@@ -349,11 +349,16 @@ def _resolve_kvr() -> str:
     """Resolve the kvr binary path, raising RuntimeError if not found."""
     path = shutil.which("kvr")
     if not path:
+        fallback = os.path.expanduser("~/.local/bin/kvr")
+        if os.path.exists(fallback):
+            path = fallback
+    if not path:
         raise RuntimeError(
             "kvr not found on PATH. Install Kealu Vector CLI (https://kealu.com) "
             "and ensure 'kvr' is available in your shell PATH."
         )
     return path
+
 
 
 # ---------------------------------------------------------------------------
@@ -1508,7 +1513,12 @@ def main() -> None:
     signal.signal(signal.SIGTERM, _handle_sigterm)
 
     # Startup validation
-    if not shutil.which("kvr"):
+    has_kvr = bool(shutil.which("kvr"))
+    if not has_kvr:
+        fallback = os.path.expanduser("~/.local/bin/kvr")
+        if os.path.exists(fallback):
+            has_kvr = True
+    if not has_kvr:
         logger.warning("kvr not found on PATH — navigate_benefits and check_eligibility will fail")
     if not os.environ.get("CMS_API_KEY"):
         logger.warning("CMS_API_KEY not set — marketplace API features unavailable")
