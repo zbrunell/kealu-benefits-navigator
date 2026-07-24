@@ -70,15 +70,35 @@ interface ActiveRun {
   orphanTimer?: ReturnType<typeof setTimeout>;
 }
 
-/** Map of runId → ActiveRun for all in-progress workflow runs. */
-export const activeRuns = new Map<string, ActiveRun>();
-
 /**
- * Secondary index: sessionId → runId.
- * Kept in sync with activeRuns to support O(1) idempotency checks in startRun()
- * and getRunIdForSession() without scanning all activeRuns.
+ * Process-global registry.
+ *
+ * Next.js development mode can evaluate this module in separate route bundles.
+ * Keeping these maps on globalThis ensures the workflow start route and SSE
+ * stream route share the same in-flight workflow state.
  */
-const sessionRunMap = new Map<string, string>();
+interface RunnerRegistry {
+  activeRuns: Map<string, ActiveRun>;
+  sessionRunMap: Map<string, string>;
+}
+
+const globalForKvrRunner = globalThis as unknown as {
+  __benefitsNavigatorKvrRunner?: RunnerRegistry;
+};
+
+const runnerRegistry =
+  globalForKvrRunner.__benefitsNavigatorKvrRunner ?? {
+    activeRuns: new Map<string, ActiveRun>(),
+    sessionRunMap: new Map<string, string>(),
+  };
+
+globalForKvrRunner.__benefitsNavigatorKvrRunner = runnerRegistry;
+
+/** Map of runId → ActiveRun for all in-progress workflow runs. */
+export const activeRuns = runnerRegistry.activeRuns;
+
+/** Secondary index: sessionId → runId. */
+const sessionRunMap = runnerRegistry.sessionRunMap;
 
 /**
  * Format a PhaseEvent as an SSE frame.
