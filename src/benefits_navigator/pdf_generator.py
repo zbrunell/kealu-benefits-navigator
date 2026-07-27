@@ -1,441 +1,449 @@
-"""Generate pre-filled benefit application draft PDFs using only the Python stdlib.
-
-Produces a valid PDF 1.4 document with form-like layout — no external
-dependencies required.  The output is a *draft* for user review, not a
-legally binding submission.
-"""
+"""Generate official state benefit application PDFs."""
 
 from __future__ import annotations
 
+import json
+
 import re
-import textwrap
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from pypdf import PdfReader, PdfWriter
 
-# ---------------------------------------------------------------------------
-# Low-level PDF helpers (raw PDF 1.4 spec)
-# ---------------------------------------------------------------------------
+_CA_MEDI_CAL_APPLICATION_URLS = (
+    "https://www.coveredca.com/pdfs/paper-application/CA-SingleStreamApp_92MAX.pdf",
+    "https://www.dhcs.ca.gov/services/medi-cal/eligibility/Documents/"
+    "2014_CoveredCA_Applications/ENG-CASingleStreamApp.pdf",
+)
 
+_CALIFORNIA_APPLICATION_DESTINATIONS = {
+    "medi-cal": "https://benefitscal.com/",
+    "medicaid": "https://benefitscal.com/",
+    "calfresh": "https://benefitscal.com/",
+    "snap": "https://benefitscal.com/",
+    "calworks": "https://benefitscal.com/",
+    "covered-california": "https://apply.coveredca.com/covered-california",
+}
 
-class _PdfWriter:
-    """Minimal PDF writer that supports text pages with basic formatting."""
-
-    def __init__(self) -> None:
-        # Slots: 0=unused, 1=reserved(Pages), 2=reserved(Font)
-        # Pre-allocate so add_page() starts at obj 3+
-        self._objects: list[bytes] = [b"", b"", b""]
-        self._pages: list[int] = []
-
-    def _add_obj(self, data: bytes) -> int:
-        self._objects.append(data)
-        return len(self._objects) - 1
-
-    def add_page(self, lines: list[tuple[str, float, float, float]]) -> None:
-        """Add a page with positioned text lines.
-
-        Each line is (text, x, y, font_size).
-        """
-        stream_parts: list[str] = []
-        for text, x, y, size in lines:
-            escaped = (
-                text.replace("\\", "\\\\")
-                .replace("(", "\\(")
-                .replace(")", "\\)")
-            )
-            stream_parts.append(f"BT /F1 {size:.0f} Tf {x:.1f} {y:.1f} Td ({escaped}) Tj ET")
-
-        stream = "\n".join(stream_parts)
-        stream_bytes = stream.encode("latin-1", errors="replace")
-
-        stream_obj = self._add_obj(
-            b"<< /Length " + str(len(stream_bytes)).encode() + b" >>\nstream\n"
-            + stream_bytes + b"\nendstream"
-        )
-
-        page_obj = self._add_obj(
-            b"<< /Type /Page /Parent 1 0 R"
-            b" /MediaBox [0 0 612 792]"
-            b" /Contents " + str(stream_obj).encode() + b" 0 R"
-            b" /Resources << /Font << /F1 2 0 R >> >> >>"
-        )
-        self._pages.append(page_obj)
-
-    def write(self, path: Path) -> None:
-        """Write the PDF to *path*."""
-        # Slot 1 = Pages, Slot 2 = Font (reserved in __init__)
-        kids = " ".join(f"{p} 0 R" for p in self._pages)
-        self._objects[1] = (
-            f"<< /Type /Pages /Kids [{kids}] /Count {len(self._pages)} >>".encode()
-        )
-        self._objects[2] = b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
-
-        catalog = self._add_obj(b"<< /Type /Catalog /Pages 1 0 R >>")
-
-        # Serialize
-        buf = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
-        offsets: list[int] = [0] * len(self._objects)
-
-        for i in range(1, len(self._objects)):
-            offsets[i] = len(buf)
-            buf.extend(f"{i} 0 obj\n".encode())
-            buf.extend(self._objects[i])
-            buf.extend(b"\nendobj\n")
-
-        xref_offset = len(buf)
-        buf.extend(f"xref\n0 {len(self._objects)}\n".encode())
-        buf.extend(b"0000000000 65535 f\r\n")
-        for i in range(1, len(self._objects)):
-            buf.extend(f"{offsets[i]:010d} 00000 n\r\n".encode())
-
-        buf.extend(
-            f"trailer\n<< /Size {len(self._objects)} /Root {catalog} 0 R >>\n"
-            f"startxref\n{xref_offset}\n%%EOF\n".encode()
-        )
-
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(bytes(buf))
+_SENSITIVE_FIELD_MARKERS = (
+    "ssn",
+    "social security",
+    "signature",
+    "signed",
+    "sign_",
+    "rep_sign",
+    "date_signed",
+    "alien",
+    "alein",
+    "imdoc__num",
+    "document_number",
+)
 
 
-# ---------------------------------------------------------------------------
-# Page layout helpers
-# ---------------------------------------------------------------------------
-
-_PAGE_W = 612  # Letter width in points
-_PAGE_H = 792
-_MARGIN_L = 54
-_MARGIN_R = 54
-_MARGIN_TOP = 54
-_USABLE_W = _PAGE_W - _MARGIN_L - _MARGIN_R
-_LINE_HEIGHT_BODY = 14
-_LINE_HEIGHT_HEADING = 20
-
-
-def _wrap(text: str, width: int = 80) -> list[str]:
-    """Word-wrap text to fit page width."""
-    return textwrap.wrap(text, width=width) or [""]
-
-
-def _add_text(
-    lines: list[tuple[str, float, float, float]],
-    text: str,
-    y: float,
-    *,
-    size: float = 10,
-    x: float = _MARGIN_L,
-    bold: bool = False,
-) -> float:
-    """Append wrapped text lines, return new y position."""
-    if bold:
-        size += 1  # Helvetica has no bold variant in base 14; simulate with size
-    wrapped = _wrap(text, width=int(_USABLE_W / (size * 0.5)))
-    lh = _LINE_HEIGHT_HEADING if size > 12 else _LINE_HEIGHT_BODY
-    for line_text in wrapped:
-        lines.append((line_text, x, y, size))
-        y -= lh
-    return y
+_APPLICATION_QUESTIONS = (
+    ("full_name", "What is your full legal name?"),
+    ("email", "What is your email address?"),
+    ("phone", "What is your phone number?"),
+    ("address", "What is your street address?"),
+    ("city", "What city do you live in?"),
+    ("state", "What state do you live in?"),
+    ("zip_code", "What is your ZIP code?"),
+    ("dob", "What is your date of birth?"),
+    ("children", "List each child applying for benefits, one per line, as: full name | date of birth. Enter none if no children are applying."),
+    ("plans_to_file_taxes", "Do you plan to file taxes for the year you want health insurance? Answer yes or no."),
+    ("tax_filing_status", "What will your tax filing status be? Answer single, head of household, married filing jointly, married filing separately, or none."),
+    ("joint_filer_name", "If you are married filing jointly, what is your spouse's full legal name? Enter none if this does not apply."),
+    ("required_to_file_taxes", "Do you expect to be required to file taxes for the year you want health insurance? Answer yes or no."),
+    ("claimed_as_dependent", "Will anyone claim you as a dependent on their taxes? Answer yes or no."),
+    ("dependent_claimer_name", "If someone will claim you as a dependent, what is that person's full legal name? Enter none if this does not apply."),
+    ("primary_tax_filer_name", "Who is the primary tax filer whose name will appear first on the tax return? Enter none if nobody files taxes."),
+    ("has_income", "Does anyone on this application have income? Answer yes or no."),
+    ("income_1_person", "Who receives the first source of income? Enter their full legal name, or none if there is no income."),
+    ("income_1_name", "What is the name of the first income source, such as the employer or business name? Enter none if there is no income."),
+    ("income_1_source", "What type of income is the first source? Answer employment, self-employment, Social Security or interest, other, or none."),
+    ("income_1_amount", "What is the amount received from the first income source before taxes? Enter a number only, or none."),
+    ("income_1_frequency", "How often is the first income received? Answer hourly, daily, weekly, every two weeks, twice a month, monthly, yearly, or none."),
+    ("income_1_hours_per_week", "If the first income is hourly, how many hours are worked per week? Enter none if this does not apply."),
+    ("income_1_days_per_week", "If the first income is daily, how many days are worked per week? Enter none if this does not apply."),
+    ("income_2_person", "Who receives the second source of income? Enter their full legal name, or none if there is no second income."),
+    ("income_2_name", "What is the name of the second income source? Enter none if there is no second income."),
+    ("income_2_source", "What type of income is the second source? Answer employment, self-employment, Social Security or interest, other, or none."),
+    ("income_2_amount", "What is the amount received from the second income source before taxes? Enter a number only, or none."),
+    ("income_2_frequency", "How often is the second income received? Answer hourly, daily, weekly, every two weeks, twice a month, monthly, yearly, or none."),
+    ("income_2_hours_per_week", "If the second income is hourly, how many hours are worked per week? Enter none if this does not apply."),
+    ("income_2_days_per_week", "If the second income is daily, how many days are worked per week? Enter none if this does not apply."),
+)
 
 
-# ---------------------------------------------------------------------------
-# Application form content builders
-# ---------------------------------------------------------------------------
+class MissingApplicationInformation(ValueError):
+    """Raised when the application profile is not complete enough to fill the form."""
+
+    def __init__(self, key: str, question: str) -> None:
+        self.key = key
+        self.question = question
+        super().__init__(question)
 
 
-def _build_header_page(
-    household: dict[str, Any],
-    programs: list[str],
-    generated_at: str,
-) -> list[tuple[str, float, float, float]]:
-    """Build the cover/header page."""
-    lines: list[tuple[str, float, float, float]] = []
-    y = _PAGE_H - _MARGIN_TOP
-
-    y = _add_text(lines, "BENEFIT APPLICATION DRAFT", y, size=18, bold=True)
-    y -= 8
-    y = _add_text(lines, "*** DRAFT FOR REVIEW - NOT A FINAL SUBMISSION ***", y, size=12, bold=True)
-    y -= 20
-
-    y = _add_text(lines, f"Generated: {generated_at}", y, size=9)
-    y = _add_text(lines, "Source: Kealu Benefit Navigator (AI-assisted)", y, size=9)
-    y -= 16
-
-    # Applicant information section
-    y = _add_text(lines, "APPLICANT INFORMATION", y, size=14, bold=True)
-    y -= 4
-    lines.append(("_" * 80, _MARGIN_L, y, 8))
-    y -= 16
-
-    fields = [
-        ("Full Name", household.get("name", "________________________")),
-        ("Date of Birth", household.get("dob", "____/____/________")),
-        ("Address", household.get("address", "________________________________________")),
-        ("City, State, ZIP", f"{household.get('city', '_____________')}, "
-                             f"{household.get('state', '____')} "
-                             f"{household.get('zip_code', '_________')}"),
-        ("Phone", household.get("phone", "(____) ____-________")),
-        ("Email", household.get("email", "________________________________")),
-        ("Household Size", str(household.get("household_size", "____"))),
-        ("Annual Income", f"${household.get('income', '____________')}"),
-        ("Income Type", household.get("income_type", "________________________")),
-    ]
-
-    for label, value in fields:
-        y = _add_text(lines, f"{label}:  {value}", y, size=10)
-        y -= 2
-
-    y -= 16
-    y = _add_text(lines, "PROGRAMS APPLIED FOR", y, size=14, bold=True)
-    y -= 4
-    lines.append(("_" * 80, _MARGIN_L, y, 8))
-    y -= 16
-
-    for i, program in enumerate(programs, 1):
-        y = _add_text(lines, f"  [{i}]  {program}", y, size=11)
-        y -= 2
-
-    y -= 24
-    y = _add_text(
-        lines,
-        "IMPORTANT: This is an AI-generated draft based on information you provided. "
-        "Review all pre-filled fields carefully before submitting to any agency. "
-        "Eligibility determinations are estimates and subject to official verification.",
-        y,
-        size=9,
-    )
-
-    return lines
+def load_application_profile(path: Path) -> dict[str, Any]:
+    """Load saved application answers from JSON, returning an empty profile if absent."""
+    if not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8") as profile_file:
+        data = json.load(profile_file)
+    if not isinstance(data, dict):
+        raise ValueError("Application profile JSON must contain an object at the top level.")
+    return data
 
 
-def _build_household_page(
-    members: list[dict[str, Any]],
-) -> list[tuple[str, float, float, float]]:
-    """Build household members page."""
-    lines: list[tuple[str, float, float, float]] = []
-    y = _PAGE_H - _MARGIN_TOP
-
-    y = _add_text(lines, "HOUSEHOLD MEMBERS", y, size=14, bold=True)
-    y -= 4
-    lines.append(("_" * 80, _MARGIN_L, y, 8))
-    y -= 16
-
-    for i, member in enumerate(members, 1):
-        y = _add_text(lines, f"Member {i}:", y, size=11, bold=True)
-        y -= 2
-        y = _add_text(lines, f"  Name: {member.get('name', '________________________')}", y)
-        y = _add_text(lines, f"  Relationship: {member.get('relationship', '________________')}", y)
-        y = _add_text(lines, f"  Age: {member.get('age', '____')}    DOB: {member.get('dob', '____/____/________')}", y)
-        y = _add_text(lines, f"  SSN: ____-____-________  (do NOT pre-fill)", y, size=9)
-        y = _add_text(lines, f"  Health Conditions: {member.get('health_needs', '________________________________')}", y)
-        y -= 12
-
-        if y < _MARGIN_TOP + 80:
-            break  # prevent overflow
-
-    return lines
+def save_application_profile(path: Path, profile: dict[str, Any]) -> None:
+    """Persist collected application answers as readable JSON."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as profile_file:
+        json.dump(profile, profile_file, indent=2, ensure_ascii=False)
+        profile_file.write("\n")
 
 
-def _build_documents_page(
-    documents: list[str],
-) -> list[tuple[str, float, float, float]]:
-    """Build required documents checklist page."""
-    lines: list[tuple[str, float, float, float]] = []
-    y = _PAGE_H - _MARGIN_TOP
-
-    y = _add_text(lines, "REQUIRED DOCUMENTS CHECKLIST", y, size=14, bold=True)
-    y -= 4
-    lines.append(("_" * 80, _MARGIN_L, y, 8))
-    y -= 16
-
-    y = _add_text(
-        lines,
-        "Gather these documents before submitting your application:",
-        y,
-        size=10,
-    )
-    y -= 8
-
-    for doc in documents:
-        y = _add_text(lines, f"  [ ]  {doc}", y, size=10)
-        y -= 4
-        if y < _MARGIN_TOP + 40:
-            break
-
-    y -= 20
-    y = _add_text(lines, "APPLICANT SIGNATURE", y, size=14, bold=True)
-    y -= 4
-    lines.append(("_" * 80, _MARGIN_L, y, 8))
-    y -= 20
-
-    y = _add_text(
-        lines,
-        "I certify that the information provided is true and correct to the best of "
-        "my knowledge. I understand that providing false information may result in "
-        "denial of benefits and potential legal consequences.",
-        y,
-        size=9,
-    )
-    y -= 20
-
-    y = _add_text(lines, "Signature: ________________________________________    Date: ____/____/________", y)
-    y -= 16
-    y = _add_text(lines, "Print Name: ________________________________________", y)
-
-    return lines
+def next_application_question(profile: dict[str, Any]) -> tuple[str, str] | None:
+    """Return exactly one unanswered application question in form order."""
+    for key, question in _APPLICATION_QUESTIONS:
+        if key not in profile:
+            return key, question
+        value = profile[key]
+        if value is None or value == "":
+            return key, question
+    return None
 
 
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
+def record_application_answer(
+    path: Path,
+    key: str,
+    answer: str,
+) -> dict[str, Any]:
+    """Add one answer to the saved application profile and return the updated profile."""
+    valid_keys = {question_key for question_key, _ in _APPLICATION_QUESTIONS}
+    if key not in valid_keys:
+        raise KeyError(f"Unknown application question key: {key}")
+
+    profile = load_application_profile(path)
+    cleaned_answer = answer.strip()
+    if key == "children":
+        if cleaned_answer.lower() in {"none", "no", "n/a"}:
+            profile[key] = []
+        else:
+            children: list[dict[str, str]] = []
+            for line in cleaned_answer.splitlines():
+                if not line.strip():
+                    continue
+                name, separator, dob = line.partition("|")
+                if not separator or not name.strip() or not dob.strip():
+                    raise ValueError(
+                        "Each child must be entered as: full name | date of birth."
+                    )
+                children.append(
+                    {"full_name": name.strip(), "dob": dob.strip()}
+                )
+            profile[key] = children
+    else:
+        profile[key] = cleaned_answer
+
+    save_application_profile(path, profile)
+    return profile
+
+
+def require_complete_application_profile(profile: dict[str, Any]) -> None:
+    """Raise with the next single question when required application data is missing."""
+    missing = next_application_question(profile)
+    if missing is not None:
+        key, question = missing
+        raise MissingApplicationInformation(key, question)
 
 
 def _parse_programs_from_output(workflow_output: str) -> list[str]:
-    """Extract program names from workflow output text."""
-    programs = []
-    known = [
-        "Medicaid", "CHIP", "SNAP", "WIC", "LIHEAP", "Section 8",
-        "TANF", "ACA Marketplace", "Head Start", "Free School Lunch",
-        "Reduced School Lunch", "NSLP", "Lifeline", "EITC",
-    ]
+    known = ["Medicaid", "Medi-Cal", "SNAP", "CalFresh", "WIC"]
     output_upper = workflow_output.upper()
-    for prog in known:
-        if prog.upper() in output_upper:
-            programs.append(prog)
-    return programs or ["(Review workflow output for eligible programs)"]
+    return [program for program in known if program.upper() in output_upper]
 
 
-def _parse_documents_from_output(workflow_output: str) -> list[str]:
-    """Extract document requirements from workflow output."""
-    documents = []
-    # Look for common document mentions
-    doc_patterns = [
-        (r"(?:proof of |verify )?income", "Proof of income (pay stubs, tax return, W-2)"),
-        (r"(?:birth certificate|proof of age)", "Birth certificates for all household members"),
-        (r"(?:social security|SSN|SS card)", "Social Security cards for all household members"),
-        (r"(?:photo id|driver.?s? license|state id)", "Government-issued photo ID"),
-        (r"(?:proof of )?residen(?:ce|cy)", "Proof of residency (utility bill, lease agreement)"),
-        (r"(?:immigration|citizenship|naturalization)", "Proof of citizenship or immigration status"),
-        (r"(?:bank statement|financial|asset)", "Bank statements (last 3 months)"),
-        (r"(?:rent|mortgage|housing)", "Housing cost documentation (lease, mortgage statement)"),
-        (r"(?:medical|health) record", "Medical records or physician statements"),
-        (r"(?:cobra|employer|coverage).{0,20}(?:letter|notice)", "Coverage loss documentation (COBRA notice, termination letter)"),
-        (r"(?:child care|daycare)", "Child care expense documentation"),
-        (r"(?:disability|SSI|SSDI)", "Disability determination letter (if applicable)"),
-    ]
+def get_california_application_destination(program: str) -> str:
+    """Return the official online application destination for a California program."""
+    normalized = program.strip().lower()
+    try:
+        return _CALIFORNIA_APPLICATION_DESTINATIONS[normalized]
+    except KeyError as exc:
+        raise NotImplementedError(
+            f"No official California online application destination is configured for {program!r}."
+        ) from exc
 
-    output_lower = workflow_output.lower()
-    for pattern, doc_name in doc_patterns:
-        if re.search(pattern, output_lower):
-            documents.append(doc_name)
 
-    if not documents:
-        # Provide standard set
-        documents = [
-            "Proof of income (pay stubs, tax return, W-2)",
-            "Birth certificates for all household members",
-            "Social Security cards for all household members",
-            "Government-issued photo ID",
-            "Proof of residency (utility bill, lease agreement)",
+def _split_name(full_name: str) -> tuple[str, str, str]:
+    parts = [part for part in full_name.strip().split() if part]
+    if not parts:
+        return "", "", ""
+    if len(parts) == 1:
+        return parts[0], "", ""
+    if len(parts) == 2:
+        return parts[0], "", parts[1]
+    return parts[0], " ".join(parts[1:-1]), parts[-1]
+
+
+def _is_yes(value: Any) -> bool:
+    return str(value or "").strip().lower() in {"yes", "y", "true", "1"}
+
+
+def _none_to_blank(value: Any) -> str:
+    text = str(value or "").strip()
+    return "" if text.lower() in {"none", "n/a", "not applicable"} else text
+
+
+def _is_sensitive_pdf_field(field_name: str) -> bool:
+    normalized = field_name.strip().lower()
+    return any(marker in normalized for marker in _SENSITIVE_FIELD_MARKERS)
+
+
+def inspect_pdf_form(pdf_path: Path) -> list[dict[str, Any]]:
+    """Inspect the real official PDF and return its fillable field inventory."""
+    reader = PdfReader(str(pdf_path))
+    inventory: list[dict[str, Any]] = []
+    for name, field in (reader.get_fields() or {}).items():
+        inventory.append(
+            {
+                "name": name,
+                "field_type": str(field.get("/FT") or ""),
+                "options": field.get("/Opt"),
+                "sensitive": _is_sensitive_pdf_field(name),
+            }
+        )
+    return inventory
+
+
+def _get_profile_value(profile: dict[str, Any], dotted_key: str) -> Any:
+    value: Any = profile
+    for part in dotted_key.split("."):
+        if isinstance(value, list):
+            try:
+                value = value[int(part)]
+            except (ValueError, IndexError):
+                return None
+        elif isinstance(value, dict) and part in value:
+            value = value[part]
+        else:
+            return None
+    return value
+
+
+def _field_values_from_plan(
+    profile: dict[str, Any],
+    field_plan: list[dict[str, Any]],
+    available_fields: set[str],
+) -> dict[str, str]:
+    """Convert an AI-produced semantic field plan into real PDF field values."""
+    values: dict[str, str] = {}
+
+    for item in field_plan:
+        if not isinstance(item, dict):
+            continue
+
+        profile_key = str(item.get("profile_key") or "").strip()
+        kind = str(item.get("kind") or "text").strip().lower()
+        pdf_fields = item.get("pdf_fields") or []
+        if isinstance(pdf_fields, str):
+            pdf_fields = [pdf_fields]
+        if not profile_key or not isinstance(pdf_fields, list):
+            continue
+
+        safe_fields = [
+            str(field_name)
+            for field_name in pdf_fields
+            if str(field_name) in available_fields
+            and not _is_sensitive_pdf_field(str(field_name))
         ]
+        if not safe_fields:
+            continue
 
-    return documents
+        profile_value = _get_profile_value(profile, profile_key)
+        if profile_value is None or profile_value == "":
+            continue
+
+        if kind == "full_name":
+            first, middle, last = _split_name(str(profile_value))
+            name_parts = [first, middle, last]
+            for field_name, part in zip(safe_fields, name_parts):
+                if part:
+                    values[field_name] = part
+            continue
+
+        if kind == "yes_no":
+            yes_field = str(item.get("yes_field") or "")
+            no_field = str(item.get("no_field") or "")
+            normalized = str(profile_value).strip().lower()
+            if normalized in {"yes", "y", "true", "1"}:
+                if yes_field in available_fields and not _is_sensitive_pdf_field(yes_field):
+                    values[yes_field] = "/Yes"
+            elif normalized in {"no", "n", "false", "0"}:
+                if no_field in available_fields and not _is_sensitive_pdf_field(no_field):
+                    values[no_field] = "/Yes"
+            continue
+
+        if kind == "choice":
+            choices = item.get("choices") or {}
+            if isinstance(choices, dict):
+                selected = choices.get(str(profile_value).strip().lower())
+                if (
+                    selected
+                    and str(selected) in available_fields
+                    and not _is_sensitive_pdf_field(str(selected))
+                ):
+                    values[str(selected)] = "/Yes"
+            continue
+
+        if kind == "multi_choice":
+            choices = item.get("choices") or {}
+            selected_values = profile_value if isinstance(profile_value, list) else [profile_value]
+            if isinstance(choices, dict):
+                for selected_value in selected_values:
+                    selected = choices.get(str(selected_value).strip().lower())
+                    if (
+                        selected
+                        and str(selected) in available_fields
+                        and not _is_sensitive_pdf_field(str(selected))
+                    ):
+                        values[str(selected)] = "/Yes"
+            continue
+
+        text = _none_to_blank(profile_value)
+        if text:
+            for field_name in safe_fields:
+                values[field_name] = text
+
+    return values
 
 
-def _parse_household_from_args(args: dict[str, Any]) -> dict[str, Any]:
-    """Extract structured household data from tool arguments."""
-    profile = args.get("household_profile", "")
-    household: dict[str, Any] = {}
+def _extract_values(args: dict[str, Any]) -> dict[str, str]:
+    application_data = args.get("application_data")
+    if application_data is None:
+        application_data = {}
+    if not isinstance(application_data, dict):
+        raise ValueError("application_data must be a dictionary when provided.")
 
-    # Extract ZIP
-    zip_match = re.search(r"\b(\d{5})\b", args.get("zip_code", "") or profile)
-    if zip_match:
-        household["zip_code"] = zip_match.group(1)
+    merged_args = {**args, **application_data}
+    profile = str(merged_args.get("household_profile") or "")
+    zip_code = str(merged_args.get("zip_code") or "").strip()
+    if not zip_code:
+        match = re.search(r"\b(\d{5})\b", profile)
+        if match:
+            zip_code = match.group(1)
 
-    # Extract state
-    if args.get("state"):
-        household["state"] = args["state"]
+    annual_income = str(merged_args.get("annual_income") or merged_args.get("income") or "").strip()
+    if not annual_income:
+        match = re.search(r"\$\s*([\d,]+)", profile)
+        if match:
+            annual_income = match.group(1)
+    annual_income = annual_income.replace("$", "").replace(",", "")
+    if annual_income:
+        try:
+            annual_income = f"{int(float(annual_income)):,.0f}"
+        except ValueError:
+            pass
 
-    # Extract income — require $ prefix or k/K suffix to avoid false matches
-    income_match = re.search(
-        r"\$\s*([\d,]+)\s*(?:k|K|/yr|/year|annual|yearly)?"
-        r"|(\d[\d,]*)\s*(?:k|K)\b"
-        r"|(\d[\d,]+)\s*/(?:yr|year|month|mo)\b",
-        profile,
+    return {
+        "full_name": str(merged_args.get("name") or merged_args.get("full_name") or "").strip(),
+        "email": str(merged_args.get("email") or "").strip(),
+        "phone": str(merged_args.get("phone") or "").strip(),
+        "address": str(merged_args.get("address") or "").strip(),
+        "city": str(merged_args.get("city") or "").strip(),
+        "state": str(merged_args.get("state") or "CA").strip().upper(),
+        "zip_code": zip_code,
+        "dob": str(merged_args.get("dob") or "").strip(),
+        "annual_income": annual_income,
+        "plans_to_file_taxes": str(merged_args.get("plans_to_file_taxes") or "").strip(),
+        "tax_filing_status": str(merged_args.get("tax_filing_status") or "").strip(),
+        "joint_filer_name": _none_to_blank(merged_args.get("joint_filer_name")),
+        "required_to_file_taxes": str(merged_args.get("required_to_file_taxes") or "").strip(),
+        "claimed_as_dependent": str(merged_args.get("claimed_as_dependent") or "").strip(),
+        "dependent_claimer_name": _none_to_blank(merged_args.get("dependent_claimer_name")),
+        "primary_tax_filer_name": _none_to_blank(merged_args.get("primary_tax_filer_name")),
+        "has_income": str(merged_args.get("has_income") or "").strip(),
+        "income_1_person": _none_to_blank(merged_args.get("income_1_person")),
+        "income_1_name": _none_to_blank(merged_args.get("income_1_name")),
+        "income_1_source": _none_to_blank(merged_args.get("income_1_source")),
+        "income_1_amount": _none_to_blank(merged_args.get("income_1_amount")),
+        "income_1_frequency": _none_to_blank(merged_args.get("income_1_frequency")),
+        "income_1_hours_per_week": _none_to_blank(merged_args.get("income_1_hours_per_week")),
+        "income_1_days_per_week": _none_to_blank(merged_args.get("income_1_days_per_week")),
+        "income_2_person": _none_to_blank(merged_args.get("income_2_person")),
+        "income_2_name": _none_to_blank(merged_args.get("income_2_name")),
+        "income_2_source": _none_to_blank(merged_args.get("income_2_source")),
+        "income_2_amount": _none_to_blank(merged_args.get("income_2_amount")),
+        "income_2_frequency": _none_to_blank(merged_args.get("income_2_frequency")),
+        "income_2_hours_per_week": _none_to_blank(merged_args.get("income_2_hours_per_week")),
+        "income_2_days_per_week": _none_to_blank(merged_args.get("income_2_days_per_week")),
+    }
+
+
+def _download_template(destination: Path) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    errors: list[str] = []
+
+    for url in _CA_MEDI_CAL_APPLICATION_URLS:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 Kealu-Benefits-Navigator/1.0",
+                "Accept": "application/pdf,*/*;q=0.8",
+            },
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                content_type = response.headers.get_content_type()
+                data = response.read()
+        except Exception as exc:
+            errors.append(f"{url}: {exc}")
+            continue
+
+        if data.startswith(b"%PDF-"):
+            destination.write_bytes(data)
+            return
+
+        errors.append(
+            f"{url}: returned {content_type!r} with header {data[:16]!r}"
+        )
+
+    raise RuntimeError(
+        "None of the official California application sources returned a valid PDF. "
+        + " | ".join(errors)
     )
-    if income_match:
-        raw = (income_match.group(1) or income_match.group(2) or income_match.group(3) or "").replace(",", "")
-        if raw:
-            amount = int(raw)
-            if amount < 1000:
-                amount *= 1000  # "42k" -> 42000
-            household["income"] = f"{amount:,}"
-
-    # Extract household size
-    size_match = re.search(
-        r"(?:family of |household.{0,10})(\d+)|(\d+)\s*(?:people|person|member)",
-        profile,
-        re.IGNORECASE,
-    )
-    if size_match:
-        household["household_size"] = size_match.group(1) or size_match.group(2)
-
-    household["income_type"] = args.get("income_type", "")
-
-    return household
 
 
-def _parse_members_from_args(args: dict[str, Any]) -> list[dict[str, Any]]:
-    """Extract household member details from profile text."""
-    profile = args.get("household_profile", "")
-    members: list[dict[str, Any]] = []
 
-    # Try to parse "single parent ... two kids ages 4 and 9" style
-    age_pairs = re.findall(r"ages?\s+(\d+)\s+and\s+(\d+)", profile, re.IGNORECASE)
-    single_ages = re.findall(r"(\d+)\s*(?:yo|y/o|year.?old)", profile, re.IGNORECASE)
 
-    # Primary applicant
-    adult_age = ""
-    for a in single_ages:
-        if int(a) >= 18:
-            adult_age = a
-            break
+def application_args_from_profile(
+    args: dict[str, Any],
+    profile_path: Path,
+) -> dict[str, Any]:
+    """Merge saved JSON answers into workflow arguments after checking completeness."""
+    profile = load_application_profile(profile_path)
+    require_complete_application_profile(profile)
+    return {**args, "application_data": profile}
 
-    relationship = "Self (Head of Household)"
-    if re.search(r"single (?:parent|mom|mother|dad|father)", profile, re.IGNORECASE):
-        relationship = "Self (Single Parent, Head of Household)"
 
-    members.append({
-        "name": "",
-        "relationship": relationship,
-        "age": adult_age,
-        "health_needs": args.get("health_needs", ""),
-    })
+def _field_values(
+    args: dict[str, Any],
+    available_fields: set[str],
+) -> dict[str, str]:
+    """Build values for the real PDF from the saved profile and AI field plan."""
+    profile = args.get("application_data") or {}
+    if not isinstance(profile, dict):
+        raise ValueError("application_data must be a dictionary.")
 
-    # Children
-    child_num = 1
-    for pair in age_pairs:
-        for age in pair:
-            if int(age) < 19:
-                members.append({
-                    "name": "",
-                    "relationship": f"Child {child_num}",
-                    "age": age,
-                    "health_needs": "",
-                })
-                child_num += 1
+    field_plan = args.get("application_field_plan")
+    if not isinstance(field_plan, list) or not field_plan:
+        raise ValueError(
+            "application_field_plan is required. The workflow AI must inspect the official PDF field inventory and map saved profile keys to real PDF fields before generation."
+        )
 
-    # Any single ages that are children
-    for age in single_ages:
-        if int(age) < 19 and not any(m["age"] == age for m in members):
-            members.append({
-                "name": "",
-                "relationship": f"Child {child_num}",
-                "age": age,
-                "health_needs": "",
-            })
-            child_num += 1
-
-    return members
+    return _field_values_from_plan(profile, field_plan, available_fields)
 
 
 def generate_application_pdf(
@@ -443,41 +451,73 @@ def generate_application_pdf(
     workflow_output: str,
     output_dir: Path | None = None,
 ) -> Path:
-    """Generate a pre-filled benefit application draft PDF.
+    """Download and prefill California's official Medi-Cal application."""
+    profile_path_value = args.get("application_profile_path")
+    if profile_path_value:
+        args = application_args_from_profile(args, Path(str(profile_path_value)))
+    elif isinstance(args.get("application_data"), dict):
+        require_complete_application_profile(args["application_data"])
 
-    Parameters
-    ----------
-    args:
-        The original tool arguments (household_profile, state, zip_code, etc.)
-    workflow_output:
-        The text output from the benefits-navigator workflow.
-    output_dir:
-        Directory to write the PDF to. Defaults to a temp-like location.
-
-    Returns
-    -------
-    Path to the generated PDF.
-    """
     if output_dir is None:
         output_dir = Path.home() / "Documents" / "benefits-applications"
 
-    now = datetime.now(tz=timezone.utc)
-    generated_at = now.strftime("%B %d, %Y at %H:%M UTC")
-    timestamp = now.strftime("%Y%m%d-%H%M%S")
+    values = _extract_values(args)
+    state = values["state"]
+    if state != "CA":
+        raise NotImplementedError(
+            f"Official application generation is not implemented for {state or 'the selected state'}."
+        )
 
-    household = _parse_household_from_args(args)
-    members = _parse_members_from_args(args)
     programs = _parse_programs_from_output(workflow_output)
-    documents = _parse_documents_from_output(workflow_output)
+    if not any(program.upper() in {"MEDICAID", "MEDI-CAL"} for program in programs):
+        raise NotImplementedError(
+            "CalFresh and WIC require separate official California application workflows."
+        )
 
-    pdf = _PdfWriter()
-    pdf.add_page(_build_header_page(household, programs, generated_at))
-    pdf.add_page(_build_household_page(members))
-    pdf.add_page(_build_documents_page(documents))
+    now = datetime.now(tz=timezone.utc)
+    timestamp = now.strftime("%Y%m%d-%H%M%S")
+    zip_code = values["zip_code"] or "unknown"
 
-    zip_code = household.get("zip_code", "unknown")
-    filename = f"benefits-application-draft-{zip_code}-{timestamp}.pdf"
-    output_path = output_dir / filename
-    pdf.write(output_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    template_path = output_dir / "official-ca-medi-cal-template.pdf"
+    output_path = output_dir / f"official-ca-medi-cal-{zip_code}-{timestamp}.pdf"
+    _download_template(template_path)
+
+    field_inventory = inspect_pdf_form(template_path)
+    inventory_path = output_dir / "official-ca-medi-cal-field-inventory.json"
+    inventory_path.write_text(
+        json.dumps(field_inventory, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    reader = PdfReader(str(template_path))
+    writer = PdfWriter()
+    writer.clone_document_from_reader(reader)
+    available_fields = set((reader.get_fields() or {}).keys())
+    requested_fields = _field_values(args, available_fields)
+    matched_fields = {
+        key: value for key, value in requested_fields.items() if key in available_fields
+    }
+    if not matched_fields:
+        raise RuntimeError(
+            "The official PDF downloaded successfully, but none of the configured field names matched its AcroForm fields."
+        )
+    for page in writer.pages:
+        writer.update_page_form_field_values(
+            page,
+            matched_fields,
+            auto_regenerate=True,
+        )
+
+    with output_path.open("wb") as output_file:
+        writer.write(output_file)
+
+    review_path = output_path.with_suffix(".review.txt")
+    review_path.write_text(
+        "Review every page of this prefilled official application before submitting it.\n"
+        "For privacy and legal reasons, Social Security numbers, immigration document numbers, signatures, and signature dates were intentionally left blank.\n"
+        "Enter those items directly into the PDF, sign and date the application, and verify that every checked box and entered value is correct.\n",
+        encoding="utf-8",
+    )
 
     return output_path
