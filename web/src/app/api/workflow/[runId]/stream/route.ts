@@ -3,15 +3,13 @@
 // Licensed under the Kealu Vector License v1.0 — PATENT PENDING
 //
 
-import { cookies } from 'next/headers';
-import { addController, removeController } from '@/lib/kvr-runner';
+import { addController, removeController } from "@/lib/kvr-runner";
 
 // Disable Next.js route handler timeout for the SSE streaming endpoint.
 // KVR workflows can run for up to 30 minutes; the default platform timeout
 // (e.g. 30s on Vercel Edge) would terminate the SSE connection mid-run.
 export const maxDuration = 0;
 
-const COOKIE_NAME = 'session';
 const KEEPALIVE_INTERVAL_MS = 15_000;
 
 /**
@@ -25,29 +23,24 @@ const KEEPALIVE_INTERVAL_MS = 15_000;
  * when mock factories reference consts declared after hoisted imports).
  */
 export async function GET(
-
   req: Request,
-
   { params }: { params: Promise<{ runId: string }> },
-
 ): Promise<Response> {
   const { runId } = await params;
 
-  const cookieStore = await cookies();
-
   // Dynamic import: defers session-store resolution to handler invocation time
-  const { sessionStore } = await import('@/lib/session-store');
+  const { sessionStore } = await import("@/lib/session-store");
 
   // Authorize: session must exist and own this runId
-  const rawCookie = req.headers.get('cookie') ?? '';
+  const rawCookie = req.headers.get("cookie") ?? "";
   const sessionCookieMatch = rawCookie.match(/(?:^|;\s*)session=([^;]+)/);
-  const cookieValue = sessionCookieMatch?.[1] ?? cookieStore.get(COOKIE_NAME)?.value;
+  const cookieValue = sessionCookieMatch?.[1];
   const session = cookieValue ? sessionStore.get(cookieValue) : null;
 
   if (!session || session.runId !== runId) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 
@@ -60,7 +53,7 @@ export async function GET(
       const encoder = new TextEncoder();
 
       // Send initial keepalive comment (prevents proxy buffering)
-      controller.enqueue(encoder.encode(': keepalive\n\n'));
+      controller.enqueue(encoder.encode(": keepalive\n\n"));
 
       // Register controller to receive broadcast events from kvr-runner
       addController(runId, controller);
@@ -68,7 +61,7 @@ export async function GET(
       // Periodic keepalive ping
       pingTimer = setInterval(() => {
         try {
-          controller.enqueue(encoder.encode(': keepalive\n\n'));
+          controller.enqueue(encoder.encode(": keepalive\n\n"));
         } catch {
           // Controller closed
         }
@@ -88,10 +81,10 @@ export async function GET(
   return new Response(stream, {
     status: 200,
     headers: {
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      'Connection': 'keep-alive',
-      'X-Correlation-Id': runId,
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Correlation-Id": runId,
     },
   });
 }
