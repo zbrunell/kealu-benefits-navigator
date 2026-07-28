@@ -3,15 +3,15 @@
 // Licensed under the Kealu Vector License v1.0 — PATENT PENDING
 //
 
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
-import { randomUUID, createHash } from 'crypto';
-import { sessionStore } from '@/lib/session-store';
-import { startRun, getRunIdForSession } from '@/lib/kvr-runner';
-import { resolveKvr } from '@/lib/kvr-checker';
-import { buildHouseholdProfile, isTier1Complete } from '@/lib/intake-flow';
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import { randomUUID, createHash } from "crypto";
+import { sessionStore } from "@/lib/session-store";
+import { startRun, getRunIdForSession } from "@/lib/kvr-runner";
+import { resolveKvr } from "@/lib/kvr-checker";
+import { buildHouseholdProfile, isTier1Complete } from "@/lib/intake-flow";
 
-const COOKIE_NAME = 'session';
+const COOKIE_NAME = "session";
 
 /**
  * POST /api/workflow/start
@@ -38,13 +38,13 @@ export async function POST(req: Request): Promise<Response> {
   // Strict equality is required — startsWith() would allow subdomain-suffix bypass:
   // `https://localhost.evil.com`.startsWith(`https://localhost`) evaluates to true.
   // The dual http/https allowedOrigins list already handles port variations.
-  const origin = req.headers.get('Origin');
-  const host = req.headers.get('Host');
+  const origin = req.headers.get("Origin");
+  const host = req.headers.get("Host");
   if (origin && host) {
     const allowedOrigins = [`https://${host}`, `http://${host}`];
     const isSameOrigin = allowedOrigins.some((o) => origin === o);
     if (!isSameOrigin) {
-      return NextResponse.json({ error: 'CSRF check failed' }, { status: 403 });
+      return NextResponse.json({ error: "CSRF check failed" }, { status: 403 });
     }
   }
 
@@ -55,15 +55,22 @@ export async function POST(req: Request): Promise<Response> {
   const sessionId = cookieStore.get(COOKIE_NAME)?.value ?? randomUUID();
   const session = sessionStore.get(sessionId) ?? sessionStore.create(sessionId);
 
-  // Check for existing run (idempotency)
+  // Check the in-memory runner for an existing run. This is the source of truth
+  // for whether a workflow is actually active; session metadata may be stale
+  // after a dev-server restart or an uncleanly terminated process.
   const existingRunId = getRunIdForSession(sessionId);
   if (existingRunId) {
+    sessionStore.update(sessionId, {
+      runId: existingRunId,
+      runStatus: "running",
+    });
+
     console.log(
       JSON.stringify({
-        level: 'info',
-        event: 'workflow_start',
+        level: "info",
+        event: "workflow_start",
         runId: existingRunId,
-        sessionId_hash: createHash('sha256').update(sessionId).digest('hex'),
+        sessionId_hash: createHash("sha256").update(sessionId).digest("hex"),
         intake_tiers_completed: session?.currentTier ?? 1,
         idempotent: true,
       }),
@@ -71,11 +78,21 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ runId: existingRunId });
   }
 
+  // Clear stale run metadata left in the session when no matching process exists.
+  // Without this normalization, a persistent browser cookie can make the client
+  // believe an old workflow is still running until the cookie is manually cleared.
+  if (session.runId || session.runStatus === "running") {
+    sessionStore.update(sessionId, {
+      runId: undefined,
+      runStatus: "idle",
+    });
+  }
+
   // Verify kvr availability
   const kvrPath = resolveKvr();
   if (!kvrPath) {
     return NextResponse.json(
-      { error: 'Workflow engine unavailable. Please ensure kvr is installed.' },
+      { error: "Workflow engine unavailable. Please ensure kvr is installed." },
       { status: 503 },
     );
   }
@@ -87,7 +104,10 @@ export async function POST(req: Request): Promise<Response> {
   // perform FPL calculations or program-eligibility lookups.
   if (!isTier1Complete(rawVars)) {
     return NextResponse.json(
-      { error: 'Intake incomplete. Please answer the required questions before starting.' },
+      {
+        error:
+          "Intake incomplete. Please answer the required questions before starting.",
+      },
       { status: 422 },
     );
   }
@@ -97,10 +117,10 @@ export async function POST(req: Request): Promise<Response> {
   // Log structured startup event (hash sessionId to avoid PII in logs)
   console.log(
     JSON.stringify({
-      level: 'info',
-      event: 'workflow_start',
+      level: "info",
+      event: "workflow_start",
       runId,
-      sessionId_hash: createHash('sha256').update(sessionId).digest('hex'),
+      sessionId_hash: createHash("sha256").update(sessionId).digest("hex"),
       intake_tiers_completed: session?.currentTier ?? 1,
       idempotent: false,
     }),
@@ -135,7 +155,7 @@ export async function POST(req: Request): Promise<Response> {
   startRun(runId, sessionId, enrichedVars);
 
   // Update session with runId
-  sessionStore.update(sessionId, { runId, runStatus: 'running' });
+  sessionStore.update(sessionId, { runId, runStatus: "running" });
 
   const response = NextResponse.json({ runId });
 
@@ -144,12 +164,13 @@ export async function POST(req: Request): Promise<Response> {
   // NODE_ENV=production alone risks transmitting the session cookie over HTTP
   // in non-production deployed environments where NODE_ENV is not set to 'production'.
   const secureCookie =
-    process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production';
+    process.env.COOKIE_SECURE === "true" ||
+    process.env.NODE_ENV === "production";
 
   response.cookies.set(COOKIE_NAME, sessionId, {
     httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
+    sameSite: "lax",
+    path: "/",
     maxAge: 60 * 60 * 2,
     secure: secureCookie,
   });
