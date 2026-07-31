@@ -13,9 +13,10 @@
  *   - Tier 2: Improves plan matching quality (coverage, medications, providers, budget,
  *             health needs). These are optional — users can skip via the skip button.
  *
- * Field extraction is done by regex against the user's free-text message; the approach
- * mirrors the Python MCP server's `_INTAKE_FIELDS` / `_ZIP_RE` / `_INCOME_PATTERNS`
- * implementation (mcp_server.py lines 42–57, 412–631).
+ * Answers are parsed according to the field currently being asked. Structured fields
+ * such as ZIP code and yearly income are validated and normalized, while conversational
+ * fields are stored as trimmed user-entered text. Opportunistic free-text extraction is
+ * retained only for backward compatibility with the MCP-style conversation flow.
  */
 
 import type { HouseholdVars, ChatMessage } from '@/types/session';
@@ -23,16 +24,37 @@ import type { HouseholdVars, ChatMessage } from '@/types/session';
 /** Partial HouseholdVars plus the extra `annual_income` runtime variable. */
 type RawVars = Partial<HouseholdVars> & { annual_income?: string };
 
+/** All supported intake field keys. */
+export type IntakeFieldKey =
+  | 'zip_code'
+  | 'annual_income'
+  | 'household_profile'
+  | 'current_coverage'
+  | 'medications'
+  | 'providers'
+  | 'premium_budget'
+  | 'health_needs';
+
+/** Result returned when parsing the answer to a specific intake question. */
+export interface IntakeParseResult {
+  value?: string;
+  error?: string;
+}
+
 /** Definition of a single guided intake question. */
 export interface IntakeField {
   /** Key into RawVars / HouseholdVars; used to check whether the field is already answered. */
-  key: string;
+  key: IntakeFieldKey;
   /** Short human-readable label for this field. */
   label: string;
   /** One-sentence explanation of why this information is needed. Shown below the prompt. */
   rationale: string;
   /** Full text of the question to display to the user. */
   prompt: string;
+  /** Preferred keyboard/input mode for the answer field. */
+  inputMode?: 'text' | 'numeric';
+  /** Optional example shown inside the answer input. */
+  placeholder?: string;
   /** Intake tier this field belongs to (1 = required, 2 = optional). */
   tier: 1 | 2;
 }
@@ -40,28 +62,34 @@ export interface IntakeField {
 /** Tier 1 fields — minimum required to start research. */
 export const TIER_1_FIELDS: IntakeField[] = [
   {
-  key: 'zip_code',
-  label: 'ZIP Code',
-  rationale: 'Your ZIP code tells us which health plans, state programs, county services, clinics, and local assistance options are available where you live.',
-  prompt:
-    'Hello! I am an AI Agent powered by Kealu Vector to help you find health insurance and benefit programs for your household.\n\n' +
-    'I\'ll ask a few questions to understand your situation — no account info needed, and your information always stays private.\n\n' +
-    'Let\'s start with some basics. What is your ZIP code?',
-  tier: 1,
-},
+    key: 'zip_code',
+    label: 'ZIP Code',
+    rationale: 'We use your ZIP code to find plans and benefit programs available where you live.',
+    prompt:
+      'Hi! I can help you find health insurance and benefit programs for your household.\n\n' +
+      'I’ll ask a few short questions. Your answers stay private, and you do not need an account.\n\n' +
+      'What is your ZIP code?',
+    inputMode: 'numeric',
+    placeholder: '19020',
+    tier: 1,
+  },
   {
     key: 'annual_income',
-    label: 'Annual Income',
-    rationale: 'Your income helps estimate what programs you may qualify for, including Medicaid, SNAP, marketplace discounts, premium tax credits, and other cost-saving benefits.',
-    prompt: 'What is your household\'s approximate income before taxes? You can answer with a yearly amount (e.g. "$42,000") or a monthly amount ("$3,500/month").',
+    label: 'Annual Household Income',
+    rationale: 'We use this to estimate which programs, discounts, and tax credits your household may qualify for.',
+    prompt: 'What is your household’s total yearly income before taxes?',
+    inputMode: 'numeric',
+    placeholder: '42000',
     tier: 1,
   },
   {
     key: 'household_profile',
-    label: 'Household Composition',
-    rationale: 'Who is in your household affects eligibility rules, benefit amounts, medical plan options, and special programs for children, pregnancy, disability, veterans, or older adults.',
+    label: 'Household Members',
+    rationale: 'Household size and ages affect eligibility and benefit amounts.',
     prompt:
-      'Please describe your household: how many people, their ages, and any special circumstances (e.g., pregnancy, disability, veteran status)?',
+      'Who should be included in your benefits household?\n\n' +
+      'Include yourself, your spouse, and anyone you claim as a tax dependent. Add each person’s age and mention pregnancy, disability, or veteran status.\n\n' +
+      'Example: Two adults, ages 32 and 30, and two children, ages 4 and 8.',
     tier: 1,
   },
 ];
@@ -70,37 +98,47 @@ export const TIER_1_FIELDS: IntakeField[] = [
 export const TIER_2_FIELDS: IntakeField[] = [
   {
     key: 'current_coverage',
-    label: 'Current Coverage',
-    rationale: 'Knowing your current coverage helps us understand whether you need a new plan, help keeping existing coverage, gap coverage, COBRA alternatives, or urgent support if you are uninsured.',
-    prompt: 'Are you currently insured? If so, through what (employer, COBRA, etc.)? If not, how long have you been uninsured?',
+    label: 'Current Health Insurance',
+    rationale: 'This helps us understand whether you need new coverage or help with your current plan.',
+    prompt:
+      'Do you currently have health insurance?\n\n' +
+      'Tell us where it comes from, such as an employer, Medicaid, Medicare, or COBRA. You can also answer “No.”',
     tier: 2,
   },
   {
     key: 'medications',
-    label: 'Medications',
-    rationale: 'Medication information helps identify plans that cover the prescriptions you rely on and avoid options that could leave you paying much more at the pharmacy.',
-    prompt: 'What prescription medications do you or household members take regularly? (Include drug name, dosage, and frequency, or "none".)',
+    label: 'Prescription Medications',
+    rationale: 'This helps us look for plans that cover the medicines your household uses.',
+    prompt:
+      'Does anyone in your household take prescription medication regularly?\n\n' +
+      'List the medication names, or answer “None.”',
     tier: 2,
   },
   {
     key: 'providers',
-    label: 'Current Providers',
-    rationale: 'Provider information helps check whether important doctors, specialists, clinics, or hospitals are likely to be in-network so you can avoid surprise costs or losing care.',
-    prompt: 'Do you have doctors or specialists you need to keep? (Name, practice, specialty — or "none".)',
+    label: 'Doctors and Specialists',
+    rationale: 'This helps us look for plans that include the doctors and clinics you want to keep.',
+    prompt:
+      'Are there any doctors, specialists, clinics, or hospitals you want to keep using?\n\n' +
+      'List their names, or answer “None.”',
     tier: 2,
   },
   {
     key: 'premium_budget',
-    label: 'Premium Budget',
-    rationale: 'Your monthly budget helps us focus on realistic options, including low-premium plans, subsidies, and programs that may reduce or remove monthly costs.',
-    prompt: 'What is the maximum monthly premium you can afford? (e.g., "$300/month" or "as low as possible")',
+    label: 'Monthly Budget',
+    rationale: 'This helps us focus on plans your household can realistically afford.',
+    prompt:
+      'What is the most your household can afford to pay each month for health insurance?\n\n' +
+      'Enter an amount, or answer “As low as possible.”',
     tier: 2,
   },
   {
     key: 'health_needs',
-    label: 'Health Needs',
-    rationale: 'Health needs help match you with coverage that fits expected care, such as chronic conditions, upcoming procedures, mental health care, frequent visits, or special services.',
-    prompt: 'Do you or household members have any chronic conditions, planned procedures, or specific health needs?',
+    label: 'Health Care Needs',
+    rationale: 'This helps us match your household with coverage that fits the care you expect to need.',
+    prompt:
+      'Does anyone in your household have ongoing health needs or care planned soon?\n\n' +
+      'For example: chronic conditions, therapy, pregnancy care, surgery, or frequent doctor visits. You can also answer “No.”',
     tier: 2,
   },
 ];
@@ -124,17 +162,17 @@ export const TOTAL_STEPS = ALL_FIELDS.length;
  * loop forever because they don't trigger the family keyword set below.
  * Opportunistic extraction is separate from this mandatory set.
  */
-export const PARSED_KEYS = new Set<string>(['zip_code', 'annual_income']);
+export const PARSED_KEYS = new Set<IntakeFieldKey>(['zip_code', 'annual_income']);
 
 /** 1-based step number for a field key, or null if the key is not an intake field. */
-export function getFieldStep(key: string): number | null {
+export function getFieldStep(key: IntakeFieldKey | string): number | null {
   const idx = ALL_FIELDS.findIndex((f) => f.key === key);
   return idx === -1 ? null : idx + 1;
 }
 
 /** A single answered intake field, safe to show back to the owning session for review/edit. */
 export interface IntakeAnswer {
-  key: string;
+  key: IntakeFieldKey;
   label: string;
   value: string;
   tier: 1 | 2;
@@ -152,10 +190,64 @@ export function buildAnswers(vars: RawVars): IntakeAnswer[] {
   for (const f of ALL_FIELDS) {
     const value = (vars as Record<string, string | undefined>)[f.key];
     if (value && value.trim().length > 0) {
-      out.push({ key: f.key, label: f.label, value, tier: f.tier });
+      out.push({ key: f.key as IntakeFieldKey, label: f.label, value, tier: f.tier });
     }
   }
   return out;
+}
+
+/** Parse and validate an answer for the field currently being asked. */
+export function parseIntakeAnswer(
+  field: IntakeFieldKey,
+  message: string,
+): IntakeParseResult {
+  switch (field) {
+    case 'zip_code':
+      return parseZipCode(message);
+    case 'annual_income':
+      return parseAnnualIncome(message);
+    default: {
+      const value = message.trim();
+      if (!value) {
+        return { error: 'Please enter an answer.' };
+      }
+      return { value };
+    }
+  }
+}
+
+function parseZipCode(message: string): IntakeParseResult {
+  const value = message.trim();
+  const match = value.match(/^(\d{5})(?:-\d{4})?$/);
+
+  if (!match) {
+    return { error: 'Enter a valid 5-digit ZIP code. For example: 19020.' };
+  }
+
+  return { value: match[1] };
+}
+
+function parseAnnualIncome(message: string): IntakeParseResult {
+  const compact = message
+    .trim()
+    .toLowerCase()
+    .replace(/[$,\s]/g, '');
+
+  const match = compact.match(/^(\d+(?:\.\d+)?)k?$/);
+  if (!match) {
+    return {
+      error: 'Enter your yearly household income using numbers only. For example: 42000.',
+    };
+  }
+
+  const multiplier = compact.endsWith('k') ? 1000 : 1;
+  const amount = Math.round(Number(match[1]) * multiplier);
+
+  if (!Number.isFinite(amount) || amount < 0) {
+    return { error: 'Enter a valid yearly household income.' };
+  }
+
+  return { value: String(amount) };
 }
 
 /**
@@ -165,52 +257,46 @@ export function buildAnswers(vars: RawVars): IntakeAnswer[] {
 export function parseUserMessage(message: string, existing: RawVars): RawVars {
   const result: RawVars = { ...existing };
 
-  // ZIP code extraction — 5-digit or ZIP+4.
-  // Negative lookbehind (?<!\$) prevents dollar amounts like "$50000" from matching as ZIP codes.
-  // Known false-positive risk: free-text messages may contain other 5-digit numbers (e.g.
-  // medication doses, year+digit combinations). False positives are low-severity because
-  // the !result.zip_code guard below prevents overwrite once a ZIP is set, and intake
-  // extraction is opportunistic (the dedicated question confirms the value).
+  // Opportunistic ZIP extraction is intentionally conservative. Exact field answers
+  // should be handled by parseIntakeAnswer using the pending field from the session.
   if (!result.zip_code) {
-    const zipMatch = message.match(/(?<!\$)\b(\d{5}(?:-\d{4})?)\b/);
-    if (zipMatch) {
+    const zipMatch = message.match(/\b(\d{5})(?:-\d{4})?\b/);
+    if (zipMatch && !/[$,]\s*\d{5}\b/.test(message)) {
       result.zip_code = zipMatch[1];
     }
   }
 
-  // Income extraction
+  // Opportunistic income extraction requires explicit income or time-period context.
+  // A bare number is not interpreted here because it may be a ZIP code or another value.
   if (!result.annual_income) {
-    // Monthly: "$3,500/month" or "$3,500 per month" → annualize
-    const monthlyMatch = message.match(/\$\s*([\d,]+)\s*(?:\/\s*mo(?:nth)?|per\s+mo(?:nth)?)/i);
+    const monthlyMatch = message.match(
+      /\$?\s*([\d,]+(?:\.\d+)?)\s*(?:\/\s*mo(?:nth)?|per\s+mo(?:nth)?|monthly)/i,
+    );
     if (monthlyMatch) {
-      const monthly = parseInt(monthlyMatch[1].replace(/,/g, ''), 10);
-      result.annual_income = String(monthly * 12);
+      const monthly = Number(monthlyMatch[1].replace(/,/g, ''));
+      if (Number.isFinite(monthly) && monthly >= 0) {
+        result.annual_income = String(Math.round(monthly * 12));
+      }
     } else {
-      // Annual: "$42k" → 42000, "$42,000" → 42000
-      // Require an income-context keyword in the same clause to avoid false positives
-      // on savings amounts, rent, bills, or other dollar figures the user may mention.
       const hasIncomeKeyword =
         /\b(?:income|earn|earning|earns|make|makes|making|salary|wages?|pay|paid|gross|annual|year(?:ly)?|per\s+year)\b/i.test(
           message,
         );
       if (hasIncomeKeyword) {
-        const annualMatch = message.match(/\$\s*([\d,]+)\s*k?\b/i);
+        const annualMatch = message.match(/\$?\s*([\d,]+(?:\.\d+)?)\s*k?\b/i);
         if (annualMatch) {
           const raw = annualMatch[1].replace(/,/g, '');
-          // Multiply by 1000 when the matched text ends with 'k' (shorthand: "$42k" = 42000)
-          const suffix = annualMatch[0].toLowerCase().endsWith('k') ? 1000 : 1;
-          result.annual_income = String(parseInt(raw, 10) * suffix);
+          const multiplier = annualMatch[0].trim().toLowerCase().endsWith('k') ? 1000 : 1;
+          const amount = Math.round(Number(raw) * multiplier);
+          if (Number.isFinite(amount) && amount >= 0) {
+            result.annual_income = String(amount);
+          }
         }
       }
     }
   }
 
-  // Household composition — look for family/household mentions.
-  // Single-person phrases ("just me", "only me", "I live alone") are intentionally
-  // excluded from this keyword list and handled by the raw-answer fallback in the
-  // intake route. Adding single-person phrases here would cause the dedicated
-  // household question to re-extract the answer before the user answers it directly,
-  // creating a confusing loop.
+  // Household composition may still be extracted from an all-in-one free-text profile.
   if (!result.household_profile) {
     const hasFamily =
       /\b(single\s+parent|family|household|kids?|children|child|spouse|partner|husband|wife|son|daughter)\b/i.test(

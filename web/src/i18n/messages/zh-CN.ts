@@ -47,7 +47,7 @@ const zhCN: Messages = {
   phase_status_error: '错误',
   phase_analyzing: '正在分析您的家庭情况…',
   phase_description:
-    '正在运行一个 5 阶段 AI 工作流。通常需要 5–15 分钟。',
+    '正在运行一个 5 阶段 AI 工作流。通常需要 15–30 分钟。',
   phase_stopping: '正在停止…',
   phase_stop_edit: '停止并编辑',
   phase_finalizing: '正在完成…',

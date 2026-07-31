@@ -78,9 +78,22 @@ export async function GET(
           draftFormType: draftResult.formType,
         });
       }
-    } catch {
-      // generateDraft failed — keep draftAvailable: false (already set by assembleReport)
-    }
+    } catch (err) {
+  console.error(
+    JSON.stringify({
+      event: 'draft_generation_failed',
+      runId,
+      error:
+        err instanceof Error
+          ? {
+              name: err.name,
+              message: err.message,
+              stack: err.stack,
+            }
+          : String(err),
+    }),
+  );
+}
 
     // Cache in session and update status
     sessionStore.update(session.sessionId, {

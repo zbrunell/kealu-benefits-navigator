@@ -51,7 +51,7 @@ const en = {
   phase_status_complete: 'Complete',
   phase_status_error: 'Error',
   phase_analyzing: 'Analyzing your household…',
-  phase_description: 'A 5-phase AI workflow is running. This typically takes 5–15 minutes.',
+  phase_description: 'A 5-phase AI workflow is running. This typically takes 15–30 minutes.',
   phase_stopping: 'Stopping…',
   phase_stop_edit: 'Stop & edit',
   phase_finalizing: 'Finalizing…',

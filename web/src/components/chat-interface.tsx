@@ -23,6 +23,8 @@ interface IntakeResponse {
   next?: IntakeField | null;
   answers?: IntakeAnswer[];
   step?: { current: number | null; total: number } | null;
+  error?: string;
+  editedField?: string;
 }
 
 /** 1-based step number for a field, or null. */
@@ -72,6 +74,7 @@ export default function ChatInterface({
   const [showPanel, setShowPanel] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -147,6 +150,15 @@ export default function ChatInterface({
       });
 
       const data = (await res.json()) as IntakeResponse;
+
+      if (!res.ok) {
+        if (data.field) setCurrentField(data.field);
+        setMessages((prev) => [
+          ...prev,
+          { id: uid(), role: 'assistant', content: data.error ?? t('chat_error_generic') },
+        ]);
+        return;
+      }
 
       if (data.type === 'ready') {
         setCurrentField(null);
@@ -242,7 +254,7 @@ export default function ChatInterface({
   /** Save an inline edit of a previously-answered field. */
   async function saveEdit(key: string) {
     const value = editValue.trim();
-    setEditingKey(null);
+    setEditError(null);
     try {
       const res = await fetch('/api/intake', {
         method: 'POST',
@@ -251,11 +263,20 @@ export default function ChatInterface({
         body: JSON.stringify({ edit: { key, value } }),
       });
       const data = (await res.json()) as IntakeResponse;
+      if (!res.ok) {
+        setEditError(data.error ?? t('chat_error_generic'));
+        if (data.answers) setAnswers(data.answers);
+        return;
+      }
+      setEditingKey(null);
+      setEditValue('');
+      setEditError(null);
       if (data.answers) setAnswers(data.answers);
       // Keep the progress indicator in sync with the recomputed next question.
       if (data.type === 'ready') setCurrentField(null);
       else if (data.field) setCurrentField(data.field);
     } catch {
+      setEditError(t('chat_error_generic'));
       /* leave panel as-is on failure */
     }
   }
@@ -304,32 +325,45 @@ export default function ChatInterface({
                 <div key={a.key} className="flex items-start gap-2 text-xs">
                   <span className="w-28 shrink-0 pt-1 text-slate-400">{a.label}</span>
                   {editingKey === a.key ? (
-                    <div className="flex-1 flex items-center gap-1.5">
-                      <input
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') void saveEdit(a.key);
-                          if (e.key === 'Escape') setEditingKey(null);
-                        }}
-                        autoFocus
-                        className="flex-1 rounded border border-slate-600 bg-slate-800 text-slate-100 px-2 py-1 focus:border-blue-400 focus:outline-none"
-                        aria-label={`Edit ${a.label}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => void saveEdit(a.key)}
-                        className="font-medium text-blue-400 hover:text-blue-300 focus:outline-none"
-                      >
-                        {t('chat_save')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditingKey(null)}
-                        className="text-slate-500 hover:text-slate-300 focus:outline-none"
-                      >
-                        {t('chat_cancel')}
-                      </button>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') void saveEdit(a.key);
+                            if (e.key === 'Escape') {
+                              setEditingKey(null);
+                              setEditError(null);
+                            }
+                          }}
+                          autoFocus
+                          className="flex-1 rounded border border-slate-600 bg-slate-800 text-slate-100 px-2 py-1 focus:border-blue-400 focus:outline-none"
+                          aria-label={`Edit ${a.label}`}
+                          inputMode={ALL_FIELDS.find((field) => field.key === a.key)?.inputMode}
+                          placeholder={ALL_FIELDS.find((field) => field.key === a.key)?.placeholder}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void saveEdit(a.key)}
+                          className="font-medium text-blue-400 hover:text-blue-300 focus:outline-none"
+                        >
+                          {t('chat_save')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingKey(null);
+                            setEditError(null);
+                          }}
+                          className="text-slate-500 hover:text-slate-300 focus:outline-none"
+                        >
+                          {t('chat_cancel')}
+                        </button>
+                      </div>
+                      {editError && (
+                        <p className="mt-1 text-xs text-red-400" role="alert">{editError}</p>
+                      )}
                     </div>
                   ) : (
                     <>
@@ -339,6 +373,7 @@ export default function ChatInterface({
                         onClick={() => {
                           setEditingKey(a.key);
                           setEditValue(a.value);
+                          setEditError(null);
                         }}
                         className="pt-1 font-medium text-blue-400 hover:text-blue-300 focus:outline-none"
                       >
@@ -428,7 +463,8 @@ export default function ChatInterface({
           onKeyDown={handleKeyDown}
           disabled={isPending}
           rows={2}
-          placeholder={t('chat_placeholder')}
+          inputMode={currentField?.inputMode ?? 'text'}
+          placeholder={currentField?.placeholder ?? t('chat_placeholder')}
           className="flex-1 resize-none rounded-lg border border-slate-700 bg-slate-800 text-slate-100 placeholder-slate-500 px-3 py-2 text-sm leading-snug focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label={t('chat_input_aria')}
         />

@@ -28,9 +28,9 @@ import { NextResponse } from 'next/server';
  */
 export async function GET(
   req: Request,
-  { params }: { params: { runId: string } },
+  { params }: { params: Promise<{ runId: string }> },
 ): Promise<Response> {
-  const { runId } = params;
+  const { runId } = await params;
   const download = new URL(req.url).searchParams.get('download') === '1';
 
   // Dynamic imports: defers module resolution to handler invocation time
@@ -42,6 +42,22 @@ export async function GET(
   const sessionCookieMatch = rawCookie.match(/(?:^|;\s*)session=([^;]+)/);
   const cookieValue = sessionCookieMatch?.[1];
   const session = cookieValue ? sessionStore.get(cookieValue) : null;
+
+console.log('DRAFT AUTH DEBUG', {
+
+  rawCookie,
+
+  cookieValue,
+
+  sessionFound: Boolean(session),
+
+  requestedRunId: runId,
+
+  sessionRunId: session?.runId,
+
+  sessionId: session?.sessionId,
+
+});
 
   if (!session || session.runId !== runId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

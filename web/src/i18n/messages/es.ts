@@ -54,7 +54,7 @@ const es: Messages = {
   phase_status_error: 'Error',
   phase_analyzing: 'Analizando su hogar…',
   phase_description:
-    'Se está ejecutando un flujo de trabajo de IA de 5 fases. Esto generalmente toma de 5 a 15 minutos.',
+    'Se está ejecutando un flujo de trabajo de IA de 5 fases. Esto generalmente toma de 15 a 30 minutos.',
   phase_stopping: 'Deteniendo…',
   phase_stop_edit: 'Detener y editar',
   phase_finalizing: 'Finalizando…',

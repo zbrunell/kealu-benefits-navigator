@@ -7,16 +7,16 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { sessionStore, SESSION_TTL_MS } from '@/lib/session-store';
 import {
-  parseUserMessage,
+  parseIntakeAnswer,
   isTier1Complete,
   getNextQuestion,
   isIdempotentSubmission,
   buildAnswers,
   getFieldStep,
   ALL_FIELDS,
-  PARSED_KEYS,
   TOTAL_STEPS,
 } from '@/lib/intake-flow';
+import type { IntakeFieldKey } from '@/lib/intake-flow';
 import type { Session } from '@/types/session';
 import { randomUUID } from 'crypto';
 
@@ -40,7 +40,7 @@ async function resolveCookieValue(req: Request): Promise<string | undefined> {
  * the answers snapshot is delivered only via GET and the explicit edit action,
  * which return the user's own data back to their own session.
  */
-function serialize(session: Session, includeAnswers: boolean): object {
+function serialize(session: Session, includeAnswers: boolean, error?: string): object {
   const nextField = getNextQuestion(session.vars, session.currentTier, session.skipIntake);
   // Persist which field we're now waiting on (drives raw-answer storage for Tier 2).
   sessionStore.update(session.sessionId, { pendingField: nextField?.key });
@@ -56,11 +56,14 @@ function serialize(session: Session, includeAnswers: boolean): object {
             rationale: nextField.rationale,
             prompt: nextField.prompt,
             tier: nextField.tier,
+            inputMode: nextField.inputMode,
+            placeholder: nextField.placeholder,
           },
           step: { current: getFieldStep(nextField.key), total: TOTAL_STEPS },
         };
 
-  return includeAnswers ? { ...base, answers: buildAnswers(session.vars) } : base;
+  const response = error ? { ...base, error } : base;
+  return includeAnswers ? { ...response, answers: buildAnswers(session.vars) } : response;
 }
 
 /**
@@ -85,7 +88,7 @@ export async function GET(req: Request): Promise<Response> {
   sessionStore.update(session.sessionId, {
     pendingField: nextField?.key,
   });
-  
+
   return NextResponse.json({
     answers: buildAnswers(session.vars),
     next: nextField
@@ -95,6 +98,8 @@ export async function GET(req: Request): Promise<Response> {
           rationale: nextField.rationale,
           prompt: nextField.prompt,
           tier: nextField.tier,
+          inputMode: nextField.inputMode,
+          placeholder: nextField.placeholder,
         }
       : null,
     step: nextField ? { current: getFieldStep(nextField.key), total: TOTAL_STEPS } : null,
@@ -151,18 +156,27 @@ export async function POST(req: Request): Promise<Response> {
   // ── Edit mode ─────────────────────────────────────────────────────────────
   // Correct an existing answer without appending to the chat history.
   if (edit && typeof edit.key === 'string' && ALL_FIELDS.some((f) => f.key === edit!.key)) {
-    const key = edit.key;
+    const key = edit.key as IntakeFieldKey;
     const value = String(edit.value ?? '').trim();
     const newVars = { ...session.vars } as Record<string, string | undefined>;
 
     if (value === '') {
       delete newVars[key];
-    } else if (PARSED_KEYS.has(key)) {
-      // Re-normalize ZIP / income through the same extractor used on first entry.
-      const parsed = parseUserMessage(value, {}) as Record<string, string | undefined>;
-      newVars[key] = parsed[key] ?? value;
     } else {
-      newVars[key] = value;
+      const parsed = parseIntakeAnswer(key, value);
+      if (parsed.error || parsed.value === undefined) {
+        return withCookie(
+          NextResponse.json(
+            {
+              ...serialize(session, true, parsed.error ?? 'Please enter a valid answer.'),
+              editedField: key,
+            },
+            { status: 422 },
+          ),
+          newSessionId,
+        );
+      }
+      newVars[key] = parsed.value;
     }
 
     // Recompute tier reachability: clearing a required field drops back to Tier 1.
@@ -175,6 +189,12 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   // ── Message mode ──────────────────────────────────────────────────────────
+  if (!message) {
+    return withCookie(
+      NextResponse.json(serialize(session, false, 'Please enter an answer.'), { status: 422 }),
+      newSessionId,
+    );
+  }
   // Idempotency: identical message re-POST (e.g., browser back button) is a no-op
   // so that history does not accumulate duplicate entries.
   if (!isIdempotentSubmission(session.messages, message)) {
@@ -191,21 +211,32 @@ export async function POST(req: Request): Promise<Response> {
       sessionStore.update(sessionId, { skipIntake: true });
       session = sessionStore.get(sessionId)!;
     } else {
-      // Tier 1 fields are regex-extracted/normalized. For any other field that the
-      // server is currently awaiting (the Tier 2 questions), store the raw answer
-      // under the pending key.
-      const updatedVars = parseUserMessage(message, session.vars) as Record<
-        string,
-        string | undefined
-      >;
-      const pending = session.pendingField;
-      if (
-        pending &&
-        !PARSED_KEYS.has(pending) &&
-        (!updatedVars[pending] || updatedVars[pending]!.trim().length === 0)
-      ) {
-        updatedVars[pending] = message;
+      const pending = session.pendingField as IntakeFieldKey | undefined;
+
+      if (!pending) {
+        return withCookie(
+          NextResponse.json(serialize(session, false, 'There is no question waiting for an answer. Please refresh and try again.'), {
+            status: 409,
+          }),
+          newSessionId,
+        );
       }
+
+      const parsed = parseIntakeAnswer(pending, message);
+      if (parsed.error || parsed.value === undefined) {
+        return withCookie(
+          NextResponse.json(
+            serialize(session, false, parsed.error ?? 'Please enter a valid answer.'),
+            { status: 422 },
+          ),
+          newSessionId,
+        );
+      }
+
+      const updatedVars = {
+        ...session.vars,
+        [pending]: parsed.value,
+      };
       sessionStore.update(sessionId, { vars: updatedVars });
       session = sessionStore.get(sessionId)!;
 
@@ -216,6 +247,13 @@ export async function POST(req: Request): Promise<Response> {
         session = sessionStore.get(sessionId)!;
       }
     }
+  }
+
+  if (!message) {
+    return withCookie(
+      NextResponse.json(serialize(session, false, 'Please enter an answer.'), { status: 422 }),
+      newSessionId,
+    );
   }
 
   // Conversational flow — no PII echoed (answers fetched separately via GET).
