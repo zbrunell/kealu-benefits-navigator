@@ -115,7 +115,12 @@ function classifyRunnerFailure(
   if (
     normalized.includes('monthly spend limit') ||
     normalized.includes("org's monthly spend limit") ||
-    normalized.includes('organization spend limit')
+    normalized.includes('organization spend limit') ||
+    normalized.includes('insufficient_quota') ||
+    normalized.includes('quota exceeded') ||
+    normalized.includes('credit balance') ||
+    normalized.includes('billing limit') ||
+    normalized.includes('resource exhausted')
   ) {
     return 'UPSTREAM_SPEND_LIMIT';
   }
@@ -157,26 +162,31 @@ function classifyRunnerFailure(
 function outputIndicatesFailure(output: string): boolean {
   const normalized = output.toLowerCase();
 
+  // Only treat explicit, structured, unrecovered error markers as fatal.
+  // Generic mentions such as "rate limit" or "retrying" may describe a
+  // transient condition that KVR successfully recovered from.
   return (
     normalized.includes('"is_error":true') ||
     normalized.includes('"is_error": true') ||
-    normalized.includes('api_error_status":429') ||
-    normalized.includes('api_error_status": 429') ||
-    normalized.includes('rate_limit') ||
-    normalized.includes('rate limit') ||
-    normalized.includes('status 429') ||
-    normalized.includes('monthly spend limit') ||
-    normalized.includes('organization spend limit') ||
-    normalized.includes('authentication_error') ||
-    normalized.includes('invalid api key') ||
-    normalized.includes('status 401') ||
-    normalized.includes('status 403') ||
-    normalized.includes('service unavailable') ||
-    normalized.includes('overloaded') ||
-    normalized.includes('status 502') ||
-    normalized.includes('status 503') ||
-    normalized.includes('status 504')
+    normalized.includes('"fatal":true') ||
+    normalized.includes('"fatal": true') ||
+    normalized.includes('"status":"failed"') ||
+    normalized.includes('"status": "failed"') ||
+    normalized.includes('"event_type":"error"') ||
+    normalized.includes('"event_type": "error"')
   );
+}
+
+function sanitizeFailureOutput(output: string): string {
+  return output
+    .replace(
+      /(api[_-]?key|authorization|bearer)\s*[:=]\s*[^\s",]+/gi,
+      '$1=[REDACTED]',
+    )
+    .replace(/sk-[a-zA-Z0-9_-]+/g, '[REDACTED_API_KEY]')
+    .replace(/AIza[0-9A-Za-z_-]{20,}/g, '[REDACTED_API_KEY]')
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [REDACTED]')
+    .slice(-4_000);
 }
 
 function _processLine(
@@ -416,10 +426,13 @@ export function startRun(
     const combinedOutput =
       `${activeRun.stdoutTail}\n${activeRun.stderrTail}`;
 
+    // A zero exit code means KVR completed successfully, even if its logs contain
+    // earlier transient warnings such as rate-limit retries. Structured fatal
+    // markers are only consulted when the process did not exit cleanly.
     const failed =
       code !== 0 ||
       signal !== null ||
-      outputIndicatesFailure(combinedOutput);
+      (code === null && outputIndicatesFailure(combinedOutput));
 
     if (failed) {
       const failureCode = classifyRunnerFailure(
@@ -438,6 +451,7 @@ export function startRun(
           publicCode,
           exitCode: code,
           signal,
+          diagnosticTail: sanitizeFailureOutput(combinedOutput),
         }),
       );
 
@@ -551,5 +565,6 @@ export const __internal = {
   _checkIdle,
   classifyRunnerFailure,
   outputIndicatesFailure,
+  sanitizeFailureOutput,
   PUBLIC_ERROR_CODES,
 };
