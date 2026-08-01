@@ -138,6 +138,21 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const sessionId = session.sessionId;
+  // Fresh sessions may receive a POST before GET or serialize has set pendingField.
+if (!session.pendingField) {
+  const nextField = getNextQuestion(
+    session.vars,
+    session.currentTier,
+    session.skipIntake,
+  );
+
+  if (nextField) {
+    sessionStore.update(sessionId, {
+      pendingField: nextField.key,
+    });
+    session = sessionStore.get(sessionId)!;
+  }
+}
 
   // Parse request body — either a message or an edit instruction.
   let message = '';
@@ -211,7 +226,13 @@ export async function POST(req: Request): Promise<Response> {
       sessionStore.update(sessionId, { skipIntake: true });
       session = sessionStore.get(sessionId)!;
     } else {
-      const pending = session.pendingField as IntakeFieldKey | undefined;
+      const pending =
+  (session.pendingField as IntakeFieldKey | undefined) ??
+  getNextQuestion(
+    session.vars,
+    session.currentTier,
+    session.skipIntake,
+  )?.key;
 
       if (!pending) {
         return withCookie(

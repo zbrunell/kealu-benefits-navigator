@@ -1,35 +1,38 @@
 /**
- * Black-box API route tests for POST /api/intake
+ * Black-box API route tests for POST /api/intake.
  *
- * These tests FAIL before implementation (route does not exist).
- * Real session store and intake-flow logic run — never mocked.
- * Only next/headers is mocked (Next.js internal).
+ * Real session-store and intake-flow logic run; only next/headers is mocked.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-let _sessionCookies: Record<string, string> = {};
-let _setCookieCalls: Array<{ name: string; value: string; opts?: any }> = [];
+import { GET, POST } from '@/app/api/intake/route';
+
+let sessionCookies: Record<string, string> = {};
+let setCookieCalls: Array<{ name: string; value: string; opts?: unknown }> = [];
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(() =>
     Promise.resolve({
-      get: (name: string) => _sessionCookies[name] ? { name, value: _sessionCookies[name] } : undefined,
-      set: vi.fn((name: string, value: string, opts?: any) => {
-        _sessionCookies[name] = value;
-        _setCookieCalls.push({ name, value, opts });
+      get: (name: string) =>
+        sessionCookies[name]
+          ? { name, value: sessionCookies[name] }
+          : undefined,
+      set: vi.fn((name: string, value: string, opts?: unknown) => {
+        sessionCookies[name] = value;
+        setCookieCalls.push({ name, value, opts });
       }),
       delete: vi.fn(),
-      has: (name: string) => name in _sessionCookies,
-    })
+      has: (name: string) => name in sessionCookies,
+    }),
   ),
 }));
 
-// This import fails until web/src/app/api/intake/route.ts is created.
-import { POST, GET } from '@/app/api/intake/route';
-
 function makeIntakeRequest(message: string, sessionId?: string): Request {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (sessionId) headers['Cookie'] = `session=${sessionId}`;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (sessionId) headers.Cookie = `session=${sessionId}`;
+
   return new Request('http://localhost/api/intake', {
     method: 'POST',
     headers,
@@ -37,10 +40,16 @@ function makeIntakeRequest(message: string, sessionId?: string): Request {
   });
 }
 
-/** Build a POST request that edits a previously-answered field directly. */
-function makeEditRequest(key: string, value: string, sessionId?: string): Request {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (sessionId) headers['Cookie'] = `session=${sessionId}`;
+function makeEditRequest(
+  key: string,
+  value: string,
+  sessionId?: string,
+): Request {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (sessionId) headers.Cookie = `session=${sessionId}`;
+
   return new Request('http://localhost/api/intake', {
     method: 'POST',
     headers,
@@ -48,312 +57,362 @@ function makeEditRequest(key: string, value: string, sessionId?: string): Reques
   });
 }
 
-/** Build a GET request for the answers snapshot. */
 function makeGetRequest(sessionId?: string): Request {
   const headers: Record<string, string> = {};
-  if (sessionId) headers['Cookie'] = `session=${sessionId}`;
-  return new Request('http://localhost/api/intake', { method: 'GET', headers });
+  if (sessionId) headers.Cookie = `session=${sessionId}`;
+
+  return new Request('http://localhost/api/intake', {
+    method: 'GET',
+    headers,
+  });
 }
 
-/**
- * Drive a fresh session through all three Tier 1 questions and return its id.
- * Each field is sent in its own message so the pending-field bookkeeping that
- * Tier 2 relies on is exercised the same way the real chat flow exercises it.
- */
 async function completeTier1(): Promise<string> {
-  await POST(makeIntakeRequest('My ZIP is 77001'));
-  const sessionId = _sessionCookies['session'];
-  await POST(makeIntakeRequest('My income is $42,000', sessionId));
-  await POST(makeIntakeRequest('single parent with 2 kids ages 4 and 9', sessionId));
+  const zipResponse = await POST(makeIntakeRequest('77001'));
+  expect(zipResponse.status).toBe(200);
+
+  const sessionId = sessionCookies.session;
+  expect(sessionId).toBeTruthy();
+
+  const incomeResponse = await POST(
+    makeIntakeRequest('42000', sessionId),
+  );
+  expect(incomeResponse.status).toBe(200);
+
+  const householdResponse = await POST(
+    makeIntakeRequest(
+      'One adult and two children, ages 4 and 9',
+      sessionId,
+    ),
+  );
+  expect(householdResponse.status).toBe(200);
+
   return sessionId;
 }
 
 describe('POST /api/intake', () => {
   beforeEach(() => {
-    _sessionCookies = {};
-    _setCookieCalls = [];
+    sessionCookies = {};
+    setCookieCalls = [];
   });
 
-  // ── Cookie handling ────────────────────────────────────────────────────────
+  it('creates a new session when the cookie is absent', async () => {
+    const response = await POST(makeIntakeRequest('77001'));
 
-  it('creates a new session when cookie is absent and still returns 200', async () => {
-    const req = makeIntakeRequest('Hello');
-    const res = await POST(req);
-    expect(res.status).toBe(200);
-    // Should have set a cookie for the new session
-    const hasCookieSet = _setCookieCalls.some((c) => c.name === 'session');
-    expect(hasCookieSet).toBe(true);
+    expect(response.status).toBe(200);
+    expect(
+      setCookieCalls.some((cookie) => cookie.name === 'session'),
+    ).toBe(true);
   });
 
-  // ── Field extraction ───────────────────────────────────────────────────────
+  it('creates a session but rejects an invalid first answer', async () => {
+    const response = await POST(makeIntakeRequest('Hello'));
+    const body = await response.json();
 
-  it('extracts ZIP code from message and reflects it back', async () => {
-    // Start a new session
-    const req1 = makeIntakeRequest('My ZIP is 77001');
-    const res1 = await POST(req1);
-    expect(res1.status).toBe(200);
-    const body1 = await res1.json();
-    // Response should be a question or ready — either way the session should have zip_code set
-    expect(['question', 'ready']).toContain(body1.type);
+    expect(response.status).toBe(422);
+    expect(body.type).toBe('question');
+    expect(body.field.key).toBe('zip_code');
+    expect(body.error).toContain('ZIP code');
+    expect(
+      setCookieCalls.some((cookie) => cookie.name === 'session'),
+    ).toBe(true);
   });
 
-  it("returns {type:'question'} when more intake questions remain", async () => {
-    // Send just a ZIP — the app should ask for more info
-    const req = makeIntakeRequest('77001');
-    const res = await POST(req);
-    const body = await res.json();
+  it('accepts a valid ZIP and advances to annual income', async () => {
+    const response = await POST(makeIntakeRequest('77001'));
+    const body = await response.json();
 
-    if (body.type === 'question') {
-      expect(body.field).toBeDefined();
-      expect(body.field.key).toBeTruthy();
-      expect(body.field.prompt).toBeTruthy();
-    }
-    // May be 'ready' if implementation considers zip alone sufficient
-    expect(['question', 'ready']).toContain(body.type);
+    expect(response.status).toBe(200);
+    expect(body.type).toBe('question');
+    expect(body.field.key).toBe('annual_income');
+    expect(body.step).toEqual({ current: 2, total: 8 });
   });
 
-  it("returns {type:'ready'} when tier 1 and 2 fields are fully answered", async () => {
-    // Provide all required fields at once
-    const req = makeIntakeRequest(
-      'ZIP 77001, income $42k, single parent 2 kids ages 4 and 9, uninsured, no meds, Dr. Smith, budget $300/month'
+  it('returns ready after all eight intake questions are answered', async () => {
+    await POST(makeIntakeRequest('77001'));
+    const sessionId = sessionCookies.session;
+
+    await POST(makeIntakeRequest('42000', sessionId));
+    await POST(
+      makeIntakeRequest(
+        'One adult and two children, ages 4 and 9',
+        sessionId,
+      ),
     );
-    const res = await POST(req);
-    const body = await res.json();
-    // This should eventually get to 'ready' — may take multiple messages in implementation
-    expect(['question', 'ready']).toContain(body.type);
+    await POST(makeIntakeRequest('No', sessionId));
+    await POST(makeIntakeRequest('None', sessionId));
+    await POST(makeIntakeRequest('None', sessionId));
+    await POST(makeIntakeRequest('As low as possible', sessionId));
+
+    const response = await POST(makeIntakeRequest('No', sessionId));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.type).toBe('ready');
   });
 
-  // ── Skip signal ────────────────────────────────────────────────────────────
+  it('skip returns ready after Tier 1 is complete', async () => {
+    const sessionId = await completeTier1();
 
-  it("skip message sets skipIntake:true and returns {type:'ready'}", async () => {
-    // First send tier-1 info to establish a session
-    const req1 = makeIntakeRequest('ZIP 77001, income $42k, single parent 2 kids');
-    await POST(req1);
+    const response = await POST(makeIntakeRequest('skip', sessionId));
+    const body = await response.json();
 
-    // Then skip
-    const sessionId = _sessionCookies['session'];
-    const req2 = makeIntakeRequest('skip', sessionId);
-    const res2 = await POST(req2);
-    const body2 = await res2.json();
-
-    expect(body2.type).toBe('ready');
+    expect(response.status).toBe(200);
+    expect(body.type).toBe('ready');
   });
 
-  // ── Idempotency ────────────────────────────────────────────────────────────
+  it('is idempotent when the same message is posted twice', async () => {
+    const first = await POST(makeIntakeRequest('77001'));
+    expect(first.status).toBe(200);
 
-  it('is idempotent: re-posting the same message returns 200 without duplicating history', async () => {
-    // First message
-    const req1 = makeIntakeRequest('My ZIP is 77001');
-    const res1 = await POST(req1);
-    expect(res1.status).toBe(200);
+    const sessionId = sessionCookies.session;
+    const second = await POST(makeIntakeRequest('77001', sessionId));
 
-    // Same message again with same session
-    const sessionId = _sessionCookies['session'];
-    const req2 = makeIntakeRequest('My ZIP is 77001', sessionId);
-    const res2 = await POST(req2);
-    expect(res2.status).toBe(200);
-
-    // Both should succeed — no crash from duplicate
+    expect(second.status).toBe(200);
   });
 
-  // ── PII protection ─────────────────────────────────────────────────────────
+  it('does not echo annual income in a conversational response', async () => {
+    await POST(makeIntakeRequest('77001'));
+    const sessionId = sessionCookies.session;
 
-  it('does NOT include income value in response body', async () => {
-    const req = makeIntakeRequest('My income is $42,000 and my ZIP is 77001');
-    const res = await POST(req);
-    const body = await res.json();
-    const bodyString = JSON.stringify(body);
+    const response = await POST(makeIntakeRequest('42000', sessionId));
+    const bodyString = JSON.stringify(await response.json());
 
-    // Income value should not appear in the response
     expect(bodyString).not.toContain('42000');
     expect(bodyString).not.toContain('42,000');
   });
 
-  it('does NOT include medications in response body', async () => {
-    const req = makeIntakeRequest('I take Metformin 500mg twice daily');
-    const res = await POST(req);
-    const body = await res.json();
-    const bodyString = JSON.stringify(body);
+  it('does not echo medications in a conversational response', async () => {
+    const sessionId = await completeTier1();
+    await POST(makeIntakeRequest('No', sessionId));
 
-    // Medication name should not be echoed back in the response body
-    // (it can be in a formatted question/message but the raw field value should not leak)
-    expect(typeof bodyString).toBe('string'); // basic type check
+    const response = await POST(
+      makeIntakeRequest('Metformin 500mg twice daily', sessionId),
+    );
+    const bodyString = JSON.stringify(await response.json());
+
+    expect(bodyString).not.toContain('Metformin');
   });
 
-  // ── Response structure ─────────────────────────────────────────────────────
+  it('returns a structured validation response for an invalid answer', async () => {
+    const response = await POST(makeIntakeRequest('Hello'));
+    const body = await response.json();
 
-  it("response body has 'type' field of 'question' or 'ready'", async () => {
-    const req = makeIntakeRequest('Hello');
-    const res = await POST(req);
-    const body = await res.json();
-    expect(['question', 'ready']).toContain(body.type);
-  });
-
-  it("question response has 'field' with 'key' and 'prompt'", async () => {
-    const req = makeIntakeRequest('Hello');
-    const res = await POST(req);
-    const body = await res.json();
-
-    if (body.type === 'question') {
-      expect(body.field).toBeDefined();
-      expect(typeof body.field.key).toBe('string');
-      expect(typeof body.field.prompt).toBe('string');
-    }
+    expect(response.status).toBe(422);
+    expect(body.type).toBe('question');
+    expect(body.field).toBeDefined();
+    expect(typeof body.field.key).toBe('string');
+    expect(typeof body.field.prompt).toBe('string');
+    expect(typeof body.error).toBe('string');
   });
 });
 
-// ───────────────────────────────────────────────────────────────────────────
-// Progress indicator, Tier 2 progression, GET snapshot, edit, and resume
-// ───────────────────────────────────────────────────────────────────────────
-
-describe('intake progress / answers snapshot / edit / resume', () => {
+describe('intake progress, answers, edit, and resume', () => {
   beforeEach(() => {
-    _sessionCookies = {};
-    _setCookieCalls = [];
+    sessionCookies = {};
+    setCookieCalls = [];
   });
 
-  // ── Progress step calculation ──────────────────────────────────────────────
+  it('reports the correct step after each accepted answer', async () => {
+    const firstResponse = await POST(makeIntakeRequest('77001'));
+    const firstBody = await firstResponse.json();
 
-  it('reports "Step X of 8" with the correct step for each question', async () => {
-    // First question (ZIP) — before any answer the next field is step 1 of 8.
-    const r1 = await POST(makeIntakeRequest('hello'));
-    const b1 = await r1.json();
-    expect(b1.type).toBe('question');
-    expect(b1.field.key).toBe('zip_code');
-    expect(b1.step).toEqual({ current: 1, total: 8 });
+    expect(firstBody.field.key).toBe('annual_income');
+    expect(firstBody.step).toEqual({ current: 2, total: 8 });
 
-    // After ZIP, the next field is income at step 2 of 8.
-    const sessionId = _sessionCookies['session'];
-    const b2 = await (await POST(makeIntakeRequest('My ZIP is 77001', sessionId))).json();
-    expect(b2.field.key).toBe('annual_income');
-    expect(b2.step).toEqual({ current: 2, total: 8 });
+    const sessionId = sessionCookies.session;
+    const secondResponse = await POST(
+      makeIntakeRequest('42000', sessionId),
+    );
+    const secondBody = await secondResponse.json();
+
+    expect(secondBody.field.key).toBe('household_profile');
+    expect(secondBody.step).toEqual({ current: 3, total: 8 });
   });
 
-  // ── Tier 2 progression after Tier 1 completion ─────────────────────────────
-
-  it('advances into Tier 2 questions once all Tier 1 fields are answered', async () => {
+  it('advances into Tier 2 after all Tier 1 fields are answered', async () => {
     const sessionId = await completeTier1();
-    // Re-issue the next question via GET (what a reload would do).
-    const snap = await (await GET(makeGetRequest(sessionId))).json();
-
-    expect(snap.next).not.toBeNull();
-    expect(snap.next.tier).toBe(2);
-    expect(snap.next.key).toBe('current_coverage'); // first Tier 2 field
-    expect(snap.step).toEqual({ current: 4, total: 8 });
-  });
-
-  it('continues through all 8 fields rather than stopping at Tier 1', async () => {
-    const sessionId = await completeTier1();
-    // Answer the first Tier 2 question — flow should keep asking, not go "ready".
-    const body = await (
-      await POST(makeIntakeRequest('I have employer coverage', sessionId))
+    const snapshot = await (
+      await GET(makeGetRequest(sessionId))
     ).json();
+
+    expect(snapshot.next).not.toBeNull();
+    expect(snapshot.next.tier).toBe(2);
+    expect(snapshot.next.key).toBe('current_coverage');
+    expect(snapshot.step).toEqual({ current: 4, total: 8 });
+  });
+
+  it('continues through all eight fields', async () => {
+    const sessionId = await completeTier1();
+
+    const response = await POST(
+      makeIntakeRequest('I have employer coverage', sessionId),
+    );
+    const body = await response.json();
+
     expect(body.type).toBe('question');
     expect(body.field.tier).toBe(2);
     expect(body.field.key).toBe('medications');
     expect(body.step).toEqual({ current: 5, total: 8 });
   });
 
-  // ── GET /api/intake answers snapshot ───────────────────────────────────────
-
-  it('GET returns the answers snapshot, next question, and step', async () => {
+  it('GET returns answers, the next question, and progress', async () => {
     const sessionId = await completeTier1();
-    const snap = await (await GET(makeGetRequest(sessionId))).json();
+    const snapshot = await (
+      await GET(makeGetRequest(sessionId))
+    ).json();
 
-    const keys = snap.answers.map((a: { key: string }) => a.key);
-    expect(keys).toEqual(['zip_code', 'annual_income', 'household_profile']);
+    expect(
+      snapshot.answers.map((answer: { key: string }) => answer.key),
+    ).toEqual(['zip_code', 'annual_income', 'household_profile']);
 
-    const zip = snap.answers.find((a: { key: string }) => a.key === 'zip_code');
-    expect(zip).toMatchObject({ key: 'zip_code', label: 'ZIP Code', value: '77001', tier: 1 });
+    expect(
+      snapshot.answers.find(
+        (answer: { key: string }) => answer.key === 'zip_code',
+      ),
+    ).toMatchObject({
+      key: 'zip_code',
+      label: 'ZIP Code',
+      value: '77001',
+      tier: 1,
+    });
 
-    // Income is normalized to an annual figure on the way in.
-    const income = snap.answers.find((a: { key: string }) => a.key === 'annual_income');
-    expect(income.value).toBe('42000');
+    expect(
+      snapshot.answers.find(
+        (answer: { key: string }) => answer.key === 'annual_income',
+      ).value,
+    ).toBe('42000');
   });
 
-  it('GET on a cookieless request returns an empty snapshot (no session created)', async () => {
-    const snap = await (await GET(makeGetRequest())).json();
-    expect(snap).toEqual({ answers: [], next: null, step: null });
+  it('GET without a session returns an empty snapshot', async () => {
+    const snapshot = await (await GET(makeGetRequest())).json();
+
+    expect(snapshot).toEqual({ answers: [], next: null, step: null });
   });
 
-  // ── Edit flow ──────────────────────────────────────────────────────────────
-
-  it('POST edit updates an existing answer and reflects it in the snapshot', async () => {
+  it('edits ZIP and persists the new value', async () => {
     const sessionId = await completeTier1();
 
     const edited = await (
       await POST(makeEditRequest('zip_code', '90210', sessionId))
     ).json();
-    const zip = edited.answers.find((a: { key: string }) => a.key === 'zip_code');
-    expect(zip.value).toBe('90210');
 
-    // Persisted: a follow-up GET sees the corrected value.
-    const snap = await (await GET(makeGetRequest(sessionId))).json();
-    expect(snap.answers.find((a: { key: string }) => a.key === 'zip_code').value).toBe('90210');
-  });
+    expect(
+      edited.answers.find(
+        (answer: { key: string }) => answer.key === 'zip_code',
+      ).value,
+    ).toBe('90210');
 
-  it('POST edit re-normalizes income (parsed field) on edit', async () => {
-    const sessionId = await completeTier1();
-    const edited = await (
-      await POST(makeEditRequest('annual_income', '$3,000/month', sessionId))
+    const snapshot = await (
+      await GET(makeGetRequest(sessionId))
     ).json();
-    const income = edited.answers.find((a: { key: string }) => a.key === 'annual_income');
-    expect(income.value).toBe('36000'); // 3000 * 12
+    expect(
+      snapshot.answers.find(
+        (answer: { key: string }) => answer.key === 'zip_code',
+      ).value,
+    ).toBe('90210');
   });
 
-  it('POST edit can set a Tier 2 field verbatim', async () => {
+  it('normalizes yearly income on edit', async () => {
     const sessionId = await completeTier1();
+
     const edited = await (
-      await POST(makeEditRequest('medications', 'Lisinopril 10mg daily', sessionId))
+      await POST(
+        makeEditRequest('annual_income', '$42,000', sessionId),
+      )
     ).json();
-    const meds = edited.answers.find((a: { key: string }) => a.key === 'medications');
-    expect(meds.value).toBe('Lisinopril 10mg daily');
+
+    expect(
+      edited.answers.find(
+        (answer: { key: string }) => answer.key === 'annual_income',
+      ).value,
+    ).toBe('42000');
   });
 
-  // ── PII: edit/GET surface values, conversational POST never does ───────────
-
-  it('edit and GET expose values to the owning session, but message POST does not', async () => {
+  it('rejects monthly income when editing annual income', async () => {
     const sessionId = await completeTier1();
 
-    // The editable panel (edit POST + GET) intentionally surfaces the user's own data.
-    const editBody = JSON.stringify(await (await GET(makeGetRequest(sessionId))).json());
-    expect(editBody).toContain('42000');
-
-    // The conversational message flow must NOT echo previously-collected PII.
-    const msgBody = JSON.stringify(
-      await (await POST(makeIntakeRequest('I have employer coverage', sessionId))).json()
+    const response = await POST(
+      makeEditRequest('annual_income', '$3,000/month', sessionId),
     );
-    expect(msgBody).not.toContain('42000'); // income
-    expect(msgBody).not.toContain('77001'); // zip
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body.error).toContain('yearly household income');
   });
 
-  // ── Session resume ─────────────────────────────────────────────────────────
-
-  it('restores progress, answers, current step, and pending field after a reload', async () => {
-    // User gets partway through: all of Tier 1 + the first Tier 2 answer.
+  it('stores a Tier 2 edit verbatim', async () => {
     const sessionId = await completeTier1();
-    await POST(makeIntakeRequest('I have employer coverage', sessionId));
 
-    // Simulate a page refresh: the client re-fetches the snapshot via GET.
-    const snap = await (await GET(makeGetRequest(sessionId))).json();
+    const edited = await (
+      await POST(
+        makeEditRequest(
+          'medications',
+          'Lisinopril 10mg daily',
+          sessionId,
+        ),
+      )
+    ).json();
 
-    // Progress bar source + answers panel: 4 fields answered.
-    expect(snap.answers.map((a: { key: string }) => a.key)).toEqual([
+    expect(
+      edited.answers.find(
+        (answer: { key: string }) => answer.key === 'medications',
+      ).value,
+    ).toBe('Lisinopril 10mg daily');
+  });
+
+  it('returns PII only through the owning session snapshot', async () => {
+    const sessionId = await completeTier1();
+
+    const snapshotBody = JSON.stringify(
+      await (await GET(makeGetRequest(sessionId))).json(),
+    );
+    expect(snapshotBody).toContain('42000');
+
+    const messageBody = JSON.stringify(
+      await (
+        await POST(
+          makeIntakeRequest('I have employer coverage', sessionId),
+        )
+      ).json(),
+    );
+    expect(messageBody).not.toContain('42000');
+    expect(messageBody).not.toContain('77001');
+  });
+
+  it('restores progress and pending-field behavior after reload', async () => {
+    const sessionId = await completeTier1();
+    await POST(
+      makeIntakeRequest('I have employer coverage', sessionId),
+    );
+
+    const snapshot = await (
+      await GET(makeGetRequest(sessionId))
+    ).json();
+
+    expect(
+      snapshot.answers.map((answer: { key: string }) => answer.key),
+    ).toEqual([
       'zip_code',
       'annual_income',
       'household_profile',
       'current_coverage',
     ]);
-    // Current step restores to the next unanswered field (medications, 5 of 8).
-    expect(snap.next.key).toBe('medications');
-    expect(snap.step).toEqual({ current: 5, total: 8 });
+    expect(snapshot.next.key).toBe('medications');
+    expect(snapshot.step).toEqual({ current: 5, total: 8 });
 
-    // Pending field restored: the next free-text answer is stored under 'medications',
-    // not mis-parsed or dropped — i.e. the flow continues seamlessly post-reload.
-    await POST(makeIntakeRequest('Metformin 500mg twice daily', sessionId));
-    const after = await (await GET(makeGetRequest(sessionId))).json();
-    const meds = after.answers.find((a: { key: string }) => a.key === 'medications');
-    expect(meds.value).toBe('Metformin 500mg twice daily');
+    await POST(
+      makeIntakeRequest('Metformin 500mg twice daily', sessionId),
+    );
+    const after = await (
+      await GET(makeGetRequest(sessionId))
+    ).json();
+
+    expect(
+      after.answers.find(
+        (answer: { key: string }) => answer.key === 'medications',
+      ).value,
+    ).toBe('Metformin 500mg twice daily');
     expect(after.step).toEqual({ current: 6, total: 8 });
   });
 });

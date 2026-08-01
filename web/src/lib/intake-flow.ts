@@ -260,7 +260,7 @@ export function parseUserMessage(message: string, existing: RawVars): RawVars {
   // Opportunistic ZIP extraction is intentionally conservative. Exact field answers
   // should be handled by parseIntakeAnswer using the pending field from the session.
   if (!result.zip_code) {
-    const zipMatch = message.match(/\b(\d{5})(?:-\d{4})?\b/);
+    const zipMatch = message.match(/\b(\d{5}(?:-\d{4})?)\b/);
     if (zipMatch && !/[$,]\s*\d{5}\b/.test(message)) {
       result.zip_code = zipMatch[1];
     }
@@ -352,11 +352,29 @@ export function getNextQuestion(
 }
 
 /**
- * Returns true if the exact same user message already exists in message history.
+ * Returns true when the submission repeats the most recent user message.
+ * Common answers such as "No" and "None" are never deduplicated because they
+ * may legitimately answer consecutive intake questions.
  */
-export function isIdempotentSubmission(messages: ChatMessage[], content: string): boolean {
+export function isIdempotentSubmission(
+  messages: ChatMessage[],
+  content: string,
+): boolean {
   const normalized = content.trim();
-  return messages.some((m) => m.role === 'user' && m.content.trim() === normalized);
+  const normalizedLower = normalized.toLowerCase();
+
+  // Common short answers may legitimately be repeated for consecutive fields,
+  // such as "None" for both medications and providers or "No" for coverage
+  // and health needs. Never suppress them as duplicate submissions.
+  if (normalizedLower === 'no' || normalizedLower === 'none') {
+    return false;
+  }
+
+  const lastUserMessage = [...messages]
+    .reverse()
+    .find((message) => message.role === 'user');
+
+  return lastUserMessage?.content.trim() === normalized;
 }
 
 /**
