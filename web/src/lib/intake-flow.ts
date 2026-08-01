@@ -266,35 +266,44 @@ export function parseUserMessage(message: string, existing: RawVars): RawVars {
     }
   }
 
-  // Opportunistic income extraction requires explicit income or time-period context.
-  // A bare number is not interpreted here because it may be a ZIP code or another value.
-  if (!result.annual_income) {
-    const monthlyMatch = message.match(
-      /\$?\s*([\d,]+(?:\.\d+)?)\s*(?:\/\s*mo(?:nth)?|per\s+mo(?:nth)?|monthly)/i,
-    );
-    if (monthlyMatch) {
-      const monthly = Number(monthlyMatch[1].replace(/,/g, ''));
-      if (Number.isFinite(monthly) && monthly >= 0) {
-        result.annual_income = String(Math.round(monthly * 12));
-      }
-    } else {
-      const hasIncomeKeyword =
-        /\b(?:income|earn|earning|earns|make|makes|making|salary|wages?|pay|paid|gross|annual|year(?:ly)?|per\s+year)\b/i.test(
-          message,
-        );
-      if (hasIncomeKeyword) {
-        const annualMatch = message.match(/\$?\s*([\d,]+(?:\.\d+)?)\s*k?\b/i);
-        if (annualMatch) {
-          const raw = annualMatch[1].replace(/,/g, '');
-          const multiplier = annualMatch[0].trim().toLowerCase().endsWith('k') ? 1000 : 1;
-          const amount = Math.round(Number(raw) * multiplier);
-          if (Number.isFinite(amount) && amount >= 0) {
-            result.annual_income = String(amount);
-          }
+// Opportunistic income extraction only recognizes annual household income.
+// Monthly income is intentionally unsupported so validation behavior is
+// consistent with parseIntakeAnswer().
+// Opportunistic income extraction only recognizes annual household income.
+// Monthly income is intentionally unsupported.
+if (!result.annual_income) {
+  const hasMonthlyPeriod =
+    /(?:\/\s*mo(?:nth)?|per\s+mo(?:nth)?|monthly)/i.test(message);
+
+  if (!hasMonthlyPeriod) {
+    const hasIncomeKeyword =
+      /\b(?:income|earn|earning|earns|make|makes|making|salary|wages?|pay|paid|gross|annual|year(?:ly)?|per\s+year)\b/i.test(
+        message,
+      );
+
+    if (hasIncomeKeyword) {
+      const annualMatch = message.match(
+        /\$?\s*([\d,]+(?:\.\d+)?)\s*k?\b/i,
+      );
+
+      if (annualMatch) {
+        const raw = annualMatch[1].replace(/,/g, '');
+        const multiplier = annualMatch[0]
+          .trim()
+          .toLowerCase()
+          .endsWith('k')
+          ? 1000
+          : 1;
+
+        const amount = Math.round(Number(raw) * multiplier);
+
+        if (Number.isFinite(amount) && amount >= 0) {
+          result.annual_income = String(amount);
         }
       }
     }
   }
+}
 
   // Household composition may still be extracted from an all-in-one free-text profile.
   if (!result.household_profile) {

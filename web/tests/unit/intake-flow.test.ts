@@ -86,11 +86,9 @@ describe('parseUserMessage() — income extraction', () => {
     expect(vars.annual_income).toBe('42000');
   });
 
-  it("extracts '$3,500/month' and annualizes it", () => {
-    const vars = parseUserMessage('I earn $3,500 per month', {});
-    expect(vars.annual_income).toBeDefined();
-    expect(vars.annual_income).toBe('42000');
-  });
+it('does not extract monthly income as annual income', () => {
+  expect(parseUserMessage('I earn $3,500 per month', {}).annual_income).toBeUndefined();
+});
 
   it('does not extract dollar amount without income keyword context', () => {
     // A bare "$500" with no income keyword should NOT be extracted as annual_income
