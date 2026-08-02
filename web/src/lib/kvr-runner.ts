@@ -18,7 +18,7 @@ export const SIGTERM_DELAY_MS = 60_000;
 
 /** Generic error shown to users. Internal failure details stay server-side. */
 export const GENERIC_WORKFLOW_ERROR =
-  "We couldn't complete your benefits search. Please try again later.";
+  "The system is currently overloaded. Please try again later.";
 
 export type RunnerFailureCode =
   | 'UPSTREAM_RATE_LIMIT'
