@@ -200,8 +200,7 @@ function _processLine(
 
   try {
     const event: PhaseEvent = JSON.parse(jsonStr);
-    const id = `${runId}-${Date.now()}`;
-    broadcast(formatSseEvent(event, id));
+    broadcast(formatSseEvent(event, `${runId}-${randomUUID()}`));
   } catch {
     // Malformed JSON — silently drop to avoid disconnecting clients.
   }
