@@ -35,6 +35,15 @@ export interface HouseholdMember {
   relationshipToApplicant: string;
 }
 
+export interface HouseholdMember {
+  id: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  dateOfBirth: string;
+  relationshipToApplicant: string;
+}
+
 export interface Saws2PlusApplicationData {
   selectedPrograms: Saws2PlusProgram[];
   applicant: ApplicantInformation;
@@ -51,17 +60,34 @@ export const EMPTY_ADDRESS: ApplicationAddress = {
 
 export const EMPTY_APPLICATION_DATA: Saws2PlusApplicationData = {
   selectedPrograms: [],
-  applicant: {
-    firstName: '',
-    middleName: '',
-    lastName: '',
-    dateOfBirth: '',
-    phone: '',
-    email: '',
-    preferredLanguage: 'English',
-    homeAddress: { ...EMPTY_ADDRESS },
-    mailingAddressSameAsHome: true,
-    mailingAddress: { ...EMPTY_ADDRESS },
+
+applicant: {
+  firstName: '',
+  middleName: '',
+  lastName: '',
+  dateOfBirth: '',
+  preferredLanguage: '',
+  phone: '',
+  email: '',
+
+  homeAddress: {
+    street: '',
+    apartment: '',
+    city: '',
+    state: '',
+    zipCode: '',
   },
+
+  mailingAddressSameAsHome: true,
+
+  mailingAddress: {
+    street: '',
+    apartment: '',
+    city: '',
+    state: '',
+    zipCode: '',
+  },
+},
+
   householdMembers: [],
 };
