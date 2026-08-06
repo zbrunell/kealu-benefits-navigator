@@ -92,7 +92,19 @@ const MOCK_REPORT: ReportPayload = {
         ],
       },
     ],
-    prefill: null,
+    prefill: {
+      zipCode: "90210",
+      state: "CA",
+      county: "Los Angeles",
+      city: "Beverly Hills",
+      preferredLanguage: "English",
+      householdProfile: "Two adults, both age 20.",
+      householdSize: 2,
+      householdMembers: [{ age: 20 }, { age: 20 }],
+      annualHouseholdIncome: 50000,
+      incomeType: "W-2 employee",
+      existingBenefits: "",
+    },
   },
 };
 
@@ -216,10 +228,10 @@ export default function AppShell({
 
       {view === "application" && sawsRecommendation && (
         <ApplicationView
-        recommendation={sawsRecommendation}
-        prefill={report?.application.prefill ?? null}
-        onBack={handleReturnToReport}
-/>
+          recommendation={sawsRecommendation}
+          prefill={report?.application.prefill ?? null}
+          onBack={handleReturnToReport}
+        />
       )}
 
       {view === "application" && !sawsRecommendation && (
