@@ -13,6 +13,91 @@ import type { ChatMessage } from '@/types/session';
 import type { IntakeField } from '@/lib/intake-flow';
 import type { ReportPayload } from '@/lib/report-assembler';
 
+const MOCK_REPORT: ReportPayload = {
+  sections: [
+    {
+      phaseName: 'benefits-research',
+      displayName: 'Benefits Research',
+      content: '## STATUS: COMPLETE\n\nMock benefits research output.',
+      expanded: false,
+    },
+    {
+      phaseName: 'insurance-research',
+      displayName: 'Insurance Research',
+      content: '## STATUS: COMPLETE\n\nMock insurance research output.',
+      expanded: false,
+    },
+    {
+      phaseName: 'evidence-verification',
+      displayName: 'Evidence Verification',
+      content: '## STATUS: COMPLETE\n\nMock verified evidence.',
+      expanded: false,
+    },
+    {
+      phaseName: 'eligibility-validation',
+      displayName: 'Eligibility Validation',
+      content: '## STATUS: COMPLETE\n\nMock eligibility results.',
+      expanded: false,
+    },
+    {
+      phaseName: 'action-plan',
+      displayName: 'Action Plan',
+      content: '## STATUS: COMPLETE\n\nMock action plan.',
+      expanded: true,
+    },
+  ],
+  bottomLine:
+    'Your household should apply for Medi-Cal and CalFresh. Additional housing expense information is needed for the CalFresh determination.',
+  application: {
+    available: true,
+    formId: 'CA_SAWS_2_PLUS',
+    formName: 'SAWS 2 PLUS',
+    status: 'not_started',
+    recommendedPrograms: ['medi_cal', 'calfresh'],
+    recommendations: [
+      {
+        formId: 'CA_SAWS_2_PLUS',
+        recommended: true,
+        programs: [
+          {
+            program: 'medi_cal',
+            status: 'likely_eligible',
+            recommendedToApply: true,
+            reasons: [
+              'Household income is below the verified Medi-Cal limit.',
+            ],
+            missingInformation: [],
+            confidence: 0.92,
+          },
+          {
+            program: 'calfresh',
+            status: 'possibly_eligible',
+            recommendedToApply: true,
+            reasons: [
+              'Income appears within the verified CalFresh screening range.',
+            ],
+            missingInformation: [
+              'Monthly housing expenses',
+              'Monthly utility expenses',
+            ],
+            confidence: 0.72,
+          },
+          {
+            program: 'calworks',
+            status: 'unlikely_eligible',
+            recommendedToApply: false,
+            reasons: [
+              'No eligible dependent child was identified.',
+            ],
+            missingInformation: [],
+            confidence: 0.96,
+          },
+        ],
+      },
+    ],
+  },
+};
+
 type View = 'intake' | 'progress' | 'report' | 'application';
 
 interface AppShellProps {
@@ -36,9 +121,17 @@ export default function AppShell({
   initialRunId,
   initialReport,
 }: AppShellProps) {
-  const [view, setView] = useState<View>(initialView);
-  const [runId, setRunId] = useState<string | undefined>(initialRunId);
-  const [report, setReport] = useState<ReportPayload | undefined>(initialReport);
+const [view, setView] = useState<View>(
+  process.env.NODE_ENV === 'development' ? 'report' : initialView,
+);
+
+const [runId, setRunId] = useState<string | undefined>(
+  process.env.NODE_ENV === 'development' ? 'mock-run' : initialRunId,
+);
+
+const [report, setReport] = useState<ReportPayload | undefined>(
+  process.env.NODE_ENV === 'development' ? MOCK_REPORT : initialReport,
+);
 
   /** Called by ChatInterface when all intake fields are collected and a run is started. */
   function handleReady(newRunId: string) {
