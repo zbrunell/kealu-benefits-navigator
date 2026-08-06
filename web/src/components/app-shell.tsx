@@ -216,9 +216,10 @@ export default function AppShell({
 
       {view === "application" && sawsRecommendation && (
         <ApplicationView
-          recommendation={sawsRecommendation}
-          onBack={handleReturnToReport}
-        />
+        recommendation={sawsRecommendation}
+        prefill={report?.application.prefill ?? null}
+        onBack={handleReturnToReport}
+/>
       )}
 
       {view === "application" && !sawsRecommendation && (

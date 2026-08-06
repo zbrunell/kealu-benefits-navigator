@@ -19,15 +19,17 @@ import type {
 import {
   EMPTY_APPLICATION_DATA,
   type ApplicantInformation,
+  type ApplicationPrefill,
   type HouseholdMember,
   type Saws2PlusApplicationData,
-} from "@/types/application";
+} from '@/types/application';
 
 type ApplicationStep =
   "programs" | "applicant" | "household" | "household-complete";
 
 interface ApplicationViewProps {
   recommendation: ApplicationRecommendation;
+  prefill: ApplicationPrefill | null;
   onBack: () => void;
 }
 
@@ -39,24 +41,56 @@ const PROGRAM_LABELS: Record<Saws2PlusProgram, string> = {
 
 export default function ApplicationView({
   recommendation,
+  prefill,
   onBack,
 }: ApplicationViewProps) {
   const [step, setStep] = useState<ApplicationStep>("programs");
 
   const [applicationData, setApplicationData] =
-    useState<Saws2PlusApplicationData>(() => ({
+  useState<Saws2PlusApplicationData>(() => {
+    const prefilledMembers: HouseholdMember[] =
+      prefill?.householdMembers.map((member) => ({
+        id: crypto.randomUUID(),
+        firstName: '',
+        middleName: '',
+        lastName: '',
+        dateOfBirth: member.dateOfBirth ?? '',
+        age: member.age,
+        relationshipToApplicant: '',
+      })) ?? [];
+
+    return {
       ...EMPTY_APPLICATION_DATA,
+
       applicant: {
         ...EMPTY_APPLICATION_DATA.applicant,
+
+        preferredLanguage:
+          prefill?.preferredLanguage ||
+          EMPTY_APPLICATION_DATA.applicant.preferredLanguage,
+
         homeAddress: {
           ...EMPTY_APPLICATION_DATA.applicant.homeAddress,
+          city: prefill?.city ?? '',
+          state: prefill?.state || 'CA',
+          zipCode: prefill?.zipCode ?? '',
         },
+
         mailingAddress: {
           ...EMPTY_APPLICATION_DATA.applicant.mailingAddress,
+          city: prefill?.city ?? '',
+          state: prefill?.state || 'CA',
+          zipCode: prefill?.zipCode ?? '',
         },
       },
-      householdMembers: [],
-    }));
+
+      householdMembers: prefilledMembers,
+
+      annualHouseholdIncome: prefill?.annualHouseholdIncome,
+      incomeType: prefill?.incomeType ?? '',
+      existingBenefits: prefill?.existingBenefits ?? '',
+    };
+  });
 
   const [selectedPrograms, setSelectedPrograms] = useState<
     Record<Saws2PlusProgram, boolean>

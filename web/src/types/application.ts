@@ -32,26 +32,8 @@ export interface HouseholdMember {
   middleName: string;
   lastName: string;
   dateOfBirth: string;
+  age?: number;
   relationshipToApplicant: string;
-}
-
-export interface HouseholdMember {
-  id: string;
-  firstName: string;
-  middleName: string;
-  lastName: string;
-  dateOfBirth: string;
-  relationshipToApplicant: string;
-}
-
-export interface Saws2PlusApplicationData {
-  selectedPrograms: Saws2PlusProgram[];
-  applicant: ApplicantInformation;
-  householdMembers: HouseholdMember[];
-
-  annualHouseholdIncome?: number;
-  incomeType: string;
-  existingBenefits: string;
 }
 
 export interface HouseholdMemberPrefill {
@@ -64,7 +46,6 @@ export interface ApplicationPrefill {
   state: string;
   county: string;
   city: string;
-
   preferredLanguage: string;
 
   /**
@@ -76,6 +57,15 @@ export interface ApplicationPrefill {
   householdSize?: number;
   householdMembers: HouseholdMemberPrefill[];
 
+  annualHouseholdIncome?: number;
+  incomeType: string;
+  existingBenefits: string;
+}
+
+export interface Saws2PlusApplicationData {
+  selectedPrograms: Saws2PlusProgram[];
+  applicant: ApplicantInformation;
+  householdMembers: HouseholdMember[];
   annualHouseholdIncome?: number;
   incomeType: string;
   existingBenefits: string;
@@ -93,21 +83,20 @@ export const EMPTY_APPLICATION_DATA: Saws2PlusApplicationData = {
   selectedPrograms: [],
 
   applicant: {
-    firstName: '',
-    middleName: '',
-    lastName: '',
-    dateOfBirth: '',
-    phone: '',
-    email: '',
-    preferredLanguage: 'English',
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    dateOfBirth: "",
+    phone: "",
+    email: "",
+    preferredLanguage: "English",
     homeAddress: { ...EMPTY_ADDRESS },
     mailingAddressSameAsHome: true,
     mailingAddress: { ...EMPTY_ADDRESS },
   },
 
   householdMembers: [],
-
   annualHouseholdIncome: undefined,
-  incomeType: '',
-  existingBenefits: '',
+  incomeType: "",
+  existingBenefits: "",
 };
