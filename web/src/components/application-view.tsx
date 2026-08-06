@@ -1,0 +1,181 @@
+//
+// Copyright 2025 Kealu Inc. All rights reserved.
+// Licensed under the Kealu Vector License v1.0 — PATENT PENDING
+//
+
+"use client";
+
+import { useMemo, useState } from "react";
+import type {
+  ApplicationRecommendation,
+  Saws2PlusProgram,
+} from "@/lib/report-assembler";
+
+const PROGRAM_LABELS: Record<Saws2PlusProgram, string> = {
+  medi_cal: "Medi-Cal",
+  calfresh: "CalFresh",
+  calworks: "CalWORKs",
+};
+
+const STATUS_LABELS = {
+  likely_eligible: "Likely eligible",
+  possibly_eligible: "Possibly eligible",
+  unlikely_eligible: "Unlikely eligible",
+  insufficient_information: "More information needed",
+} as const;
+
+interface ApplicationViewProps {
+  recommendation: ApplicationRecommendation;
+  onBack: () => void;
+}
+
+export default function ApplicationView({
+  recommendation,
+  onBack,
+}: ApplicationViewProps) {
+  const [selectedPrograms, setSelectedPrograms] = useState<
+    Record<Saws2PlusProgram, boolean>
+  >(() => {
+    const initialSelections: Record<Saws2PlusProgram, boolean> = {
+      medi_cal: false,
+      calfresh: false,
+      calworks: false,
+    };
+
+    for (const program of recommendation.programs) {
+      initialSelections[program.program] = program.recommendedToApply;
+    }
+
+    return initialSelections;
+  });
+
+  const selectedCount = useMemo(
+    () => Object.values(selectedPrograms).filter(Boolean).length,
+    [selectedPrograms],
+  );
+
+  function toggleProgram(program: Saws2PlusProgram) {
+    setSelectedPrograms((current) => ({
+      ...current,
+      [program]: !current[program],
+    }));
+  }
+
+  function handleContinue() {
+    const selected = Object.entries(selectedPrograms)
+      .filter(([, isSelected]) => isSelected)
+      .map(([program]) => program as Saws2PlusProgram);
+
+    console.log("Selected SAWS 2 PLUS programs:", selected);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
+          SAWS 2 PLUS
+        </p>
+
+        <h1 className="mt-2 text-2xl font-semibold text-slate-900">
+          Choose the programs to include
+        </h1>
+
+        <p className="mt-2 text-sm text-slate-600">
+          We preselected programs based on the completed eligibility analysis.
+          You can change these selections before continuing.
+        </p>
+
+        <div className="mt-6 space-y-3">
+          {recommendation.programs.map((program) => {
+            const checked = selectedPrograms[program.program];
+
+            return (
+              <label
+                key={program.program}
+                className="block cursor-pointer rounded-lg border border-slate-200 bg-white p-4 hover:border-green-300"
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleProgram(program.program)}
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-green-700 focus:ring-green-600"
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-2">
+                        <h2 className="font-semibold text-slate-900">
+                          {PROGRAM_LABELS[program.program]}
+                        </h2>
+
+                        {program.recommendedToApply && (
+                          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="text-xs font-medium text-slate-500">
+                        {STATUS_LABELS[program.status]}
+                      </span>
+                    </div>
+
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+                      {program.reasons.map((reason) => (
+                        <li key={reason}>{reason}</li>
+                      ))}
+                    </ul>
+
+                    {program.missingInformation.length > 0 && (
+                      <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                          Information still needed
+                        </p>
+
+                        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-amber-900">
+                          {program.missingInformation.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <p className="text-sm text-slate-700">
+            {selectedCount === 0
+              ? "No programs selected."
+              : `${selectedCount} ${
+                  selectedCount === 1 ? "program" : "programs"
+                } selected.`}
+          </p>
+        </div>
+
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Back to report
+          </button>
+
+          <button
+            type="button"
+            onClick={handleContinue}
+            disabled={selectedCount === 0}
+            className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Continue with selected programs
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

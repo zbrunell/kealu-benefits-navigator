@@ -3,34 +3,34 @@
 // Licensed under the Kealu Vector License v1.0 — PATENT PENDING
 //
 
-import { readFile, stat, rm } from 'fs/promises';
-import path from 'path';
+import { readFile, stat, rm } from "fs/promises";
+import path from "path";
 
 /** Canonical phase execution order. */
 export const PHASE_ORDER: string[] = [
-  'benefits-research',
-  'insurance-research',
-  'evidence-verification',
-  'eligibility-validation',
-  'action-plan',
+  "benefits-research",
+  "insurance-research",
+  "evidence-verification",
+  "eligibility-validation",
+  "action-plan",
 ];
 
 /** Human-readable display names for each phase. */
 export const PHASE_DISPLAY_NAMES: Record<string, string> = {
-  'benefits-research': 'Benefits Research',
-  'insurance-research': 'Insurance Research',
-  'evidence-verification': 'Evidence Verification',
-  'eligibility-validation': 'Eligibility Validation',
-  'action-plan': 'Action Plan',
+  "benefits-research": "Benefits Research",
+  "insurance-research": "Insurance Research",
+  "evidence-verification": "Evidence Verification",
+  "eligibility-validation": "Eligibility Validation",
+  "action-plan": "Action Plan",
 };
 
-const SAWS_PROGRAMS = ['medi_cal', 'calfresh', 'calworks'] as const;
+const SAWS_PROGRAMS = ["medi_cal", "calfresh", "calworks"] as const;
 
 const RECOMMENDATION_STATUSES = [
-  'likely_eligible',
-  'possibly_eligible',
-  'unlikely_eligible',
-  'insufficient_information',
+  "likely_eligible",
+  "possibly_eligible",
+  "unlikely_eligible",
+  "insufficient_information",
 ] as const;
 
 /** A single rendered phase section in the assembled report. */
@@ -48,7 +48,7 @@ export interface ReportSection {
   expanded: boolean;
 }
 
-export type SupportedApplicationForm = 'CA_SAWS_2_PLUS';
+export type SupportedApplicationForm = "CA_SAWS_2_PLUS";
 
 export type Saws2PlusProgram = (typeof SAWS_PROGRAMS)[number];
 
@@ -71,10 +71,7 @@ export interface ApplicationRecommendation {
 }
 
 export type ApplicationStatus =
-  | 'not_started'
-  | 'in_progress'
-  | 'ready_for_review'
-  | 'completed';
+  "not_started" | "in_progress" | "ready_for_review" | "completed";
 
 /** Metadata for the post-report application workflow. */
 export interface ApplicationSummary {
@@ -111,7 +108,7 @@ export interface ReportPayload {
  * Error thrown when the run directory or all phase files are missing.
  */
 export interface AssembleError extends Error {
-  code: 'RUN_DIR_MISSING' | 'INCOMPLETE';
+  code: "RUN_DIR_MISSING" | "INCOMPLETE";
   missingPhases?: string[];
 }
 
@@ -119,7 +116,7 @@ export interface AssembleError extends Error {
  * Resolve the .workforce base directory relative to the repo root.
  */
 export function getWorkforceBase(): string {
-  return path.join(process.cwd(), '..', '.workforce');
+  return path.join(process.cwd(), "..", ".workforce");
 }
 
 /**
@@ -128,7 +125,7 @@ export function getWorkforceBase(): string {
  * This remains temporarily because the legacy draft endpoint may still use it.
  */
 export function getDraftsBase(): string {
-  return path.join(process.cwd(), '..', '.workforce-drafts');
+  return path.join(process.cwd(), "..", ".workforce-drafts");
 }
 
 /**
@@ -140,7 +137,7 @@ function extractBottomLine(content: string): string {
   );
 
   if (!match) {
-    return '';
+    return "";
   }
 
   return match[1].trim();
@@ -148,7 +145,7 @@ function extractBottomLine(content: string): string {
 
 function isSaws2PlusProgram(value: unknown): value is Saws2PlusProgram {
   return (
-    typeof value === 'string' &&
+    typeof value === "string" &&
     (SAWS_PROGRAMS as readonly string[]).includes(value)
   );
 }
@@ -157,22 +154,21 @@ function isRecommendationStatus(
   value: unknown,
 ): value is ProgramRecommendationStatus {
   return (
-    typeof value === 'string' &&
+    typeof value === "string" &&
     (RECOMMENDATION_STATUSES as readonly string[]).includes(value)
   );
 }
 
 function isStringArray(value: unknown): value is string[] {
   return (
-    Array.isArray(value) &&
-    value.every((item) => typeof item === 'string')
+    Array.isArray(value) && value.every((item) => typeof item === "string")
   );
 }
 
 function parseProgramRecommendation(
   value: unknown,
 ): ProgramRecommendation | null {
-  if (!value || typeof value !== 'object') {
+  if (!value || typeof value !== "object") {
     return null;
   }
 
@@ -186,7 +182,7 @@ function parseProgramRecommendation(
     return null;
   }
 
-  if (typeof candidate.recommendedToApply !== 'boolean') {
+  if (typeof candidate.recommendedToApply !== "boolean") {
     return null;
   }
 
@@ -199,7 +195,7 @@ function parseProgramRecommendation(
   }
 
   if (
-    typeof candidate.confidence !== 'number' ||
+    typeof candidate.confidence !== "number" ||
     !Number.isFinite(candidate.confidence) ||
     candidate.confidence < 0 ||
     candidate.confidence > 1
@@ -212,7 +208,7 @@ function parseProgramRecommendation(
    * a program after the Action Planner classified it as unlikely.
    */
   if (
-    candidate.status === 'unlikely_eligible' &&
+    candidate.status === "unlikely_eligible" &&
     candidate.recommendedToApply
   ) {
     return null;
@@ -231,17 +227,17 @@ function parseProgramRecommendation(
 function parseApplicationRecommendation(
   value: unknown,
 ): ApplicationRecommendation | null {
-  if (!value || typeof value !== 'object') {
+  if (!value || typeof value !== "object") {
     return null;
   }
 
   const candidate = value as Record<string, unknown>;
 
-  if (candidate.formId !== 'CA_SAWS_2_PLUS') {
+  if (candidate.formId !== "CA_SAWS_2_PLUS") {
     return null;
   }
 
-  if (typeof candidate.recommended !== 'boolean') {
+  if (typeof candidate.recommended !== "boolean") {
     return null;
   }
 
@@ -251,9 +247,7 @@ function parseApplicationRecommendation(
 
   const programs = candidate.programs
     .map(parseProgramRecommendation)
-    .filter(
-      (program): program is ProgramRecommendation => program !== null,
-    );
+    .filter((program): program is ProgramRecommendation => program !== null);
 
   /*
    * SAWS 2 PLUS must contain exactly one valid recommendation for each
@@ -285,7 +279,7 @@ function parseApplicationRecommendation(
   }
 
   return {
-    formId: 'CA_SAWS_2_PLUS',
+    formId: "CA_SAWS_2_PLUS",
     recommended: candidate.recommended,
     programs,
   };
@@ -297,9 +291,8 @@ function parseApplicationRecommendations(
   const applications = values
     .map(parseApplicationRecommendation)
     .filter(
-      (
-        application,
-      ): application is ApplicationRecommendation => application !== null,
+      (application): application is ApplicationRecommendation =>
+        application !== null,
     );
 
   /*
@@ -330,9 +323,7 @@ function extractStructuredApplicationOutput(
     return [];
   }
 
-  const jsonMatch = sectionMatch[1].match(
-    /```json\s*([\s\S]*?)\s*```/i,
-  );
+  const jsonMatch = sectionMatch[1].match(/```json\s*([\s\S]*?)\s*```/i);
 
   if (!jsonMatch) {
     return [];
@@ -377,12 +368,12 @@ export async function assembleReport(
   } catch (err: unknown) {
     const e = err as NodeJS.ErrnoException;
 
-    if (e.code === 'ENOENT') {
+    if (e.code === "ENOENT") {
       const error = new Error(
         `Run directory not found: ${runDir}`,
       ) as AssembleError;
 
-      error.code = 'RUN_DIR_MISSING';
+      error.code = "RUN_DIR_MISSING";
       throw error;
     }
 
@@ -392,7 +383,7 @@ export async function assembleReport(
   const sections: ReportSection[] = [];
   const missingPhases: string[] = [];
 
-  let bottomLine = '';
+  let bottomLine = "";
   let applicationRecommendations: ApplicationRecommendation[] = [];
 
   for (const phaseName of PHASE_ORDER) {
@@ -400,32 +391,28 @@ export async function assembleReport(
     let content: string;
 
     try {
-      content = await readFile(filePath, 'utf8');
+      content = await readFile(filePath, "utf8");
     } catch (err: unknown) {
       const e = err as NodeJS.ErrnoException;
 
-      if (e.code === 'ENOENT') {
+      if (e.code === "ENOENT") {
         missingPhases.push(phaseName);
-        content = '_Phase completed without written output._';
+        content = "_Phase completed without written output._";
       } else {
         throw err;
       }
     }
 
-    if (
-      phaseName === 'action-plan' &&
-      !missingPhases.includes(phaseName)
-    ) {
+    if (phaseName === "action-plan" && !missingPhases.includes(phaseName)) {
       bottomLine = extractBottomLine(content);
-      applicationRecommendations =
-        extractStructuredApplicationOutput(content);
+      applicationRecommendations = extractStructuredApplicationOutput(content);
     }
 
     sections.push({
       phaseName,
       displayName: PHASE_DISPLAY_NAMES[phaseName] ?? phaseName,
       content,
-      expanded: phaseName === 'action-plan',
+      expanded: phaseName === "action-plan",
     });
   }
 
@@ -435,16 +422,16 @@ export async function assembleReport(
    */
   if (missingPhases.length === PHASE_ORDER.length) {
     const error = new Error(
-      'All phase files missing — workflow incomplete',
+      "All phase files missing — workflow incomplete",
     ) as AssembleError;
 
-    error.code = 'INCOMPLETE';
+    error.code = "INCOMPLETE";
     error.missingPhases = missingPhases;
     throw error;
   }
 
   const sawsApplication = applicationRecommendations.find(
-    (application) => application.formId === 'CA_SAWS_2_PLUS',
+    (application) => application.formId === "CA_SAWS_2_PLUS",
   );
 
   const recommendedPrograms =
@@ -459,7 +446,7 @@ export async function assembleReport(
       available: false,
       formId: null,
       formName: null,
-      status: 'not_started',
+      status: "not_started",
       recommendedPrograms,
       recommendations: applicationRecommendations,
     },
