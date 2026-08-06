@@ -3,7 +3,8 @@
 // Licensed under the Kealu Vector License v1.0 — PATENT PENDING
 //
 
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import type { ReportPayload } from "@/lib/report-assembler";
 
 /**
  * GET /api/workflow/[runId]/report
@@ -24,6 +25,17 @@ import { NextResponse } from 'next/server';
  * - 403 — session does not own this runId
  * - 422 `{ error, missingPhases }` — run directory missing or incomplete
  */
+
+function parseAnnualIncome(value: string | undefined): number | undefined {
+  if (!value?.trim()) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
 export async function GET(
   req: Request,
   { params }: { params: { runId: string } },
@@ -31,29 +43,80 @@ export async function GET(
   const { runId } = params;
 
   // Dynamic imports: defers module resolution to handler invocation time.
-  const { sessionStore } = await import('@/lib/session-store');
-  const {
-    assembleReport,
-    deleteRunDir,
-    getWorkforceBase,
-    PHASE_ORDER,
-  } = await import('@/lib/report-assembler');
+  const { sessionStore } = await import("@/lib/session-store");
+  const { assembleReport, deleteRunDir, getWorkforceBase, PHASE_ORDER } =
+    await import("@/lib/report-assembler");
 
   // Authorize using only the session cookie from this request.
-  const rawCookie = req.headers.get('cookie') ?? '';
+  const rawCookie = req.headers.get("cookie") ?? "";
   const sessionCookieMatch = rawCookie.match(/(?:^|;\s*)session=([^;]+)/);
   const cookieValue = sessionCookieMatch?.[1];
   const session = cookieValue ? sessionStore.get(cookieValue) : null;
+  const localeCookieMatch = rawCookie.match(/(?:^|;\s*)kbn-locale=([^;]+)/);
+
+  const locale = localeCookieMatch?.[1] ?? "en";
+
+  const preferredLanguage =
+    locale === "es" ? "Spanish" : locale === "zh-CN" ? "Chinese" : "English";
+  const applicationPrefill = {
+    zipCode: session?.vars.zip_code?.trim() ?? "",
+    state: session?.vars.state?.trim() || "CA",
+    county: session?.vars.county?.trim() ?? "",
+    city: "",
+
+    preferredLanguage,
+
+    /*
+     * Household composition is currently stored as natural language.
+     * Preserve it for later structured parsing instead of guessing here.
+     */
+    householdProfile: session?.vars.household_profile?.trim() ?? "",
+    householdSize: undefined,
+    householdMembers: [],
+
+    annualHouseholdIncome: parseAnnualIncome(session?.vars.annual_income),
+
+    incomeType: session?.vars.income_type?.trim() ?? "",
+    existingBenefits: session?.vars.existing_benefits?.trim() ?? "",
+  };
 
   if (!session || session.runId !== runId) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   // Return cached report if available.
   if (session.reportContent) {
-    return NextResponse.json(session.reportContent, {
+    const cachedPayload = session.reportContent as ReportPayload;
+    cachedPayload.application ??= {
+      available: false,
+      formId: null,
+      formName: null,
+      status: "not_started",
+      recommendedPrograms: [],
+      recommendations: [],
+      prefill: null,
+    };
+
+    const sawsRecommendation = cachedPayload.application.recommendations.find(
+      (application) => application.formId === "CA_SAWS_2_PLUS",
+    );
+
+    if (
+      session.vars.state?.trim().toUpperCase() === "CA" &&
+      sawsRecommendation
+    ) {
+      cachedPayload.application = {
+        ...cachedPayload.application,
+        available: true,
+        formId: "CA_SAWS_2_PLUS",
+        formName: "SAWS 2 PLUS",
+        prefill: applicationPrefill,
+      };
+    }
+
+    return NextResponse.json(cachedPayload, {
       status: 200,
-      headers: { 'X-Correlation-Id': runId },
+      headers: { "X-Correlation-Id": runId },
     });
   }
 
@@ -61,23 +124,38 @@ export async function GET(
 
   try {
     const payload = await assembleReport(runId, workforceBase);
+    payload.application ??= {
+      available: false,
+      formId: null,
+      formName: null,
+      status: "not_started",
+      recommendedPrograms: [],
+      recommendations: [],
+      prefill: null,
+    };
 
     // SAWS 2 PLUS is currently supported only for California households.
-    if (session.vars.state?.trim().toUpperCase() === 'CA') {
+    const sawsRecommendation = payload.application.recommendations.find(
+      (application) => application.formId === "CA_SAWS_2_PLUS",
+    );
+
+    if (
+      session.vars.state?.trim().toUpperCase() === "CA" &&
+      sawsRecommendation
+    ) {
       payload.application = {
+        ...payload.application,
         available: true,
-        formId: 'CA_SAWS_2_PLUS',
-        formName: 'SAWS 2 PLUS',
-        status: 'not_started',
-        recommendedPrograms: [],
-        recommendations: payload.application.recommendations
+        formId: "CA_SAWS_2_PLUS",
+        formName: "SAWS 2 PLUS",
+        prefill: applicationPrefill,
       };
     }
 
     // Cache report and mark the workflow complete.
     sessionStore.update(session.sessionId, {
       reportContent: payload,
-      runStatus: 'complete',
+      runStatus: "complete",
     });
 
     // The report is cached, so the run directory is no longer needed.
@@ -85,28 +163,28 @@ export async function GET(
 
     return NextResponse.json(payload, {
       status: 200,
-      headers: { 'X-Correlation-Id': runId },
+      headers: { "X-Correlation-Id": runId },
     });
   } catch (err: unknown) {
     const e = err as { code?: string; missingPhases?: string[] };
 
-    if (e.code === 'RUN_DIR_MISSING') {
+    if (e.code === "RUN_DIR_MISSING") {
       return NextResponse.json(
         {
-          error: 'Run directory not found — workflow may not have completed.',
+          error: "Run directory not found — workflow may not have completed.",
           missingPhases: PHASE_ORDER,
         },
-        { status: 422, headers: { 'X-Correlation-Id': runId } },
+        { status: 422, headers: { "X-Correlation-Id": runId } },
       );
     }
 
-    if (e.code === 'INCOMPLETE') {
+    if (e.code === "INCOMPLETE") {
       return NextResponse.json(
         {
-          error: 'Workflow incomplete — some phases have not finished.',
+          error: "Workflow incomplete — some phases have not finished.",
           missingPhases: e.missingPhases ?? [],
         },
-        { status: 422, headers: { 'X-Correlation-Id': runId } },
+        { status: 422, headers: { "X-Correlation-Id": runId } },
       );
     }
 

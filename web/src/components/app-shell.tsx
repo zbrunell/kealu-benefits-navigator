@@ -92,6 +92,7 @@ const MOCK_REPORT: ReportPayload = {
         ],
       },
     ],
+    prefill: null,
   },
 };
 

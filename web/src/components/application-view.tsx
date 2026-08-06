@@ -5,11 +5,31 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+
+import ApplicantStep from "./application/applicant-step";
+import HouseholdStep from "./application/household-step";
+import ProgramSelectionStep from "./application/program-selection-step";
+
 import type {
   ApplicationRecommendation,
   Saws2PlusProgram,
 } from "@/lib/report-assembler";
+
+import {
+  EMPTY_APPLICATION_DATA,
+  type ApplicantInformation,
+  type HouseholdMember,
+  type Saws2PlusApplicationData,
+} from "@/types/application";
+
+type ApplicationStep =
+  "programs" | "applicant" | "household" | "household-complete";
+
+interface ApplicationViewProps {
+  recommendation: ApplicationRecommendation;
+  onBack: () => void;
+}
 
 const PROGRAM_LABELS: Record<Saws2PlusProgram, string> = {
   medi_cal: "Medi-Cal",
@@ -17,22 +37,27 @@ const PROGRAM_LABELS: Record<Saws2PlusProgram, string> = {
   calworks: "CalWORKs",
 };
 
-const STATUS_LABELS = {
-  likely_eligible: "Likely eligible",
-  possibly_eligible: "Possibly eligible",
-  unlikely_eligible: "Unlikely eligible",
-  insufficient_information: "More information needed",
-} as const;
-
-interface ApplicationViewProps {
-  recommendation: ApplicationRecommendation;
-  onBack: () => void;
-}
-
 export default function ApplicationView({
   recommendation,
   onBack,
 }: ApplicationViewProps) {
+  const [step, setStep] = useState<ApplicationStep>("programs");
+
+  const [applicationData, setApplicationData] =
+    useState<Saws2PlusApplicationData>(() => ({
+      ...EMPTY_APPLICATION_DATA,
+      applicant: {
+        ...EMPTY_APPLICATION_DATA.applicant,
+        homeAddress: {
+          ...EMPTY_APPLICATION_DATA.applicant.homeAddress,
+        },
+        mailingAddress: {
+          ...EMPTY_APPLICATION_DATA.applicant.mailingAddress,
+        },
+      },
+      householdMembers: [],
+    }));
+
   const [selectedPrograms, setSelectedPrograms] = useState<
     Record<Saws2PlusProgram, boolean>
   >(() => {
@@ -49,11 +74,6 @@ export default function ApplicationView({
     return initialSelections;
   });
 
-  const selectedCount = useMemo(
-    () => Object.values(selectedPrograms).filter(Boolean).length,
-    [selectedPrograms],
-  );
-
   function toggleProgram(program: Saws2PlusProgram) {
     setSelectedPrograms((current) => ({
       ...current,
@@ -61,121 +81,167 @@ export default function ApplicationView({
     }));
   }
 
-  function handleContinue() {
+  function continueFromPrograms() {
     const selected = Object.entries(selectedPrograms)
       .filter(([, isSelected]) => isSelected)
       .map(([program]) => program as Saws2PlusProgram);
 
-    console.log("Selected SAWS 2 PLUS programs:", selected);
+    setApplicationData((current) => ({
+      ...current,
+      selectedPrograms: selected,
+    }));
+
+    setStep("applicant");
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
-          SAWS 2 PLUS
-        </p>
+  function updateApplicantField<K extends keyof ApplicantInformation>(
+    field: K,
+    value: ApplicantInformation[K],
+  ) {
+    setApplicationData((current) => ({
+      ...current,
+      applicant: {
+        ...current.applicant,
+        [field]: value,
+      },
+    }));
+  }
 
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-          Choose the programs to include
-        </h1>
+  function updateHomeAddressField(
+    field: keyof ApplicantInformation["homeAddress"],
+    value: string,
+  ) {
+    setApplicationData((current) => ({
+      ...current,
+      applicant: {
+        ...current.applicant,
+        homeAddress: {
+          ...current.applicant.homeAddress,
+          [field]: value,
+        },
+      },
+    }));
+  }
 
-        <p className="mt-2 text-sm text-slate-600">
-          We preselected programs based on the completed eligibility analysis.
-          You can change these selections before continuing.
-        </p>
+  function addHouseholdMember() {
+    const member: HouseholdMember = {
+      id: crypto.randomUUID(),
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      dateOfBirth: "",
+      relationshipToApplicant: "",
+    };
 
-        <div className="mt-6 space-y-3">
-          {recommendation.programs.map((program) => {
-            const checked = selectedPrograms[program.program];
+    setApplicationData((current) => ({
+      ...current,
+      householdMembers: [...current.householdMembers, member],
+    }));
+  }
 
-            return (
-              <label
-                key={program.program}
-                className="block cursor-pointer rounded-lg border border-slate-200 bg-white p-4 hover:border-green-300"
-              >
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggleProgram(program.program)}
-                    className="mt-1 h-4 w-4 rounded border-slate-300 text-green-700 focus:ring-green-600"
-                  />
+  function updateHouseholdMember<K extends keyof HouseholdMember>(
+    memberId: string,
+    field: K,
+    value: HouseholdMember[K],
+  ) {
+    setApplicationData((current) => ({
+      ...current,
+      householdMembers: current.householdMembers.map((member) =>
+        member.id === memberId
+          ? {
+              ...member,
+              [field]: value,
+            }
+          : member,
+      ),
+    }));
+  }
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-2">
-                        <h2 className="font-semibold text-slate-900">
-                          {PROGRAM_LABELS[program.program]}
-                        </h2>
+  function removeHouseholdMember(memberId: string) {
+    setApplicationData((current) => ({
+      ...current,
+      householdMembers: current.householdMembers.filter(
+        (member) => member.id !== memberId,
+      ),
+    }));
+  }
 
-                        {program.recommendedToApply && (
-                          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                            Recommended
-                          </span>
-                        )}
-                      </div>
+  switch (step) {
+    case "applicant":
+      return (
+        <ApplicantStep
+          applicant={applicationData.applicant}
+          onChange={updateApplicantField}
+          onHomeAddressChange={updateHomeAddressField}
+          onBack={() => setStep("programs")}
+          onContinue={() => setStep("household")}
+        />
+      );
 
-                      <span className="text-xs font-medium text-slate-500">
-                        {STATUS_LABELS[program.status]}
-                      </span>
-                    </div>
+    case "household":
+      return (
+        <HouseholdStep
+          applicant={applicationData.applicant}
+          members={applicationData.householdMembers}
+          onAdd={addHouseholdMember}
+          onUpdate={updateHouseholdMember}
+          onRemove={removeHouseholdMember}
+          onBack={() => setStep("applicant")}
+          onContinue={() => setStep("household-complete")}
+        />
+      );
 
-                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
-                      {program.reasons.map((reason) => (
-                        <li key={reason}>{reason}</li>
-                      ))}
-                    </ul>
+    case "household-complete":
+      return (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
+              SAWS 2 PLUS
+            </p>
 
-                    {program.missingInformation.length > 0 && (
-                      <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                          Information still needed
-                        </p>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-900">
+              Household information saved
+            </h1>
 
-                        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-amber-900">
-                          {program.missingInformation.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </label>
-            );
-          })}
+            <p className="mt-2 text-sm text-slate-600">
+              Your application includes the primary applicant and{" "}
+              {applicationData.householdMembers.length} additional household{" "}
+              {applicationData.householdMembers.length === 1
+                ? "member"
+                : "members"}
+              .
+            </p>
+
+            <div className="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm text-blue-900">
+                Selected programs:{" "}
+                {applicationData.selectedPrograms
+                  .map((program) => PROGRAM_LABELS[program])
+                  .join(", ")}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setStep("household")}
+              className="mt-5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Back to household members
+            </button>
+          </div>
         </div>
+      );
 
-        <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <p className="text-sm text-slate-700">
-            {selectedCount === 0
-              ? "No programs selected."
-              : `${selectedCount} ${
-                  selectedCount === 1 ? "program" : "programs"
-                } selected.`}
-          </p>
-        </div>
-
-        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-          <button
-            type="button"
-            onClick={onBack}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Back to report
-          </button>
-
-          <button
-            type="button"
-            onClick={handleContinue}
-            disabled={selectedCount === 0}
-            className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Continue with selected programs
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+    case "programs":
+    default:
+      return (
+        <ProgramSelectionStep
+          recommendation={recommendation}
+          selectedPrograms={selectedPrograms}
+          onToggleProgram={toggleProgram}
+          onBack={onBack}
+          onContinue={continueFromPrograms}
+        />
+      );
+  }
 }

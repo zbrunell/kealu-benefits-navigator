@@ -5,6 +5,7 @@
 
 import { readFile, stat, rm } from "fs/promises";
 import path from "path";
+import type { ApplicationPrefill } from '@/types/application';
 
 /** Canonical phase execution order. */
 export const PHASE_ORDER: string[] = [
@@ -79,12 +80,10 @@ export interface ApplicationSummary {
   formId: SupportedApplicationForm | null;
   formName: string | null;
   status: ApplicationStatus;
-
-  /** Programs preselected for the currently supported form. */
   recommendedPrograms: Saws2PlusProgram[];
-
-  /** Structured applications produced by the Action Plan phase. */
   recommendations: ApplicationRecommendation[];
+
+  prefill: ApplicationPrefill | null;
 }
 
 /** The assembled multi-phase report returned by the report API route. */
@@ -446,9 +445,10 @@ export async function assembleReport(
       available: false,
       formId: null,
       formName: null,
-      status: "not_started",
+      status: 'not_started',
       recommendedPrograms,
       recommendations: applicationRecommendations,
+      prefill: null,
     },
   };
 }
