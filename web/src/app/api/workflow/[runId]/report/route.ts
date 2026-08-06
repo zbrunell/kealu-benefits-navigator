@@ -70,6 +70,7 @@ export async function GET(
         formName: 'SAWS 2 PLUS',
         status: 'not_started',
         recommendedPrograms: [],
+        recommendations: payload.application.recommendations
       };
     }
 
