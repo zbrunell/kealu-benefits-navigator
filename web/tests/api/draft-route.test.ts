@@ -141,11 +141,11 @@ describe('GET /api/workflow/[runId]/draft', () => {
     expect(res.headers.get('content-type')).toBe('application/pdf');
   });
 
-  it('Content-Disposition includes official form filename for draftFormType official', async () => {
+  it('Content-Disposition includes SAWS 2 PLUS filename for draftFormType official', async () => {
     const req = makeDraftRequest(TEST_RUN_ID, TEST_SESSION_ID);
     const res = await GET(req, { params: { runId: TEST_RUN_ID } });
     const cd = res.headers.get('content-disposition') ?? '';
-    expect(cd).toContain('partially-prefilled-SAWS-1-draft.pdf');
+expect(cd).toContain('partially-prefilled-SAWS-2-PLUS-draft.pdf');
   });
 
   it('Content-Disposition includes worksheet filename for draftFormType worksheet', async () => {

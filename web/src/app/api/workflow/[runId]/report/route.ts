@@ -12,14 +12,15 @@ import { NextResponse } from 'next/server';
  * Authorizes via session cookie: session.runId must match path runId.
  * Caches the assembled report in session.reportContent to avoid re-reading on refresh.
  * Deletes the run directory after the first successful assembly.
- * Best-effort: calls generateDraft() to produce a pre-filled PDF application draft.
+ *
+ * Returns application metadata after the completed benefits analysis.
+ * PDF generation occurs later in the dedicated application workflow.
  *
  * Both session-store and report-assembler are imported dynamically so that
- * vi.mock() factories in tests are not triggered at module-load time (avoids
- * TDZ errors when mock factories reference consts declared after hoisted imports).
+ * vi.mock() factories in tests are not triggered at module-load time.
  *
  * Response codes:
- * - 200 `{ sections, bottomLine, draftAvailable, draftFormType }` — report assembled
+ * - 200 `{ sections, bottomLine, application }` — report assembled
  * - 403 — session does not own this runId
  * - 422 `{ error, missingPhases }` — run directory missing or incomplete
  */
@@ -29,15 +30,16 @@ export async function GET(
 ): Promise<Response> {
   const { runId } = params;
 
-  // Dynamic imports: defers module resolution to handler invocation time
+  // Dynamic imports: defers module resolution to handler invocation time.
   const { sessionStore } = await import('@/lib/session-store');
-  const { assembleReport, deleteRunDir, getWorkforceBase, getDraftsBase, PHASE_ORDER } = await import(
-    '@/lib/report-assembler'
-  );
+  const {
+    assembleReport,
+    deleteRunDir,
+    getWorkforceBase,
+    PHASE_ORDER,
+  } = await import('@/lib/report-assembler');
 
-  // Authorize: read session exclusively from the request Cookie header (never fall back to
-  // next/headers cookieStore — that would bypass the per-request auth boundary in tests
-  // and in environments where multiple sessions coexist).
+  // Authorize using only the session cookie from this request.
   const rawCookie = req.headers.get('cookie') ?? '';
   const sessionCookieMatch = rawCookie.match(/(?:^|;\s*)session=([^;]+)/);
   const cookieValue = sessionCookieMatch?.[1];
@@ -47,7 +49,7 @@ export async function GET(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Return cached report if available (avoids re-reading deleted run dir)
+  // Return cached report if available.
   if (session.reportContent) {
     return NextResponse.json(session.reportContent, {
       status: 200,
@@ -55,53 +57,29 @@ export async function GET(
     });
   }
 
-  // Assemble report
   const workforceBase = getWorkforceBase();
 
   try {
     const payload = await assembleReport(runId, workforceBase);
 
-    // Best-effort: generate a pre-filled benefit application draft PDF.
-    // Failure is non-fatal — the report is still returned with draftAvailable: false.
-    try {
-      const { generateDraft } = await import('@/lib/draft-generator');
-      const draftsBase = getDraftsBase();
-      // Concatenate all phase content for checkbox determination in the Python helper
-      const workflowOutput = payload.sections.map((s) => s.content).join('\n\n');
-      const draftResult = await generateDraft(runId, session.vars, workflowOutput, draftsBase);
+    // SAWS 2 PLUS is currently supported only for California households.
+    if (session.vars.state?.trim().toUpperCase() === 'CA') {
+      payload.application = {
+        available: true,
+        formId: 'CA_SAWS_2_PLUS',
+        formName: 'SAWS 2 PLUS',
+        status: 'not_started',
+        recommendedPrograms: [],
+      };
+    }
 
-      if (draftResult) {
-        payload.draftAvailable = true;
-        payload.draftFormType = draftResult.formType;
-        sessionStore.update(session.sessionId, {
-          draftPath: draftResult.path,
-          draftFormType: draftResult.formType,
-        });
-      }
-    } catch (err) {
-  console.error(
-    JSON.stringify({
-      event: 'draft_generation_failed',
-      runId,
-      error:
-        err instanceof Error
-          ? {
-              name: err.name,
-              message: err.message,
-              stack: err.stack,
-            }
-          : String(err),
-    }),
-  );
-}
-
-    // Cache in session and update status
+    // Cache report and mark the workflow complete.
     sessionStore.update(session.sessionId, {
       reportContent: payload,
       runStatus: 'complete',
     });
 
-    // Delete run directory now that report is cached
+    // The report is cached, so the run directory is no longer needed.
     await deleteRunDir(runId, workforceBase);
 
     return NextResponse.json(payload, {

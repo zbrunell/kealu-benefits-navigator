@@ -172,21 +172,40 @@ export default function ReportView({ payload, runId, onRetry }: ReportViewProps)
         </details>
       ))}
 
-      {/* ── Draft application download ────────────────────────────────────── */}
-      {payload.draftAvailable && (
-        <div className="rounded-xl border border-green-200 bg-green-50 p-4 space-y-1.5">
-          <a
-            href={`/api/workflow/${runId}/draft`}
-            download
-            className="inline-flex items-center gap-2 text-sm font-medium text-green-800 underline underline-offset-2 hover:text-green-900"
-          >
-            {payload.draftFormType === 'official'
-              ? t('report_download_official')
-              : t('report_download_worksheet')}
-          </a>
-          <p className="text-xs text-green-700">{t('report_draft_disclaimer')}</p>
-        </div>
-      )}
+{/* ── SAWS 2 PLUS application ───────────────────────────────────────── */}
+{payload.application.available && (
+  <div className="rounded-xl border border-green-200 bg-green-50 p-5">
+    <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
+      California benefits application
+    </p>
+
+    <h2 className="mt-2 text-lg font-semibold text-green-950">
+      Continue to the SAWS 2 PLUS application
+    </h2>
+
+    <p className="mt-2 text-sm text-green-900">
+      We can use information from your completed benefits analysis to begin
+      preparing an application for Medi-Cal, CalFresh, and CalWORKs.
+    </p>
+
+    <p className="mt-2 text-xs text-green-700">
+      You will review every prefilled answer and provide any missing required
+      information before a PDF is generated.
+    </p>
+
+    <button
+      type="button"
+      disabled
+      className="mt-4 rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white opacity-60"
+    >
+      Continue to application
+    </button>
+
+    <p className="mt-2 text-xs text-green-700">
+      Application setup is being added.
+    </p>
+  </div>
+)}
 
       {/* ── Footer actions ────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between pt-2">

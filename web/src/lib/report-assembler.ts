@@ -36,26 +36,60 @@ export interface ReportSection {
   expanded: boolean;
 }
 
+
+/** Programs supported by the California SAWS 2 PLUS application. */
+export type Saws2PlusProgram = 'medi_cal' | 'calfresh' | 'calworks';
+
+export type ApplicationStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'ready_for_review'
+  | 'completed';
+
+/** Metadata for the post-report SAWS 2 PLUS application flow. */
+export interface ApplicationSummary {
+  /** Whether this household can start a supported application. */
+  available: boolean;
+
+  /** Stable internal identifier for the application form. */
+  formId: 'CA_SAWS_2_PLUS' | null;
+
+  /** Human-readable form name shown in the UI. */
+  formName: string | null;
+
+  /** Current application workflow status. */
+  status: ApplicationStatus;
+
+  /**
+   * Programs recommended by the completed eligibility analysis.
+   * This remains empty until structured recommendation parsing is added.
+   */
+  recommendedPrograms: Saws2PlusProgram[];
+}
+
+/** The assembled multi-phase report returned by the report API route. */
 /** The assembled multi-phase report returned by the report API route. */
 export interface ReportPayload {
-  /** Sections in PHASE_ORDER sequence. Always 5 entries (missing phases get a placeholder). */
+  /**
+   * Sections in PHASE_ORDER sequence.
+   * Always 5 entries; missing phases receive placeholder content.
+   */
   sections: ReportSection[];
+
   /**
    * Text extracted from the `## Bottom Line` section of the action-plan output.
    * Empty string if the action-plan did not include a Bottom Line section.
    */
   bottomLine: string;
+
   /**
-   * True when a pre-filled benefit application draft was successfully generated.
-   * The download URL is `/api/workflow/{runId}/draft` — runId is already known to the client.
-   * The absolute filesystem path is never sent to the client; it lives only in the Session.
+   * Metadata for the separate post-analysis application workflow.
+   *
+   * The report assembler does not decide whether the form is available for a
+   * particular household. The report API route adds state-specific availability
+   * after loading the session.
    */
-  draftAvailable: boolean;
-  /**
-   * "official" when an official state AcroForm PDF was filled; "worksheet" for the fallback
-   * worksheet PDF. null when draftAvailable is false.
-   */
-  draftFormType: 'official' | 'worksheet' | null;
+  application: ApplicationSummary;
 }
 
 /**
@@ -169,7 +203,7 @@ export async function assembleReport(
     throw error;
   }
 
-  return { sections, bottomLine, draftAvailable: false, draftFormType: null };
+  return { sections, bottomLine, application: { available: false, formId: null, formName: null, status: 'not_started', recommendedPrograms: [] } };
 }
 
 /**

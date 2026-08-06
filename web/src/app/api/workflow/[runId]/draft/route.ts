@@ -43,21 +43,6 @@ export async function GET(
   const cookieValue = sessionCookieMatch?.[1];
   const session = cookieValue ? sessionStore.get(cookieValue) : null;
 
-console.log('DRAFT AUTH DEBUG', {
-
-  rawCookie,
-
-  cookieValue,
-
-  sessionFound: Boolean(session),
-
-  requestedRunId: runId,
-
-  sessionRunId: session?.runId,
-
-  sessionId: session?.sessionId,
-
-});
 
   if (!session || session.runId !== runId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -102,10 +87,10 @@ console.log('DRAFT AUTH DEBUG', {
 
   // Determine filename from form type
   const formType = session.draftFormType ?? 'official';
-  const filename =
-    formType === 'official'
-      ? 'partially-prefilled-SAWS-1-draft.pdf'
-      : 'benefits-preparation-worksheet-draft.pdf';
+const filename =
+  formType === 'official'
+    ? 'partially-prefilled-SAWS-2-PLUS-draft.pdf'
+    : 'benefits-preparation-worksheet-draft.pdf';
 
   return new Response(new Uint8Array(pdfBuffer), {
     status: 200,
