@@ -6,6 +6,7 @@
 import { readFile, stat } from 'fs/promises';
 import path from 'path';
 import { NextResponse } from 'next/server';
+import type { Saws2PlusApplicationData } from '@/types/application';
 
 /**
  * GET /api/workflow/[runId]/draft
@@ -87,12 +88,13 @@ export async function GET(
 
   // Determine filename from form type
   const formType = session.draftFormType ?? 'official';
-const filename =
+
+  const filename =
   formType === 'official'
     ? 'partially-prefilled-SAWS-2-PLUS-draft.pdf'
     : 'benefits-preparation-worksheet-draft.pdf';
 
-  return new Response(new Uint8Array(pdfBuffer), {
+    return new Response(new Uint8Array(pdfBuffer), {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
@@ -102,4 +104,68 @@ const filename =
       'X-Correlation-Id': runId,
     },
   });
+}
+
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ runId: string }> },
+): Promise<Response> {
+  const { runId } = await params;
+  const { sessionStore } = await import('@/lib/session-store');
+
+const rawCookie = req.headers.get('cookie') ?? '';
+const sessionCookieMatch = rawCookie.match(/(?:^|;\s*)session=([^;]+)/);
+const cookieValue = sessionCookieMatch?.[1];
+const session = cookieValue ? sessionStore.get(cookieValue) : null;
+
+if (!session || session.runId !== runId) {
+  return NextResponse.json(
+    { error: 'Forbidden' },
+    { status: 403 },
+  );
+}
+
+let body: { applicationData: Saws2PlusApplicationData };
+
+try {
+  body = await req.json();
+} catch {
+  return NextResponse.json(
+      { error: 'Request body must be valid JSON.' },
+      { status: 400 },
+    );
+  }
+  const applicationData = body.applicationData;
+
+  if (
+    typeof body !== 'object' ||
+    body === null ||
+    !('applicationData' in body) ||
+    !body.applicationData
+  ) {
+    return NextResponse.json(
+      { error: 'applicationData is required.' },
+      { status: 400 },
+    );
+  }
+if (!session.reportContent) {
+  return NextResponse.json(
+    { error: "No completed workflow report found for this session." },
+    { status: 409 },
+  );
+}
+  return NextResponse.json(
+  {
+    success: true,
+    runId,
+    applicant: applicationData.applicant,
+    householdMemberCount: applicationData.householdMembers.length,
+  },
+  {
+    status: 200,
+    headers: {
+      'X-Correlation-Id': runId,
+      },
+    },
+  );
 }

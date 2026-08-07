@@ -26,10 +26,34 @@ import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { resolveKvr } from '@/lib/kvr-checker';
 import { resolvePythonExec, generateDraft } from '@/lib/draft-generator';
+import {
+  EMPTY_APPLICATION_DATA,
+  type Saws2PlusApplicationData,
+} from '@/types/application';
 
 const mockSpawn = vi.mocked(spawn);
 const mockExistsSync = vi.mocked(existsSync);
 const mockResolveKvr = vi.mocked(resolveKvr);
+
+const applicationData: Saws2PlusApplicationData = {
+  ...EMPTY_APPLICATION_DATA,
+  selectedPrograms: ['medi_cal'],
+  applicant: {
+    ...EMPTY_APPLICATION_DATA.applicant,
+    firstName: 'Test',
+    lastName: 'Applicant',
+    homeAddress: {
+      ...EMPTY_APPLICATION_DATA.applicant.homeAddress,
+      state: 'CA',
+      zipCode: '90210',
+    },
+    mailingAddress: {
+      ...EMPTY_APPLICATION_DATA.applicant.mailingAddress,
+      state: 'CA',
+      zipCode: '90210',
+    },
+  },
+};
 
 // Helper: build a mock child process that emits stdout, stderr, and close events
 function makeMockProcess(options: {
@@ -157,6 +181,7 @@ describe('generateDraft()', () => {
       'test-run-1',
       { state: 'CA', zip_code: '90210' } as any,
       'workflow output',
+      applicationData,
       '/tmp/.workforce-drafts',
     );
     expect(result).toBeNull();
@@ -171,6 +196,7 @@ describe('generateDraft()', () => {
       'test-run-2',
       { state: 'CA', zip_code: '90210' } as any,
       'workflow output',
+      applicationData,
       '/tmp/.workforce-drafts',
     );
     // Trigger events after the promise is awaited
@@ -188,6 +214,7 @@ describe('generateDraft()', () => {
       'test-run-3',
       { state: 'CA', zip_code: '90210' } as any,
       'workflow output',
+      applicationData,
       '/tmp/.workforce-drafts',
     );
     setTimeout(() => mockProc._trigger(), 0);
@@ -205,6 +232,7 @@ describe('generateDraft()', () => {
       'test-run-4',
       { state: 'CA', zip_code: '90210' } as any,
       'workflow output',
+      applicationData,
       '/tmp/.workforce-drafts',
     );
     setTimeout(() => mockProc._trigger(), 0);
@@ -225,6 +253,7 @@ describe('generateDraft()', () => {
       'test-run-ok',
       { state: 'CA', zip_code: '90210' } as any,
       'workflow output with SNAP Medi-Cal CALFRESH',
+      applicationData,
       '/tmp/.workforce-drafts',
     );
     setTimeout(() => mockProc._trigger(), 0);
@@ -247,6 +276,7 @@ describe('generateDraft()', () => {
       'test-run-ws',
       { state: 'TX', zip_code: '78701' } as any,
       'workflow output',
+      applicationData,
       '/tmp/.workforce-drafts',
     );
     setTimeout(() => mockProc._trigger(), 0);
@@ -264,6 +294,7 @@ describe('generateDraft()', () => {
       'test-run-spawn-err',
       { state: 'CA' } as any,
       '',
+      applicationData,
       '/tmp/.workforce-drafts',
     );
     setTimeout(() => mockProc._trigger(), 0);
@@ -284,6 +315,7 @@ describe('generateDraft()', () => {
       'test-run-args',
       { state: 'CA' } as any,
       'output',
+      applicationData,
       '/tmp/.workforce-drafts',
     );
     setTimeout(() => mockProc._trigger(), 0);
@@ -294,5 +326,22 @@ describe('generateDraft()', () => {
     expect(typeof pythonExec).toBe('string');
     expect(args).toContain('-m');
     expect(args).toContain('benefits_navigator.generate_draft_helper');
+
+    const stdinPayload = JSON.parse(
+      vi.mocked(mockProc.stdin.write).mock.calls[0][0] as string,
+    );
+
+    const expectedApplicationData = JSON.parse(
+      JSON.stringify(applicationData),
+    );
+
+    expect(stdinPayload).toEqual({
+      args: {
+        state: 'CA',
+        application_data: expectedApplicationData,
+      },
+      workflow_output: 'output',
+      output_dir: '/tmp/.workforce-drafts/test-run-args',
+    });
   });
 });

@@ -28,6 +28,7 @@ type ApplicationStep =
   "programs" | "applicant" | "household" | "household-complete";
 
 interface ApplicationViewProps {
+  runId: string;
   recommendation: ApplicationRecommendation;
   prefill: ApplicationPrefill | null;
   onBack: () => void;
@@ -40,6 +41,7 @@ const PROGRAM_LABELS: Record<Saws2PlusProgram, string> = {
 };
 
 export default function ApplicationView({
+  runId,
   recommendation,
   prefill,
   onBack,
@@ -173,6 +175,22 @@ export default function ApplicationView({
     }));
   }
 
+  async function handleGenerateApplication() {
+    const response = await fetch(`/api/workflow/${runId}/draft`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        applicationData,
+      }),
+    });
+
+    const result = await response.json();
+
+    console.log(result);
+  }
+
   function updateHouseholdMember<K extends keyof HouseholdMember>(
     memberId: string,
     field: K,
@@ -225,7 +243,7 @@ export default function ApplicationView({
         />
       );
 
-    case "household-complete":
+        case "household-complete":
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
@@ -255,13 +273,23 @@ export default function ApplicationView({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setStep("household")}
-              className="mt-5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Back to household members
-            </button>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setStep("household")}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Back to household members
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGenerateApplication}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Generate application
+              </button>
+            </div>
           </div>
         </div>
       );

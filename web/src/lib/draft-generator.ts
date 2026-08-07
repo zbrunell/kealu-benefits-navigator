@@ -17,6 +17,8 @@ import { existsSync } from 'fs';
 import path from 'path';
 import { resolveKvr } from '@/lib/kvr-checker';
 import type { HouseholdVars } from '@/types/session';
+import type { Saws2PlusApplicationData } from "@/types/application";
+
 
 /** Result of a successful draft generation. */
 export interface DraftResult {
@@ -91,6 +93,7 @@ export async function generateDraft(
   runId: string,
   vars: Partial<HouseholdVars> & { annual_income?: string },
   workflowOutput: string,
+  applicationData: Saws2PlusApplicationData,
   draftsBase: string,
 ): Promise<DraftResult | null> {
   const pythonExec = resolvePythonExec();
@@ -107,11 +110,14 @@ export async function generateDraft(
   }
 
   const outputDir = path.join(draftsBase, runId);
-  const stdinPayload = JSON.stringify({
-    args: vars,
-    workflow_output: workflowOutput,
-    output_dir: outputDir,
-  });
+const stdinPayload = JSON.stringify({
+  args: {
+    ...vars,
+    application_data: applicationData,
+  },
+  workflow_output: workflowOutput,
+  output_dir: outputDir,
+});
 
   const startMs = Date.now();
 
