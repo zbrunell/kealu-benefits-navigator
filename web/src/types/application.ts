@@ -5,6 +5,43 @@
 
 import type { Saws2PlusProgram } from "@/lib/report-assembler";
 
+
+export type MaritalStatus =
+  | "single"
+  | "married"
+  | "separated"
+  | "divorced"
+  | "widowed";
+
+export type PersonSex = "male" | "female";
+
+export interface PersonApplicationDetails {
+  applyingFor: Saws2PlusProgram[];
+
+  sex?: PersonSex;
+  citizenOrNational?: boolean;
+
+  fullTimeStudent?: boolean;
+  disabled?: boolean;
+}
+
+export interface AdultApplicationDetails extends PersonApplicationDetails {
+  maritalStatus?: MaritalStatus;
+}
+
+export interface ChildApplicationDetails extends PersonApplicationDetails {
+  placeOfBirth: string;
+  immunizationsUpToDate?: boolean;
+
+  parentStatus: {
+    notInHome?: boolean;
+    unemployed?: boolean;
+    disabled?: boolean;
+    deceased?: boolean;
+    none?: boolean;
+  };
+}
+
 export interface ApplicationAddress {
   street: string;
   apartment: string;
@@ -24,6 +61,7 @@ export interface ApplicantInformation {
   homeAddress: ApplicationAddress;
   mailingAddressSameAsHome: boolean;
   mailingAddress: ApplicationAddress;
+  householdDetails: AdultApplicationDetails;
 }
 
 export interface HouseholdMember {
@@ -34,6 +72,8 @@ export interface HouseholdMember {
   dateOfBirth: string;
   age?: number;
   relationshipToApplicant: string;
+  adultDetails?: AdultApplicationDetails;
+  childDetails?: ChildApplicationDetails;
 }
 
 export interface HouseholdMemberPrefill {
@@ -114,20 +154,53 @@ export interface ApplicationPreferences {
   deafOrHardOfHearing?: boolean;
 }
 
+export interface ApplicationPreferences {
+  emailApplicationInformation?: boolean;
+  emailCaseMessages?: boolean;
+  needsDisabilityApplicationHelp?: boolean;
+  homeless?: boolean;
+  deafOrHardOfHearing?: boolean;
+}
+
+export interface ExpeditedServiceInformation {
+  grossIncomeUnder150AndResourcesUnder100?: boolean;
+  incomeAndResourcesLessThanHousingCosts?: boolean;
+  migrantOrSeasonalFarmWorker?: boolean;
+  evictionNotice?: boolean;
+  utilitiesShutOffOrNotice?: boolean;
+  foodRunsOutWithinThreeDays?: boolean;
+  needsEssentialClothing?: boolean;
+  needsTransportationForEmergencyNeeds?: boolean;
+}
+
+export interface PregnancyInformation {
+  anyonePregnant?: boolean;
+  presumptiveEligibilityCard?: boolean;
+}
+
+export interface PersonalEmergencyInformation {
+  hasEmergency?: boolean;
+  pregnancy?: boolean;
+  immediateMedicalNeed?: boolean;
+  childAbuse?: boolean;
+  domesticAbuse?: boolean;
+  elderAbuse?: boolean;
+  otherEmergency?: boolean;
+}
+
 export interface Saws2PlusApplicationData {
   selectedPrograms: Saws2PlusProgram[];
   applicant: ApplicantInformation;
   householdMembers: HouseholdMember[];
+
+  preferences: ApplicationPreferences;
+  expeditedService: ExpeditedServiceInformation;
+  pregnancy: PregnancyInformation;
+  personalEmergency: PersonalEmergencyInformation;
+
   annualHouseholdIncome?: number;
   incomeType: string;
   existingBenefits: string;
-  preferences: ApplicationPreferences;
-
-  expeditedService: ExpeditedServiceInformation;
-
-  pregnancy: PregnancyInformation;
-
-  personalEmergency: PersonalEmergencyInformation;
 }
 
 export const EMPTY_ADDRESS: ApplicationAddress = {
@@ -152,43 +225,51 @@ export const EMPTY_APPLICATION_DATA: Saws2PlusApplicationData = {
     homeAddress: { ...EMPTY_ADDRESS },
     mailingAddressSameAsHome: true,
     mailingAddress: { ...EMPTY_ADDRESS },
+    householdDetails: {
+  applyingFor: [],
+  sex: undefined,
+  citizenOrNational: undefined,
+  fullTimeStudent: undefined,
+  disabled: undefined,
+  maritalStatus: undefined,
+},
   },
 
   householdMembers: [],
   annualHouseholdIncome: undefined,
   incomeType: "",
   existingBenefits: "",
-  preferences: {
-  emailApplicationInformation: undefined,
-  emailCaseMessages: undefined,
-  needsDisabilityApplicationHelp: undefined,
-  homeless: undefined,
-  deafOrHardOfHearing: undefined,
-},
+    preferences: {
+    emailApplicationInformation: undefined,
+    emailCaseMessages: undefined,
+    needsDisabilityApplicationHelp: undefined,
+    homeless: undefined,
+    deafOrHardOfHearing: undefined,
+  },
 
-expeditedService: {
-  grossIncomeUnder150AndResourcesUnder100: undefined,
-  incomeAndResourcesLessThanHousingCosts: undefined,
-  migrantOrSeasonalFarmWorker: undefined,
-  evictionNotice: undefined,
-  utilitiesShutOffOrNotice: undefined,
-  foodRunsOutWithinThreeDays: undefined,
-  needsEssentialClothing: undefined,
-  needsTransportationForEmergencyNeeds: undefined,
-},
+  expeditedService: {
+    grossIncomeUnder150AndResourcesUnder100: undefined,
+    incomeAndResourcesLessThanHousingCosts: undefined,
+    migrantOrSeasonalFarmWorker: undefined,
+    evictionNotice: undefined,
+    utilitiesShutOffOrNotice: undefined,
+    foodRunsOutWithinThreeDays: undefined,
+    needsEssentialClothing: undefined,
+    needsTransportationForEmergencyNeeds: undefined,
+  },
 
-pregnancy: {
-  anyonePregnant: undefined,
-  presumptiveEligibilityCard: undefined,
-},
+  pregnancy: {
+    anyonePregnant: undefined,
+    presumptiveEligibilityCard: undefined,
+  },
 
-personalEmergency: {
-  hasEmergency: undefined,
-  pregnancy: undefined,
-  immediateMedicalNeed: undefined,
-  childAbuse: undefined,
-  domesticAbuse: undefined,
-  elderAbuse: undefined,
-  otherEmergency: undefined,
+  personalEmergency: {
+    hasEmergency: undefined,
+    pregnancy: undefined,
+    immediateMedicalNeed: undefined,
+    childAbuse: undefined,
+    domesticAbuse: undefined,
+    elderAbuse: undefined,
+    otherEmergency: undefined,
+  }
 }
-};

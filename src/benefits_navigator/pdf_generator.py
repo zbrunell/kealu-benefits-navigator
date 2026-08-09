@@ -526,68 +526,348 @@ class Saws2PlusFieldAdapter:
         "household.personal_emergency.other": "Check Box60 PG 1",
     }
 
+    PERSON_PROGRAM_INDEX = {
+        "calfresh": 0,
+        "calworks": 1,
+        "medi_cal": 2,
+    }
+
+    ADULT_STATUS_INDEX = {
+        "single": 0,
+        "married": 1,
+        "separated": 2,
+        "divorced": 3,
+        "widowed": 4,
+        "full_time_student": 5,
+        "disabled": 6,
+    }
+
+    CHILD_STATUS_INDEX = {
+        "parent_not_in_home": 0,
+        "parent_unemployed": 1,
+        "parent_disabled": 2,
+        "parent_deceased": 3,
+        "parent_none": 4,
+        "full_time_student": 5,
+        "immunizations_up_to_date": 6,
+    }
+
+        # -----------------------------------------------------------------------
+    # Household person tables — SAWS 2 PLUS Pages 3 and 4
+    # -----------------------------------------------------------------------
+    #
+    # These mappings were reviewed against the actual AcroForm widget
+    # coordinates in the official SAWS 2 PLUS PDF.
+    #
+    # IMPORTANT:
+    # The SSN text fields are intentionally NOT represented anywhere below.
+    #
+    # Adult SSN fields excluded:
+    #   Text17B PG 3
+    #   Text35 PG 3
+    #   Text53 PG 3
+    #   Text71 PG 3
+    #   Text89 PG 3
+    #
+    # Child SSN fields excluded:
+    #   Text19 PG 4
+    #   Text38 PG 4
+    #   Text57 PG 4
+    #   Text76 PG 4
+    #   Text95 PG 4
+    #
+    # Because those destinations never enter these row definitions, they also
+    # never enter SAFE_FIELDS and cannot be written through set_field().
+
     ADULT_ROWS = (
-        (
-            "Text5 PG 3",
-            "Text6 PG 3",
-            "Text7 PG 3",
-        ),
-        (
-            "Text22 PG 3",
-            "Text23 PG 3",
-            "Text24 PG 3",
-        ),
-        (
-            "Text40 PG 3",
-            "Text41 PG 3",
-            "Text42 PG 3",
-        ),
-        (
-            "Text58 PG 3",
-            "Text59 PG 3",
-            "Text60 PG 3",
-        ),
-        (
-            "Text76 PG 3",
-            "Text77 PG 3",
-            "Text78 PG 3",
-        ),
+        {
+            "programs": (
+                "Check Box1 PG 3",
+                "Check Box2 PG 3",
+                "Check Box3 PG 3",
+                "Check Box4 PG 3",
+            ),
+            "name": "Text5 PG 3",
+            "relationship": "Text6 PG 3",
+            "dob": "Text7 PG 3",
+            "sex": "Text8 PG 3",
+            "statuses": (
+                "Check Box9 PG 3",
+                "Check Box10 PG 3",
+                "Check Box11 PG 3",
+                "Check Box12 PG 3",
+                "Check Box13 PG 3",
+                "Check Box14 PG 3",
+                "Check Box15 PG 3",
+            ),
+            "citizen_yes": "Check Box16 PG 3",
+            "citizen_no": "Check Box17 PG 3",
+        },
+        {
+            "programs": (
+                "Check Box18 PG 3",
+                "Check Box19 PG 3",
+                "Check Box20 PG 3",
+                "Check Box21 PG 3",
+            ),
+            "name": "Text22 PG 3",
+            "relationship": "Text23 PG 3",
+            "dob": "Text24 PG 3",
+            "sex": "Text25 PG 3",
+            "statuses": (
+                "Check Box26 PG 3",
+                "Check Box27 PG 3",
+                "Check Box28 PG 3",
+                "Check Box29 PG 3",
+                "Check Box30 PG 3",
+                "Check Box31 PG 3",
+                "Check Box32 PG 3",
+            ),
+            "citizen_yes": "Check Box33 PG 3",
+            "citizen_no": "Check Box34 PG 3",
+        },
+        {
+            "programs": (
+                "Check Box36 PG 3",
+                "Check Box37 PG 3",
+                "Check Box38 PG 3",
+                "Check Box39 PG 3",
+            ),
+            "name": "Text40 PG 3",
+            "relationship": "Text41 PG 3",
+            "dob": "Text42 PG 3",
+            "sex": "Text43 PG 3",
+            "statuses": (
+                "Check Box44 PG 3",
+                "Check Box45 PG 3",
+                "Check Box46 PG 3",
+                "Check Box47 PG 3",
+                "Check Box48 PG 3",
+                "Check Box49 PG 3",
+                "Check Box50 PG 3",
+            ),
+            "citizen_yes": "Check Box51 PG 3",
+            "citizen_no": "Check Box52 PG 3",
+        },
+        {
+            "programs": (
+                "Check Box54 PG 3",
+                "Check Box55 PG 3",
+                "Check Box56 PG 3",
+                "Check Box57 PG 3",
+            ),
+            "name": "Text58 PG 3",
+            "relationship": "Text59 PG 3",
+            "dob": "Text60 PG 3",
+            "sex": "Text61 PG 3",
+            "statuses": (
+                "Check Box62 PG 3",
+                "Check Box63 PG 3",
+                "Check Box64 PG 3",
+                "Check Box65 PG 3",
+                "Check Box66 PG 3",
+                "Check Box67 PG 3",
+                "Check Box68 PG 3",
+            ),
+            "citizen_yes": "Check Box69 PG 3",
+            "citizen_no": "Check Box70 PG 3",
+        },
+        {
+            "programs": (
+                "Check Box72 PG 3",
+                "Check Box73 PG 3",
+                "Check Box74 PG 3",
+                "Check Box75 PG 3",
+            ),
+            "name": "Text76 PG 3",
+            "relationship": "Text77 PG 3",
+            "dob": "Text78 PG 3",
+            "sex": "Text79 PG 3",
+            "statuses": (
+                "Check Box80 PG 3",
+                "Check Box81 PG 3",
+                "Check Box82 PG 3",
+                "Check Box83 PG 3",
+                "Check Box84 PG 3",
+                "Check Box85 PG 3",
+                "Check Box86 PG 3",
+            ),
+            "citizen_yes": "Check Box87 PG 3",
+            "citizen_no": "Check Box88 PG 3",
+        },
     )
 
     CHILD_ROWS = (
-        (
-            "Text5 PG 4",
-            "Text6 PG 4",
-            "Text7 PG 4",
-        ),
-        (
-            "Text24 PG 4",
-            "Text25 PG 4",
-            "Text26 PG 4",
-        ),
-        (
-            "Text43 PG 4",
-            "Text44 PG 4",
-            "Text45 PG 4",
-        ),
-        (
-            "Text62 PG 4",
-            "Text63 PG 4",
-            "Text64 PG 4",
-        ),
-        (
-            "Text81 PG 4",
-            "Text82 PG 4",
-            "Text83 PG 4",
-        ),
+        {
+            "programs": (
+                "Check Box1 PG 4",
+                "Check Box2 PG 4",
+                "Check Box3 PG 4",
+                "Check Box4 PG 4",
+            ),
+            "name": "Text5 PG 4",
+            "relationship": "Text6 PG 4",
+            "dob": "Text7 PG 4",
+            "place_of_birth": "Text8 PG 4",
+            "sex": "Text9 PG 4",
+            "statuses": (
+                "Check Box10 PG 4",
+                "Check Box11 PG 4",
+                "Check Box12 PG 4",
+                "Check Box13 PG 4",
+                "Check Box14 PG 4",
+                "Check Box15 PG 4",
+                "Check Box16 PG 4",
+            ),
+            "citizen_yes": "Check Box17 PG 4",
+            "citizen_no": "Check Box18 PG 4",
+        },
+        {
+            "programs": (
+                "Check Box20 PG 4",
+                "Check Box21 PG 4",
+                "Check Box22 PG 4",
+                "Check Box23 PG 4",
+            ),
+            "name": "Text24 PG 4",
+            "relationship": "Text25 PG 4",
+            "dob": "Text26 PG 4",
+            "place_of_birth": "Text27 PG 4",
+            "sex": "Text28 PG 4",
+            "statuses": (
+                "Check Box29 PG 4",
+                "Check Box30 PG 4",
+                "Check Box31 PG 4",
+                "Check Box32 PG 4",
+                "Check Box33 PG 4",
+                "Check Box34 PG 4",
+                "Check Box35 PG 4",
+            ),
+            "citizen_yes": "Check Box36 PG 4",
+            "citizen_no": "Check Box37 PG 4",
+        },
+        {
+            "programs": (
+                "Check Box39 PG 4",
+                "Check Box40 PG 4",
+                "Check Box41 PG 4",
+                "Check Box42 PG 4",
+            ),
+            "name": "Text43 PG 4",
+            "relationship": "Text44 PG 4",
+            "dob": "Text45 PG 4",
+            "place_of_birth": "Text46 PG 4",
+            "sex": "Text47 PG 4",
+            "statuses": (
+                "Check Box48 PG 4",
+                "Check Box49 PG 4",
+                "Check Box50 PG 4",
+                "Check Box51 PG 4",
+                "Check Box52 PG 4",
+                "Check Box53 PG 4",
+                "Check Box54 PG 4",
+            ),
+            "citizen_yes": "Check Box55 PG 4",
+            "citizen_no": "Check Box56 PG 4",
+        },
+        {
+            "programs": (
+                "Check Box58 PG 4",
+                "Check Box59 PG 4",
+                "Check Box60 PG 4",
+                "Check Box61 PG 4",
+            ),
+            "name": "Text62 PG 4",
+            "relationship": "Text63 PG 4",
+            "dob": "Text64 PG 4",
+            "place_of_birth": "Text65 PG 4",
+            "sex": "Text66 PG 4",
+            "statuses": (
+                "Check Box67 PG 4",
+                "Check Box68 PG 4",
+                "Check Box69 PG 4",
+                "Check Box70 PG 4",
+                "Check Box71 PG 4",
+                "Check Box72 PG 4",
+                "Check Box73 PG 4",
+            ),
+            "citizen_yes": "Check Box74 PG 4",
+            "citizen_no": "Check Box75 PG 4",
+        },
+        {
+            "programs": (
+                "Check Box77 PG 4",
+                "Check Box78 PG 4",
+                "Check Box79 PG 4",
+                "Check Box80 PG 4",
+            ),
+            "name": "Text81 PG 4",
+            "relationship": "Text82 PG 4",
+            "dob": "Text83 PG 4",
+            "place_of_birth": "Text84 PG 4",
+            "sex": "Text85 PG 4",
+            "statuses": (
+                "Check Box86 PG 4",
+                "Check Box87 PG 4",
+                "Check Box88 PG 4",
+                "Check Box89 PG 4",
+                "Check Box90 PG 4",
+                "Check Box91 PG 4",
+                "Check Box92 PG 4",
+            ),
+            "citizen_yes": "Check Box93 PG 4",
+            "citizen_no": "Check Box94 PG 4",
+        },
     )
+
+    # Program columns in the person tables.
+    #
+    # The fourth checkbox is the form's "None" column. We deliberately do not
+    # automatically check it merely because `applyingFor` is empty: an empty
+    # list may also mean the user has not answered the per-person question.
+    PERSON_PROGRAM_INDEX = {
+        "calfresh": 0,
+        "calworks": 1,
+        "medi_cal": 2,
+    }
+
+    # Seven adult status columns:
+    # Single, Married, Separated, Divorced, Widowed,
+    # Full-Time Student, Disabled.
+    ADULT_STATUS_INDEX = {
+        "single": 0,
+        "married": 1,
+        "separated": 2,
+        "divorced": 3,
+        "widowed": 4,
+        "full_time_student": 5,
+        "disabled": 6,
+    }
+
+    # Seven child status columns:
+    # Parent not in home, parent unemployed, parent disabled,
+    # parent deceased, none of those parent conditions,
+    # full-time student, shots/immunizations up to date.
+    #
+    # A child's own disability is collected in the semantic application model
+    # for later SAWS questions, but it does NOT map to one of these seven
+    # Page 4 row checkboxes.
+    CHILD_STATUS_INDEX = {
+        "parent_not_in_home": 0,
+        "parent_unemployed": 1,
+        "parent_disabled": 2,
+        "parent_deceased": 3,
+        "parent_none": 4,
+        "full_time_student": 5,
+        "immunizations_up_to_date": 6,
+    }
 
     SAFE_FIELDS = frozenset(
         {
-            # Applicant name
+            # Page 1 applicant name.
             "Text1 PG 1",
 
-            # Preferred read/spoken language
+            # Preferred read/spoken language.
             "Text30 PG 1",
             "Text31 PG 1",
 
@@ -602,16 +882,28 @@ class Saws2PlusFieldAdapter:
 
             *SINGLE_CHECKBOX_FIELDS.values(),
 
+            # Every destination in the reviewed adult household rows.
             *(
                 field
                 for row in ADULT_ROWS
-                for field in row
+                for value in row.values()
+                for field in (
+                    value
+                    if isinstance(value, tuple)
+                    else (value,)
+                )
             ),
 
+            # Every destination in the reviewed child household rows.
             *(
                 field
                 for row in CHILD_ROWS
-                for field in row
+                for value in row.values()
+                for field in (
+                    value
+                    if isinstance(value, tuple)
+                    else (value,)
+                )
             ),
         }
     )
@@ -621,12 +913,16 @@ class Saws2PlusFieldAdapter:
         canonical_values: dict[str, Any],
         available_fields: set[str],
     ) -> dict[str, str]:
+        """Translate canonical application values into reviewed SAWS fields."""
+
         values: dict[str, str] = {}
 
         def set_field(
             field_name: str,
             value: Any,
         ) -> None:
+            """Write only to an explicitly reviewed destination field."""
+
             if field_name not in self.SAFE_FIELDS:
                 raise RuntimeError(
                     "Unreviewed SAWS 2 PLUS field destination: "
@@ -641,7 +937,41 @@ class Saws2PlusFieldAdapter:
             if text:
                 values[field_name] = text
 
-        # Page 1 applicant name
+        def format_sex(value: Any) -> str:
+            """Convert semantic sex values to the M/F format used by SAWS."""
+
+            normalized = str(value or "").strip().lower()
+
+            if normalized in {"male", "m"}:
+                return "M"
+
+            if normalized in {"female", "f"}:
+                return "F"
+
+            return ""
+
+        def apply_programs(
+            row: dict[str, Any],
+            prefix: str,
+        ) -> None:
+            """Fill explicit per-person program selections."""
+
+            program_fields = row["programs"]
+
+            for program, field_index in self.PERSON_PROGRAM_INDEX.items():
+                if canonical_values.get(
+                    f"{prefix}.applying_for.{program}"
+                ) is True:
+                    set_field(
+                        program_fields[field_index],
+                        "/Yes",
+                    )
+
+        # -------------------------------------------------------------------
+        # Page 1
+        # -------------------------------------------------------------------
+
+        # Applicant name.
         set_field(
             "Text1 PG 1",
             _full_name(
@@ -650,7 +980,7 @@ class Saws2PlusFieldAdapter:
             ),
         )
 
-        # Home / mailing address and contact information
+        # Home / mailing address and contact information.
         same_mailing = bool(
             canonical_values.get(
                 "applicant.mailing_address_same_as_home",
@@ -672,7 +1002,7 @@ class Saws2PlusFieldAdapter:
                 canonical_values.get(key),
             )
 
-        # English is already the default language on the form.
+        # English is already the default language printed on the form.
         language = str(
             canonical_values.get(
                 "applicant.preferred_language"
@@ -694,7 +1024,7 @@ class Saws2PlusFieldAdapter:
                 language,
             )
 
-        # Requested programs
+        # Programs requested by the application as a whole.
         for key, pdf_field in self.PROGRAM_FIELDS.items():
             if canonical_values.get(key) is True:
                 set_field(
@@ -702,11 +1032,14 @@ class Saws2PlusFieldAdapter:
                     "/Yes",
                 )
 
-                        # Explicit yes/no questions.
+        # Explicit Page 1 yes/no questions.
         #
-        # Only populate these if the application actually contains a boolean.
-        # Missing/unasked questions remain blank rather than being treated as No.
-        for key, (yes_field, no_field) in self.YES_NO_FIELDS.items():
+        # Missing/unasked questions remain blank rather than being treated as
+        # an implicit No.
+        for (
+            key,
+            (yes_field, no_field),
+        ) in self.YES_NO_FIELDS.items():
             value = canonical_values.get(key)
 
             if not isinstance(value, bool):
@@ -717,24 +1050,25 @@ class Saws2PlusFieldAdapter:
                 "/Yes",
             )
 
-        # Standalone checkboxes have no paired "No" field.
-        # Only check them when explicitly true.
-        for key, pdf_field in self.SINGLE_CHECKBOX_FIELDS.items():
+        # Standalone Page 1 checkboxes have no paired No destination.
+        for (
+            key,
+            pdf_field,
+        ) in self.SINGLE_CHECKBOX_FIELDS.items():
             if canonical_values.get(key) is True:
                 set_field(
                     pdf_field,
                     "/Yes",
                 )
 
-        adults: list[
-            tuple[str, str, str]
-        ] = []
+        # -------------------------------------------------------------------
+        # Build semantic household-person records.
+        # -------------------------------------------------------------------
 
-        children: list[
-            tuple[str, str, str]
-        ] = []
+        adults: list[dict[str, Any]] = []
+        children: list[dict[str, Any]] = []
 
-        # Applicant also belongs in the household-person table.
+        # The primary applicant also belongs in the household table.
         applicant_name = _full_name(
             canonical_values,
             "applicant",
@@ -749,27 +1083,33 @@ class Saws2PlusFieldAdapter:
         ).strip()
 
         if applicant_name:
-            applicant_row = (
-                applicant_name,
-                "self",
-                _format_date(
-                    applicant_dob
-                ),
-            )
-
             applicant_age = _age_on_date(
                 applicant_dob
             )
 
-            (
-                children
-                if (
-                    applicant_age is not None
-                    and applicant_age < 18
-                )
-                else adults
-            ).append(applicant_row)
+            applicant_record = {
+                "name": applicant_name,
+                "relationship": "self",
+                "dob": _format_date(
+                    applicant_dob
+                ),
+                "raw_dob": applicant_dob,
+                "prefix": "applicant.household",
+            }
 
+            if (
+                applicant_age is not None
+                and applicant_age < 18
+            ):
+                children.append(
+                    applicant_record
+                )
+            else:
+                adults.append(
+                    applicant_record
+                )
+
+        # Additional household members.
         index = 0
 
         while (
@@ -780,73 +1120,279 @@ class Saws2PlusFieldAdapter:
                 f"household.members.{index}"
             )
 
-            member = (
-                _full_name(
+            dob = str(
+                canonical_values.get(
+                    f"{prefix}.date_of_birth"
+                )
+                or ""
+            ).strip()
+
+            age = _age_on_date(
+                dob
+            )
+
+            record = {
+                "name": _full_name(
                     canonical_values,
                     prefix,
                     last_first=True,
                 ),
-                str(
+                "relationship": str(
                     canonical_values.get(
                         f"{prefix}.relationship_to_applicant"
                     )
                     or ""
                 ),
-                str(
-                    canonical_values.get(
-                        f"{prefix}.date_of_birth"
-                    )
-                    or ""
+                "dob": _format_date(
+                    dob
                 ),
-            )
+                "raw_dob": dob,
+                "prefix": prefix,
+            }
 
-            age = _age_on_date(
-                member[2]
-            )
-
-            member = (
-                member[0],
-                member[1],
-                _format_date(
-                    member[2]
-                ),
-            )
-
-            (
-                children
-                if age is not None and age < 18
-                else adults
-            ).append(member)
+            if (
+                age is not None
+                and age < 18
+            ):
+                children.append(
+                    record
+                )
+            else:
+                adults.append(
+                    record
+                )
 
             index += 1
 
-        for row, member in zip(
+        # -------------------------------------------------------------------
+        # Page 3 — adult household rows
+        # -------------------------------------------------------------------
+
+        for row, person in zip(
             self.ADULT_ROWS,
             adults,
         ):
-            for field_name, value in zip(
-                row,
-                member,
-            ):
-                set_field(
-                    field_name,
-                    value,
+            prefix = str(
+                person["prefix"]
+            )
+
+            # Primary applicant fields use applicant.household.* while
+            # additional adults use household.members.N.adult.*.
+            if prefix == "applicant.household":
+                details_prefix = prefix
+            else:
+                details_prefix = (
+                    f"{prefix}.adult"
                 )
 
-        for row, member in zip(
+            set_field(
+                row["name"],
+                person["name"],
+            )
+
+            set_field(
+                row["relationship"],
+                person["relationship"],
+            )
+
+            set_field(
+                row["dob"],
+                person["dob"],
+            )
+
+            set_field(
+                row["sex"],
+                format_sex(
+                    canonical_values.get(
+                        f"{details_prefix}.sex"
+                    )
+                ),
+            )
+
+            # Per-person benefit participation.
+            apply_programs(
+                row,
+                prefix,
+            )
+
+            statuses = row["statuses"]
+
+            marital_status = str(
+                canonical_values.get(
+                    f"{details_prefix}.marital_status"
+                )
+                or ""
+            ).strip().lower()
+
+            marital_index = (
+                self.ADULT_STATUS_INDEX.get(
+                    marital_status
+                )
+            )
+
+            if marital_index is not None:
+                set_field(
+                    statuses[marital_index],
+                    "/Yes",
+                )
+
+            if canonical_values.get(
+                f"{details_prefix}.full_time_student"
+            ) is True:
+                set_field(
+                    statuses[
+                        self.ADULT_STATUS_INDEX[
+                            "full_time_student"
+                        ]
+                    ],
+                    "/Yes",
+                )
+
+            if canonical_values.get(
+                f"{details_prefix}.disabled"
+            ) is True:
+                set_field(
+                    statuses[
+                        self.ADULT_STATUS_INDEX[
+                            "disabled"
+                        ]
+                    ],
+                    "/Yes",
+                )
+
+            citizen = canonical_values.get(
+                f"{details_prefix}.citizen_or_national"
+            )
+
+            if isinstance(
+                citizen,
+                bool,
+            ):
+                set_field(
+                    (
+                        row["citizen_yes"]
+                        if citizen
+                        else row["citizen_no"]
+                    ),
+                    "/Yes",
+                )
+
+        # -------------------------------------------------------------------
+        # Page 4 — child household rows
+        # -------------------------------------------------------------------
+
+        for row, person in zip(
             self.CHILD_ROWS,
             children,
         ):
-            for field_name, value in zip(
-                row,
-                member,
-            ):
-                set_field(
-                    field_name,
-                    value,
+            prefix = str(
+                person["prefix"]
+            )
+
+            # A minor primary applicant currently shares the applicant
+            # household namespace. Other children use the dedicated child
+            # namespace from the TypeScript canonical model.
+            if prefix == "applicant.household":
+                details_prefix = prefix
+            else:
+                details_prefix = (
+                    f"{prefix}.child"
                 )
 
-        self.assert_safe(values)
+            set_field(
+                row["name"],
+                person["name"],
+            )
+
+            set_field(
+                row["relationship"],
+                person["relationship"],
+            )
+
+            set_field(
+                row["dob"],
+                person["dob"],
+            )
+
+            set_field(
+                row["place_of_birth"],
+                canonical_values.get(
+                    f"{details_prefix}.place_of_birth"
+                ),
+            )
+
+            set_field(
+                row["sex"],
+                format_sex(
+                    canonical_values.get(
+                        f"{details_prefix}.sex"
+                    )
+                ),
+            )
+
+            # Per-person benefit participation.
+            apply_programs(
+                row,
+                prefix,
+            )
+
+            statuses = row["statuses"]
+
+            # Parent-status checkboxes.
+            child_status_keys = {
+                "parent_not_in_home":
+                    "parent_status.not_in_home",
+                "parent_unemployed":
+                    "parent_status.unemployed",
+                "parent_disabled":
+                    "parent_status.disabled",
+                "parent_deceased":
+                    "parent_status.deceased",
+                "parent_none":
+                    "parent_status.none",
+                "full_time_student":
+                    "full_time_student",
+                "immunizations_up_to_date":
+                    "immunizations_up_to_date",
+            }
+
+            for (
+                status_name,
+                canonical_suffix,
+            ) in child_status_keys.items():
+                if canonical_values.get(
+                    f"{details_prefix}.{canonical_suffix}"
+                ) is True:
+                    set_field(
+                        statuses[
+                            self.CHILD_STATUS_INDEX[
+                                status_name
+                            ]
+                        ],
+                        "/Yes",
+                    )
+
+            citizen = canonical_values.get(
+                f"{details_prefix}.citizen_or_national"
+            )
+
+            if isinstance(
+                citizen,
+                bool,
+            ):
+                set_field(
+                    (
+                        row["citizen_yes"]
+                        if citizen
+                        else row["citizen_no"]
+                    ),
+                    "/Yes",
+                )
+
+        # Final defensive check immediately before returning PDF destinations.
+        self.assert_safe(
+            values
+        )
 
         return values
 
