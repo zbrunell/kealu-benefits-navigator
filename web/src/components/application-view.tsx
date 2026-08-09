@@ -47,6 +47,13 @@ export default function ApplicationView({
   onBack,
 }: ApplicationViewProps) {
   const [step, setStep] = useState<ApplicationStep>("programs");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const [draftUrl, setDraftUrl] =
+    useState<string | null>(null);
+
+  const [generationError, setGenerationError] =
+    useState<string | null>(null);
 
   const [applicationData, setApplicationData] =
   useState<Saws2PlusApplicationData>(() => {
@@ -175,21 +182,55 @@ export default function ApplicationView({
     }));
   }
 
-  async function handleGenerateApplication() {
-    const response = await fetch(`/api/workflow/${runId}/draft`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+async function handleGenerateApplication() {
+  setIsGenerating(true);
+  setGenerationError(null);
+  setDraftUrl(null);
+
+  try {
+    const response = await fetch(
+      `/api/workflow/${runId}/draft`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          applicationData,
+        }),
       },
-      body: JSON.stringify({
-        applicationData,
-      }),
-    });
+    );
 
-    const result = await response.json();
+    const result = (
+      await response.json()
+    ) as {
+      draftUrl?: string;
+      error?: string;
+    };
 
-    console.log(result);
+    if (
+      !response.ok
+      || !result.draftUrl
+    ) {
+      throw new Error(
+        result.error
+        ?? "Failed to generate application draft.",
+      );
+    }
+
+    setDraftUrl(
+      result.draftUrl,
+    );
+  } catch (error) {
+    setGenerationError(
+      error instanceof Error
+        ? error.message
+        : "Failed to generate application draft.",
+    );
+  } finally {
+    setIsGenerating(false);
   }
+}
 
   function updateHouseholdMember<K extends keyof HouseholdMember>(
     memberId: string,
@@ -283,16 +324,58 @@ export default function ApplicationView({
               </button>
 
               <button
-                type="button"
-                onClick={handleGenerateApplication}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                Generate application
-              </button>
-            </div>
-          </div>
+              type="button"
+              onClick={handleGenerateApplication}
+              disabled={isGenerating}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isGenerating
+                ? "Generating…"
+                : "Generate application"}
+            </button>
+            {generationError && (
+  <p
+    className="mt-4 text-sm text-red-700"
+    role="alert"
+  >
+        {generationError}
+      </p>
+    )}
+
+    {draftUrl && (
+      <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
+        <p className="text-sm font-medium text-green-900">
+          Your partially prefilled SAWS 2 PLUS draft is ready.
+        </p>
+
+        <p className="mt-1 text-sm text-green-800">
+          Review every page and manually complete sensitive or missing
+          fields before signing.
+        </p>
+
+        <div className="mt-3 flex flex-wrap gap-3">
+          <a
+            href={draftUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
+          >
+            Open draft
+          </a>
+
+          <a
+            href={`${draftUrl}?download=1`}
+            className="rounded-lg border border-green-300 bg-white px-4 py-2 text-sm font-medium text-green-800 hover:bg-green-100"
+          >
+            Download draft
+          </a>
         </div>
-      );
+      </div>
+    )}
+                </div>
+              </div>
+            </div>
+          );
 
     case "programs":
     default:

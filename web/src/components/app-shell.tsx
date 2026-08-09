@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ChatInterface from "./chat-interface";
 import PhaseTracker from "./phase-tracker";
 import ReportView from "./report-view";
@@ -131,17 +131,60 @@ export default function AppShell({
   initialRunId,
   initialReport,
 }: AppShellProps) {
-  const [view, setView] = useState<View>(
-    process.env.NODE_ENV === "development" ? "report" : initialView,
-  );
+const [view, setView] = useState<View>(
+  process.env.NODE_ENV === "development" ? "report" : initialView,
+);
 
-  const [runId, setRunId] = useState<string | undefined>(
-    process.env.NODE_ENV === "development" ? "mock-run" : initialRunId,
-  );
+const [runId, setRunId] = useState<string | undefined>(
+  initialRunId,
+);
 
-  const [report, setReport] = useState<ReportPayload | undefined>(
-    process.env.NODE_ENV === "development" ? MOCK_REPORT : initialReport,
-  );
+const [report, setReport] = useState<ReportPayload | undefined>(
+  process.env.NODE_ENV === "development" ? MOCK_REPORT : initialReport,
+);
+useEffect(() => {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  let cancelled = false;
+
+  async function createMockSession() {
+    try {
+      const response = await fetch("/api/dev/mock-session", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to create mock session (${response.status})`,
+        );
+      }
+
+      const data = (await response.json()) as {
+        runId?: string;
+      };
+
+      if (!data.runId) {
+        throw new Error(
+          "Mock session response did not include a runId.",
+        );
+      }
+
+      if (!cancelled) {
+        setRunId(data.runId);
+      }
+    } catch (error) {
+      console.error("Failed to initialize mock session:", error);
+    }
+  }
+
+  void createMockSession();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   const sawsRecommendation = report?.application.recommendations.find(
     (application) => application.formId === "CA_SAWS_2_PLUS",

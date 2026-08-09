@@ -335,13 +335,49 @@ describe('generateDraft()', () => {
       JSON.stringify(applicationData),
     );
 
-    expect(stdinPayload).toEqual({
-      args: {
-        state: 'CA',
-        application_data: expectedApplicationData,
-      },
-      workflow_output: 'output',
-      output_dir: '/tmp/.workforce-drafts/test-run-args',
-    });
+    expect(
+  stdinPayload.args.state,
+).toBe('CA');
+
+expect(
+  stdinPayload.args.application_data,
+).toEqual(
+  expectedApplicationData,
+);
+
+expect(
+  stdinPayload.args.application_field_plan,
+).toEqual(
+  expect.arrayContaining([
+    {
+      key:
+        'applicant.first_name',
+      value:
+        'Test',
+    },
+    {
+      key:
+        'applicant.last_name',
+      value:
+        'Applicant',
+    },
+    {
+      key:
+        'programs.medi_cal',
+      value:
+        true,
+    },
+  ]),
+);
+
+      expect(
+        stdinPayload.workflow_output,
+      ).toBe('output');
+
+      expect(
+        stdinPayload.output_dir,
+      ).toBe(
+        '/tmp/.workforce-drafts/test-run-args',
+      );
   });
 });

@@ -42,7 +42,6 @@ _CA_SAWS1_FIELDS: dict[str, str] = {
     "phone_home": "applicant_phone_home",
     "phone_alternate": "applicant_phone_alternate",
     "email": "applicant_email",
-    "ssn": "applicant_ssn",
     "date": "applicant_date",
     "language_speak": "applicant_language_speak",
     "language_read": "applicant_language_read",
@@ -303,19 +302,23 @@ def generate_application(
 ) -> tuple[Path, str]:
     """Generate a benefit application PDF.
 
-    Tries to fill an official state form first. Falls back to the
-    worksheet-style PDF if no official form is available.
-
-    Returns
-    -------
-    (path, form_type) where form_type is ``"official"`` or ``"worksheet"``.
+    Structured California application data uses the official SAWS 2 PLUS
+    generator. Legacy callers without an application field plan retain the
+    existing state-form/worksheet fallback behavior.
     """
-    # Try official form first
+    state = str(args.get("state") or "").upper()
+    field_plan = args.get("application_field_plan")
+
+    if state == "CA" and isinstance(field_plan, list) and field_plan:
+        from benefits_navigator.pdf_generator import generate_application_pdf
+
+        path = generate_application_pdf(args, workflow_output, output_dir)
+        return path, "official"
+
     path = fill_official_form(args, workflow_output, output_dir)
     if path is not None:
         return path, "official"
 
-    # Fall back to worksheet
     from benefits_navigator.pdf_generator import generate_application_pdf
 
     path = generate_application_pdf(args, workflow_output, output_dir)

@@ -15,79 +15,112 @@
 import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import path from 'path';
-import { resolveKvr } from '@/lib/kvr-checker';
-import type { HouseholdVars } from '@/types/session';
-import type { Saws2PlusApplicationData } from "@/types/application";
 
+import { buildApplicationFieldPlan } from '@/lib/application-mapper';
+import { resolveKvr } from '@/lib/kvr-checker';
+import type { Saws2PlusApplicationData } from '@/types/application';
+import type { HouseholdVars } from '@/types/session';
 
 /** Result of a successful draft generation. */
 export interface DraftResult {
   /** Absolute filesystem path to the generated PDF. */
   path: string;
+
   /** "official" for a real state AcroForm PDF; "worksheet" for the fallback. */
   formType: 'official' | 'worksheet';
 }
 
 /**
- * Locate the Python executable to use for spawning the draft helper.
+ * Locate the Python executable used to spawn the draft helper.
  *
  * Resolution order:
- * 1. `process.env.KVR_PYTHON` — explicit operator override.
- * 2. `dirname(resolveKvr())/python` — Python alongside KVR in the venv's bin/.
- * 3. `dirname(resolveKvr())/python3` — fallback for venvs that only symlink python3.
- * 4. null — log a structured warning; draft generation is skipped.
+ * 1. `KVR_PYTHON` explicit override.
+ * 2. Currently active virtual environment.
+ * 3. Project-local `.venv`.
+ * 4. Python alongside the resolved KVR executable.
+ * 5. null — generation is skipped and a structured warning is logged.
  */
 export function resolvePythonExec(): string | null {
-  // 1. Explicit override
+  // 1. Explicit operator override.
   const envPython = process.env.KVR_PYTHON;
+
   if (envPython && existsSync(envPython)) {
     return envPython;
   }
 
-  const kvrPath = resolveKvr();
-  if (!kvrPath) {
-    console.log(
-      JSON.stringify({
-        level: 'warn',
-        event: 'python_exec_not_found',
-        reason: 'kvr binary not found; cannot derive Python path',
-      }),
-    );
-    return null;
+  // 2. Active virtual environment.
+  const virtualEnv = process.env.VIRTUAL_ENV;
+
+  if (virtualEnv) {
+    const candidates = [
+      path.join(virtualEnv, 'bin', 'python'),
+      path.join(virtualEnv, 'bin', 'python3'),
+    ];
+
+    for (const candidate of candidates) {
+      if (existsSync(candidate)) {
+        return candidate;
+      }
+    }
   }
 
-  const binDir = path.dirname(kvrPath);
+  // 3. Project-local virtual environment.
+  //
+  // In normal Next.js development, process.cwd() is `web/`, so the Python
+  // project root is one directory above it.
+  const projectVenvCandidates = [
+    path.resolve(process.cwd(), '..', '.venv', 'bin', 'python'),
+    path.resolve(process.cwd(), '..', '.venv', 'bin', 'python3'),
+    path.resolve(process.cwd(), '.venv', 'bin', 'python'),
+    path.resolve(process.cwd(), '.venv', 'bin', 'python3'),
+  ];
 
-  // 2. python alongside kvr in venv bin/
-  const python = path.join(binDir, 'python');
-  if (existsSync(python)) return python;
+  for (const candidate of projectVenvCandidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
 
-  // 3. python3 fallback
-  const python3 = path.join(binDir, 'python3');
-  if (existsSync(python3)) return python3;
+  // 4. Python alongside KVR, if KVR itself is installed in a venv.
+  const kvrPath = resolveKvr();
+
+  if (kvrPath) {
+    const binDir = path.dirname(kvrPath);
+
+    const candidates = [
+      path.join(binDir, 'python'),
+      path.join(binDir, 'python3'),
+    ];
+
+    for (const candidate of candidates) {
+      if (existsSync(candidate)) {
+        return candidate;
+      }
+    }
+  }
 
   console.log(
     JSON.stringify({
       level: 'warn',
       event: 'python_exec_not_found',
-      reason: 'no python/python3 found in kvr bin directory',
-      binDir,
+      reason:
+        'no configured, virtualenv, project-local, or KVR-adjacent Python executable found',
     }),
   );
+
   return null;
 }
 
 /**
  * Spawn the Python draft helper to generate a pre-filled benefit application PDF.
  *
- * Returns a DraftResult on success, or null on any failure (Python not found,
- * subprocess error, JSON parse failure, timeout). Errors are logged with
- * structured JSON; no PII is logged.
+ * Returns a DraftResult on success, or null on any failure.
  *
- * @param runId         UUID of the workflow run (for structured logs only).
- * @param vars          Household variables (state, county, zip, etc.).
- * @param workflowOutput  Concatenated workflow markdown output for checkbox determination.
- * @param draftsBase    Base directory for draft PDFs (`.workforce-drafts/`).
+ * @param runId Workflow run UUID, used only for structured logs.
+ * @param vars Household variables such as state, county, and ZIP code.
+ * @param workflowOutput Concatenated workflow output.
+ * @param applicationData Structured application state.
+ * @param draftsBase Base directory for generated drafts.
  */
 export async function generateDraft(
   runId: string,
@@ -97,6 +130,7 @@ export async function generateDraft(
   draftsBase: string,
 ): Promise<DraftResult | null> {
   const pythonExec = resolvePythonExec();
+
   if (!pythonExec) {
     console.log(
       JSON.stringify({
@@ -106,23 +140,44 @@ export async function generateDraft(
         reason: 'python exec not found',
       }),
     );
+
     return null;
   }
 
   const outputDir = path.join(draftsBase, runId);
-const stdinPayload = JSON.stringify({
-  args: {
-    ...vars,
-    application_data: applicationData,
-  },
-  workflow_output: workflowOutput,
-  output_dir: outputDir,
-});
+
+  const applicationFieldPlan = buildApplicationFieldPlan(applicationData, {
+    county: vars.county,
+  });
+
+  const stdinPayload = JSON.stringify({
+    args: {
+      ...vars,
+      application_data: applicationData,
+      application_field_plan: applicationFieldPlan,
+    },
+    workflow_output: workflowOutput,
+    output_dir: outputDir,
+  });
+
+  /*
+   * Force the subprocess to import Python modules from this repository
+   * instead of an editable installation pointing at another KVR worktree.
+   *
+   * Normally process.cwd() is `web/`.
+   */
+  const repoRoot = path.resolve(process.cwd(), '..');
+  const localPythonSrc = path.join(repoRoot, 'src');
+
+  const pythonPath = process.env.PYTHONPATH
+    ? `${localPythonSrc}${path.delimiter}${process.env.PYTHONPATH}`
+    : localPythonSrc;
 
   const startMs = Date.now();
 
   return new Promise<DraftResult | null>((resolve) => {
     const controller = new AbortController();
+
     const timeoutHandle = setTimeout(() => {
       controller.abort();
     }, 30_000);
@@ -136,7 +191,11 @@ const stdinPayload = JSON.stringify({
       {
         signal: controller.signal,
         shell: false,
-        env: { ...process.env, PYTHONUNBUFFERED: '1' },
+        env: {
+          ...process.env,
+          PYTHONUNBUFFERED: '1',
+          PYTHONPATH: pythonPath,
+        },
       },
     );
 
@@ -153,6 +212,7 @@ const stdinPayload = JSON.stringify({
 
     child.on('error', (err) => {
       clearTimeout(timeoutHandle);
+
       console.log(
         JSON.stringify({
           level: 'warn',
@@ -162,16 +222,18 @@ const stdinPayload = JSON.stringify({
           error: err.message,
         }),
       );
+
       resolve(null);
     });
 
     child.on('close', (code) => {
       clearTimeout(timeoutHandle);
+
       const elapsedMs = Date.now() - startMs;
 
       if (code !== 0) {
-        // Truncate stderr to 512 chars — no user data in logs
         const snippet = stderr.slice(0, 512).replace(/\n/g, ' ');
+
         console.log(
           JSON.stringify({
             level: 'warn',
@@ -182,6 +244,7 @@ const stdinPayload = JSON.stringify({
             stderr_snippet: snippet,
           }),
         );
+
         resolve(null);
         return;
       }
@@ -199,15 +262,37 @@ const stdinPayload = JSON.stringify({
               level: 'warn',
               event: 'draft_generation_failed',
               runId,
-              reason: result.error ?? 'missing path or form_type in output',
+              reason:
+                result.error ??
+                'missing path or form_type in output',
               elapsed_ms: elapsedMs,
             }),
           );
+
           resolve(null);
           return;
         }
 
-        const formType = result.form_type as 'official' | 'worksheet';
+        if (
+          result.form_type !== 'official' &&
+          result.form_type !== 'worksheet'
+        ) {
+          console.log(
+            JSON.stringify({
+              level: 'warn',
+              event: 'draft_generation_failed',
+              runId,
+              reason: `unexpected form_type: ${result.form_type}`,
+              elapsed_ms: elapsedMs,
+            }),
+          );
+
+          resolve(null);
+          return;
+        }
+
+        const formType = result.form_type;
+
         console.log(
           JSON.stringify({
             level: 'info',
@@ -218,7 +303,11 @@ const stdinPayload = JSON.stringify({
             success: true,
           }),
         );
-        resolve({ path: result.path, formType });
+
+        resolve({
+          path: result.path,
+          formType,
+        });
       } catch {
         console.log(
           JSON.stringify({
@@ -229,6 +318,7 @@ const stdinPayload = JSON.stringify({
             elapsed_ms: elapsedMs,
           }),
         );
+
         resolve(null);
       }
     });

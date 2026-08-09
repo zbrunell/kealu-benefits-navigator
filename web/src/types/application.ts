@@ -62,6 +62,58 @@ export interface ApplicationPrefill {
   existingBenefits: string;
 }
 
+export interface ExpeditedServiceInformation {
+  grossIncomeUnder150AndResourcesUnder100?: boolean;
+
+  incomeAndResourcesLessThanHousingCosts?: boolean;
+
+  migrantOrSeasonalFarmWorker?: boolean;
+
+  evictionNotice?: boolean;
+
+  utilitiesShutOffOrNotice?: boolean;
+
+  foodRunsOutWithinThreeDays?: boolean;
+
+  needsEssentialClothing?: boolean;
+
+  needsTransportationForEmergencyNeeds?: boolean;
+}
+
+export interface PersonalEmergencyInformation {
+  hasEmergency?: boolean;
+
+  pregnancy?: boolean;
+
+  immediateMedicalNeed?: boolean;
+
+  childAbuse?: boolean;
+
+  domesticAbuse?: boolean;
+
+  elderAbuse?: boolean;
+
+  otherEmergency?: boolean;
+}
+
+export interface PregnancyInformation {
+  anyonePregnant?: boolean;
+
+  presumptiveEligibilityCard?: boolean;
+}
+
+export interface ApplicationPreferences {
+  emailApplicationInformation?: boolean;
+
+  emailCaseMessages?: boolean;
+
+  needsDisabilityApplicationHelp?: boolean;
+
+  homeless?: boolean;
+
+  deafOrHardOfHearing?: boolean;
+}
+
 export interface Saws2PlusApplicationData {
   selectedPrograms: Saws2PlusProgram[];
   applicant: ApplicantInformation;
@@ -69,6 +121,13 @@ export interface Saws2PlusApplicationData {
   annualHouseholdIncome?: number;
   incomeType: string;
   existingBenefits: string;
+  preferences: ApplicationPreferences;
+
+  expeditedService: ExpeditedServiceInformation;
+
+  pregnancy: PregnancyInformation;
+
+  personalEmergency: PersonalEmergencyInformation;
 }
 
 export const EMPTY_ADDRESS: ApplicationAddress = {
@@ -99,4 +158,37 @@ export const EMPTY_APPLICATION_DATA: Saws2PlusApplicationData = {
   annualHouseholdIncome: undefined,
   incomeType: "",
   existingBenefits: "",
+  preferences: {
+  emailApplicationInformation: undefined,
+  emailCaseMessages: undefined,
+  needsDisabilityApplicationHelp: undefined,
+  homeless: undefined,
+  deafOrHardOfHearing: undefined,
+},
+
+expeditedService: {
+  grossIncomeUnder150AndResourcesUnder100: undefined,
+  incomeAndResourcesLessThanHousingCosts: undefined,
+  migrantOrSeasonalFarmWorker: undefined,
+  evictionNotice: undefined,
+  utilitiesShutOffOrNotice: undefined,
+  foodRunsOutWithinThreeDays: undefined,
+  needsEssentialClothing: undefined,
+  needsTransportationForEmergencyNeeds: undefined,
+},
+
+pregnancy: {
+  anyonePregnant: undefined,
+  presumptiveEligibilityCard: undefined,
+},
+
+personalEmergency: {
+  hasEmergency: undefined,
+  pregnancy: undefined,
+  immediateMedicalNeed: undefined,
+  childAbuse: undefined,
+  domesticAbuse: undefined,
+  elderAbuse: undefined,
+  otherEmergency: undefined,
+}
 };

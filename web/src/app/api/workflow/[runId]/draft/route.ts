@@ -112,11 +112,20 @@ export async function POST(
 ): Promise<Response> {
   const { runId } = await params;
   const { sessionStore } = await import('@/lib/session-store');
+  const { getDraftsBase } = await import('@/lib/report-assembler');
+  const { generateDraft } = await import('@/lib/draft-generator');
 
 const rawCookie = req.headers.get('cookie') ?? '';
-const sessionCookieMatch = rawCookie.match(/(?:^|;\s*)session=([^;]+)/);
+
+const sessionCookieMatch = rawCookie.match(
+  /(?:^|;\s*)session=([^;]+)/,
+);
+
 const cookieValue = sessionCookieMatch?.[1];
-const session = cookieValue ? sessionStore.get(cookieValue) : null;
+
+const session = cookieValue
+  ? sessionStore.get(cookieValue)
+  : null;
 
 if (!session || session.runId !== runId) {
   return NextResponse.json(
@@ -125,44 +134,108 @@ if (!session || session.runId !== runId) {
   );
 }
 
-let body: { applicationData: Saws2PlusApplicationData };
+let body: {
+  applicationData?: Saws2PlusApplicationData;
+};
 
 try {
   body = await req.json();
 } catch {
   return NextResponse.json(
-      { error: 'Request body must be valid JSON.' },
-      { status: 400 },
-    );
-  }
-  const applicationData = body.applicationData;
-
-  if (
-    typeof body !== 'object' ||
-    body === null ||
-    !('applicationData' in body) ||
-    !body.applicationData
-  ) {
-    return NextResponse.json(
-      { error: 'applicationData is required.' },
-      { status: 400 },
-    );
-  }
-if (!session.reportContent) {
-  return NextResponse.json(
-    { error: "No completed workflow report found for this session." },
-    { status: 409 },
+    {
+      error: 'Request body must be valid JSON.',
+    },
+    {
+      status: 400,
+    },
   );
 }
+
+const applicationData = body.applicationData;
+
+if (
+  !applicationData
+  || typeof applicationData !== 'object'
+) {
   return NextResponse.json(
+    {
+      error: 'applicationData is required.',
+    },
+    {
+      status: 400,
+    },
+  );
+}
+
+if (!session.reportContent) {
+  return NextResponse.json(
+    {
+      error:
+        'No completed workflow report found for this session.',
+    },
+    {
+      status: 409,
+    },
+  );
+}
+
+const state = session.vars.state
+  ?.trim()
+  .toUpperCase();
+
+if (state !== 'CA') {
+  return NextResponse.json(
+    {
+      error:
+        'SAWS 2 PLUS draft generation is only available for California.',
+    },
+    {
+      status: 422,
+    },
+  );
+}
+
+const result = await generateDraft(
+  runId,
+  session.vars,
+  JSON.stringify(session.reportContent),
+  applicationData,
+  getDraftsBase(),
+);
+
+if (!result) {
+  return NextResponse.json(
+    {
+      error:
+        'Failed to generate application draft.',
+    },
+    {
+      status: 500,
+      headers: {
+        'X-Correlation-Id': runId,
+      },
+    },
+  );
+}
+
+sessionStore.update(
+  session.sessionId,
+  {
+    draftPath: result.path,
+    draftFormType: result.formType,
+  },
+);
+
+return NextResponse.json(
   {
     success: true,
     runId,
-    applicant: applicationData.applicant,
-    householdMemberCount: applicationData.householdMembers.length,
+    formType: result.formType,
+    draftUrl:
+      `/api/workflow/${runId}/draft`,
   },
   {
-    status: 200,
+    status: 201,
     headers: {
       'X-Correlation-Id': runId,
       },

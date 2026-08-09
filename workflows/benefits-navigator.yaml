@@ -614,6 +614,9 @@ phases:
       ## Application Directory
       <!-- FILL: table with Program | Apply Online URL | Phone | Nearest Office + Hours -->
 
+      ## Structured Application Output
+      <!-- FILL: exactly one fenced JSON block following the required application-output schema. Do not add prose inside this section outside the JSON block. -->
+
       ## Income Cliff Warnings
       <!-- FILL: specific dollar amounts where eligibility changes, with annual benefit value at risk -->
 
@@ -662,7 +665,124 @@ phases:
 
       **Step 8:** Calculate estimated monthly/annual savings from all eligible programs.
 
-      **Step 9:** Replace every `<!-- FILL: ... -->` placeholder in STATUS.md.
+            **Step 9:** Complete the `## Structured Application Output` section.
+
+      This section is consumed programmatically. Its body MUST contain exactly
+      one fenced JSON block and no explanatory text outside that JSON block.
+      Continue completing later STATUS.md sections normally.
+
+      Determine whether a supported application form is appropriate using:
+      - the household state;
+      - the verified eligibility conclusions;
+      - the recommended actions;
+      - any unresolved information identified by eligibility validation.
+
+      Currently supported form:
+
+      - California: `CA_SAWS_2_PLUS`
+        - Medi-Cal
+        - CalFresh
+        - CalWORKs
+
+      For California households, include one application object for
+      `CA_SAWS_2_PLUS`.
+
+      For households outside California, return an empty `applications` array.
+      Do not recommend SAWS 2 PLUS for a non-California household.
+
+      Use exactly this top-level schema:
+
+      ```json
+      {
+        "schemaVersion": 1,
+        "applications": [
+          {
+            "formId": "CA_SAWS_2_PLUS",
+            "recommended": true,
+            "programs": [
+              {
+                "program": "medi_cal",
+                "status": "likely_eligible",
+                "recommendedToApply": true,
+                "reasons": [
+                  "Household income is below the verified Medi-Cal limit."
+                ],
+                "missingInformation": [],
+                "confidence": 0.9
+              },
+              {
+                "program": "calfresh",
+                "status": "possibly_eligible",
+                "recommendedToApply": true,
+                "reasons": [
+                  "Income appears within the verified CalFresh screening range."
+                ],
+                "missingInformation": [
+                  "Monthly housing and utility expenses"
+                ],
+                "confidence": 0.7
+              },
+              {
+                "program": "calworks",
+                "status": "unlikely_eligible",
+                "recommendedToApply": false,
+                "reasons": [
+                  "No eligible dependent child was identified."
+                ],
+                "missingInformation": [],
+                "confidence": 0.95
+              }
+            ]
+          }
+        ]
+      }
+      ```
+
+      Requirements:
+
+      - Return valid JSON.
+      - Do not include JSON comments or trailing commas.
+      - `schemaVersion` must be `1`.
+      - `applications` must be an array.
+      - For a California household, include exactly one application object.
+      - For a non-California household, use:
+        `"applications": []`
+      - The California application object must use:
+        `"formId": "CA_SAWS_2_PLUS"`
+      - The California application must include exactly three program objects.
+      - Include each supported program exactly once:
+        - `medi_cal`
+        - `calfresh`
+        - `calworks`
+      - Allowed status values:
+        - `likely_eligible`
+        - `possibly_eligible`
+        - `unlikely_eligible`
+        - `insufficient_information`
+      - `recommendedToApply` should normally be true for:
+        - `likely_eligible`
+        - `possibly_eligible`
+      - `recommendedToApply` must be false for `unlikely_eligible`.
+      - For `insufficient_information`, recommend applying only when applying is
+        still a reasonable next action despite the unresolved information.
+      - Set the application-level `recommended` field to true when at least one
+        program has `recommendedToApply: true`.
+      - Every recommendation must be grounded in the Eligibility Validation and
+        Evidence Verification outputs.
+      - Do not classify a program as likely eligible when the eligibility phase
+        classified it as ineligible.
+      - Do not convert missing facts into assumptions.
+      - Put unresolved facts in `missingInformation`.
+      - `reasons` must contain at least one concise factual reason.
+      - `confidence` must be a number between `0` and `1`.
+      - Confidence represents confidence in the screening recommendation, not
+        the probability of government approval.
+      - Do not include Social Security numbers, immigration document numbers,
+        signatures, bank account numbers, or other sensitive identifiers.
+      - This output is a screening and workflow recommendation, not an official
+        eligibility determination.
+
+      **Step 10:** Replace every `<!-- FILL: ... -->` placeholder in STATUS.md.
 
       ---
 
@@ -699,6 +819,9 @@ phases:
             - "## Prioritized Action Plan"
             - "## Document Checklist"
             - "## Application Directory"
+            - "## Structured Application Output"
+            - "\"schemaVersion\": 1"
+            - "\"applications\":"
             - "## Income Cliff Warnings"
             - "## Contingency Plans"
             - "## Estimated Value Summary"
