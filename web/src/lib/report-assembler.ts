@@ -314,8 +314,18 @@ function parseApplicationRecommendations(
 function extractStructuredApplicationOutput(
   content: string,
 ): ApplicationRecommendation[] {
+  /*
+   * The section body runs to the next `## ` heading, or to the end of the
+   * document when this is the final section.
+   *
+   * The terminator must not be a bare `$`: under the `m` flag `$` is
+   * line-anchored, so a lazy body would stop at the first line break and
+   * capture only the opening ```json fence — leaving the JSON block
+   * unparseable for every real Action Plan. `$(?![\s\S])` anchors to true
+   * end-of-document instead. `\n##\s` keeps `###` subsections inside the body.
+   */
   const sectionMatch = content.match(
-    /^##\s+Structured Application Output\s*\n([\s\S]*?)(?=^##\s|\s*$)/m,
+    /^##\s+Structured Application Output\s*\n([\s\S]*?)(?=\n##\s|$(?![\s\S]))/m,
   );
 
   if (!sectionMatch) {

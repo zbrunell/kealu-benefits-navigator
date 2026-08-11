@@ -310,9 +310,9 @@ def generate_application(
     field_plan = args.get("application_field_plan")
 
     if state == "CA" and isinstance(field_plan, list) and field_plan:
-        from benefits_navigator.pdf_generator import generate_application_pdf
+        from benefits_navigator.pdf_generator import generate_saws2_plus_pdf
 
-        path = generate_application_pdf(args, workflow_output, output_dir)
+        path = generate_saws2_plus_pdf(args, workflow_output, output_dir)
         return path, "official"
 
     path = fill_official_form(args, workflow_output, output_dir)

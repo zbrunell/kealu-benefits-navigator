@@ -19,10 +19,10 @@
  * retained only for backward compatibility with the MCP-style conversation flow.
  */
 
-import type { HouseholdVars, ChatMessage } from '@/types/session';
+import type { ChatMessage, SessionVars } from '@/types/session';
 
-/** Partial HouseholdVars plus the extra `annual_income` runtime variable. */
-type RawVars = Partial<HouseholdVars> & { annual_income?: string };
+/** Household vars as stored on the session (YAML vars + extra runtime vars). */
+type RawVars = SessionVars;
 
 /** All supported intake field keys. */
 export type IntakeFieldKey =

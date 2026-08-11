@@ -1,3 +1,4 @@
+import { householdSizeFromMembers } from "@/lib/household";
 import type { Saws2PlusApplicationData } from "@/types/application";
 
 export type ApplicationFieldValue = string | boolean | number | null;
@@ -406,6 +407,15 @@ function mapFinancialInformation(
   application: Saws2PlusApplicationData,
 ): ApplicationFieldPlanEntry[] {
   return [
+    /**
+     * Household size is derived, not collected: the primary applicant plus every
+     * household member row currently entered. Because it is computed here rather
+     * than stored, it stays correct when members are added, removed, or edited.
+     */
+    entry(
+      "household.size",
+      householdSizeFromMembers(application.householdMembers.length),
+    ),
     entry(
       "household.annual_income",
       application.annualHouseholdIncome ?? null,

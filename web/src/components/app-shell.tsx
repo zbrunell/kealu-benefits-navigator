@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ChatInterface from "./chat-interface";
 import PhaseTracker from "./phase-tracker";
 import ReportView from "./report-view";
@@ -13,100 +13,6 @@ import ApplicationView from "./application-view";
 import type { ChatMessage } from "@/types/session";
 import type { IntakeField } from "@/lib/intake-flow";
 import type { ReportPayload } from "@/lib/report-assembler";
-
-const MOCK_REPORT: ReportPayload = {
-  sections: [
-    {
-      phaseName: "benefits-research",
-      displayName: "Benefits Research",
-      content: "## STATUS: COMPLETE\n\nMock benefits research output.",
-      expanded: false,
-    },
-    {
-      phaseName: "insurance-research",
-      displayName: "Insurance Research",
-      content: "## STATUS: COMPLETE\n\nMock insurance research output.",
-      expanded: false,
-    },
-    {
-      phaseName: "evidence-verification",
-      displayName: "Evidence Verification",
-      content: "## STATUS: COMPLETE\n\nMock verified evidence.",
-      expanded: false,
-    },
-    {
-      phaseName: "eligibility-validation",
-      displayName: "Eligibility Validation",
-      content: "## STATUS: COMPLETE\n\nMock eligibility results.",
-      expanded: false,
-    },
-    {
-      phaseName: "action-plan",
-      displayName: "Action Plan",
-      content: "## STATUS: COMPLETE\n\nMock action plan.",
-      expanded: true,
-    },
-  ],
-  bottomLine:
-    "Your household should apply for Medi-Cal and CalFresh. Additional housing expense information is needed for the CalFresh determination.",
-  application: {
-    available: true,
-    formId: "CA_SAWS_2_PLUS",
-    formName: "SAWS 2 PLUS",
-    status: "not_started",
-    recommendedPrograms: ["medi_cal", "calfresh"],
-    recommendations: [
-      {
-        formId: "CA_SAWS_2_PLUS",
-        recommended: true,
-        programs: [
-          {
-            program: "medi_cal",
-            status: "likely_eligible",
-            recommendedToApply: true,
-            reasons: ["Household income is below the verified Medi-Cal limit."],
-            missingInformation: [],
-            confidence: 0.92,
-          },
-          {
-            program: "calfresh",
-            status: "possibly_eligible",
-            recommendedToApply: true,
-            reasons: [
-              "Income appears within the verified CalFresh screening range.",
-            ],
-            missingInformation: [
-              "Monthly housing expenses",
-              "Monthly utility expenses",
-            ],
-            confidence: 0.72,
-          },
-          {
-            program: "calworks",
-            status: "unlikely_eligible",
-            recommendedToApply: false,
-            reasons: ["No eligible dependent child was identified."],
-            missingInformation: [],
-            confidence: 0.96,
-          },
-        ],
-      },
-    ],
-    prefill: {
-      zipCode: "90210",
-      state: "CA",
-      county: "Los Angeles",
-      city: "Beverly Hills",
-      preferredLanguage: "English",
-      householdProfile: "Two adults, both age 20.",
-      householdSize: 2,
-      householdMembers: [{ age: 20 }, { age: 20 }],
-      annualHouseholdIncome: 50000,
-      incomeType: "W-2 employee",
-      existingBenefits: "",
-    },
-  },
-};
 
 type View = "intake" | "progress" | "report" | "application";
 
@@ -131,60 +37,9 @@ export default function AppShell({
   initialRunId,
   initialReport,
 }: AppShellProps) {
-const [view, setView] = useState<View>(
-  process.env.NODE_ENV === "development" ? "report" : initialView,
-);
-
-const [runId, setRunId] = useState<string | undefined>(
-  initialRunId,
-);
-
-const [report, setReport] = useState<ReportPayload | undefined>(
-  process.env.NODE_ENV === "development" ? MOCK_REPORT : initialReport,
-);
-useEffect(() => {
-  if (process.env.NODE_ENV !== "development") {
-    return;
-  }
-
-  let cancelled = false;
-
-  async function createMockSession() {
-    try {
-      const response = await fetch("/api/dev/mock-session", {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to create mock session (${response.status})`,
-        );
-      }
-
-      const data = (await response.json()) as {
-        runId?: string;
-      };
-
-      if (!data.runId) {
-        throw new Error(
-          "Mock session response did not include a runId.",
-        );
-      }
-
-      if (!cancelled) {
-        setRunId(data.runId);
-      }
-    } catch (error) {
-      console.error("Failed to initialize mock session:", error);
-    }
-  }
-
-  void createMockSession();
-
-  return () => {
-    cancelled = true;
-  };
-}, []);
+  const [view, setView] = useState<View>(initialView);
+  const [runId, setRunId] = useState<string | undefined>(initialRunId);
+  const [report, setReport] = useState<ReportPayload | undefined>(initialReport);
 
   const sawsRecommendation = report?.application.recommendations.find(
     (application) => application.formId === "CA_SAWS_2_PLUS",

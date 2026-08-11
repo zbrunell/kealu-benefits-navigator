@@ -4,6 +4,10 @@
 //
 
 import { NextResponse } from "next/server";
+import {
+  buildHouseholdMemberPrefill,
+  parseHouseholdComposition,
+} from "@/lib/household";
 import type { ReportPayload } from "@/lib/report-assembler";
 
 /**
@@ -58,21 +62,34 @@ export async function GET(
 
   const preferredLanguage =
     locale === "es" ? "Spanish" : locale === "zh-CN" ? "Chinese" : "English";
+  /*
+   * Household size and the additional-member rows are derived from the intake
+   * household answer, never asked again. Once the applicant edits the household
+   * in the application flow, size follows the rows they entered
+   * (see householdSizeFromMembers).
+   */
+  const householdComposition = parseHouseholdComposition(
+    session?.vars.household_profile,
+  );
+
   const applicationPrefill = {
     zipCode: session?.vars.zip_code?.trim() ?? "",
+
+    /*
+     * City, state, and county were derived from the ZIP code during intake
+     * (lib/location.ts). Anything that could not be resolved stays blank so the
+     * applicant can supply it rather than being shown a guess.
+     */
+    city: session?.vars.city?.trim() ?? "",
     state: session?.vars.state?.trim() || "CA",
     county: session?.vars.county?.trim() ?? "",
-    city: "",
 
     preferredLanguage,
 
-    /*
-     * Household composition is currently stored as natural language.
-     * Preserve it for later structured parsing instead of guessing here.
-     */
+    /* The original free-text answer is retained for reference. */
     householdProfile: session?.vars.household_profile?.trim() ?? "",
-    householdSize: undefined,
-    householdMembers: [],
+    householdSize: householdComposition.size,
+    householdMembers: buildHouseholdMemberPrefill(householdComposition),
 
     annualHouseholdIncome: parseAnnualIncome(session?.vars.annual_income),
 

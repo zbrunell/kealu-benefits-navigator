@@ -17,11 +17,60 @@ import {
   TOTAL_STEPS,
 } from '@/lib/intake-flow';
 import type { IntakeFieldKey } from '@/lib/intake-flow';
-import type { Session } from '@/types/session';
+import { resolveZipLocation } from '@/lib/location';
+import type { Session, SessionVars } from '@/types/session';
 import { randomUUID } from 'crypto';
 
 const COOKIE_NAME = 'session';
 const COOKIE_MAX_AGE_SEC = SESSION_TTL_MS / 1000;
+
+/**
+ * Resolve city, state, and county from an accepted ZIP code and store them in
+ * the session vars.
+ *
+ * These three fields are derived, never asked: the report, the SAWS 2 PLUS
+ * application prefill, the canonical field plan, and the demo fixture all read
+ * them from here, so the applicant is not asked for their city, state, or
+ * county later in the application flow.
+ *
+ * The values are replaced wholesale (including with empty strings) because they
+ * belong to whichever ZIP is currently on file — a stale county from a
+ * previously-entered ZIP would be worse than a blank one. An unresolvable ZIP
+ * simply clears them; nothing is guessed.
+ */
+async function applyZipDerivedLocation(
+  sessionId: string,
+  vars: SessionVars,
+  zipCode: string,
+): Promise<SessionVars> {
+  const location = await resolveZipLocation(zipCode);
+
+  const derived: SessionVars = {
+    ...vars,
+    city: location.city,
+    state: location.state,
+    county: location.county,
+  };
+
+  sessionStore.update(sessionId, { vars: derived });
+
+  console.log(
+    JSON.stringify({
+      level: 'info',
+      event: 'zip_location_derived',
+      // No PII: the ZIP itself and the resolved names are omitted; only which
+      // fields resolved and from which source.
+      source: location.source,
+      resolved: {
+        city: location.city.length > 0,
+        state: location.state.length > 0,
+        county: location.county.length > 0,
+      },
+    }),
+  );
+
+  return derived;
+}
 
 /** Resolve the session id from the request cookie (raw header or cookie store). */
 async function resolveCookieValue(req: Request): Promise<string | undefined> {
@@ -197,6 +246,12 @@ if (!session.pendingField) {
     // Recompute tier reachability: clearing a required field drops back to Tier 1.
     const currentTier = isTier1Complete(newVars) ? Math.max(session.currentTier, 2) : 1;
     sessionStore.update(sessionId, { vars: newVars, currentTier });
+
+    // A corrected ZIP re-derives city/state/county; a cleared ZIP clears them.
+    if (key === 'zip_code') {
+      await applyZipDerivedLocation(sessionId, newVars, newVars.zip_code ?? '');
+    }
+
     session = sessionStore.get(sessionId)!;
 
     // Edit is an explicit "review my data" action — return the refreshed snapshot.
@@ -254,11 +309,18 @@ if (!session.pendingField) {
         );
       }
 
-      const updatedVars = {
+      const updatedVars: SessionVars = {
         ...session.vars,
         [pending]: parsed.value,
       };
       sessionStore.update(sessionId, { vars: updatedVars });
+
+      // Derive city/state/county as soon as the ZIP is known so no later step
+      // has to ask for them.
+      if (pending === 'zip_code') {
+        await applyZipDerivedLocation(sessionId, updatedVars, parsed.value);
+      }
+
       session = sessionStore.get(sessionId)!;
 
       // Advance to Tier 2 once all Tier 1 fields are present so the optional

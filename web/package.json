@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:demo": "E2E_MODE=1 next dev",
     "build": "next build",
     "lint": "eslint src --max-warnings=0",
     "start": "next start",

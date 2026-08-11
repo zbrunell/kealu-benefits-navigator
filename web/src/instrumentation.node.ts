@@ -12,6 +12,7 @@
 import { readdir, stat, rm } from 'fs/promises';
 import path from 'path';
 import { logStartupChecks } from '@/lib/kvr-checker';
+import { logE2EModeWarning } from '@/lib/e2e-mode';
 import { getWorkforceBase } from '@/lib/report-assembler';
 import { UUID_V4_REGEX } from './instrumentation';
 
@@ -62,6 +63,7 @@ async function sweepOrphanRunDirs(): Promise<void> {
 /** Called by register() after confirming NEXT_RUNTIME === 'nodejs'. */
 export async function initNodeRuntime(): Promise<void> {
   logStartupChecks();
+  logE2EModeWarning();
   await sweepOrphanRunDirs();
   console.log(
     JSON.stringify({

@@ -58,6 +58,28 @@ export interface HouseholdVars {
 }
 
 /**
+ * Extra runtime variables the web app collects or derives that are not part of
+ * the workflow YAML `variables:` block.
+ *
+ * - `annual_income` — asked during intake.
+ * - `city` — derived from the ZIP code alongside `state` and `county`
+ *   (see lib/location.ts). `state`/`county` are YAML variables; `city` is not,
+ *   so it lives here rather than in HouseholdVars.
+ *
+ * Both are passed through to KVR as `--var` values like any other var.
+ */
+export interface ExtraRuntimeVars {
+  annual_income?: string;
+  city?: string;
+}
+
+/**
+ * Household variables as stored on a session: the YAML variables (all optional
+ * while intake is in progress) plus the extra runtime vars.
+ */
+export type SessionVars = Partial<HouseholdVars> & ExtraRuntimeVars;
+
+/**
  * Runtime-inspectable manifest of HouseholdVars keys.
  * Includes all 16 YAML variables + annual_income (extra runtime var).
  */
@@ -137,10 +159,11 @@ export interface Session {
    */
   pendingField?: string;
   /**
-   * Accumulated intake variables. Uses `Partial` because collection is
-   * incremental; `annual_income` is added as an extra key not in HouseholdVars.
+   * Accumulated intake variables. Collection is incremental, so every YAML
+   * variable is optional; `annual_income` and the ZIP-derived `city` are extra
+   * runtime keys (see SessionVars).
    */
-  vars: Partial<HouseholdVars> & { annual_income?: string };
+  vars: SessionVars;
   /** Ordered chat history for the intake conversation. */
   messages: ChatMessage[];
   /** UUID v4 of the most recently started KVR workflow run, if any. */

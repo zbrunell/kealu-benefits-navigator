@@ -7,6 +7,8 @@
 
 import { useState } from "react";
 
+import { householdSizeFromMembers } from "@/lib/household";
+
 import ApplicantStep from "./application/applicant-step";
 import EligibilityStep from "./application/eligibility-step";
 import HouseholdStep from "./application/household-step";
@@ -169,6 +171,15 @@ export default function ApplicationView({
 
     return initialSelections;
   });
+
+  /**
+   * Household size: the primary applicant plus every member row. Derived on
+   * render rather than stored, so it cannot drift out of sync when members are
+   * added, removed, or edited.
+   */
+  const householdSize = householdSizeFromMembers(
+    applicationData.householdMembers.length,
+  );
 
   function toggleProgram(program: Saws2PlusProgram) {
     setSelectedPrograms((current) => ({
@@ -596,6 +607,12 @@ export default function ApplicationView({
                 ? "member"
                 : "members"}
               .
+            </p>
+
+            {/* Household size is derived from the rows above — never asked for
+                separately — so it always matches what was entered. */}
+            <p className="mt-1 text-sm font-medium text-slate-700">
+              Household size: {householdSize}
             </p>
 
             <div className="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4">

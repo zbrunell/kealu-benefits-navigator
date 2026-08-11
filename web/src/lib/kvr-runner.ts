@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto';
 import { spawn } from 'child_process';
 import path from 'path';
 import type { ChildProcess } from 'child_process';
-import type { HouseholdVars, PhaseEvent } from '@/types/session';
+import type { PhaseEvent, SessionVars } from '@/types/session';
 import { resolveKvr } from '@/lib/kvr-checker';
 
 /** Idle timeout: 30 minutes with no subprocess output or phase event. */
@@ -68,7 +68,12 @@ type StreamController = ReadableStreamDefaultController<Uint8Array>;
 
 interface ActiveRun {
   history: string[];
-  proc: ChildProcess;
+  /**
+   * The KVR subprocess. Undefined for synthetic runs registered via
+   * registerSyntheticRun() (deterministic demo/E2E fixture runs), which produce
+   * phase events in-process rather than by spawning a binary.
+   */
+  proc?: ChildProcess;
   runId: string;
   sessionId: string;
   startedAt: number;
@@ -289,7 +294,7 @@ function cleanupRun(runId: string, closeControllers: boolean): void {
 export function startRun(
   runId: string,
   sessionId: string,
-  vars: Partial<HouseholdVars> & { annual_income?: string },
+  vars: SessionVars,
 ): void {
   if (sessionRunMap.has(sessionId)) return;
 
@@ -484,6 +489,62 @@ export function startRun(
   });
 }
 
+/**
+ * Register a run that has no KVR subprocess behind it.
+ *
+ * Used by the deterministic demo/E2E fixture runner so that a simulated run
+ * lives in the same registry as a real one: the SSE route (addController /
+ * removeController), getRunIdForSession(), the stop route, the idle safety net,
+ * and terminateRun() all behave identically. Nothing about the streaming
+ * contract is duplicated for demo mode.
+ *
+ * Returns false when the session already has an active run, mirroring the
+ * single-run-per-session guard in startRun().
+ */
+export function registerSyntheticRun(
+  runId: string,
+  sessionId: string,
+): boolean {
+  if (sessionRunMap.has(sessionId)) return false;
+
+  const idleTimer = setInterval(() => {
+    const activeRun = activeRuns.get(runId);
+
+    if (activeRun) {
+      _checkIdle(runId, activeRun.lastEventAt, terminateRun, (payload) =>
+        broadcastToRun(runId, payload),
+      );
+    }
+  }, 30_000);
+
+  const run: ActiveRun = {
+    runId,
+    sessionId,
+    startedAt: Date.now(),
+    lastEventAt: Date.now(),
+    controllers: new Set(),
+    history: [],
+    idleTimer,
+    stdoutTail: '',
+    stderrTail: '',
+  };
+
+  activeRuns.set(runId, run);
+  sessionRunMap.set(sessionId, runId);
+
+  return true;
+}
+
+/**
+ * Broadcast a phase event to every SSE controller attached to a run, and record
+ * it in the replay history. No-op when the run is not registered.
+ */
+export function emitPhaseEvent(runId: string, event: PhaseEvent): void {
+  if (!activeRuns.has(runId)) return;
+
+  broadcastToRun(runId, formatSseEvent(event, `${runId}-${randomUUID()}`));
+}
+
 export function terminateRun(runId: string): void {
   const run = activeRuns.get(runId);
   if (!run) return;
@@ -495,7 +556,8 @@ export function terminateRun(runId: string): void {
   }
 
   try {
-    run.proc.kill('SIGTERM');
+    // Synthetic runs have no subprocess.
+    run.proc?.kill('SIGTERM');
   } catch {
     // Ignore if already dead.
   }

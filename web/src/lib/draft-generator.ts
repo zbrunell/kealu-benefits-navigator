@@ -19,7 +19,7 @@ import path from 'path';
 import { buildApplicationFieldPlan } from '@/lib/application-mapper';
 import { resolveKvr } from '@/lib/kvr-checker';
 import type { Saws2PlusApplicationData } from '@/types/application';
-import type { HouseholdVars } from '@/types/session';
+import type { SessionVars } from '@/types/session';
 
 /** Result of a successful draft generation. */
 export interface DraftResult {
@@ -124,7 +124,7 @@ export function resolvePythonExec(): string | null {
  */
 export async function generateDraft(
   runId: string,
-  vars: Partial<HouseholdVars> & { annual_income?: string },
+  vars: SessionVars,
   workflowOutput: string,
   applicationData: Saws2PlusApplicationData,
   draftsBase: string,

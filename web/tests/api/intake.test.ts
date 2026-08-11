@@ -6,9 +6,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GET, POST } from '@/app/api/intake/route';
+import { sessionStore } from '@/lib/session-store';
+import { __clearLocationCache } from '@/lib/location';
+import { ALL_FIELDS } from '@/lib/intake-flow';
 
 let sessionCookies: Record<string, string> = {};
 let setCookieCalls: Array<{ name: string; value: string; opts?: unknown }> = [];
+
+/**
+ * The CMS county lookup is mocked so ZIP-derived location is hermetic: no
+ * network access, and the fallback path is exercised deterministically.
+ */
+const mockGetCountiesByZip = vi.fn();
+
+vi.mock('@/lib/cms-marketplace', () => ({
+  getCountiesByZip: (zip: string) => mockGetCountiesByZip(zip),
+}));
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(() =>
@@ -414,5 +427,131 @@ describe('intake progress, answers, edit, and resume', () => {
       ).value,
     ).toBe('Metformin 500mg twice daily');
     expect(after.step).toEqual({ current: 6, total: 8 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ZIP-derived location
+// ---------------------------------------------------------------------------
+
+describe('location derived from the ZIP code', () => {
+  beforeEach(() => {
+    sessionCookies = {};
+    setCookieCalls = [];
+    mockGetCountiesByZip.mockReset();
+    mockGetCountiesByZip.mockRejectedValue(new Error('CMS unavailable in tests'));
+    __clearLocationCache();
+  });
+
+  function varsFor(sessionId: string) {
+    return sessionStore.get(sessionId)?.vars ?? {};
+  }
+
+  it('never asks the user for city, state, or county', () => {
+    const askedKeys = ALL_FIELDS.map((field) => field.key as string);
+
+    expect(askedKeys).not.toContain('city');
+    expect(askedKeys).not.toContain('state');
+    expect(askedKeys).not.toContain('county');
+  });
+
+  it('derives city, state, and county from an accepted ZIP answer', async () => {
+    const response = await POST(makeIntakeRequest('90001'));
+    expect(response.status).toBe(200);
+
+    const vars = varsFor(sessionCookies.session);
+
+    expect(vars.zip_code).toBe('90001');
+    expect(vars.city).toBe('Los Angeles');
+    expect(vars.state).toBe('CA');
+    expect(vars.county).toBe('Los Angeles');
+  });
+
+  it('stores the derived location in the same session vars used downstream', async () => {
+    await POST(makeIntakeRequest('94102'));
+    const sessionId = sessionCookies.session;
+
+    await POST(makeIntakeRequest('26000', sessionId));
+    await POST(
+      makeIntakeRequest('Single parent with 2 kids ages 4 and 9', sessionId),
+    );
+
+    // Still present after later answers overwrite other vars.
+    const vars = varsFor(sessionId);
+    expect(vars.city).toBe('San Francisco');
+    expect(vars.county).toBe('San Francisco');
+    expect(vars.state).toBe('CA');
+  });
+
+  it('re-derives the location when the ZIP is corrected', async () => {
+    await POST(makeIntakeRequest('90001'));
+    const sessionId = sessionCookies.session;
+    expect(varsFor(sessionId).county).toBe('Los Angeles');
+
+    const response = await POST(makeEditRequest('zip_code', '95814', sessionId));
+    expect(response.status).toBe(200);
+
+    const vars = varsFor(sessionId);
+    expect(vars.zip_code).toBe('95814');
+    expect(vars.city).toBe('Sacramento');
+    expect(vars.county).toBe('Sacramento');
+  });
+
+  it('clears the derived location when the ZIP is cleared', async () => {
+    await POST(makeIntakeRequest('90001'));
+    const sessionId = sessionCookies.session;
+
+    await POST(makeEditRequest('zip_code', '', sessionId));
+
+    const vars = varsFor(sessionId);
+    expect(vars.zip_code).toBeUndefined();
+    expect(vars.city).toBe('');
+    expect(vars.state).toBe('');
+    expect(vars.county).toBe('');
+  });
+
+  it('leaves the location blank when the ZIP cannot be resolved', async () => {
+    await POST(makeIntakeRequest('00000'));
+    const sessionId = sessionCookies.session;
+
+    const vars = varsFor(sessionId);
+    expect(vars.zip_code).toBe('00000');
+    expect(vars.city).toBe('');
+    expect(vars.state).toBe('');
+    expect(vars.county).toBe('');
+  });
+
+  it('resolves state without a county guess for a ZIP outside the exact table', async () => {
+    await POST(makeIntakeRequest('77001'));
+    const sessionId = sessionCookies.session;
+
+    const vars = varsFor(sessionId);
+    expect(vars.state).toBe('TX');
+    expect(vars.county).toBe('');
+    expect(vars.city).toBe('');
+  });
+
+  it('uses the CMS county when the ZIP is not in the exact table', async () => {
+    mockGetCountiesByZip.mockReset();
+    mockGetCountiesByZip.mockResolvedValue([
+      { fips: '06107', name: 'Tulare County', state: 'CA' },
+    ]);
+
+    await POST(makeIntakeRequest('93247'));
+    const sessionId = sessionCookies.session;
+
+    const vars = varsFor(sessionId);
+    expect(vars.state).toBe('CA');
+    expect(vars.county).toBe('Tulare');
+  });
+
+  it('does not surface derived location as an intake answer', async () => {
+    await POST(makeIntakeRequest('90001'));
+    const sessionId = sessionCookies.session;
+
+    const snapshot = await (await GET(makeGetRequest(sessionId))).json();
+    const keys = snapshot.answers.map((answer: { key: string }) => answer.key);
+
+    expect(keys).toEqual(['zip_code']);
   });
 });

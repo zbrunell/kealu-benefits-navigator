@@ -187,6 +187,125 @@ Your household qualifies for $18,000/year. Apply for CHIP this week.
     expect(payload.bottomLine).not.toContain('## Bottom Line'); // header stripped
   });
 
+  /**
+   * Regression: the `## Structured Application Output` body is a multi-line
+   * fenced JSON block, which is the only format the Action Plan template in
+   * workflows/benefits-navigator.yaml produces. A line-anchored terminator
+   * truncated the body to its opening ```json fence, so no real Action Plan
+   * ever yielded an application recommendation.
+   */
+  it('parses a multi-line fenced JSON block from ## Structured Application Output', async () => {
+    const structured = {
+      schemaVersion: 1,
+      applications: [
+        {
+          formId: 'CA_SAWS_2_PLUS',
+          recommended: true,
+          programs: [
+            {
+              program: 'medi_cal',
+              status: 'likely_eligible',
+              recommendedToApply: true,
+              reasons: ['Income below the verified limit.'],
+              missingInformation: [],
+              confidence: 0.9,
+            },
+            {
+              program: 'calfresh',
+              status: 'possibly_eligible',
+              recommendedToApply: true,
+              reasons: ['Income within the screening range.'],
+              missingInformation: ['Monthly housing costs'],
+              confidence: 0.7,
+            },
+            {
+              program: 'calworks',
+              status: 'unlikely_eligible',
+              recommendedToApply: false,
+              reasons: ['No dependent child identified.'],
+              missingInformation: [],
+              confidence: 0.95,
+            },
+          ],
+        },
+      ],
+    };
+
+    const actionPlan = `## Bottom Line
+Apply for Medi-Cal and CalFresh.
+
+## Structured Application Output
+\`\`\`json
+${JSON.stringify(structured, null, 2)}
+\`\`\`
+
+## Income Cliff Warnings
+- Medi-Cal ends above $20,000.
+`;
+
+    mockStat.mockResolvedValue({ isDirectory: () => true } as any);
+    mockReadFile.mockImplementation(async (filePath: any) => {
+      const fp = String(filePath);
+      if (fp.includes('action-plan')) return actionPlan;
+      return SAMPLE_PHASE_CONTENT;
+    });
+
+    const payload = await assembleReport(TEST_RUN_ID, TEST_WORKFORCE_BASE);
+    const saws = payload.application.recommendations.find(
+      (application) => application.formId === 'CA_SAWS_2_PLUS',
+    );
+
+    expect(saws).toBeDefined();
+    expect(saws?.recommended).toBe(true);
+    expect(saws?.programs).toHaveLength(3);
+    expect(payload.application.recommendedPrograms).toEqual(['medi_cal', 'calfresh']);
+  });
+
+  it('parses the structured block when it is the final section in the document', async () => {
+    const structured = {
+      schemaVersion: 1,
+      applications: [
+        {
+          formId: 'CA_SAWS_2_PLUS',
+          recommended: false,
+          programs: (['medi_cal', 'calfresh', 'calworks'] as const).map((program) => ({
+            program,
+            status: 'unlikely_eligible',
+            recommendedToApply: false,
+            reasons: ['Household income is above the program limit.'],
+            missingInformation: [],
+            confidence: 0.9,
+          })),
+        },
+      ],
+    };
+
+    const actionPlan = `## Bottom Line
+No application recommended.
+
+## Structured Application Output
+\`\`\`json
+${JSON.stringify(structured, null, 2)}
+\`\`\`
+`;
+
+    mockStat.mockResolvedValue({ isDirectory: () => true } as any);
+    mockReadFile.mockImplementation(async (filePath: any) => {
+      const fp = String(filePath);
+      if (fp.includes('action-plan')) return actionPlan;
+      return SAMPLE_PHASE_CONTENT;
+    });
+
+    const payload = await assembleReport(TEST_RUN_ID, TEST_WORKFORCE_BASE);
+    const saws = payload.application.recommendations.find(
+      (application) => application.formId === 'CA_SAWS_2_PLUS',
+    );
+
+    expect(saws).toBeDefined();
+    expect(saws?.recommended).toBe(false);
+    expect(payload.application.recommendedPrograms).toEqual([]);
+  });
+
   it('bottomLine is empty string when ## Bottom Line section is absent', async () => {
     const contentWithoutBottomLine = `## Action Plan\nJust action steps here.`;
     mockStat.mockResolvedValue({ isDirectory: () => true } as any);

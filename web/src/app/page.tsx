@@ -7,6 +7,7 @@ import { cookies } from 'next/headers';
 import { sessionStore } from '@/lib/session-store';
 import { checkKvrVersion } from '@/lib/kvr-checker';
 import { getNextQuestion } from '@/lib/intake-flow';
+import { resolveWorkflowLauncher } from '@/lib/workflow-launcher';
 import AppShell from '@/components/app-shell';
 import LanguageSwitcher from '@/components/language-switcher';
 import { messages, t } from '@/i18n';
@@ -64,11 +65,13 @@ export default async function Home() {
     }
   }
 
-  // Check kvr availability for the offline banner (best-effort; never throws)
+  // Check workflow-engine availability for the offline banner (best-effort;
+  // never throws). Only the real KVR launcher depends on the binary — a
+  // launcher that does not require it is always considered online.
   let kvrOnline = true;
   try {
-    const check = checkKvrVersion();
-    kvrOnline = check.ok;
+    const launcher = await resolveWorkflowLauncher();
+    kvrOnline = !launcher.requiresKvr || checkKvrVersion().ok;
   } catch {
     kvrOnline = false;
   }

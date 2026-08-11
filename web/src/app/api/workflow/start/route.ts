@@ -7,9 +7,10 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { randomUUID, createHash } from "crypto";
 import { sessionStore } from "@/lib/session-store";
-import { startRun, getRunIdForSession } from "@/lib/kvr-runner";
+import { getRunIdForSession } from "@/lib/kvr-runner";
 import { resolveKvr } from "@/lib/kvr-checker";
 import { buildHouseholdProfile, isTier1Complete } from "@/lib/intake-flow";
+import { resolveWorkflowLauncher } from "@/lib/workflow-launcher";
 
 const COOKIE_NAME = "session";
 
@@ -88,9 +89,12 @@ export async function POST(req: Request): Promise<Response> {
     });
   }
 
-  // Verify kvr availability
-  const kvrPath = resolveKvr();
-  if (!kvrPath) {
+  // Resolve which workflow implementation runs this session. Normally the real
+  // KVR subprocess; with E2E_MODE=1 the deterministic fixture runner.
+  const launcher = await resolveWorkflowLauncher();
+
+  // Verify kvr availability — only the real runner depends on the binary.
+  if (launcher.requiresKvr && !resolveKvr()) {
     return NextResponse.json(
       { error: "Workflow engine unavailable. Please ensure kvr is installed." },
       { status: 503 },
@@ -123,6 +127,7 @@ export async function POST(req: Request): Promise<Response> {
       sessionId_hash: createHash("sha256").update(sessionId).digest("hex"),
       intake_tiers_completed: session?.currentTier ?? 1,
       idempotent: false,
+      launcher: launcher.kind,
     }),
   );
 
@@ -151,8 +156,8 @@ export async function POST(req: Request): Promise<Response> {
     ...(enrichedProfile !== null ? { household_profile: enrichedProfile } : {}),
   };
 
-  // Start the run
-  startRun(runId, sessionId, enrichedVars);
+  // Start the run through the resolved launcher.
+  launcher.launch(runId, sessionId, enrichedVars);
 
   // Update session with runId
   sessionStore.update(sessionId, { runId, runStatus: "running" });
