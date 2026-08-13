@@ -27,6 +27,11 @@ interface ProgramSelectionStepProps {
   recommendation: ApplicationRecommendation;
   selectedPrograms: Record<Saws2PlusProgram, boolean>;
   onToggleProgram: (program: Saws2PlusProgram) => void;
+  /** Page 1 "Other" program box. */
+  otherRequested: boolean;
+  otherDescription: string;
+  onToggleOther: () => void;
+  onOtherDescriptionChange: (value: string) => void;
   onBack: () => void;
   onContinue: () => void;
 }
@@ -35,10 +40,16 @@ export default function ProgramSelectionStep({
   recommendation,
   selectedPrograms,
   onToggleProgram,
+  otherRequested,
+  otherDescription,
+  onToggleOther,
+  onOtherDescriptionChange,
   onBack,
   onContinue,
 }: ProgramSelectionStepProps) {
-  const selectedCount = Object.values(selectedPrograms).filter(Boolean).length;
+  const selectedCount =
+    Object.values(selectedPrograms).filter(Boolean).length +
+    (otherRequested ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -126,6 +137,38 @@ export default function ProgramSelectionStep({
                   selectedCount === 1 ? "program" : "programs"
                 } selected.`}
           </p>
+        </div>
+
+                {/* Page 1 also offers an "Other" program box with a description. */}
+        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={otherRequested}
+              onChange={onToggleOther}
+              className="mt-1 h-4 w-4 rounded border-slate-300 text-green-700 focus:ring-green-600"
+            />
+            <span>
+              <span className="font-medium text-slate-900">
+                Another program not listed above
+              </span>
+              <span className="mt-0.5 block text-xs text-slate-600">
+                The application has an &ldquo;Other&rdquo; box on page 1. Tell us
+                which program so we can write it on the form.
+              </span>
+            </span>
+          </label>
+
+          {otherRequested && (
+            <input
+              type="text"
+              value={otherDescription}
+              onChange={(event) => onOtherDescriptionChange(event.target.value)}
+              placeholder="Which program?"
+              aria-label="Which other program are you applying for?"
+              className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+            />
+          )}
         </div>
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">

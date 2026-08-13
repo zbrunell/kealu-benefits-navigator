@@ -169,6 +169,27 @@ export default function ApplicantStep({
           </label>
         </div>
 
+        {/* Page 1 asks for any other names the applicant has used. */}
+        <div className="mt-4">
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">
+              Other names you have used
+            </span>
+            <span className="mt-0.5 block text-xs text-slate-500">
+              Maiden name, nicknames, or any other name on your records. Leave
+              blank if none.
+            </span>
+            <input
+              type="text"
+              value={applicant.otherNames}
+              onChange={(event) =>
+                onChange("otherNames", event.target.value)
+              }
+              className={INPUT_CLASS}
+            />
+          </label>
+        </div>
+
         {/* Contact information used on Page 1. */}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="block">
@@ -182,6 +203,20 @@ export default function ApplicantStep({
                 onChange("phone", event.target.value)
               }
               autoComplete="tel"
+              className={INPUT_CLASS}
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">
+              Work, alternate, or message phone
+            </span>
+            <input
+              type="tel"
+              value={applicant.alternatePhone}
+              onChange={(event) =>
+                onChange("alternatePhone", event.target.value)
+              }
               className={INPUT_CLASS}
             />
           </label>
