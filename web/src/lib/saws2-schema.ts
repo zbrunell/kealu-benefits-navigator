@@ -135,6 +135,37 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     path: 'applicant.dateOfBirth',
     canonicalKey: 'applicant.date_of_birth',
   },
+  {
+    id: 'household.adult_table',
+    saws: 'Q6',
+    label:
+      'Adult household table: name, relationship, date of birth, gender, ' +
+      'marital status, program selections, student and disabled indicators, ' +
+      'and citizenship',
+    section: 'household',
+    tier: 2,
+    kind: 'records',
+    support: 'prefillable',
+    pdf: 'mapped',
+    canonicalKey: 'household.adult_rows.count',
+    note:
+      'Rows are assigned by planHouseholdRows before the adapter runs: the ' +
+      'applicant always takes row 1, other adults follow in application order.',
+  },
+  {
+    id: 'household.child_table',
+    saws: 'Q6b',
+    label:
+      'Child household table: name, relationship, date of birth, place of ' +
+      'birth, gender, program selections, parent status and immunizations',
+    section: 'household',
+    tier: 2,
+    kind: 'records',
+    support: 'prefillable',
+    pdf: 'mapped',
+    canonicalKey: 'household.child_rows.count',
+    note: 'Numbered independently of the adult table so neither can shift the other.',
+  },
 
   /*
    * Page 1 blocks. The printed page carries no question numbers of its own, so
