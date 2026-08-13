@@ -1,4 +1,5 @@
 import { householdSizeFromMembers } from "@/lib/household";
+import { activeEntries, memberOptions } from "@/lib/saws2-question-planner";
 import type { Saws2PlusApplicationData } from "@/types/application";
 
 export type ApplicationFieldValue = string | boolean | number | null;
@@ -98,6 +99,10 @@ function mapApplicant(
       applicant.lastName,
     ),
     entry(
+      "applicant.other_names",
+      applicant.otherNames,
+    ),
+    entry(
       "applicant.date_of_birth",
       applicant.dateOfBirth,
     ),
@@ -106,6 +111,10 @@ function mapApplicant(
     entry(
       "applicant.phone",
       applicant.phone,
+    ),
+    entry(
+      "applicant.alternate_phone",
+      applicant.alternatePhone,
     ),
     entry(
       "applicant.email",
@@ -439,12 +448,25 @@ function mapFinancialInformation(
 function mapPrograms(
   application: Saws2PlusApplicationData,
 ): ApplicationFieldPlanEntry[] {
-  return application.selectedPrograms.map((program) =>
+  const fields = application.selectedPrograms.map((program) =>
     entry(
       `programs.${program}`,
       true,
     ),
   );
+
+  /*
+   * Page 1 also offers an "Other" program box with a free-text description.
+   * The checkbox is only ticked when the applicant asked for it.
+   */
+  if (application.otherProgramRequested === true) {
+    fields.push(entry("programs.other", true));
+    fields.push(
+      entry("programs.other_description", application.otherProgramDescription),
+    );
+  }
+
+  return fields;
 }
 
 /**
@@ -570,6 +592,307 @@ function mapPregnancyAndEmergency(
   ];
 }
 
+
+/**
+ * Map the three-state questionnaire answers.
+ *
+ * A tri-state answer is emitted only when it is a real boolean: `undefined`
+ * produces no entry at all, so an unasked question leaves both the Yes and the
+ * No box blank on the form. An explicit `false` is emitted as `false` and the
+ * adapter ticks No.
+ */
+function mapQuestionnaire(
+  application: Saws2PlusApplicationData,
+): ApplicationFieldPlanEntry[] {
+  const { programIntegrity, otherServices, circumstances, income, expenses, resources, health } =
+    application.questionnaire;
+
+  const fields: ApplicationFieldPlanEntry[] = [];
+
+  /*
+   * Resolve a member id to the person's typed name for the form's
+   * "Person Working" / "Person Self-Employed" columns.
+   *
+   * Only a real name is returned. The planner's display fallbacks
+   * ("Household member 2") are placeholders for the UI, never values to print on
+   * a government form, so an unnamed person leaves the column blank.
+   */
+  const namesById = new Map(
+    memberOptions(application).map((option) => [option.id, option.label]),
+  );
+
+  const realNames = new Set<string>();
+  const applicantName =
+    `${application.applicant.firstName} ${application.applicant.lastName}`.trim();
+  if (applicantName) realNames.add(applicantName);
+  for (const member of application.householdMembers) {
+    const name = `${member.firstName} ${member.lastName}`.trim();
+    if (name) realNames.add(name);
+  }
+
+  const personName = (memberId: string): string => {
+    const label = namesById.get(memberId) ?? "";
+    return realNames.has(label) ? label : "";
+  };
+
+  /** Emit a tri-state answer, skipping unknowns. */
+  const tri = (key: string, value: boolean | undefined) => {
+    if (typeof value === "boolean") {
+      fields.push(entry(key, value));
+    }
+  };
+
+  /**
+   * Emit a non-empty string.
+   *
+   * Tolerates a missing value: `applicationData` arrives as JSON from the client,
+   * so a payload written against an older shape can omit a field the current
+   * types declare. A missing answer is simply not emitted rather than throwing.
+   */
+  const text = (key: string, value: string | undefined | null) => {
+    const trimmed = typeof value === "string" ? value.trim() : "";
+
+    if (trimmed) fields.push(entry(key, trimmed));
+  };
+
+  // ── Program integrity / legal history (form page 16) ────────────────────
+  tri("integrity.fleeing_felon", programIntegrity.fleeingFelon);
+  tri("integrity.probation_or_parole_violation", programIntegrity.probationOrParoleViolation);
+  tri("integrity.duplicate_benefits", programIntegrity.duplicateBenefits);
+  tri("integrity.trafficking_benefits", programIntegrity.traffickingBenefits);
+  tri("integrity.trading_benefits_for_drugs", programIntegrity.tradingBenefitsForDrugs);
+  tri("integrity.trading_benefits_for_firearms", programIntegrity.tradingBenefitsForFirearms);
+  tri("integrity.welfare_fraud_conviction", programIntegrity.welfareFraudConviction);
+  tri("integrity.current_sanction", programIntegrity.currentSanctionOrNonCooperation);
+
+  /*
+   * The "who?" explanations are only meaningful alongside a Yes. A stale
+   * explanation left over from a Yes the user changed to No is not emitted.
+   */
+  if (programIntegrity.fleeingFelon === true) {
+    text("integrity.fleeing_felon_who", programIntegrity.fleeingFelonWho);
+  }
+
+  if (programIntegrity.probationOrParoleViolation === true) {
+    text("integrity.probation_or_parole_who", programIntegrity.probationOrParoleWho);
+  }
+
+  // ── Other services (form page 16, Q37–Q39) ─────────────────────────────
+  tri("services.special_needs_payment", otherServices.specialNeedsPayment);
+
+  if (otherServices.specialNeedsPayment === true) {
+    text("services.special_needs_explanation", otherServices.specialNeedsExplanation);
+  }
+
+  tri("services.chdp_more_information", otherServices.chdpMoreInformation);
+  tri("services.chdp_medical", otherServices.chdpMedicalServices);
+  tri("services.chdp_dental", otherServices.chdpDentalServices);
+  tri("services.chdp_appointment_help", otherServices.chdpAppointmentOrTransportHelp);
+  tri("services.immunization_information", otherServices.immunizationInformation);
+  tri("services.pregnancy_assistance", otherServices.pregnancyAssistance);
+  tri("services.breastfeeding", otherServices.breastfeeding);
+
+  // Only meaningful when breastfeeding is Yes.
+  if (otherServices.breastfeeding === true) {
+    tri("services.gave_birth_last_twelve_months", otherServices.gaveBirthInLastTwelveMonths);
+  }
+
+  tri("services.family_planning", otherServices.familyPlanningServices);
+  tri("services.third_party_liability", otherServices.thirdPartyLiability);
+
+  if (otherServices.thirdPartyLiability === true) {
+    text("services.third_party_liability_who", otherServices.thirdPartyLiabilityWho);
+  }
+
+  // ── Household circumstances ────────────────────────────────────────────
+  tri("household.prior_public_assistance", circumstances.priorPublicAssistance);
+  tri("household.california_resident", circumstances.californiaResident);
+  tri("household.planned_absence", circumstances.plannedAbsence);
+  tri("household.buys_and_prepares_food_together", circumstances.buysAndPreparesFoodTogether);
+  tri("household.institutional_living", circumstances.institutionalLiving);
+  tri("household.receives_ihss", circumstances.receivesIhss);
+  tri("household.other_food_program", circumstances.otherFoodProgram);
+  tri("household.caretaker_relative", circumstances.caretakerRelative);
+  tri("household.authorized_representative", circumstances.authorizedRepresentative.answer);
+
+  for (const [index, representative] of activeEntries(
+    circumstances.authorizedRepresentative,
+  ).entries()) {
+    const prefix = `household.authorized_representative.${index}`;
+    text(`${prefix}.name`, representative.name);
+    text(`${prefix}.organization`, representative.organization);
+    text(`${prefix}.phone`, representative.phone);
+    text(`${prefix}.address`, representative.address);
+    tri(`${prefix}.for_calfresh`, representative.forCalFresh);
+    tri(`${prefix}.for_health_coverage`, representative.forHealthCoverage);
+  }
+
+  // ── Income ─────────────────────────────────────────────────────────────
+  tri("income.has_earned_income", income.earned.answer);
+  tri("income.has_self_employment", income.selfEmployment.answer);
+  tri("income.has_unearned_income", income.unearned.answer);
+  tri("income.has_in_kind_support", income.inKindSupport.answer);
+  tri("income.recent_job_change", income.recentJobChange.answer);
+  tri("income.varies_during_year", income.incomeVariesDuringYear);
+
+  for (const [index, job] of activeEntries(income.earned).entries()) {
+    const prefix = `income.earned.${index}`;
+    text(`${prefix}.member_id`, job.memberId);
+    text(`${prefix}.person_name`, personName(job.memberId));
+    text(`${prefix}.employer_name`, job.employerName);
+    text(`${prefix}.employer_address`, job.employerAddress);
+    text(`${prefix}.employer_phone`, job.employerPhone);
+    text(`${prefix}.start_date`, job.startDate);
+    if (job.payFrequency) text(`${prefix}.pay_frequency`, job.payFrequency);
+    if (job.hourlyRate !== undefined) {
+      fields.push(entry(`${prefix}.hourly_rate`, job.hourlyRate));
+    }
+    if (job.grossPerPeriod !== undefined) {
+      fields.push(entry(`${prefix}.gross_per_period`, job.grossPerPeriod));
+    }
+    if (job.grossReceivedThisMonth !== undefined) {
+      fields.push(
+        entry(`${prefix}.gross_received_this_month`, job.grossReceivedThisMonth),
+      );
+    }
+    if (job.hoursPerWeek !== undefined) {
+      fields.push(entry(`${prefix}.hours_per_week`, job.hoursPerWeek));
+    }
+    tri(`${prefix}.expected_to_continue`, job.expectedToContinue);
+  }
+
+  for (const [index, business] of activeEntries(income.selfEmployment).entries()) {
+    const prefix = `income.self_employment.${index}`;
+    text(`${prefix}.member_id`, business.memberId);
+    text(`${prefix}.person_name`, personName(business.memberId));
+    text(`${prefix}.business_name`, business.businessName);
+    text(`${prefix}.business_type`, business.businessType);
+    text(`${prefix}.start_date`, business.startDate);
+    if (business.grossMonthly !== undefined) {
+      fields.push(entry(`${prefix}.gross_monthly`, business.grossMonthly));
+    }
+    if (business.netMonthly !== undefined) {
+      fields.push(entry(`${prefix}.net_monthly`, business.netMonthly));
+    }
+    if (business.expenseMethod) {
+      text(`${prefix}.expense_method`, business.expenseMethod);
+    }
+    if (business.expenseAmount !== undefined) {
+      fields.push(entry(`${prefix}.expense_amount`, business.expenseAmount));
+    }
+  }
+
+  for (const [index, source] of activeEntries(income.unearned).entries()) {
+    const prefix = `income.unearned.${index}`;
+    text(`${prefix}.member_id`, source.memberId);
+    text(`${prefix}.source`, source.source);
+    if (source.amountMonthly !== undefined) {
+      fields.push(entry(`${prefix}.amount_monthly`, source.amountMonthly));
+    }
+  }
+
+  for (const [index, change] of activeEntries(income.recentJobChange).entries()) {
+    const prefix = `income.recent_job_change.${index}`;
+    text(`${prefix}.member_id`, change.memberId);
+    text(`${prefix}.person_name`, personName(change.memberId));
+    text(`${prefix}.employer_name`, change.employerName);
+    text(`${prefix}.change_date`, change.changeDate);
+    text(`${prefix}.reason`, change.reason);
+  }
+
+  // ── Expenses ───────────────────────────────────────────────────────────
+  tri("expenses.has_household_expenses", expenses.household.answer);
+  tri("expenses.has_dependent_care", expenses.dependentCare.answer);
+  tri("expenses.pays_child_support", expenses.childSupportPaid.answer);
+  tri("expenses.pays_spousal_support", expenses.spousalSupportPaid.answer);
+  tri("expenses.has_medical_expenses", expenses.medical.answer);
+
+  for (const [index, expense] of activeEntries(expenses.household).entries()) {
+    const prefix = `expenses.household.${index}`;
+    text(`${prefix}.kind`, expense.kind);
+    text(`${prefix}.description`, expense.description);
+    if (expense.amountMonthly !== undefined) {
+      fields.push(entry(`${prefix}.amount_monthly`, expense.amountMonthly));
+    }
+  }
+
+  for (const [index, expense] of activeEntries(expenses.medical).entries()) {
+    const prefix = `expenses.medical.${index}`;
+    text(`${prefix}.member_id`, expense.memberId);
+    text(`${prefix}.kind`, expense.kind);
+    if (expense.amountMonthly !== undefined) {
+      fields.push(entry(`${prefix}.amount_monthly`, expense.amountMonthly));
+    }
+  }
+
+  // ── Resources ──────────────────────────────────────────────────────────
+  tri("resources.has_accounts", resources.accounts.answer);
+  tri("resources.has_vehicles", resources.vehicles.answer);
+  tri("resources.has_real_property", resources.realProperty.answer);
+  tri("resources.transferred_resources", resources.transferredResources.answer);
+  tri("resources.received_diversion_payment", resources.receivedDiversionPayment);
+
+  for (const [index, account] of activeEntries(resources.accounts).entries()) {
+    const prefix = `resources.accounts.${index}`;
+    text(`${prefix}.member_id`, account.memberId);
+    text(`${prefix}.kind`, account.kind);
+    text(`${prefix}.institution`, account.institution);
+    if (account.balance !== undefined) {
+      fields.push(entry(`${prefix}.balance`, account.balance));
+    }
+  }
+
+  for (const [index, vehicle] of activeEntries(resources.vehicles).entries()) {
+    const prefix = `resources.vehicles.${index}`;
+    text(`${prefix}.member_id`, vehicle.memberId);
+    text(`${prefix}.year`, vehicle.year);
+    text(`${prefix}.make`, vehicle.make);
+    text(`${prefix}.model`, vehicle.model);
+    text(`${prefix}.used_for`, vehicle.usedFor);
+    if (vehicle.amountOwed !== undefined) {
+      fields.push(entry(`${prefix}.amount_owed`, vehicle.amountOwed));
+    }
+    if (vehicle.estimatedValue !== undefined) {
+      fields.push(entry(`${prefix}.estimated_value`, vehicle.estimatedValue));
+    }
+  }
+
+  // ── Health coverage and taxes ──────────────────────────────────────────
+  tri("health.has_current_coverage", health.currentCoverage.answer);
+  tri("health.coverage_ending", health.coverageEnding.answer);
+  tri("health.has_employer_coverage", health.employerCoverage.answer);
+  tri("health.retroactive_medical_help", health.retroactiveMedicalHelp);
+  tri("health.tax_filer", health.taxFiler);
+  tri("health.american_indian_or_alaska_native", health.americanIndianOrAlaskaNative);
+  tri("health.renewal_authorization", health.renewalAuthorization);
+
+  if (health.taxFiler === true) {
+    tri("health.spouse_filing_jointly", health.spouseFilingJointly);
+  }
+
+  for (const [index, coverage] of activeEntries(health.currentCoverage).entries()) {
+    const prefix = `health.current_coverage.${index}`;
+    text(`${prefix}.member_id`, coverage.memberId);
+    text(`${prefix}.plan_name`, coverage.planName);
+    text(`${prefix}.policy_holder_name`, coverage.policyHolderName);
+    text(`${prefix}.end_date`, coverage.endDate);
+  }
+
+  for (const [index, coverage] of activeEntries(health.employerCoverage).entries()) {
+    const prefix = `health.employer_coverage.${index}`;
+    text(`${prefix}.member_id`, coverage.memberId);
+    text(`${prefix}.employer_name`, coverage.employerName);
+    text(`${prefix}.employer_phone`, coverage.employerPhone);
+    tri(`${prefix}.offers_coverage`, coverage.offersCoverage);
+    tri(`${prefix}.eligible_now_or_soon`, coverage.eligibleNowOrSoon);
+    if (coverage.lowestCostPremium !== undefined) {
+      fields.push(entry(`${prefix}.lowest_cost_premium`, coverage.lowestCostPremium));
+    }
+  }
+
+  return fields;
+}
+
 /**
  * Convert structured application state into a reusable, form-independent plan.
  *
@@ -601,6 +924,9 @@ export function buildApplicationFieldPlan(
       application,
     ),
     ...mapPrograms(
+      application,
+    ),
+    ...mapQuestionnaire(
       application,
     ),
   ].filter(({ value }) => {

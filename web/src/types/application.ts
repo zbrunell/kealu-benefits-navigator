@@ -4,6 +4,10 @@
 //
 
 import type { Saws2PlusProgram } from "@/lib/report-assembler";
+import {
+  emptyQuestionnaire,
+  type Saws2PlusQuestionnaire,
+} from "@/types/saws-questionnaire";
 
 
 export type MaritalStatus =
@@ -54,8 +58,16 @@ export interface ApplicantInformation {
   firstName: string;
   middleName: string;
   lastName: string;
+
+  /** Maiden name, nicknames, or any other name the applicant has used. */
+  otherNames: string;
+
   dateOfBirth: string;
   phone: string;
+
+  /** Work, alternate, or message phone (the second phone box on page 1). */
+  alternatePhone: string;
+
   email: string;
   preferredLanguage: string;
   homeAddress: ApplicationAddress;
@@ -190,6 +202,13 @@ export interface PersonalEmergencyInformation {
 
 export interface Saws2PlusApplicationData {
   selectedPrograms: Saws2PlusProgram[];
+
+  /**
+   * Page 1 asks "What programs are you applying for?" with an "Other" option
+   * and a free-text description beside it.
+   */
+  otherProgramRequested?: boolean;
+  otherProgramDescription: string;
   applicant: ApplicantInformation;
   householdMembers: HouseholdMember[];
 
@@ -201,6 +220,14 @@ export interface Saws2PlusApplicationData {
   annualHouseholdIncome?: number;
   incomeType: string;
   existingBenefits: string;
+
+  /**
+   * Structured answers to the conditional SAWS 2 PLUS questions.
+   *
+   * Every gateway here is three-state: undefined means never asked, so an
+   * unanswered question is never mistaken for an explicit No.
+   */
+  questionnaire: Saws2PlusQuestionnaire;
 }
 
 export const EMPTY_ADDRESS: ApplicationAddress = {
@@ -214,12 +241,17 @@ export const EMPTY_ADDRESS: ApplicationAddress = {
 export const EMPTY_APPLICATION_DATA: Saws2PlusApplicationData = {
   selectedPrograms: [],
 
+  otherProgramRequested: undefined,
+  otherProgramDescription: "",
+
   applicant: {
     firstName: "",
     middleName: "",
     lastName: "",
+    otherNames: "",
     dateOfBirth: "",
     phone: "",
+    alternatePhone: "",
     email: "",
     preferredLanguage: "English",
     homeAddress: { ...EMPTY_ADDRESS },
@@ -262,6 +294,8 @@ export const EMPTY_APPLICATION_DATA: Saws2PlusApplicationData = {
     anyonePregnant: undefined,
     presumptiveEligibilityCard: undefined,
   },
+
+  questionnaire: emptyQuestionnaire(),
 
   personalEmergency: {
     hasEmergency: undefined,
