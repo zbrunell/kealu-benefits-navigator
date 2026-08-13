@@ -44,7 +44,14 @@ const MAX_COUNT = 20;
 
 const CHILD_NOUNS =
   'children|child|kids|kid|sons|son|daughters|daughter|babies|baby|infants|infant|' +
-  'toddlers|toddler|stepchildren|stepchild|grandchildren|grandchild|newborns|newborn';
+  'toddlers|toddler|stepchildren|stepchild|grandchildren|grandchild|newborns|newborn|' +
+  'twins|triplets';
+
+/** Nouns that state how many people they describe. */
+const IMPLIED_COUNT_NOUNS: Readonly<Record<string, number>> = {
+  twins: 2,
+  triplets: 3,
+};
 
 const ADULT_NOUNS =
   'adults|adult|people|persons|grownups|grownup|parents|parent|' +
@@ -88,14 +95,28 @@ export interface HouseholdComposition {
 
 /**
  * Normalize the phrasings people actually type so one set of patterns covers
- * them: lowercase, straight quotes, and every "6-year-old" / "6 yo" / "6 yrs
- * old" variant rewritten to the canonical "6 year old".
+ * them.
+ *
+ * Two normalizations matter most:
+ *
+ * 1. **Spelled-out numbers become digits.** "me and my one year old" carries
+ *    exactly the same meaning as "me and my 1 year old", but every age and
+ *    count pattern downstream matches digits. Without this step a word-number
+ *    age is invisible, and a phrase whose only clue is the age ("my one year
+ *    old") produced no person at all — the child was silently dropped.
+ * 2. **Age spellings collapse to "N year old"**, covering "6-year-old",
+ *    "6 yrs old", "6 yo", and "6 y/o".
  */
 function normalizeProfile(text: string): string {
+  const wordNumbers = new RegExp(`\\b(${Object.keys(NUMBER_WORDS).join('|')})\\b`, 'g');
+
   return text
     .toLowerCase()
     .replace(/[‘’]/g, "'")
     .replace(/[–—]/g, '-')
+    // Spelled-out numbers → digits, so "one year old" and "two kids" parse the
+    // same way as "1 year old" and "2 kids".
+    .replace(wordNumbers, (word) => String(NUMBER_WORDS[word]))
     .replace(/(\d)\s*-?\s*(?:years?|yrs?)\s*-?\s*old/g, '$1 year old')
     .replace(/(\d)\s*(?:y\/o|y\.o\.|yo)\b/g, '$1 year old')
     .replace(/\s+/g, ' ')
@@ -256,14 +277,30 @@ function extractPersonGroups(masked: string): PersonGroup[] {
             ? 'unknown'
             : 'adult';
 
+      // "twins"/"triplets" state their own count.
+      const impliedCount = IMPLIED_COUNT_NOUNS[noun] ?? null;
+
+      // A plural noun means at least two people; an explicit count wins, and an
+      // age list attached later can correct an assumed count.
+      const count = explicitCount ?? impliedCount ?? (isPlural ? 2 : 1);
+
+      /*
+       * An age written on the noun itself describes everyone in the group:
+       * "my 3 year old twins" means both children are 3. An age *list*
+       * ("ages 4 and 8") is attached separately, one age per person.
+       */
+      const attachedAges =
+        groupAge !== undefined && isAge(groupAge)
+          ? (Array(count).fill(groupAge) as number[])
+          : [];
+
       groups.push({
         index,
         role,
-        // A plural noun means at least two people; an explicit count wins, and
-        // an age list attached later can correct an assumed count.
-        count: explicitCount ?? (isPlural ? 2 : 1),
-        ages: groupAge !== undefined && isAge(groupAge) ? [groupAge] : [],
-        countIsAssumed: explicitCount === null && isPlural,
+        count,
+        ages: attachedAges,
+        countIsAssumed:
+          explicitCount === null && impliedCount === null && isPlural,
         described: noun,
       });
       continue;
