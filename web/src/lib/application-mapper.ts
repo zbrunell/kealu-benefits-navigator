@@ -1,4 +1,5 @@
 import { householdSizeFromMembers } from "@/lib/household";
+import { planHouseholdRows } from "@/lib/household-rows";
 import { activeEntries, memberOptions } from "@/lib/saws2-question-planner";
 import type { Saws2PlusApplicationData } from "@/types/application";
 
@@ -249,6 +250,19 @@ function mapHousehold(
     const prefix = `household.members.${index}`;
 
     const fields: ApplicationFieldPlanEntry[] = [
+      /**
+       * Marks that this member exists, independently of whether any of their
+       * details have been filled in.
+       *
+       * The PDF adapter used to discover members by probing for a non-empty
+       * first name and stopping at the first gap, which deleted every member
+       * after an unnamed one. Presence is now stated rather than inferred.
+       */
+      entry(
+        `${prefix}.present`,
+        true,
+      ),
+
       // Shared household identity.
       entry(
         `${prefix}.first_name`,
@@ -402,6 +416,55 @@ function mapHousehold(
 
     return fields;
   });
+}
+
+/**
+ * State which printed household row each person occupies.
+ *
+ * This is the whole point of the canonical boundary: the semantic decision
+ * ("the spouse is the second adult") is made once, here, and the PDF adapter
+ * only obeys it. The adapter previously re-derived the ordering from whichever
+ * canonical keys happened to be present, so a blank name or a missing birth date
+ * could move somebody into another person's row.
+ *
+ * Row numbers are zero-based and printed top to bottom. A row beyond the five
+ * the paper form provides is still stated honestly; the adapter drops it rather
+ * than wrapping it onto an occupied row.
+ */
+function mapHouseholdRowAssignments(
+  application: Saws2PlusApplicationData,
+): ApplicationFieldPlanEntry[] {
+  const plan = planHouseholdRows(application);
+
+  const fields: ApplicationFieldPlanEntry[] = [
+    entry(
+      "household.members.count",
+      application.householdMembers.length,
+    ),
+    entry(
+      "household.adult_rows.count",
+      plan.adults.length,
+    ),
+    entry(
+      "household.child_rows.count",
+      plan.children.length,
+    ),
+  ];
+
+  for (const assignment of plan.all) {
+    fields.push(
+      entry(
+        `${assignment.prefix}.table`,
+        assignment.table,
+      ),
+      entry(
+        `${assignment.prefix}.table_row`,
+        assignment.row,
+      ),
+    );
+  }
+
+  return fields;
 }
 
 /**
@@ -943,6 +1006,9 @@ export function buildApplicationFieldPlan(
       application,
     ),
     ...mapHousehold(
+      application,
+    ),
+    ...mapHouseholdRowAssignments(
       application,
     ),
     ...mapFinancialInformation(

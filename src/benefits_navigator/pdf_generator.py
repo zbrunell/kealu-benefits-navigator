@@ -1784,126 +1784,176 @@ class Saws2PlusFieldAdapter:
         # -------------------------------------------------------------------
         # Build semantic household-person records.
         # -------------------------------------------------------------------
+        #
+        # Row placement is NOT decided here. The TypeScript canonical layer
+        # states, per person, which printed table they belong in and which row
+        # of it they occupy (`<prefix>.table` / `<prefix>.table_row`). This
+        # adapter only obeys that plan.
+        #
+        # That split exists because every previous misplacement came from this
+        # function inferring the ordering from whichever canonical keys were
+        # present: an unnamed member truncated the discovery loop, a member with
+        # an age but no birth date was classified as an adult, and an unnamed
+        # applicant gave up row 1 to the next adult.
 
-        adults: list[dict[str, Any]] = []
-        children: list[dict[str, Any]] = []
+        adults: dict[int, dict[str, Any]] = {}
+        children: dict[int, dict[str, Any]] = {}
 
-        # The primary applicant also belongs in the household table.
-        applicant_name = _full_name(
-            canonical_values,
-            "applicant",
-            last_first=True,
-        )
+        def place(
+            prefix: str,
+            details_prefix: str,
+            programs_prefix: str,
+            name: str,
+            relationship: str,
+            raw_dob: str,
+        ) -> None:
+            """File one person into the row the canonical plan assigned."""
 
-        applicant_dob = str(
-            canonical_values.get(
-                "applicant.date_of_birth"
+            table = str(
+                canonical_values.get(
+                    f"{prefix}.table"
+                )
+                or ""
+            ).strip()
+
+            row = canonical_values.get(
+                f"{prefix}.table_row"
             )
-            or ""
-        ).strip()
 
-        if applicant_name:
-            applicant_age = _age_on_date(
-                applicant_dob
-            )
+            if table not in {"adult", "child"} or not isinstance(
+                row,
+                int,
+            ):
+                # No assignment means no row. Guessing one is what put people in
+                # the wrong place before.
+                return
 
-            applicant_record = {
-                "name": applicant_name,
-                "relationship": "self",
+            record = {
+                "name": name,
+                "relationship": relationship,
                 "dob": _format_date(
-                    applicant_dob
+                    raw_dob
                 ),
-                "raw_dob": applicant_dob,
-                "prefix": "applicant.household",
+                "raw_dob": raw_dob,
+                "prefix": prefix,
+                "details_prefix": details_prefix,
+                "programs_prefix": programs_prefix,
             }
 
-            if (
-                applicant_age is not None
-                and applicant_age < 18
-            ):
-                children.append(
-                    applicant_record
-                )
-            else:
-                adults.append(
-                    applicant_record
+            target = (
+                adults
+                if table == "adult"
+                else children
+            )
+
+            # Two people can never share a row: the canonical plan numbers each
+            # table independently and consecutively.
+            if row in target:
+                raise RuntimeError(
+                    "Two household people were assigned the same "
+                    f"{table} row: {row}"
                 )
 
-        # Additional household members.
-        index = 0
+            target[row] = record
 
-        while (
-            f"household.members.{index}.first_name"
-            in canonical_values
+        # The primary applicant. Placed whether or not a name has been entered,
+        # so nobody else can take their row.
+        place(
+            prefix="applicant",
+            details_prefix="applicant.household",
+            # The applicant's per-person program selections live under their
+            # household namespace; members carry theirs at the member root.
+            programs_prefix="applicant.household",
+            name=_full_name(
+                canonical_values,
+                "applicant",
+                last_first=True,
+            ),
+            relationship="self",
+            raw_dob=str(
+                canonical_values.get(
+                    "applicant.date_of_birth"
+                )
+                or ""
+            ).strip(),
+        )
+
+        # Additional household members. Membership is stated explicitly by
+        # `<prefix>.present`, never inferred from a populated name.
+        member_count = canonical_values.get(
+            "household.members.count"
+        )
+
+        if not isinstance(
+            member_count,
+            int,
+        ):
+            member_count = 0
+
+        for index in range(
+            member_count
         ):
             prefix = (
                 f"household.members.{index}"
             )
 
-            dob = str(
+            if canonical_values.get(
+                f"{prefix}.present"
+            ) is not True:
+                continue
+
+            table = str(
                 canonical_values.get(
-                    f"{prefix}.date_of_birth"
+                    f"{prefix}.table"
                 )
                 or ""
             ).strip()
 
-            age = _age_on_date(
-                dob
-            )
-
-            record = {
-                "name": _full_name(
+            place(
+                prefix=prefix,
+                details_prefix=f"{prefix}.{table}",
+                programs_prefix=prefix,
+                name=_full_name(
                     canonical_values,
                     prefix,
                     last_first=True,
                 ),
-                "relationship": str(
+                relationship=str(
                     canonical_values.get(
                         f"{prefix}.relationship_to_applicant"
                     )
                     or ""
                 ),
-                "dob": _format_date(
-                    dob
-                ),
-                "raw_dob": dob,
-                "prefix": prefix,
-            }
-
-            if (
-                age is not None
-                and age < 18
-            ):
-                children.append(
-                    record
-                )
-            else:
-                adults.append(
-                    record
-                )
-
-            index += 1
+                raw_dob=str(
+                    canonical_values.get(
+                        f"{prefix}.date_of_birth"
+                    )
+                    or ""
+                ).strip(),
+            )
 
         # -------------------------------------------------------------------
         # Page 3 — adult household rows
         # -------------------------------------------------------------------
 
-        for row, person in zip(
-            self.ADULT_ROWS,
-            adults,
+        for row_index, person in sorted(
+            adults.items()
         ):
-            prefix = str(
-                person["prefix"]
-            )
+            # A household larger than the printed table simply has no row for
+            # the extra people. Wrapping them onto row 1 would overwrite the
+            # applicant.
+            if row_index >= len(
+                self.ADULT_ROWS
+            ):
+                continue
 
-            # Primary applicant fields use applicant.household.* while
-            # additional adults use household.members.N.adult.*.
-            if prefix == "applicant.household":
-                details_prefix = prefix
-            else:
-                details_prefix = (
-                    f"{prefix}.adult"
-                )
+            row = self.ADULT_ROWS[
+                row_index
+            ]
+
+            details_prefix = str(
+                person["details_prefix"]
+            )
 
             set_field(
                 row["name"],
@@ -1932,7 +1982,9 @@ class Saws2PlusFieldAdapter:
             # Per-person benefit participation.
             apply_programs(
                 row,
-                prefix,
+                str(
+                    person["programs_prefix"]
+                ),
             )
 
             statuses = row["statuses"]
@@ -2001,23 +2053,24 @@ class Saws2PlusFieldAdapter:
         # Page 4 — child household rows
         # -------------------------------------------------------------------
 
-        for row, person in zip(
-            self.CHILD_ROWS,
-            children,
+        for row_index, person in sorted(
+            children.items()
         ):
-            prefix = str(
-                person["prefix"]
-            )
+            if row_index >= len(
+                self.CHILD_ROWS
+            ):
+                continue
 
-            # A minor primary applicant currently shares the applicant
-            # household namespace. Other children use the dedicated child
-            # namespace from the TypeScript canonical model.
-            if prefix == "applicant.household":
-                details_prefix = prefix
-            else:
-                details_prefix = (
-                    f"{prefix}.child"
-                )
+            row = self.CHILD_ROWS[
+                row_index
+            ]
+
+            # A minor primary applicant keeps the single applicant household
+            # namespace; other children use their own child sub-namespace. The
+            # canonical plan states which, so this is not re-derived here.
+            details_prefix = str(
+                person["details_prefix"]
+            )
 
             set_field(
                 row["name"],
@@ -2053,7 +2106,9 @@ class Saws2PlusFieldAdapter:
             # Per-person benefit participation.
             apply_programs(
                 row,
-                prefix,
+                str(
+                    person["programs_prefix"]
+                ),
             )
 
             statuses = row["statuses"]
