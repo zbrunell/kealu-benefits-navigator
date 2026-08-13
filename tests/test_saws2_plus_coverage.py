@@ -307,6 +307,13 @@ APPLICANT_AND_ONE_YEAR_OLD = {
     "applicant.household.applying_for.calfresh": True,
     "applicant.email_application_information": True,
     "household.homeless": False,
+    # Printed-row assignment, exactly as the canonical mapper emits it.
+    "applicant.table": "adult",
+    "applicant.table_row": 0,
+    "household.members.count": 1,
+    "household.members.0.present": True,
+    "household.members.0.table": "child",
+    "household.members.0.table_row": 0,
     # The child parsed from "me and my one year old", completed in the UI.
     "household.members.0.first_name": "Sofia",
     "household.members.0.last_name": "Delgado",
@@ -462,6 +469,8 @@ _APPLICANT_CORE = {
     "applicant.mailing_address_same_as_home": True,
     "applicant.household.sex": "female",
     "applicant.household.citizen_or_national": True,
+    "applicant.table": "adult",
+    "applicant.table_row": 0,
 }
 
 
@@ -478,6 +487,13 @@ def working_family_pdf(tmp_path_factory):
         "programs.calfresh": True,
         "programs.medi_cal": True,
         # Spouse and a 1-year-old child.
+        "household.members.count": 2,
+        "household.members.0.present": True,
+        "household.members.0.table": "adult",
+        "household.members.0.table_row": 1,
+        "household.members.1.present": True,
+        "household.members.1.table": "child",
+        "household.members.1.table_row": 0,
         "household.members.0.first_name": "Luis",
         "household.members.0.last_name": "Delgado",
         "household.members.0.date_of_birth": "1991-09-02",
@@ -586,6 +602,10 @@ def self_employed_pdf(tmp_path_factory):
         **_APPLICANT_CORE,
         "applicant.household.marital_status": "single",
         "programs.calfresh": True,
+        "household.members.count": 1,
+        "household.members.0.present": True,
+        "household.members.0.table": "child",
+        "household.members.0.table_row": 0,
         "household.members.0.first_name": "Sofia",
         "household.members.0.last_name": "Delgado",
         "household.members.0.date_of_birth": "2024-06-15",

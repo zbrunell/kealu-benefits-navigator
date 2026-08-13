@@ -133,6 +133,35 @@ def test_adapter_maps_adults_and_children_without_ssn_columns() -> None:
         "applicant.date_of_birth":
             "1990-12-10",
 
+        # Printed-row assignment comes from the canonical layer, never from
+        # inference inside the adapter.
+        "applicant.table":
+            "adult",
+
+        "applicant.table_row":
+            0,
+
+        "household.members.count":
+            2,
+
+        "household.members.0.present":
+            True,
+
+        "household.members.0.table":
+            "adult",
+
+        "household.members.0.table_row":
+            1,
+
+        "household.members.1.present":
+            True,
+
+        "household.members.1.table":
+            "child",
+
+        "household.members.1.table_row":
+            0,
+
         "household.members.0.first_name":
             "Adult",
 
