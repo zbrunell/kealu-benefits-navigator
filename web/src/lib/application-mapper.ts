@@ -779,6 +779,16 @@ function mapQuestionnaire(
   tri("household.caretaker_relative", circumstances.caretakerRelative);
   tri("household.authorized_representative", circumstances.authorizedRepresentative.answer);
 
+  /*
+   * The record gateways' own Yes/No answers. These were previously not emitted
+   * at all, so answering Q6d/Q6g/Q6l/Q6p left both printed boxes blank even
+   * when the applicant had explicitly said No.
+   */
+  tri("household.military_service", circumstances.militaryService.answer);
+  tri("household.absent_parents", circumstances.absentParents.answer);
+  tri("household.students", circumstances.students.answer);
+  tri("household.foster_care", circumstances.fosterCare.answer);
+
   for (const [index, representative] of activeEntries(
     circumstances.authorizedRepresentative,
   ).entries()) {

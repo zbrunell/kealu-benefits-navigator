@@ -53,6 +53,27 @@ EXPECTED = {
         "Check Box21 PG 15",
         "Check Box22 PG 15",
     ),
+    # Household circumstances. Several field names carry the form's own
+    # typography errors and are reproduced exactly.
+    "household.authorized_representative": ("Q2", "Check Box1 PG 2", "Check Box2 PG 2"),
+    "health.american_indian_or_alaska_native": (
+        "Q3",
+        "Check Box15 PG 2",
+        "Check Box16 PG 2",
+    ),
+    "household.prior_public_assistance": ("Q5", "Check Box47 PG 2", "Check Box48 PG 2"),
+    "household.military_service": ("Q6d", "Check Box1 PG 5", "Check Box2 PG 5"),
+    "household.absent_parents": ("Q6g", "Check Box17 PG 6", "Check Box18 PG 6"),
+    "household.caretaker_relative": ("Q6h", "Check Box23 PG 6", "Check Box24 PG 6"),
+    # Note the spaces inside the field name, exactly as the form defines them.
+    "household.students": ("Q6l", "Check Box 1 PG 7", "Check Box 2 PG 7"),
+    "household.foster_care": ("Q6p", "Check Box1 PG 8", "Check Box2 PG 8"),
+    # Note the double space before "PG 8".
+    "household.california_resident": ("Q6q", "Check Box8 PG 8", "Check Box9  PG 8"),
+    "household.planned_absence": ("Q6r", "Check Box11 PG 8", "Check Box12 PG 8"),
+    # Note the lower-case "pg 10".
+    "income.varies_during_year": ("Q10", "Check Box27 pg 10", "Check Box28 pg 10"),
+    "household.other_food_program": ("Q18", "Check Box40 PG 12", "Check Box41 PG 12"),
 }
 
 
@@ -247,3 +268,29 @@ def test_q7_writes_nothing_for_a_record_with_no_amount(available_fields):
     # The person and source columns still fill.
     assert values[Q7_ROW_0[0]] == "Maria Delgado"
     assert values[Q7_ROW_0[1]] == "Unemployment"
+
+
+def test_q23f_consent_box_is_never_written(available_fields):
+    """Q23f offers two opposite choices but the AcroForm has one checkbox.
+
+    Printed page 13 shows "Yes, renew my eligibility automatically ..." at
+    y=61.8 and "No, don't use information from tax returns ..." at y=51.8, both
+    marked at x~83.7. The form contains exactly one box, Check Box74 PG 13, at
+    x=83.5 mid_y=56.6 — equidistant from both lines. Ticking it could tell the
+    county either thing, so it stays unwritten and unwritable.
+    """
+    box = Saws2PlusFieldAdapter.Q23F_AMBIGUOUS_CONSENT_BOX
+
+    assert box in available_fields, "the box does exist on the form"
+    assert box not in Saws2PlusFieldAdapter.SAFE_FIELDS
+
+    for value in (True, False):
+        values = _map({"health.renewal_authorization": value}, available_fields)
+        assert box not in values, value
+
+
+def test_field_names_preserve_the_forms_own_typography(available_fields):
+    """The AcroForm key is whatever the form author typed, spaces and all."""
+    for odd in ("Check Box 1 PG 7", "Check Box9  PG 8", "Check Box27 pg 10"):
+        assert odd in available_fields, odd
+        assert odd in Saws2PlusFieldAdapter.SAFE_FIELDS, odd

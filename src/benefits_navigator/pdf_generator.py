@@ -1350,7 +1350,124 @@ class Saws2PlusFieldAdapter:
             "Check Box21 PG 15",
             "Check Box22 PG 15",
         ),
+
+        # -- Household circumstances, verified the same way ------------------
+        #
+        # Several of these field names carry the form's own typography errors —
+        # a space inside "Check Box 1 PG 7", a double space in
+        # "Check Box9  PG 8", a lower-case "pg 10". They are reproduced exactly:
+        # the AcroForm key is whatever the form author typed.
+
+        # Q2 "Do you want to name someone to help you with your CalFresh case?"
+        # Yes x=339.2 / No x=382.2.
+        "household.authorized_representative": (
+            "Check Box1 PG 2",
+            "Check Box2 PG 2",
+        ),
+
+        # Q3 "Are you or any member of your family American Indian or Alaskan
+        # Native?"  Yes x=379.2 / No x=422.0.
+        "health.american_indian_or_alaska_native": (
+            "Check Box15 PG 2",
+            "Check Box16 PG 2",
+        ),
+
+        # Q5 "...have you received benefits from another program (General
+        # Assistance/General Relief, SNAP, etc.)?"  Yes x=466.0 / No x=508.8.
+        "household.prior_public_assistance": (
+            "Check Box47 PG 2",
+            "Check Box48 PG 2",
+        ),
+
+        # Q6d "Has anyone been in the U.S. Military service, or are they the
+        # spouse, parent or child of a person who was?"
+        # Yes x=241.8 / No x=284.8.
+        "household.military_service": (
+            "Check Box1 PG 5",
+            "Check Box2 PG 5",
+        ),
+
+        # Q6g "Does anyone under 21 have a parent who does not live in the
+        # home?"  Yes x=78.0 / No x=111.5.
+        "household.absent_parents": (
+            "Check Box17 PG 6",
+            "Check Box18 PG 6",
+        ),
+
+        # Q6h "Does anyone live with at least one child under 19 and are they
+        # the main person taking care of the child?"
+        # Yes x=78.0 / No x=111.5.
+        "household.caretaker_relative": (
+            "Check Box23 PG 6",
+            "Check Box24 PG 6",
+        ),
+
+        # Q6l "Is anyone who is applying for benefits attending a college or
+        # vocational school?"  Yes x=435.5 / No x=469.2.
+        "household.students": (
+            "Check Box 1 PG 7",
+            "Check Box 2 PG 7",
+        ),
+
+        # Q6p "Is there a foster child currently living in your home who is
+        # receiving foster care services?"  Yes x=471.2 / No x=505.0.
+        "household.foster_care": (
+            "Check Box1 PG 8",
+            "Check Box2 PG 8",
+        ),
+
+        # Q6q "Does everyone listed in question 6 live in California and expect
+        # to keep living here?"  Yes x=442.2 / No x=475.8.
+        "household.california_resident": (
+            "Check Box8 PG 8",
+            "Check Box9  PG 8",
+        ),
+
+        # Q6r "Does anyone listed in question 6 plan to leave California for
+        # more than 30 days?"  Yes x=432.0 / No x=465.5.
+        "household.planned_absence": (
+            "Check Box11 PG 8",
+            "Check Box12 PG 8",
+        ),
+
+        # Q10 "Does anyone's total income (unearned, earned, and self
+        # employment) change from month to month?"
+        # Yes x=485.5 / No x=519.2.
+        "income.varies_during_year": (
+            "Check Box27 pg 10",
+            "Check Box28 pg 10",
+        ),
+
+        # Q18 "Does anyone in question 6 get food from any of the following?"
+        # The Yes/No pair sits above the printed list of programs.
+        # Yes x=353.5 / No x=387.0.
+        "household.other_food_program": (
+            "Check Box40 PG 12",
+            "Check Box41 PG 12",
+        ),
     }
+
+    # -----------------------------------------------------------------------
+    # Verified as UNMAPPABLE — recorded so the search is not repeated
+    # -----------------------------------------------------------------------
+    #
+    # Q23f asks the applicant to consent to automatic renewal from tax data.
+    # The printed page offers two opposite choices:
+    #
+    #   y=61.8  "Yes, renew my eligibility automatically for the next ..."
+    #   y=51.8  "No, don't use information from tax returns to renew my
+    #            coverage."
+    #
+    # Both printed markers start at x≈83.7, and the AcroForm contains exactly
+    # ONE checkbox for them: "Check Box74 PG 13" at x=83.5, mid_y=56.6 — 5.2pt
+    # from each line, so its rectangle does not disambiguate them. The duration
+    # boxes (Check Box69-73 PG 13, "5/4/3/2/1 years") sit on the Yes line at
+    # mid_y=65.1 and are unambiguous, but the model carries no duration.
+    #
+    # Ticking that one box could therefore tell the county either "renew my
+    # coverage automatically" or "never use my tax returns" — opposite
+    # instructions about the applicant's tax data. It stays unwritten.
+    Q23F_AMBIGUOUS_CONSENT_BOX = "Check Box74 PG 13"
 
     SAFE_FIELDS = frozenset(
         {

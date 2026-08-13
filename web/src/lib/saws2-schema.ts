@@ -476,10 +476,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 2,
     kind: 'boolean',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'circumstances.californiaResident',
     canonicalKey: 'household.california_resident',
-    note: 'Q6q destination not yet located on the printed form.',
   },
   {
     id: 'circumstances.food_together',
@@ -550,10 +549,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 2,
     kind: 'boolean',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'income.incomeVariesDuringYear',
     canonicalKey: 'income.varies_during_year',
-    note: 'Q10 destination not yet located on the printed form.',
   },
   {
     id: 'expenses.household',
@@ -589,10 +587,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 3,
     kind: 'records',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'circumstances.authorizedRepresentative.answer',
     canonicalKey: 'household.authorized_representative',
-    note: 'Q2 destination not yet located; Appendix C carries the detail.',
   },
   {
     id: 'health.american_indian',
@@ -602,10 +599,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 3,
     kind: 'boolean',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'health.americanIndianOrAlaskaNative',
     canonicalKey: 'health.american_indian_or_alaska_native',
-    note: 'Q3 destination not yet located on the printed form.',
   },
   {
     id: 'circumstances.prior_public_assistance',
@@ -615,10 +611,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 3,
     kind: 'boolean',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'circumstances.priorPublicAssistance',
     canonicalKey: 'household.prior_public_assistance',
-    note: 'Q5 destination not yet located on the printed form.',
   },
   {
     id: 'circumstances.military_service',
@@ -628,10 +623,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 3,
     kind: 'records',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'circumstances.militaryService.answer',
     canonicalKey: 'household.military_service',
-    note: 'Q6d destination not yet located on the printed form.',
   },
   {
     id: 'circumstances.absent_parents',
@@ -641,10 +635,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 3,
     kind: 'records',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'circumstances.absentParents.answer',
     canonicalKey: 'household.absent_parents',
-    note: 'Q6g destination not yet located on the printed form.',
   },
   {
     id: 'circumstances.caretaker_relative',
@@ -654,10 +647,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 3,
     kind: 'boolean',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'circumstances.caretakerRelative',
     canonicalKey: 'household.caretaker_relative',
-    note: 'Q6h destination not yet located on the printed form.',
   },
   {
     id: 'circumstances.students',
@@ -667,10 +659,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 3,
     kind: 'records',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'circumstances.students.answer',
     canonicalKey: 'household.students',
-    note: 'Q6l destination not yet located on the printed form.',
   },
   {
     id: 'circumstances.foster_care',
@@ -680,10 +671,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 3,
     kind: 'records',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'circumstances.fosterCare.answer',
     canonicalKey: 'household.foster_care',
-    note: 'Q6p destination not yet located on the printed form.',
   },
   {
     id: 'circumstances.planned_absence',
@@ -693,10 +683,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 3,
     kind: 'boolean',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'circumstances.plannedAbsence',
     canonicalKey: 'household.planned_absence',
-    note: 'Q6r destination not yet located on the printed form.',
   },
   {
     id: 'income.recent_job_change',
@@ -779,10 +768,9 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 3,
     kind: 'boolean',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'circumstances.otherFoodProgram',
     canonicalKey: 'household.other_food_program',
-    note: 'Q18 is a checkbox list rather than a single Yes/No pair.',
   },
   {
     id: 'circumstances.institutional_living',
@@ -900,7 +888,13 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     pdf: 'unreviewed',
     path: 'health.renewalAuthorization',
     canonicalKey: 'health.renewal_authorization',
-    note: 'Q23f offers a duration choice (1-5 years) the model does not carry.',
+    note:
+      'Verified unmappable, not merely unreviewed. The printed page offers two ' +
+      'opposite choices — "Yes, renew automatically" and "No, do not use my tax ' +
+      'returns" — both marked at x~83.7, and the AcroForm has exactly one ' +
+      'checkbox (Check Box74 PG 13, x=83.5, mid_y=56.6) equidistant from both ' +
+      'lines. Ticking it could tell the county either thing, so nothing is ' +
+      'written. The model also carries no renewal duration (1-5 years).',
   },
   {
     id: 'resources.transferred',
