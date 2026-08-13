@@ -262,12 +262,33 @@ export const QUESTION_META: Readonly<
   'expenses.spousal_support_paid': { tier: 3, saws: 'Q13' },
   'expenses.medical': { tier: 3, saws: 'Q16' },
   'expenses.other_tax_deductible': { tier: 3, saws: 'Q17' },
+  /*
+   * The printed form asks four separate health-coverage questions, and they are
+   * numbered separately. Labelling three of them "Q22" made the flow look like
+   * it was asking the same question over and over: an applicant who answered
+   * Q22 "No" was then shown two more questions badged "SAWS 2 PLUS Q22".
+   *
+   * Verified against the printed page (PDF page 19):
+   *
+   *   Q22  "Is anyone enrolled in health coverage now from the following?"
+   *   Q22a "Is anyone listed on this application offered health care coverage
+   *         from a job?" — a Yes here is what adds Appendix A.
+   *   Q22b "Is anyone's health insurance expected to end or has it ended in the
+   *         last 90 days?"
+   *   Q22c "Does anyone want help for medical bills from the last three months?"
+   *
+   * None of them is a follow-up to Q22: each is independently applicable, so
+   * answering Q22 No must not suppress any of the other three.
+   */
   'health.current_coverage': { tier: 3, saws: 'Q22' },
-  'health.coverage_ending': { tier: 3, saws: 'Q22' },
-  'health.employer_coverage': { tier: 3, saws: 'Appendix A' },
+  'health.employer_coverage': { tier: 3, saws: 'Q22a' },
+  'health.coverage_ending': { tier: 3, saws: 'Q22b' },
+  'health.retroactive_medical': { tier: 3, saws: 'Q22c' },
   'health.tax_filer': { tier: 3, saws: 'Q23' },
-  'health.spouse_filing_jointly': { tier: 3, saws: 'Q23' },
-  'health.retroactive_medical': { tier: 3, saws: 'Q22' },
+  // Q23c is the only tax sub-question we currently ask; it is genuinely a
+  // follow-up, printed under "complete for each person who plans to file".
+  'health.spouse_filing_jointly': { tier: 3, saws: 'Q23c' },
+  'health.renewal_authorization': { tier: 3, saws: 'Q23f' },
   'health.american_indian': { tier: 3, saws: 'Q3' },
   'resources.vehicles': { tier: 3, saws: 'Q26' },
   'resources.real_property': { tier: 3, saws: 'Q27' },
@@ -344,10 +365,38 @@ function withPriority(question: UnstampedQuestion): PlannedQuestion {
   };
 }
 
-/** True when a tri-state answer still needs asking. */
-function unanswered(value: TriState): boolean {
-  return value === undefined;
+/**
+ * Whether a tri-state question has an answer.
+ *
+ * This is the single definition of "answered" for the whole application, and it
+ * is deliberately a presence check rather than a truthiness check. `false` is a
+ * real answer — the applicant said No — and a No must behave exactly like a Yes
+ * as far as "have we asked this yet?" is concerned.
+ *
+ * Anything of the shape
+ *
+ *     if (!value) { ask the question again }
+ *
+ * collapses "answered No" into "never asked" and makes the flow re-ask a
+ * question the applicant already dealt with. Use these helpers instead of
+ * writing the comparison inline, so there is one place to be right.
+ *
+ * Skipping is not represented here at all: a skipped question was never
+ * answered, so it stays `undefined` and nothing is written for it. The
+ * navigator tracks "the user chose to move past this" separately, which is what
+ * keeps Skip distinct from No.
+ */
+export function isAnswered(value: TriState): boolean {
+  return value === true || value === false;
 }
+
+/** True when a tri-state answer still needs asking. */
+export function isUnanswered(value: TriState): boolean {
+  return !isAnswered(value);
+}
+
+/** Internal shorthand; the exported names are the contract. */
+const unanswered = isUnanswered;
 
 interface GatewaySpec {
   section: QuestionSection;

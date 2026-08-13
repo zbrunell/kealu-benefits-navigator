@@ -36,6 +36,7 @@
 import {
   getRequiredApplicationQuestions,
   householdHasElderlyOrDisabledMember,
+  isAnswered,
 } from '@/lib/saws2-question-planner';
 import type { Saws2PlusApplicationData } from '@/types/application';
 import type { Saws2PlusProgram } from '@/lib/report-assembler';
@@ -176,10 +177,13 @@ function householdAgesKnown(data: Saws2PlusApplicationData): boolean {
   );
 }
 
-/** True when a tri-state gateway has been answered either way. */
-function answered(value: boolean | undefined): boolean {
-  return value !== undefined;
-}
+/**
+ * True when a tri-state gateway has been answered either way.
+ *
+ * Re-exported from the planner rather than redefined, so "answered" cannot drift
+ * between what the flow asks and what readiness reports as outstanding.
+ */
+const answered = isAnswered;
 
 /** Income gateways the county needs answered to compute any budget. */
 function incomeGatewaysAnswered(data: Saws2PlusApplicationData): boolean {

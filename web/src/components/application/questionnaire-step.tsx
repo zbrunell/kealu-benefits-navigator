@@ -947,8 +947,8 @@ export default function QuestionnaireStep({
               className="w-full text-xs text-slate-500"
               data-testid="skip-explanation"
             >
-              Skipping leaves this blank in your draft — it is not answered “No”.
-              You may need to complete it later.
+              Skip for now. This will stay blank in your draft — it is not
+              answered “No” — and may need to be completed before submission.
             </p>
           )}
         </div>
