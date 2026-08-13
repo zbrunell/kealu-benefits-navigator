@@ -24,6 +24,8 @@ import { buildInitialApplicationData } from '@/lib/application-data';
 import { buildApplicationFieldPlan } from '@/lib/application-mapper';
 import {
   QUESTION_META,
+  REQUIREMENT_HINTS,
+  REQUIREMENT_LABELS,
   getRequiredApplicationQuestions,
   requirementForTier,
   sawsQuestionFor,
@@ -158,11 +160,45 @@ describe('question priority', () => {
     expect(detail?.sawsQuestion).toBe('Q8');
   });
 
-  it('maps tiers to skippability consistently', () => {
+  it('maps tiers to skippability with precise vocabulary', () => {
     expect(requirementForTier(1)).toBe('required');
     expect(requirementForTier(2)).toBe('important');
-    expect(requirementForTier(3)).toBe('optional');
+    // Tier 3 is skippable while building a draft but may still be needed by the
+    // county, so it is deliberately NOT called "optional".
+    expect(requirementForTier(3)).toBe('can_complete_later');
+    // Only questions the form itself treats as non-impacting are "optional".
     expect(requirementForTier(4)).toBe('optional');
+  });
+
+  it('never labels an eligibility-bearing question as optional', () => {
+    // Q29-Q36 are skippable in the draft flow but do bear on eligibility.
+    for (const id of [
+      'integrity.fleeing_felon',
+      'integrity.welfare_fraud',
+      'integrity.duplicate_benefits',
+      'integrity.sanction',
+    ]) {
+      expect(requirementForTier(tierFor(id)), id).toBe('can_complete_later');
+    }
+  });
+
+  it('gives every requirement a user-facing label and hint', () => {
+    for (const requirement of [
+      'required',
+      'important',
+      'can_complete_later',
+      'optional',
+    ] as const) {
+      expect(REQUIREMENT_LABELS[requirement]).toBeTruthy();
+      expect(REQUIREMENT_HINTS[requirement]).toBeTruthy();
+      // Skipping must never be described as "does not apply" or "not needed".
+      expect(REQUIREMENT_HINTS[requirement]).not.toMatch(
+        /does not apply|not needed|irrelevant/i,
+      );
+    }
+
+    expect(REQUIREMENT_LABELS.required).toBe('Required to continue');
+    expect(REQUIREMENT_LABELS.can_complete_later).toBe('Can complete later');
   });
 });
 
@@ -203,9 +239,10 @@ describe('SAWS 2 PLUS question numbering', () => {
   it('every question the planner asks carries a tier and a requirement', () => {
     for (const question of getRequiredApplicationQuestions(household()).outstanding) {
       expect([1, 2, 3, 4], question.id).toContain(question.tier);
-      expect(['required', 'important', 'optional'], question.id).toContain(
-        question.requirement,
-      );
+      expect(
+        ['required', 'important', 'can_complete_later', 'optional'],
+        question.id,
+      ).toContain(question.requirement);
     }
   });
 });
@@ -216,7 +253,9 @@ describe('SAWS 2 PLUS question numbering', () => {
 
 describe('skipping questions', () => {
   /** Advance the flow to a question with the given requirement. */
-  function flowAt(requirement: 'required' | 'important' | 'optional') {
+  function flowAt(
+    requirement: 'required' | 'important' | 'can_complete_later' | 'optional',
+  ) {
     const data = household();
     let flow = startFlow(data);
 
