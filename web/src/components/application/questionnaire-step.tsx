@@ -8,6 +8,8 @@
 import { useMemo, useState } from "react";
 
 import {
+  REQUIREMENT_HINTS,
+  REQUIREMENT_LABELS,
   SECTION_TITLES,
   getActiveAppendices,
   getRequiredApplicationQuestions,
@@ -813,40 +815,34 @@ export default function QuestionnaireStep({
         </h1>
 
         {question && (
-          <p className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-            <span
-              className={`rounded-full border px-2 py-0.5 font-medium ${
-                question.requirement === "required"
-                  ? "border-red-200 bg-red-50 text-red-800"
-                  : question.requirement === "important"
-                    ? "border-amber-200 bg-amber-50 text-amber-800"
-                    : "border-slate-200 bg-slate-50 text-slate-600"
-              }`}
-              data-testid="question-requirement"
-            >
-              {question.requirement === "required"
-                ? "Needed to file"
-                : question.requirement === "important"
-                  ? "Speeds up your determination"
-                  : "Optional"}
-            </span>
-
-            {question.sawsQuestion && (
-              <span className="text-slate-500">
-                SAWS 2 PLUS {question.sawsQuestion}
+          <div className="mt-2">
+            <p className="flex flex-wrap items-center gap-2 text-xs">
+              <span
+                className={`rounded-full border px-2 py-0.5 font-medium ${
+                  question.requirement === "required"
+                    ? "border-red-200 bg-red-50 text-red-800"
+                    : question.requirement === "important"
+                      ? "border-amber-200 bg-amber-50 text-amber-800"
+                      : question.requirement === "can_complete_later"
+                        ? "border-blue-200 bg-blue-50 text-blue-800"
+                        : "border-slate-200 bg-slate-50 text-slate-600"
+                }`}
+                data-testid="question-requirement"
+              >
+                {REQUIREMENT_LABELS[question.requirement]}
               </span>
-            )}
-          </p>
-        )}
 
-        {question?.help && (
-          <p className="mt-2 text-sm text-slate-600">{question.help}</p>
-        )}
+              {question.sawsQuestion && (
+                <span className="text-slate-500">
+                  SAWS 2 PLUS {question.sawsQuestion}
+                </span>
+              )}
+            </p>
 
-        {!question && (
-          <p className="mt-2 text-sm text-slate-600">
-            You can go back to review any answer, or continue to the review step.
-          </p>
+            <p className="mt-1 text-xs text-slate-600">
+              {REQUIREMENT_HINTS[question.requirement]}
+            </p>
+          </div>
         )}
 
         {/* Progress */}
@@ -930,10 +926,11 @@ export default function QuestionnaireStep({
             <button
               type="button"
               onClick={skipQuestion}
+              title="This field stays blank in your draft. You may need to complete it later."
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
               data-testid="question-skip"
             >
-              Skip this question
+              Skip for now
             </button>
           )}
 
@@ -944,6 +941,16 @@ export default function QuestionnaireStep({
           >
             {question ? "Finish and review" : "Continue to review"}
           </button>
+
+          {canSkip(question) && (
+            <p
+              className="w-full text-xs text-slate-500"
+              data-testid="skip-explanation"
+            >
+              Skipping leaves this blank in your draft — it is not answered “No”.
+              You may need to complete it later.
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -76,16 +76,53 @@ export type QuestionKind = 'gateway' | 'records' | 'field' | 'choice';
  */
 export type QuestionTier = 1 | 2 | 3 | 4;
 
-/** Whether the user may move past a question without answering it. */
-export type QuestionRequirement = 'required' | 'important' | 'optional';
+/**
+ * Whether the user may move past a question without answering it.
+ *
+ * The names describe what skipping costs, not whether the question matters:
+ *
+ * - `required` — the flow will not continue without it.
+ * - `important` — materially affects eligibility, benefit amount or processing
+ *   speed, but a usable draft is still possible without it.
+ * - `can_complete_later` — may be left blank in the draft, yet the county may
+ *   still need it before the application is decided. Q29-Q36 sit here: they are
+ *   skippable while building a draft, but they are not "optional" in the sense of
+ *   not mattering.
+ * - `optional` — the form itself treats it as non-impacting, e.g. Q38 states
+ *   outright that the answers do not affect eligibility.
+ */
+export type QuestionRequirement =
+  | 'required'
+  | 'important'
+  | 'can_complete_later'
+  | 'optional';
 
 /** How a tier maps to skippability. */
 export function requirementForTier(tier: QuestionTier): QuestionRequirement {
   if (tier === 1) return 'required';
   if (tier === 2) return 'important';
+  if (tier === 3) return 'can_complete_later';
 
   return 'optional';
 }
+
+/** Short user-facing label for a requirement. */
+export const REQUIREMENT_LABELS: Record<QuestionRequirement, string> = {
+  required: 'Required to continue',
+  important: 'Helps determine your benefits',
+  can_complete_later: 'Can complete later',
+  optional: 'Optional',
+};
+
+/** One-line explanation of what the requirement means for the applicant. */
+export const REQUIREMENT_HINTS: Record<QuestionRequirement, string> = {
+  required: 'We need this before moving on.',
+  important:
+    'Answering helps the County process your application faster and work out what you qualify for.',
+  can_complete_later:
+    'You can leave this blank for now. The County may still need it later.',
+  optional: 'The form treats this as optional — it does not affect eligibility.',
+};
 
 export interface PlannedQuestion {
   /** Priority tier; lower is asked first. */
@@ -190,13 +227,15 @@ export const QUESTION_META: Readonly<
   'household.applicant_dob': { tier: 1, saws: 'Q6' },
 
   // ── Tier 2: eligibility-critical (Q6 detail, Q7-Q9, Q15, Q24) ──────────
-  'income.unearned': { tier: 2, saws: 'Q7' },
+  'income.unearned': { tier: 2, saws: 'Q7' }, // Unearned Income (page 8)
   'income.earned': { tier: 2, saws: 'Q8' },
   'income.self_employment': { tier: 2, saws: 'Q8a' },
+  // Q9 "Other Income" — housing/utilities/food/clothing received free or for
+  // work. Distinct from Q7 (unearned) and Q8 (earned).
   'income.in_kind': { tier: 2, saws: 'Q9' },
   'income.varies_during_year': { tier: 2, saws: 'Q10' },
-  'expenses.household': { tier: 2, saws: 'Q15' },
-  'resources.accounts': { tier: 2, saws: 'Q24' },
+  'expenses.household': { tier: 2, saws: 'Q15' }, // Household Expenses (page 11)
+  'resources.accounts': { tier: 2, saws: 'Q24' }, // Household's Resources (page 14)
   'circumstances.food_together': { tier: 2, saws: 'Q21' },
   'circumstances.california_resident': { tier: 2, saws: 'Q6q' },
 
@@ -232,7 +271,12 @@ export const QUESTION_META: Readonly<
   'health.american_indian': { tier: 3, saws: 'Q3' },
   'resources.vehicles': { tier: 3, saws: 'Q26' },
   'resources.real_property': { tier: 3, saws: 'Q27' },
-  'resources.transferred': { tier: 3, saws: 'Q25' },
+  /*
+   * The transferred-resource question is printed at the end of Q24, above the
+   * "25. Personal Property" heading, and carries no number of its own. It was
+   * previously labelled Q25, which is a different question (personal property).
+   */
+  'resources.transferred': { tier: 3, saws: 'Q24 (transferred resources)' },
   'resources.diversion_payment': { tier: 3, saws: 'Q28' },
   'appendices.tribal_name': { tier: 3, saws: 'Appendix B' },
   'appendices.employment_history': { tier: 3, saws: 'Appendix D' },
