@@ -50,6 +50,15 @@ export interface QuestionFlowState {
   draft: string;
   /** Validation message for the current draft, or null. */
   error: string | null;
+  /**
+   * Questions the user chose to skip.
+   *
+   * A skipped question is not re-asked while walking forward, and nothing is
+   * written for it — the corresponding PDF field simply stays blank. Skipping is
+   * not an answer: it never becomes a No, and the planner still counts the
+   * question as unanswered.
+   */
+  skipped: string[];
 }
 
 export const EMPTY_FLOW: QuestionFlowState = {
@@ -57,6 +66,7 @@ export const EMPTY_FLOW: QuestionFlowState = {
   index: -1,
   draft: '',
   error: null,
+  skipped: [],
 };
 
 /** Question kinds that submit through a draft + explicit Continue/Enter. */
@@ -182,7 +192,8 @@ export function committedValue(
   const value = readPath(data.questionnaire, question.path);
 
   if (value === undefined || value === null) return '';
-  if (typeof value === 'boolean') return '';
+  // A boolean is shown by its selected button, and a record list has no draft.
+  if (typeof value === 'boolean' || typeof value === 'object') return '';
 
   return String(value);
 }
@@ -240,15 +251,51 @@ export function stillRelevant(
 export function nextUnvisited(
   data: Saws2PlusApplicationData,
   trail: PlannedQuestion[],
+  skipped: string[] = [],
 ): PlannedQuestion | null {
-  const seen = new Set(trail.map((question) => question.id));
+  const seen = new Set([...trail.map((question) => question.id), ...skipped]);
   const outstanding = getRequiredApplicationQuestions(data).outstanding;
 
+  // Outstanding is already ordered by priority, so this walks tier 1 first.
+  const unseen = outstanding.find((question) => !seen.has(question.id));
+  if (unseen) return unseen;
+
+  // Everything left has been visited or skipped; offer the first required one
+  // again rather than a skipped optional question.
   return (
-    outstanding.find((question) => !seen.has(question.id)) ??
-    outstanding[0] ??
-    null
+    outstanding.find(
+      (question) =>
+        question.requirement === 'required' && !skipped.includes(question.id),
+    ) ?? null
   );
+}
+
+/** Whether the question on screen may be passed over without an answer. */
+export function canSkip(question: PlannedQuestion | null): boolean {
+  return question !== null && question.requirement !== 'required';
+}
+
+/**
+ * Skip the current question.
+ *
+ * Writes nothing: the answer stays unknown and the PDF field stays blank. A
+ * required (tier 1) question cannot be skipped.
+ */
+export function skipCurrent(
+  data: Saws2PlusApplicationData,
+  state: QuestionFlowState,
+): QuestionFlowState {
+  const question = currentQuestion(state);
+
+  if (!canSkip(question)) {
+    return { ...state, error: 'This answer is needed to file the application.' };
+  }
+
+  return advance(data, {
+    ...state,
+    skipped: [...state.skipped, question!.id],
+    error: null,
+  });
 }
 
 /** Start (or restart) the flow at the first outstanding question. */
@@ -262,6 +309,7 @@ export function startFlow(data: Saws2PlusApplicationData): QuestionFlowState {
     index: 0,
     draft: committedValue(data, first),
     error: null,
+    skipped: [],
   };
 }
 
@@ -366,7 +414,7 @@ export function advance(
     }
   }
 
-  const next = nextUnvisited(data, state.trail);
+  const next = nextUnvisited(data, state.trail, state.skipped);
 
   if (!next) {
     // Nothing left to ask: keep the trail for Back, but show no question.
@@ -376,6 +424,7 @@ export function advance(
   const trail = [...state.trail, next];
 
   return {
+    ...state,
     trail,
     index: trail.length - 1,
     draft: committedValue(data, next),

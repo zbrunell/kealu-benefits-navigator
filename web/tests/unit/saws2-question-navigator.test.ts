@@ -39,8 +39,14 @@ import {
   validateDraft,
   type QuestionFlowState,
 } from '@/lib/saws2-question-navigator';
+import type { PlannedQuestion } from '@/lib/saws2-question-planner';
 import type { Saws2PlusApplicationData } from '@/types/application';
 import { APPLICANT_MEMBER_ID } from '@/types/saws-questionnaire';
+
+/** Build a planned question for tests, defaulting its priority metadata. */
+function q(partial: Omit<PlannedQuestion, 'tier' | 'requirement'>): PlannedQuestion {
+  return { tier: 3, requirement: 'optional', ...partial };
+}
 
 function set(
   data: Saws2PlusApplicationData,
@@ -109,7 +115,7 @@ function withEmployerNameQuestion(): {
 
   return {
     data,
-    state: { trail: [question!], index: 0, draft: '', error: null },
+    state: { trail: [question!], index: 0, draft: '', error: null, skipped: [] },
   };
 }
 
@@ -239,8 +245,8 @@ describe('validation before commit', () => {
   });
 
   it('validates amounts and dates by field semantics', () => {
-    const amount = { id: 'x', kind: 'field' as const, section: 'income' as const, prompt: '', path: 'income.earned.entries.0.grossPerPeriod' };
-    const date = { id: 'y', kind: 'field' as const, section: 'income' as const, prompt: '', path: 'income.earned.entries.0.startDate' };
+    const amount = q({ id: 'x', kind: 'field', section: 'income', prompt: '', path: 'income.earned.entries.0.grossPerPeriod' });
+    const date = q({ id: 'y', kind: 'field', section: 'income', prompt: '', path: 'income.earned.entries.0.startDate' });
 
     expect(draftKind(amount)).toBe('number');
     expect(draftKind(date)).toBe('date');
@@ -258,7 +264,7 @@ describe('validation before commit', () => {
 
     expect(usesDraft(currentQuestion(state))).toBe(true);
     expect(
-      usesDraft({ id: 'g', kind: 'gateway', section: 'income', prompt: '', path: 'income.earned.answer' }),
+      usesDraft(q({ id: 'g', kind: 'gateway', section: 'income', prompt: '', path: 'income.earned.answer' })),
     ).toBe(false);
   });
 });
@@ -371,24 +377,24 @@ describe('editing a gateway after the fact', () => {
       },
     ]);
 
-    const gateway = {
+    const gateway = q({
       id: 'income.earned',
-      kind: 'gateway' as const,
-      section: 'income' as const,
+      kind: 'gateway',
+      section: 'income',
       prompt: 'Does anyone get income from a job?',
       path: 'income.earned.answer',
-    };
-    const field = {
+    });
+    const field = q({
       id: 'income.earned.0.employerName',
-      kind: 'field' as const,
-      section: 'income' as const,
+      kind: 'field',
+      section: 'income',
       prompt: 'Employer name',
       path: 'income.earned.entries.0.employerName',
-    };
+    });
 
     return {
       data,
-      state: { trail: [gateway, field], index: 1, draft: '', error: null },
+      state: { trail: [gateway, field], index: 1, draft: '', error: null, skipped: [] },
       gateway,
       field,
     };
@@ -562,7 +568,7 @@ describe('array-backed paths survive submission', () => {
 
     const result = submitDraft(
       data,
-      { trail: [question!], index: 0, draft: 'Second', error: null },
+      { trail: [question!], index: 0, draft: 'Second', error: null, skipped: [] },
     );
 
     const entries = readPath(

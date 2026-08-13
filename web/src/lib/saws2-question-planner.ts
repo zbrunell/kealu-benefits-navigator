@@ -58,7 +58,46 @@ export const SECTION_TITLES: Record<QuestionSection, string> = {
 /** What kind of answer a question expects. */
 export type QuestionKind = 'gateway' | 'records' | 'field' | 'choice';
 
+/**
+ * Priority tier, derived from what the SAWS 2 PLUS form itself needs — not from
+ * PDF field order.
+ *
+ * The form states that answering Q1, Q6-Q9, Q15 and Q24 helps the county
+ * determine benefits faster, and the filing rules require only identity and
+ * address. That gives four tiers:
+ *
+ * 1. Filing / identity / core application — asked first, cannot be skipped.
+ * 2. Eligibility-critical — Q6 household detail, Q7-Q9 income, Q15 expenses,
+ *    Q24 resources. Important, but a useful draft is still possible without them.
+ * 3. Supporting — improves the benefit calculation or completes a conditional
+ *    section.
+ * 4. Optional — the form says outright that some answers do not affect
+ *    eligibility (Q38 other services), or they are preferences.
+ */
+export type QuestionTier = 1 | 2 | 3 | 4;
+
+/** Whether the user may move past a question without answering it. */
+export type QuestionRequirement = 'required' | 'important' | 'optional';
+
+/** How a tier maps to skippability. */
+export function requirementForTier(tier: QuestionTier): QuestionRequirement {
+  if (tier === 1) return 'required';
+  if (tier === 2) return 'important';
+
+  return 'optional';
+}
+
 export interface PlannedQuestion {
+  /** Priority tier; lower is asked first. */
+  tier: QuestionTier;
+  /** Whether this question may be skipped. */
+  requirement: QuestionRequirement;
+  /**
+   * The question number on the printed SAWS 2 PLUS form, when this question
+   * corresponds to one (e.g. "Q8", "Q6q"). Absent for questions we ask that the
+   * paper form collects elsewhere.
+   */
+  sawsQuestion?: string;
   /** Stable, PII-free identifier. */
   id: string;
   section: QuestionSection;
@@ -122,6 +161,143 @@ export function activeEntries<TEntry>(
   if (!section || section.answer !== true) return [];
 
   return safeEntries<TEntry>(section.entries);
+}
+
+
+/** A planned question before priority metadata is stamped on. */
+export type UnstampedQuestion = Omit<
+  PlannedQuestion,
+  'tier' | 'requirement' | 'sawsQuestion'
+>;
+
+/**
+ * Priority and SAWS 2 PLUS question number for every question we ask.
+ *
+ * This is the single place that ties a question we ask to the numbered question
+ * on the printed form, so the mapping can be audited and tested rather than
+ * inferred from PDF field order. A question absent from this table defaults to
+ * tier 3 (supporting) and carries no form number.
+ *
+ * `saws` is the printed question number. It is omitted where the paper form has
+ * no single corresponding question, and that omission is deliberate: it is
+ * better to record "no confident mapping" than to invent one.
+ */
+export const QUESTION_META: Readonly<
+  Record<string, { tier: QuestionTier; saws?: string }>
+> = {
+  // ── Tier 1: filing, identity, core application (Q1, Q6 identity) ────────
+  'household.applicant_name': { tier: 1, saws: 'Q1' },
+  'household.applicant_dob': { tier: 1, saws: 'Q6' },
+
+  // ── Tier 2: eligibility-critical (Q6 detail, Q7-Q9, Q15, Q24) ──────────
+  'income.unearned': { tier: 2, saws: 'Q7' },
+  'income.earned': { tier: 2, saws: 'Q8' },
+  'income.self_employment': { tier: 2, saws: 'Q8a' },
+  'income.in_kind': { tier: 2, saws: 'Q9' },
+  'income.varies_during_year': { tier: 2, saws: 'Q10' },
+  'expenses.household': { tier: 2, saws: 'Q15' },
+  'resources.accounts': { tier: 2, saws: 'Q24' },
+  'circumstances.food_together': { tier: 2, saws: 'Q21' },
+  'circumstances.california_resident': { tier: 2, saws: 'Q6q' },
+
+  // ── Tier 3: supporting — improves the calculation or completes a section ─
+  'circumstances.authorized_representative': { tier: 3, saws: 'Q2' },
+  'circumstances.prior_public_assistance': { tier: 3, saws: 'Q5' },
+  'circumstances.planned_absence': { tier: 3, saws: 'Q6r' },
+  'circumstances.military_service': { tier: 3, saws: 'Q6d' },
+  'circumstances.absent_parents': { tier: 3, saws: 'Q6g' },
+  'circumstances.caretaker_relative': { tier: 3, saws: 'Q6h' },
+  'circumstances.students': { tier: 3, saws: 'Q6l' },
+  'circumstances.foster_care': { tier: 3, saws: 'Q6p' },
+  'circumstances.institutional_living': { tier: 3, saws: 'Q19' },
+  'circumstances.ihss': { tier: 3, saws: 'Q20' },
+  'circumstances.other_food_program': { tier: 3, saws: 'Q18' },
+  /*
+   * The job-loss / hours-change block is printed inside Q8's area but is not the
+   * earned-income table and carries no number of its own, so it is labelled
+   * distinctly rather than conflated with Q8.
+   */
+  'income.recent_job_change': { tier: 3, saws: 'Q8 (job change)' },
+  'expenses.dependent_care': { tier: 3, saws: 'Q11' },
+  'expenses.child_support_paid': { tier: 3, saws: 'Q12' },
+  'expenses.spousal_support_paid': { tier: 3, saws: 'Q13' },
+  'expenses.medical': { tier: 3, saws: 'Q16' },
+  'expenses.other_tax_deductible': { tier: 3, saws: 'Q17' },
+  'health.current_coverage': { tier: 3, saws: 'Q22' },
+  'health.coverage_ending': { tier: 3, saws: 'Q22' },
+  'health.employer_coverage': { tier: 3, saws: 'Appendix A' },
+  'health.tax_filer': { tier: 3, saws: 'Q23' },
+  'health.spouse_filing_jointly': { tier: 3, saws: 'Q23' },
+  'health.retroactive_medical': { tier: 3, saws: 'Q22' },
+  'health.american_indian': { tier: 3, saws: 'Q3' },
+  'resources.vehicles': { tier: 3, saws: 'Q26' },
+  'resources.real_property': { tier: 3, saws: 'Q27' },
+  'resources.transferred': { tier: 3, saws: 'Q25' },
+  'resources.diversion_payment': { tier: 3, saws: 'Q28' },
+  'appendices.tribal_name': { tier: 3, saws: 'Appendix B' },
+  'appendices.employment_history': { tier: 3, saws: 'Appendix D' },
+
+  // Program-integrity questions (Q29-Q36). They bear on eligibility but do not
+  // block a useful draft, so they sit in tier 3.
+  'integrity.duplicate_benefits': { tier: 3, saws: 'Q29' },
+  'integrity.trafficking': { tier: 3, saws: 'Q30' },
+  'integrity.drugs': { tier: 3, saws: 'Q31' },
+  'integrity.firearms': { tier: 3, saws: 'Q32' },
+  'integrity.welfare_fraud': { tier: 3, saws: 'Q33' },
+  'integrity.sanction': { tier: 3, saws: 'Q34' },
+  'integrity.fleeing_felon': { tier: 3, saws: 'Q35' },
+  'integrity.probation_violation': { tier: 3, saws: 'Q36' },
+  'integrity.fleeing_felon_who': { tier: 3, saws: 'Q35' },
+  'integrity.probation_who': { tier: 3, saws: 'Q36' },
+
+  // ── Tier 4: optional — the form says these do not affect eligibility ────
+  'integrity.special_needs_payment': { tier: 4, saws: 'Q37' },
+  'integrity.special_needs_explanation': { tier: 4, saws: 'Q37' },
+  'integrity.third_party_liability': { tier: 4, saws: 'Q39' },
+  'integrity.third_party_who': { tier: 4, saws: 'Q39' },
+  'services.chdp_information': { tier: 4, saws: 'Q38A' },
+  'services.chdp_medical': { tier: 4, saws: 'Q38A' },
+  'services.chdp_dental': { tier: 4, saws: 'Q38A' },
+  'services.chdp_transport': { tier: 4, saws: 'Q38A' },
+  'services.immunization': { tier: 4, saws: 'Q38B' },
+  'services.pregnancy_assistance': { tier: 4, saws: 'Q38C' },
+  'services.breastfeeding': { tier: 4, saws: 'Q38D' },
+  'services.gave_birth_recently': { tier: 4, saws: 'Q38D' },
+  'services.family_planning': { tier: 4, saws: 'Q38E' },
+};
+
+/** Tier for a question id, defaulting to supporting. */
+export function tierFor(id: string): QuestionTier {
+  return QUESTION_META[id]?.tier ?? 3;
+}
+
+/** Printed SAWS question number for a question id, when one is established. */
+export function sawsQuestionFor(id: string): string | undefined {
+  return QUESTION_META[id]?.saws;
+}
+
+/**
+ * Stamp priority metadata onto a planned question.
+ *
+ * A question id that is a record/field variant (`income.earned.0.employerName`,
+ * `income.earned.records`) inherits the tier of its owning gateway, so a detail
+ * never outranks the question that unlocked it.
+ */
+function withPriority(question: UnstampedQuestion): PlannedQuestion {
+  const ownerId = Object.keys(QUESTION_META)
+    .filter((id) => question.id === id || question.id.startsWith(`${id}.`))
+    .sort((a, b) => b.length - a.length)[0];
+
+  const tier = ownerId ? QUESTION_META[ownerId].tier : 3;
+
+  return {
+    ...question,
+    tier,
+    requirement: requirementForTier(tier),
+    ...(ownerId && QUESTION_META[ownerId].saws
+      ? { sawsQuestion: QUESTION_META[ownerId].saws }
+      : {}),
+  };
 }
 
 /** True when a tri-state answer still needs asking. */
@@ -705,8 +881,8 @@ type UnknownRecord = Record<string, unknown>;
 function missingRequiredFields(
   spec: RecordGatewaySpec,
   entriesValue: unknown,
-): PlannedQuestion[] {
-  const questions: PlannedQuestion[] = [];
+): UnstampedQuestion[] {
+  const questions: UnstampedQuestion[] = [];
 
   // Never assume the caller handed us a list.
   safeEntries<unknown>(entriesValue).forEach((entry, index) => {
@@ -750,8 +926,8 @@ export function getRequiredApplicationQuestions(
   let answeredCount = 0;
   let totalCount = 0;
 
-  const push = (question: PlannedQuestion) => {
-    bySection.get(question.section)!.push(question);
+  const push = (question: UnstampedQuestion) => {
+    bySection.get(question.section)!.push(withPriority(question));
   };
 
   // ── Applicant & household ────────────────────────────────────────────────
@@ -1079,15 +1255,29 @@ export function getRequiredApplicationQuestions(
   const sections: PlannedSection[] = QUESTION_SECTIONS.map((section) => ({
     section,
     title: SECTION_TITLES[section],
-    questions: bySection.get(section)!,
+    questions: byTier(bySection.get(section)!),
   })).filter((planned) => planned.questions.length > 0);
 
+  /*
+   * The outstanding list drives the one-question-at-a-time flow, so it is
+   * ordered by priority across sections: filing and identity first, then the
+   * eligibility-critical income/expense/resource questions the form says speed
+   * up a determination, then supporting, then optional.
+   */
   return {
     sections,
-    outstanding: sections.flatMap((planned) => planned.questions),
+    outstanding: byTier(sections.flatMap((planned) => planned.questions)),
     answeredCount,
     totalCount,
   };
+}
+
+/** Stable sort by tier: lower tiers first, original order preserved within. */
+function byTier(questions: PlannedQuestion[]): PlannedQuestion[] {
+  return questions
+    .map((question, index) => ({ question, index }))
+    .sort((a, b) => a.question.tier - b.question.tier || a.index - b.index)
+    .map(({ question }) => question);
 }
 
 /** True when any household member is 60+ or marked disabled. */
