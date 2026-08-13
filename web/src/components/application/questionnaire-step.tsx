@@ -1,0 +1,909 @@
+//
+// Copyright 2025 Kealu Inc. All rights reserved.
+// Licensed under the Kealu Vector License v1.0 — PATENT PENDING
+//
+
+"use client";
+
+import { useMemo, useState } from "react";
+
+import {
+  SECTION_TITLES,
+  getActiveAppendices,
+  getRequiredApplicationQuestions,
+  isPersonScoped,
+  memberOptions,
+  readPath,
+  safeEntries,
+  selectableMembers,
+  writePath,
+  type PlannedQuestion,
+} from "@/lib/saws2-question-planner";
+import {
+  back as navigatorBack,
+  currentQuestion,
+  draftKind,
+  resync,
+  setDraft as setNavigatorDraft,
+  shouldSubmitOnKey,
+  startFlow,
+  submitChoice,
+  submitDraft,
+  usesDraft,
+  validateDraft,
+  type QuestionFlowState,
+} from "@/lib/saws2-question-navigator";
+import type { Saws2PlusApplicationData } from "@/types/application";
+
+const INPUT_CLASS =
+  "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 " +
+  "focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600";
+
+/**
+ * Blank records for each repeatable section, keyed by the planner's entries
+ * path. Record shapes are declared here so the generic editor knows which inputs
+ * to render — every value starts empty or undefined so nothing is invented.
+ */
+const RECORD_FACTORIES: Record<string, (id: string, memberId: string) => Record<string, unknown>> = {
+  "circumstances.authorizedRepresentative.entries": () => ({
+    name: "",
+    organization: "",
+    phone: "",
+    address: "",
+    forCalFresh: undefined,
+    forHealthCoverage: undefined,
+  }),
+  "circumstances.militaryService.entries": (id, memberId) => ({
+    id,
+    memberId,
+    relationshipToService: "",
+    branch: "",
+  }),
+  "circumstances.students.entries": (id, memberId) => ({
+    id,
+    memberId,
+    schoolName: "",
+    halfTimeOrMore: undefined,
+  }),
+  "circumstances.absentParents.entries": (id, memberId) => ({
+    id,
+    memberId,
+    parentName: "",
+    lastKnownLocation: "",
+  }),
+  "circumstances.fosterCare.entries": (id, memberId) => ({
+    id,
+    memberId,
+    agencyName: "",
+    monthlyPayment: undefined,
+  }),
+  "income.earned.entries": (id, memberId) => ({
+    id,
+    memberId,
+    employerName: "",
+    employerAddress: "",
+    employerPhone: "",
+    startDate: "",
+    payFrequency: undefined,
+    hourlyRate: undefined,
+    hoursPerWeek: undefined,
+    grossPerPeriod: undefined,
+    grossReceivedThisMonth: undefined,
+    expectedToContinue: undefined,
+  }),
+  "income.selfEmployment.entries": (id, memberId) => ({
+    id,
+    memberId,
+    businessName: "",
+    businessType: "",
+    startDate: "",
+    grossMonthly: undefined,
+    netMonthly: undefined,
+    expenseMethod: undefined,
+    expenseAmount: undefined,
+  }),
+  "income.unearned.entries": (id, memberId) => ({
+    id,
+    memberId,
+    source: "",
+    amountMonthly: undefined,
+  }),
+  "income.inKindSupport.entries": (id, memberId) => ({
+    id,
+    memberId,
+    kind: "housing",
+    providedBy: "",
+    estimatedMonthlyValue: undefined,
+  }),
+  "income.recentJobChange.entries": (id, memberId) => ({
+    id,
+    memberId,
+    employerName: "",
+    changeDate: "",
+    reason: "",
+  }),
+  "expenses.household.entries": (id) => ({
+    id,
+    kind: "rent_or_mortgage",
+    amountMonthly: undefined,
+    description: "",
+  }),
+  "expenses.dependentCare.entries": (id, memberId) => ({
+    id,
+    memberId,
+    providerName: "",
+    amountMonthly: undefined,
+    forDependentAdult: undefined,
+  }),
+  "expenses.childSupportPaid.entries": (id, memberId) => ({
+    id,
+    memberId,
+    paidTo: "",
+    amountMonthly: undefined,
+    courtOrdered: undefined,
+  }),
+  "expenses.spousalSupportPaid.entries": (id, memberId) => ({
+    id,
+    memberId,
+    paidTo: "",
+    amountMonthly: undefined,
+    courtOrdered: undefined,
+  }),
+  "expenses.medical.entries": (id, memberId) => ({
+    id,
+    memberId,
+    kind: "",
+    amountMonthly: undefined,
+  }),
+  "expenses.otherTaxDeductible.entries": (id) => ({
+    id,
+    kind: "other",
+    amountMonthly: undefined,
+    description: "",
+  }),
+  "health.currentCoverage.entries": (id, memberId) => ({
+    id,
+    memberId,
+    planName: "",
+    policyHolderName: "",
+    endDate: "",
+  }),
+  "health.coverageEnding.entries": (id, memberId) => ({
+    id,
+    memberId,
+    planName: "",
+    policyHolderName: "",
+    endDate: "",
+  }),
+  "health.employerCoverage.entries": (id, memberId) => ({
+    id,
+    memberId,
+    employerName: "",
+    employerPhone: "",
+    offersCoverage: undefined,
+    eligibleNowOrSoon: undefined,
+    lowestCostPremium: undefined,
+    premiumFrequency: undefined,
+  }),
+  "resources.accounts.entries": (id, memberId) => ({
+    id,
+    memberId,
+    kind: "checking",
+    institution: "",
+    balance: undefined,
+  }),
+  "resources.vehicles.entries": (id, memberId) => ({
+    id,
+    memberId,
+    year: "",
+    make: "",
+    model: "",
+    usedFor: "",
+    amountOwed: undefined,
+    estimatedValue: undefined,
+  }),
+  "resources.realProperty.entries": (id, memberId) => ({
+    id,
+    memberId,
+    kind: "home",
+    description: "",
+    estimatedValue: undefined,
+  }),
+  "resources.transferredResources.entries": (id, memberId) => ({
+    id,
+    memberId,
+    kind: "other",
+    description: "",
+    estimatedValue: undefined,
+  }),
+  "appendices.employmentHistory.entries": (id, memberId) => ({
+    id,
+    memberId,
+    employerName: "",
+    jobTitle: "",
+    startDate: "",
+    endDate: "",
+    reasonForLeaving: "",
+  }),
+};
+
+/** Human labels for record fields; falls back to a de-camel-cased key. */
+const FIELD_LABELS: Record<string, string> = {
+  memberId: "Who is this for",
+  employerName: "Employer name",
+  startDate: "Start date",
+  endDate: "End date",
+  changeDate: "Date of change",
+  payFrequency: "How often paid",
+  employerAddress: "Employer address",
+  hourlyRate: "Hourly rate",
+  grossPerPeriod: "Gross pay per paycheck",
+  grossReceivedThisMonth: "Total gross received this month",
+  expectedToContinue: "Do you expect this income to continue",
+  expenseAmount: "Expense amount",
+  hoursPerWeek: "Hours per week",
+  businessName: "Business name",
+  businessType: "Type of business",
+  grossMonthly: "Gross monthly income",
+  netMonthly: "Net monthly income",
+  expenseMethod: "How you claim expenses",
+  amountMonthly: "Monthly amount",
+  estimatedMonthlyValue: "Estimated monthly value",
+  providedBy: "Provided by",
+  providerName: "Provider name",
+  forDependentAdult: "This care is for a dependent adult",
+  paidTo: "Paid to",
+  courtOrdered: "Court ordered",
+  planName: "Plan name",
+  policyHolderName: "Policy holder",
+  employerPhone: "Employer phone",
+  offersCoverage: "Employer offers coverage",
+  eligibleNowOrSoon: "Eligible now or within three months",
+  lowestCostPremium: "Lowest-cost employee premium",
+  institution: "Bank or institution",
+  balance: "Current balance",
+  usedFor: "Used for",
+  amountOwed: "Amount still owed",
+  estimatedValue: "Estimated value",
+  jobTitle: "Job title",
+  reasonForLeaving: "Reason for leaving",
+  schoolName: "School name",
+  halfTimeOrMore: "Enrolled at least half time",
+  relationshipToService: "Relationship to the service member",
+  branch: "Branch of service",
+  parentName: "Parent's name",
+  lastKnownLocation: "Last known city and state",
+  agencyName: "Agency name",
+  monthlyPayment: "Monthly payment",
+  organization: "Organization",
+  forCalFresh: "May act for CalFresh",
+  forHealthCoverage: "May act for health coverage",
+};
+
+const CHOICE_OPTIONS: Record<string, Array<{ value: string; label: string }>> = {
+  payFrequency: [
+    { value: "weekly", label: "Weekly" },
+    { value: "every_two_weeks", label: "Every two weeks" },
+    { value: "twice_a_month", label: "Twice a month" },
+    { value: "monthly", label: "Monthly" },
+    { value: "irregular", label: "Irregular" },
+  ],
+  premiumFrequency: [
+    { value: "weekly", label: "Weekly" },
+    { value: "every_two_weeks", label: "Every two weeks" },
+    { value: "twice_a_month", label: "Twice a month" },
+    { value: "monthly", label: "Monthly" },
+  ],
+  expenseMethod: [
+    { value: "standard_40_percent", label: "40% flat rate (CalFresh/cash aid)" },
+    { value: "actual_expenses", label: "Actual expenses" },
+    { value: "monthly_average", label: "Monthly average" },
+  ],
+  kind: [
+    { value: "rent_or_mortgage", label: "Rent or mortgage" },
+    { value: "property_tax", label: "Property tax" },
+    { value: "home_insurance", label: "Home insurance" },
+    { value: "electricity", label: "Electricity" },
+    { value: "gas", label: "Gas" },
+    { value: "water", label: "Water" },
+    { value: "trash", label: "Trash" },
+    { value: "telephone", label: "Telephone" },
+    { value: "checking", label: "Checking account" },
+    { value: "savings", label: "Savings account" },
+    { value: "cash_on_hand", label: "Cash on hand" },
+    { value: "stocks_or_bonds", label: "Stocks or bonds" },
+    { value: "trust", label: "Trust" },
+    { value: "home", label: "Home" },
+    { value: "land", label: "Land" },
+    { value: "rental", label: "Rental property" },
+    { value: "housing", label: "Housing" },
+    { value: "utilities", label: "Utilities" },
+    { value: "food", label: "Food" },
+    { value: "clothing", label: "Clothing" },
+    { value: "other", label: "Other" },
+  ],
+};
+
+function labelFor(key: string): string {
+  return (
+    FIELD_LABELS[key] ??
+    key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())
+  );
+}
+
+const DATE_KEYS = new Set(["startDate", "endDate", "changeDate"]);
+const NUMBER_KEYS = new Set([
+  "grossPerPeriod",
+  "grossReceivedThisMonth",
+  "hourlyRate",
+  "expenseAmount",
+  "hoursPerWeek",
+  "grossMonthly",
+  "netMonthly",
+  "amountMonthly",
+  "estimatedMonthlyValue",
+  "balance",
+  "amountOwed",
+  "estimatedValue",
+  "lowestCostPremium",
+  "monthlyPayment",
+]);
+
+interface QuestionnaireStepProps {
+  application: Saws2PlusApplicationData;
+  onChange: (next: Saws2PlusApplicationData) => void;
+  onBack: () => void;
+  onContinue: () => void;
+}
+
+/**
+ * Dynamic SAWS 2 PLUS completion flow.
+ *
+ * The planner decides what to ask; this component only renders. Sections with no
+ * outstanding questions disappear entirely, which is what makes the flow much
+ * shorter than the 17-page paper form.
+ */
+export default function QuestionnaireStep({
+  application,
+  onChange,
+  onBack,
+  onContinue,
+}: QuestionnaireStepProps) {
+  const plan = useMemo(
+    () => getRequiredApplicationQuestions(application),
+    [application],
+  );
+
+  const appendices = useMemo(() => getActiveAppendices(application), [application]);
+  const members = useMemo(() => memberOptions(application), [application]);
+
+  /**
+   * Question-level navigation state.
+   *
+   * Distinct from the application step: `flow` walks the questionnaire's own
+   * trail, and only when the navigator reports `atStart` does Back leave the
+   * step via `onBack()`.
+   */
+  const [flow, setFlow] = useState<QuestionFlowState>(() => startFlow(application));
+
+  /** Entries path awaiting a household-member choice before a record is made. */
+  const [pendingPersonPick, setPendingPersonPick] = useState<string | null>(null);
+
+  const question = currentQuestion(flow);
+
+  const percent =
+    plan.totalCount === 0
+      ? 100
+      : Math.round((plan.answeredCount / plan.totalCount) * 100);
+
+  /** Apply new application data and re-sync the flow to it. */
+  function applyData(next: Saws2PlusApplicationData, nextFlow?: QuestionFlowState) {
+    onChange(next);
+    setFlow(nextFlow ?? resync(next, flow));
+  }
+
+  function readAnswer(path: string): unknown {
+    return readPath(application.questionnaire, path);
+  }
+
+  /** Commit the drafted answer for the current question. */
+  function commitDraft() {
+    const result = submitDraft(application, flow);
+
+    setFlow(result.state);
+
+    if (result.committed) onChange(result.data);
+  }
+
+  /** Commit an explicit Yes/No choice, which needs no second confirmation. */
+  function commitChoice(path: string, value: unknown) {
+    const result = submitChoice(application, flow, path, value);
+
+    onChange(result.data);
+    setFlow(result.state);
+  }
+
+  /** Question-level Back; leaves the step only at the very beginning. */
+  function goBack() {
+    const result = navigatorBack(application, flow);
+
+    if (result.atStart) {
+      onBack();
+      return;
+    }
+
+    setFlow(result.state);
+  }
+
+  function beginAddRecord(entriesPath: string) {
+    if (isPersonScoped(entriesPath)) {
+      setPendingPersonPick(entriesPath);
+      return;
+    }
+
+    createRecord(entriesPath, "");
+  }
+
+  function createRecord(entriesPath: string, memberId: string) {
+    const factory = RECORD_FACTORIES[entriesPath];
+    if (!factory) return;
+
+    const existing = safeEntries<unknown>(readAnswer(entriesPath));
+    const record = factory(`record-${existing.length + 1}-${Date.now()}`, memberId);
+
+    setPendingPersonPick(null);
+    applyData({
+      ...application,
+      questionnaire: writePath(application.questionnaire, entriesPath, [
+        ...existing,
+        record,
+      ]),
+    });
+  }
+
+  function removeRecord(entriesPath: string, index: number) {
+    const existing = safeEntries<unknown>(readAnswer(entriesPath));
+
+    applyData({
+      ...application,
+      questionnaire: writePath(
+        application.questionnaire,
+        entriesPath,
+        existing.filter((_, position) => position !== index),
+      ),
+    });
+  }
+
+  function updateRecordField(
+    entriesPath: string,
+    index: number,
+    key: string,
+    value: unknown,
+  ) {
+    const existing = safeEntries<unknown>(readAnswer(entriesPath)).slice();
+    existing[index] = { ...(existing[index] as Record<string, unknown>), [key]: value };
+
+    applyData({
+      ...application,
+      questionnaire: writePath(application.questionnaire, entriesPath, existing),
+    });
+  }
+
+  /** Three-state Yes/No control. An explicit click commits and advances. */
+  function TriStateControl({ path }: { path: string }) {
+    const value = readAnswer(path) as boolean | undefined;
+
+    return (
+      <div className="mt-3 flex items-center gap-2">
+        {[
+          { label: "Yes", answer: true },
+          { label: "No", answer: false },
+        ].map((option) => (
+          <button
+            key={option.label}
+            type="button"
+            onClick={() => commitChoice(path, option.answer)}
+            aria-pressed={value === option.answer}
+            className={`rounded-lg border px-5 py-2 text-sm font-medium ${
+              value === option.answer
+                ? "border-green-700 bg-green-700 text-white"
+                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+
+        {value === undefined && (
+          <span className="text-xs text-slate-500">Not answered yet</span>
+        )}
+      </div>
+    );
+  }
+
+  /** Editor for one repeatable record, derived from the record's own shape. */
+  function RecordEditor({
+    entriesPath,
+    index,
+    record,
+  }: {
+    entriesPath: string;
+    index: number;
+    record: Record<string, unknown>;
+  }) {
+    const memberName =
+      members.find((member) => member.id === record.memberId)?.label ?? null;
+
+    return (
+      <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-slate-800">
+            {memberName ? memberName : `Entry ${index + 1}`}
+          </p>
+          <button
+            type="button"
+            onClick={() => removeRecord(entriesPath, index)}
+            className="text-xs font-medium text-red-700 underline hover:text-red-900"
+          >
+            Remove
+          </button>
+        </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {Object.keys(record)
+            .filter((key) => key !== "id" && key !== "memberId")
+            .map((key) => {
+              const value = record[key];
+              const options = CHOICE_OPTIONS[key];
+
+              if (options) {
+                return (
+                  <label key={key} className="block">
+                    <span className="text-sm font-medium text-slate-700">
+                      {labelFor(key)}
+                    </span>
+                    <select
+                      value={String(value ?? "")}
+                      onChange={(event) =>
+                        updateRecordField(
+                          entriesPath,
+                          index,
+                          key,
+                          event.target.value || undefined,
+                        )
+                      }
+                      className={INPUT_CLASS}
+                    >
+                      <option value="">Not answered</option>
+                      {options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              }
+
+              if (typeof value === "boolean" || value === undefined) {
+                if (NUMBER_KEYS.has(key)) {
+                  return (
+                    <label key={key} className="block">
+                      <span className="text-sm font-medium text-slate-700">
+                        {labelFor(key)}
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={value === undefined ? "" : String(value)}
+                        onChange={(event) =>
+                          updateRecordField(
+                            entriesPath,
+                            index,
+                            key,
+                            event.target.value === ""
+                              ? undefined
+                              : Number(event.target.value),
+                          )
+                        }
+                        className={INPUT_CLASS}
+                      />
+                    </label>
+                  );
+                }
+
+                return (
+                  <div key={key}>
+                    <span className="text-sm font-medium text-slate-700">
+                      {labelFor(key)}
+                    </span>
+                    <div className="mt-1 flex gap-2">
+                      {[
+                        { label: "Yes", answer: true },
+                        { label: "No", answer: false },
+                      ].map((option) => (
+                        <button
+                          key={option.label}
+                          type="button"
+                          onClick={() =>
+                            updateRecordField(entriesPath, index, key, option.answer)
+                          }
+                          aria-pressed={value === option.answer}
+                          className={`rounded-lg border px-3 py-1 text-sm ${
+                            value === option.answer
+                              ? "border-green-700 bg-green-700 text-white"
+                              : "border-slate-300 bg-white text-slate-700"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
+              if (typeof value === "number") {
+                return (
+                  <label key={key} className="block">
+                    <span className="text-sm font-medium text-slate-700">
+                      {labelFor(key)}
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={String(value)}
+                      onChange={(event) =>
+                        updateRecordField(
+                          entriesPath,
+                          index,
+                          key,
+                          event.target.value === ""
+                            ? undefined
+                            : Number(event.target.value),
+                        )
+                      }
+                      className={INPUT_CLASS}
+                    />
+                  </label>
+                );
+              }
+
+              return (
+                <label key={key} className="block">
+                  <span className="text-sm font-medium text-slate-700">
+                    {labelFor(key)}
+                  </span>
+                  <input
+                    type={DATE_KEYS.has(key) ? "date" : "text"}
+                    value={String(value ?? "")}
+                    onChange={(event) =>
+                      updateRecordField(entriesPath, index, key, event.target.value)
+                    }
+                    className={INPUT_CLASS}
+                  />
+                </label>
+              );
+            })}
+        </div>
+      </div>
+    );
+  }
+
+  function renderRecordsQuestion(current: PlannedQuestion) {
+    const records = safeEntries<Record<string, unknown>>(readAnswer(current.path));
+    const picking = pendingPersonPick === current.path;
+    const choices = selectableMembers(application, current.path);
+
+    return (
+      <div>
+        {records.map((record, index) => (
+          <RecordEditor
+            key={String(record.id ?? index)}
+            entriesPath={current.path}
+            index={index}
+            record={record}
+          />
+        ))}
+
+        {picking ? (
+          <div
+            className="mt-3 rounded-lg border border-green-300 bg-green-50 p-4"
+            data-testid="member-picker"
+          >
+            <p className="text-sm font-medium text-green-900">Who is this for?</p>
+
+            {choices.length === 0 ? (
+              <p className="mt-2 text-sm text-green-800">
+                Everyone in your household already has an entry here.
+              </p>
+            ) : (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {choices.map((member) => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => createRecord(current.path, member.id)}
+                    className="rounded-lg border border-green-700 bg-white px-3 py-1.5 text-sm font-medium text-green-800 hover:bg-green-100"
+                  >
+                    {member.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setPendingPersonPick(null)}
+              className="mt-3 text-xs text-slate-600 underline hover:text-slate-800"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => beginAddRecord(current.path)}
+            disabled={isPersonScoped(current.path) && choices.length === 0}
+            className="mt-3 rounded-lg border border-green-700 px-3 py-1.5 text-sm font-medium text-green-800 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Add entry
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  /** The drafted text/number/date input plus its explicit Continue. */
+  function renderDraftQuestion(current: PlannedQuestion) {
+    const kind = draftKind(current);
+    const valid = validateDraft(current, flow.draft).ok;
+
+    return (
+      <div>
+        <input
+          type={kind === "date" ? "date" : kind === "number" ? "number" : "text"}
+          {...(kind === "number" ? { min: 0, step: "0.01" } : {})}
+          value={flow.draft}
+          onChange={(event) => setFlow(setNavigatorDraft(flow, event.target.value))}
+          onKeyDown={(event) => {
+            if (!shouldSubmitOnKey(event)) return;
+
+            // Keep Enter inside this question: it must never reach the
+            // application-step buttons.
+            event.preventDefault();
+            event.stopPropagation();
+            commitDraft();
+          }}
+          autoFocus
+          aria-label={current.prompt}
+          className={INPUT_CLASS}
+          data-testid="question-input"
+        />
+
+        {flow.error && (
+          <p className="mt-2 text-sm text-red-700" role="alert">
+            {flow.error}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={commitDraft}
+          disabled={!valid}
+          className="mt-3 rounded-lg bg-green-700 px-5 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
+          data-testid="question-continue"
+        >
+          Continue
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
+          {question ? SECTION_TITLES[question.section] : "SAWS 2 PLUS"}
+        </p>
+
+        <h1 className="mt-2 text-2xl font-semibold text-slate-900">
+          {question ? question.prompt : "Everything we need is answered"}
+        </h1>
+
+        {question?.help && (
+          <p className="mt-2 text-sm text-slate-600">{question.help}</p>
+        )}
+
+        {!question && (
+          <p className="mt-2 text-sm text-slate-600">
+            You can go back to review any answer, or continue to the review step.
+          </p>
+        )}
+
+        {/* Progress */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+            <span data-testid="questionnaire-progress-label">
+              {plan.outstanding.length === 0
+                ? "All questions answered"
+                : `${plan.outstanding.length} question${
+                    plan.outstanding.length === 1 ? "" : "s"
+                  } left`}
+            </span>
+            <span className="tabular-nums">{percent}%</span>
+          </div>
+          <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-green-600 transition-[width]"
+              style={{ width: `${percent}%` }}
+              role="progressbar"
+              aria-valuenow={percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Application completion"
+            />
+          </div>
+        </div>
+
+        {/* The question on screen */}
+        <div className="mt-5" data-testid="questionnaire-questions">
+          {question?.kind === "gateway" && <TriStateControl path={question.path} />}
+          {question?.kind === "records" && renderRecordsQuestion(question)}
+          {question && usesDraft(question) && renderDraftQuestion(question)}
+        </div>
+
+        {/* Appendices that this application activates */}
+        {appendices.length > 0 && (
+          <div
+            className="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4"
+            data-testid="active-appendices"
+          >
+            <p className="text-sm font-semibold text-blue-900">
+              Extra pages your answers added
+            </p>
+            <ul className="mt-2 space-y-1 text-sm text-blue-900">
+              {appendices.map((appendix) => (
+                <li key={appendix.id}>
+                  <span className="font-medium">Appendix {appendix.id}</span> —{" "}
+                  {appendix.title}. {appendix.reason}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
+          <button
+            type="button"
+            onClick={goBack}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            data-testid="question-back"
+          >
+            Back
+          </button>
+
+          {question?.kind === "records" && (
+            <button
+              type="button"
+              onClick={() => setFlow(resync(application, { ...flow, index: flow.index + 1 }))}
+              className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
+            >
+              Next question
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onContinue}
+            className="ml-auto rounded-lg px-3 py-2 text-sm font-medium text-slate-600 underline hover:text-slate-800"
+          >
+            {question ? "Skip the rest for now" : "Continue to review"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

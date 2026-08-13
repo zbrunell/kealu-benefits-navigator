@@ -7,12 +7,15 @@
 
 import { useState } from "react";
 
+import { buildInitialApplicationData } from "@/lib/application-data";
 import { householdSizeFromMembers } from "@/lib/household";
 
 import ApplicantStep from "./application/applicant-step";
+import DraftCompletionGuide from "./application/draft-completion-guide";
 import EligibilityStep from "./application/eligibility-step";
 import HouseholdStep from "./application/household-step";
 import ProgramSelectionStep from "./application/program-selection-step";
+import QuestionnaireStep from "./application/questionnaire-step";
 
 import type {
   ApplicationRecommendation,
@@ -20,7 +23,6 @@ import type {
 } from "@/lib/report-assembler";
 
 import {
-  EMPTY_APPLICATION_DATA,
   type ApplicantInformation,
   type ApplicationPrefill,
   type HouseholdMember,
@@ -32,6 +34,7 @@ type ApplicationStep =
   | "applicant"
   | "eligibility"
   | "household"
+  | "questionnaire"
   | "household-complete";
 
 interface ApplicationViewProps {
@@ -73,84 +76,9 @@ export default function ApplicationView({
    * particularly important for government-form answers such as citizenship,
    * disability, program participation, and household-member details.
    */
-  const [applicationData, setApplicationData] =
-    useState<Saws2PlusApplicationData>(() => {
-      const prefilledMembers: HouseholdMember[] =
-        prefill?.householdMembers.map((member) => ({
-          id: crypto.randomUUID(),
-          firstName: "",
-          middleName: "",
-          lastName: "",
-          dateOfBirth: member.dateOfBirth ?? "",
-          age: member.age,
-          relationshipToApplicant: "",
-
-          /**
-           * Both detail groups are initialized because the household wizard
-           * determines whether to render adult or child questions from DOB/age.
-           *
-           * We never infer answers merely because a person is an adult/child.
-           */
-          adultDetails: {
-            applyingFor: [],
-            sex: undefined,
-            citizenOrNational: undefined,
-            fullTimeStudent: undefined,
-            disabled: undefined,
-            maritalStatus: undefined,
-          },
-
-          childDetails: {
-            applyingFor: [],
-            sex: undefined,
-            citizenOrNational: undefined,
-            fullTimeStudent: undefined,
-            disabled: undefined,
-            placeOfBirth: "",
-            immunizationsUpToDate: undefined,
-
-            parentStatus: {
-              notInHome: undefined,
-              unemployed: undefined,
-              disabled: undefined,
-              deceased: undefined,
-              none: undefined,
-            },
-          },
-        })) ?? [];
-
-      return {
-        ...EMPTY_APPLICATION_DATA,
-
-        applicant: {
-          ...EMPTY_APPLICATION_DATA.applicant,
-
-          preferredLanguage:
-            prefill?.preferredLanguage ||
-            EMPTY_APPLICATION_DATA.applicant.preferredLanguage,
-
-          homeAddress: {
-            ...EMPTY_APPLICATION_DATA.applicant.homeAddress,
-            city: prefill?.city ?? "",
-            state: prefill?.state || "CA",
-            zipCode: prefill?.zipCode ?? "",
-          },
-
-          mailingAddress: {
-            ...EMPTY_APPLICATION_DATA.applicant.mailingAddress,
-            city: prefill?.city ?? "",
-            state: prefill?.state || "CA",
-            zipCode: prefill?.zipCode ?? "",
-          },
-        },
-
-        householdMembers: prefilledMembers,
-
-        annualHouseholdIncome: prefill?.annualHouseholdIncome,
-        incomeType: prefill?.incomeType ?? "",
-        existingBenefits: prefill?.existingBenefits ?? "",
-      };
-    });
+  const [applicationData, setApplicationData] = useState<Saws2PlusApplicationData>(
+    () => buildInitialApplicationData(prefill),
+  );
 
   /**
    * Program selection is initially based on recommendation output, but the user
@@ -185,6 +113,25 @@ export default function ApplicationView({
     setSelectedPrograms((current) => ({
       ...current,
       [program]: !current[program],
+    }));
+  }
+
+  function toggleOtherProgram() {
+    setApplicationData((current) => ({
+      ...current,
+      otherProgramRequested: !current.otherProgramRequested,
+      // Clearing the box also clears the description so a stale answer is
+      // never written to the form.
+      otherProgramDescription: current.otherProgramRequested
+        ? ""
+        : current.otherProgramDescription,
+    }));
+  }
+
+  function updateOtherProgramDescription(value: string) {
+    setApplicationData((current) => ({
+      ...current,
+      otherProgramDescription: value,
     }));
   }
 
@@ -584,6 +531,16 @@ export default function ApplicationView({
           onChildParentStatusChange={updateChildParentStatus}
           onRemove={removeHouseholdMember}
           onBack={() => setStep("eligibility")}
+          onContinue={() => setStep("questionnaire")}
+        />
+      );
+
+    case "questionnaire":
+      return (
+        <QuestionnaireStep
+          application={applicationData}
+          onChange={setApplicationData}
+          onBack={() => setStep("household")}
           onContinue={() => setStep("household-complete")}
         />
       );
@@ -627,10 +584,10 @@ export default function ApplicationView({
             <div className="mt-5 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => setStep("household")}
+                onClick={() => setStep("questionnaire")}
                 className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
-                Back to household members
+                Back to questions
               </button>
 
               <button
@@ -650,34 +607,13 @@ export default function ApplicationView({
             )}
 
             {draftUrl && (
-              <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
-                <p className="text-sm font-medium text-green-900">
-                  Your partially prefilled SAWS 2 PLUS draft is ready.
-                </p>
-
-                <p className="mt-1 text-sm text-green-800">
-                  Review every page and manually complete sensitive or missing
-                  fields before signing.
-                </p>
-
-                <div className="mt-3 flex flex-wrap gap-3">
-                  <a
-                    href={draftUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
-                  >
-                    Open draft
-                  </a>
-
-                  <a
-                    href={`${draftUrl}?download=1`}
-                    className="rounded-lg border border-green-300 bg-white px-4 py-2 text-sm font-medium text-green-800 hover:bg-green-100"
-                  >
-                    Download draft
-                  </a>
-                </div>
-              </div>
+              <DraftCompletionGuide
+                draftUrl={draftUrl}
+                county={prefill?.county ?? ""}
+                includesHealthCoverage={applicationData.selectedPrograms.includes(
+                  "medi_cal",
+                )}
+              />
             )}
           </div>
         </div>
@@ -690,6 +626,10 @@ export default function ApplicationView({
           recommendation={recommendation}
           selectedPrograms={selectedPrograms}
           onToggleProgram={toggleProgram}
+          otherRequested={applicationData.otherProgramRequested === true}
+          otherDescription={applicationData.otherProgramDescription}
+          onToggleOther={toggleOtherProgram}
+          onOtherDescriptionChange={updateOtherProgramDescription}
           onBack={onBack}
           onContinue={continueFromPrograms}
         />
