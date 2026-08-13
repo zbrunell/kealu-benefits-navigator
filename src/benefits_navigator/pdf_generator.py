@@ -1035,6 +1035,185 @@ class Saws2PlusFieldAdapter:
         "monthly_average": 2,
     }
 
+
+    # -----------------------------------------------------------------------
+    # Page 8 — Q7 Unearned Income
+    # -----------------------------------------------------------------------
+    #
+    # Verified: the printed gateway "Does anyone get income that does not come
+    # from work (unearned)?" sits at y=498 with its Yes glyph at x=362 and No at
+    # x=396; the two widgets below occupy [361,495,375,509] and [394,495,408,509].
+    # Table columns were matched to the printed headers: "Person Getting the
+    # Money?" (x=61), "From Where?", "How Much?", "How Often Received?" (x=407)
+    # and "Expect to Continue?" (x=517/519).
+    PAGE_8_UNEARNED_GATEWAY = ("Check Box23 PG 8", "Check Box24 PG 8")
+
+    #: (person, from where, how much, how often, continue-yes, continue-no)
+    PAGE_8_UNEARNED_ROWS = (
+        (
+            "Text54 PG 8", "Text55 PG 8", "Text56 PG 8", "Text57 PG 8",
+            "Check Box58 PG 8", "Check Box59 PG 8",
+        ),
+        (
+            "Text60 PG 8", "Text61 PG 8", "Text62 PG 8", "Text63 PG 8",
+            "Check Box64 PG 8", "Check Box65 PG 8",
+        ),
+        (
+            "Text66 PG 8", "Text67 PG 8", "Text68 PG 8", "Text69 PG 8",
+            "Check Box70 PG 8", "Check Box71 PG 8",
+        ),
+        (
+            "Text72 PG 8", "Text73 PG 8", "Text74 PG 8", "Text75 PG 8",
+            "Check Box76 PG 8", "Check Box77 PG 8",
+        ),
+    )
+
+    # The 27 "check all types of unearned income" boxes (Check Box25-51 PG 8) are
+    # deliberately NOT mapped: the application collects a free-text source, and
+    # matching that text to one of 27 printed categories would be guesswork. Two
+    # of those widgets also share a y position, so their identity is unresolved.
+
+    # -----------------------------------------------------------------------
+    # Page 10 — Q9 Other Income (free or in exchange for work)
+    # -----------------------------------------------------------------------
+    #
+    # Verified: gateway Yes/No at [430,...]/[465,...] under the printed question.
+    # The table has FOUR FIXED rows, one per printed item type, not free rows.
+    # Columns: Free | For Work | Who gets the item? | Value | Who gives the item?
+    PAGE_10_OTHER_INCOME_GATEWAY = ("Check Box1 pg 10", "Check Box2 pg 10")
+
+    #: item kind -> (free box, for-work box, who gets, value, who gives)
+    PAGE_10_OTHER_INCOME_ROWS = {
+        "housing": (
+            "Check Box4 pg 10", "Check Box5 pg 10",
+            "Text6 pg 10", "Text7 pg 10", "Text8 pg 10",
+        ),
+        "utilities": (
+            "Check Box10 pg 10", "Check Box11 pg 10",
+            "Text12 pg 10", "Text13 pg 10", "Text14 pg 10",
+        ),
+        "food": (
+            "Check Box16 pg 10", "Check Box17 pg 10",
+            "Text18 pg 10", "Text19 pg 10", "Tex20 pg 10",
+        ),
+        "clothing": (
+            "Check Box22 pg 10", "Check Box23 pg 10",
+            "Text24 pg 10", "Text25 pg 10", "Text26pg 10",
+        ),
+    }
+
+    # The Free / For Work boxes stay blank: the application asks one combined
+    # question ("free or in exchange for work") and never learns which it was.
+
+    # -----------------------------------------------------------------------
+    # Page 11 — Q15 Household Expenses
+    # -----------------------------------------------------------------------
+    #
+    # Verified: gateway Yes/No at x=440/472. Column bands matched to the printed
+    # headers "Have Expense?" (Yes x=223, No x=255), "Who Pays?" (x=295-413),
+    # "Amount Owed" (x=423-474) and "How Often Billed?" (x=478-568).
+    #
+    # The form prints a NOTE: heating/cooling, telephone, other utilities and the
+    # homeless shelter "are set allowances. It is not necessary to fill in the
+    # actual amount owed." Those four rows have NO Amount Owed widget at all, so
+    # `amount` is None for them and no amount is ever written there.
+    PAGE_11_EXPENSES_GATEWAY = ("Check Box23 PG 11", "Check Box24 PG 11")
+
+    #: printed row -> (have-yes, have-no, who pays, amount owed or None, how often)
+    PAGE_11_EXPENSE_ROWS = {
+        "rent_or_house_payment": (
+            "Check Box25 PG 11", "Check Box26 PG 11",
+            "Text27 PG 11", "Text28 PG 11", "Text29 PG 11",
+        ),
+        "property_taxes_and_insurance": (
+            "Check Box30 PG 11", "Check Box31 PG 11",
+            "Text32 PG 11", "Text33 PG 11", "Text34 PG 11",
+        ),
+        "heating_or_cooling": (
+            "Check Box35 PG 11", "Check Box36 PG 11",
+            "Text37 PG 11", None, "Text38 PG 11",
+        ),
+        "telephone": (
+            "Check Box39 PG 11", "Check Bo40 PG 11",
+            "Text41 PG 11", None, "Text42 PG 11",
+        ),
+        "homeless_shelter": (
+            "Check Box43 PG 11", "Check Box44 PG 11",
+            "Text45 PG 11", None, "Text46 PG 11",
+        ),
+        "water_sewage_garbage": (
+            "Check Box47 PG 11", "Check Box48 PG 11",
+            "Text49 PG 11", None, "Text50 PG 11",
+        ),
+    }
+
+    #: Our expense kinds mapped onto the printed rows above.
+    EXPENSE_KIND_TO_ROW = {
+        "rent_or_mortgage": "rent_or_house_payment",
+        "property_tax": "property_taxes_and_insurance",
+        "home_insurance": "property_taxes_and_insurance",
+        "gas": "heating_or_cooling",
+        "electricity": "heating_or_cooling",
+        "telephone": "telephone",
+        "water": "water_sewage_garbage",
+        "trash": "water_sewage_garbage",
+    }
+
+    # "other" has no printed row on Q15 and is intentionally unmapped. The
+    # "Who Pays?" column also stays blank: household expenses are collected at
+    # household level, so no payer is known. LIHEAP (Check Box54/55 PG 11) and the
+    # outside-help block are not modeled and stay blank.
+
+    # -----------------------------------------------------------------------
+    # Page 14 — Q24 Household's Resources
+    # -----------------------------------------------------------------------
+    #
+    # Verified: gateway Yes at [190,...], No at [224,...] beneath the printed
+    # question. The type grid is 5 rows x 3 columns (Check Box3-17), and the table
+    # below has four rows with columns "In Whose Name is the Resource Listed?"
+    # (x=36-160), "Type of Resource" (x=165-274), "How Much is it Worth?"
+    # (x=282-334) and "Where is the Resource?" (x=339-578).
+    PAGE_14_RESOURCES_GATEWAY = ("Check Box1 PG 14", "Check Box2 PG 14")
+
+    #: our resource kind -> the printed type checkbox
+    PAGE_14_RESOURCE_TYPE_BOXES = {
+        "checking": "Check Box3 PG 14",     # Bank/Credit Union account (Checking)
+        "savings": "Check Box4 PG 14",      # Bank/Credit Union account (Savings)
+        "cash_on_hand": "Check Box11 PG 14",  # Cash on hand
+        "trust": "Check Box9 PG 14",        # Mutual funds/Trust funds
+        "other": "Check Box17 PG 14",       # Other: ______
+    }
+
+    # "stocks_or_bonds" is intentionally unmapped: the form has separate "Stocks"
+    # (Check Box13) and "Bonds" (Check Box14) boxes and the application collects a
+    # single combined category, so ticking either one would assert something the
+    # applicant did not say.
+
+    #: (in whose name, type of resource, how much worth, where held)
+    PAGE_14_RESOURCE_ROWS = (
+        ("Text18 PG 14", "Text19 PG 14", "Text20PG 14", "Text21 PG 14"),
+        ("Text22 PG 14", "Text23 PG 14", "Text24 PG 14", "Text25 PG 14"),
+        ("Text26 PG 14", "Text27 PG 14", "Text28 PG 14", "Text29 PG 14"),
+        ("Text30 PG 14", "Text31 PG 14", "Text32 PG 14", "Text33 PG 14"),
+    )
+
+    #: Human labels for the "Type of Resource" column, matching the printed grid.
+    RESOURCE_TYPE_LABELS = {
+        "checking": "Bank/Credit Union account (Checking)",
+        "savings": "Bank/Credit Union account (Savings)",
+        "cash_on_hand": "Cash on hand",
+        "stocks_or_bonds": "Stocks/Bonds",
+        "trust": "Mutual funds/Trust funds",
+        "other": "Other",
+    }
+
+    #: The un-numbered transferred-resource question printed at the end of Q24,
+    #: above the "25. Personal Property" heading. Yes at x=513, No at x=546.
+    PAGE_14_TRANSFERRED_GATEWAY = ("Check Box34 PG 14", "Check Box35 PG 14")
+    PAGE_14_TRANSFERRED_WHAT = "Text37 PG 14"
+    PAGE_14_TRANSFERRED_WORTH = "Text38 PG 14"
+    # "WHEN?" (Text36) and "HOW MUCH DID YOU GET FOR IT" (Text39) are not modeled.
+
     SAFE_FIELDS = frozenset(
         {
             # Page 1 applicant name.
@@ -1055,6 +1234,29 @@ class Saws2PlusFieldAdapter:
             PAGE_9_JOB_CHANGE_DATE,
             PAGE_9_JOB_CHANGE_REASON,
             *(field for row in PAGE_9_EARNED_ROWS for field in row),
+
+            # Page 8 Q7, page 10 Q9, page 11 Q15, page 14 Q24.
+            *PAGE_8_UNEARNED_GATEWAY,
+            *(field for row in PAGE_8_UNEARNED_ROWS for field in row),
+            *PAGE_10_OTHER_INCOME_GATEWAY,
+            *(
+                field
+                for row in PAGE_10_OTHER_INCOME_ROWS.values()
+                for field in row
+            ),
+            *PAGE_11_EXPENSES_GATEWAY,
+            *(
+                field
+                for row in PAGE_11_EXPENSE_ROWS.values()
+                for field in row
+                if field is not None
+            ),
+            *PAGE_14_RESOURCES_GATEWAY,
+            *PAGE_14_RESOURCE_TYPE_BOXES.values(),
+            *(field for row in PAGE_14_RESOURCE_ROWS for field in row),
+            *PAGE_14_TRANSFERRED_GATEWAY,
+            PAGE_14_TRANSFERRED_WHAT,
+            PAGE_14_TRANSFERRED_WORTH,
             *(field for row in PAGE_9_SELF_EMPLOYMENT_ROWS for field in row),
 
             *(
@@ -1397,6 +1599,161 @@ class Saws2PlusFieldAdapter:
                     set_field(actual_amount_field, amount)
                 elif option_index == 2:
                     set_field(average_amount_field, amount)
+
+        # -------------------------------------------------------------------
+        # Page 8 — Q7 Unearned Income
+        # -------------------------------------------------------------------
+        unearned_gateway = canonical_values.get("income.has_unearned_income")
+
+        if isinstance(unearned_gateway, bool):
+            yes_field, no_field = self.PAGE_8_UNEARNED_GATEWAY
+            set_field(yes_field if unearned_gateway else no_field, "/Yes")
+
+        for row_index, row in enumerate(self.PAGE_8_UNEARNED_ROWS):
+            prefix = f"income.unearned.{row_index}"
+
+            if not any(key.startswith(f"{prefix}.") for key in canonical_values):
+                continue
+
+            person, from_where, how_much, how_often, _yes, _no = row
+
+            set_field(person, canonical_values.get(f"{prefix}.person_name"))
+            set_field(from_where, canonical_values.get(f"{prefix}.source"))
+
+            amount = canonical_values.get(f"{prefix}.amount_monthly")
+            set_field(how_much, amount)
+
+            # The application asks for a *monthly* amount, so the frequency
+            # column restates that same fact rather than inferring a new one. It
+            # is only written when there is an amount to describe.
+            if amount is not None:
+                set_field(how_often, "Monthly")
+
+            # "Expect to Continue?" is not collected for unearned income, so both
+            # boxes stay blank.
+
+        # -------------------------------------------------------------------
+        # Page 10 — Q9 Other Income
+        # -------------------------------------------------------------------
+        other_income_gateway = canonical_values.get("income.has_in_kind_support")
+
+        if isinstance(other_income_gateway, bool):
+            yes_field, no_field = self.PAGE_10_OTHER_INCOME_GATEWAY
+            set_field(yes_field if other_income_gateway else no_field, "/Yes")
+
+        # Rows are keyed by the printed item type, so the first record of each
+        # kind fills that row. A second record of the same kind has no printed row
+        # and is left for the applicant to add by hand.
+        filled_kinds: set[str] = set()
+
+        for index in range(len(self.PAGE_10_OTHER_INCOME_ROWS) * 4):
+            prefix = f"income.in_kind.{index}"
+
+            if not any(key.startswith(f"{prefix}.") for key in canonical_values):
+                continue
+
+            kind = str(canonical_values.get(f"{prefix}.kind") or "").strip()
+            row = self.PAGE_10_OTHER_INCOME_ROWS.get(kind)
+
+            if row is None or kind in filled_kinds:
+                continue
+
+            filled_kinds.add(kind)
+            _free, _for_work, who_gets, value, who_gives = row
+
+            set_field(who_gets, canonical_values.get(f"{prefix}.person_name"))
+            set_field(value, canonical_values.get(f"{prefix}.estimated_monthly_value"))
+            set_field(who_gives, canonical_values.get(f"{prefix}.provided_by"))
+
+            # Free vs For Work is never written: the application asks one combined
+            # question and does not learn which of the two applies.
+
+        # -------------------------------------------------------------------
+        # Page 11 — Q15 Household Expenses
+        # -------------------------------------------------------------------
+        expenses_gateway = canonical_values.get("expenses.has_household_expenses")
+
+        if isinstance(expenses_gateway, bool):
+            yes_field, no_field = self.PAGE_11_EXPENSES_GATEWAY
+            set_field(yes_field if expenses_gateway else no_field, "/Yes")
+
+        filled_rows: set[str] = set()
+
+        for index in range(20):
+            prefix = f"expenses.household.{index}"
+
+            if not any(key.startswith(f"{prefix}.") for key in canonical_values):
+                continue
+
+            kind = str(canonical_values.get(f"{prefix}.kind") or "").strip()
+            row_name = self.EXPENSE_KIND_TO_ROW.get(kind)
+
+            if row_name is None or row_name in filled_rows:
+                continue
+
+            filled_rows.add(row_name)
+            have_yes, _have_no, _who_pays, amount_field, how_often = (
+                self.PAGE_11_EXPENSE_ROWS[row_name]
+            )
+
+            # Recording this expense is an affirmative statement that the
+            # household has it.
+            set_field(have_yes, "/Yes")
+
+            amount = canonical_values.get(f"{prefix}.amount_monthly")
+
+            # Rows the form treats as set allowances have no amount box at all.
+            if amount_field is not None:
+                set_field(amount_field, amount)
+
+            if amount is not None:
+                set_field(how_often, "Monthly")
+
+        # -------------------------------------------------------------------
+        # Page 14 — Q24 Household's Resources
+        # -------------------------------------------------------------------
+        resources_gateway = canonical_values.get("resources.has_accounts")
+
+        if isinstance(resources_gateway, bool):
+            yes_field, no_field = self.PAGE_14_RESOURCES_GATEWAY
+            set_field(yes_field if resources_gateway else no_field, "/Yes")
+
+        for row_index, row in enumerate(self.PAGE_14_RESOURCE_ROWS):
+            prefix = f"resources.accounts.{row_index}"
+
+            if not any(key.startswith(f"{prefix}.") for key in canonical_values):
+                continue
+
+            whose_name, type_of_resource, worth, where_held = row
+            kind = str(canonical_values.get(f"{prefix}.kind") or "").strip()
+
+            set_field(whose_name, canonical_values.get(f"{prefix}.person_name"))
+            set_field(type_of_resource, self.RESOURCE_TYPE_LABELS.get(kind, ""))
+            set_field(worth, canonical_values.get(f"{prefix}.balance"))
+            set_field(where_held, canonical_values.get(f"{prefix}.institution"))
+
+            # Tick the matching entry in the printed type grid, where our
+            # category corresponds to exactly one printed box.
+            type_box = self.PAGE_14_RESOURCE_TYPE_BOXES.get(kind)
+
+            if type_box is not None:
+                set_field(type_box, "/Yes")
+
+        # The un-numbered transferred-resource question at the end of Q24.
+        transferred_gateway = canonical_values.get("resources.transferred_resources")
+
+        if isinstance(transferred_gateway, bool):
+            yes_field, no_field = self.PAGE_14_TRANSFERRED_GATEWAY
+            set_field(yes_field if transferred_gateway else no_field, "/Yes")
+
+        set_field(
+            self.PAGE_14_TRANSFERRED_WHAT,
+            canonical_values.get("resources.transferred.0.description"),
+        )
+        set_field(
+            self.PAGE_14_TRANSFERRED_WORTH,
+            canonical_values.get("resources.transferred.0.estimated_value"),
+        )
 
         # -------------------------------------------------------------------
         # Page 16 — program integrity, other services, third-party liability

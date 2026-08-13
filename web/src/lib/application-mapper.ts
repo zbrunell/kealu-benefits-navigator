@@ -782,12 +782,29 @@ function mapQuestionnaire(
     }
   }
 
+  // Q7 Unearned Income — person, source and monthly amount.
   for (const [index, source] of activeEntries(income.unearned).entries()) {
     const prefix = `income.unearned.${index}`;
     text(`${prefix}.member_id`, source.memberId);
+    text(`${prefix}.person_name`, personName(source.memberId));
     text(`${prefix}.source`, source.source);
     if (source.amountMonthly !== undefined) {
       fields.push(entry(`${prefix}.amount_monthly`, source.amountMonthly));
+    }
+  }
+
+  // Q9 Other Income — housing, utilities, food or clothing received free or in
+  // exchange for work. The printed table has one fixed row per item type.
+  for (const [index, support] of activeEntries(income.inKindSupport).entries()) {
+    const prefix = `income.in_kind.${index}`;
+    text(`${prefix}.member_id`, support.memberId);
+    text(`${prefix}.person_name`, personName(support.memberId));
+    text(`${prefix}.kind`, support.kind);
+    text(`${prefix}.provided_by`, support.providedBy);
+    if (support.estimatedMonthlyValue !== undefined) {
+      fields.push(
+        entry(`${prefix}.estimated_monthly_value`, support.estimatedMonthlyValue),
+      );
     }
   }
 
@@ -832,13 +849,27 @@ function mapQuestionnaire(
   tri("resources.transferred_resources", resources.transferredResources.answer);
   tri("resources.received_diversion_payment", resources.receivedDiversionPayment);
 
+  // Q24 Household's Resources.
   for (const [index, account] of activeEntries(resources.accounts).entries()) {
     const prefix = `resources.accounts.${index}`;
     text(`${prefix}.member_id`, account.memberId);
+    text(`${prefix}.person_name`, personName(account.memberId));
     text(`${prefix}.kind`, account.kind);
     text(`${prefix}.institution`, account.institution);
     if (account.balance !== undefined) {
       fields.push(entry(`${prefix}.balance`, account.balance));
+    }
+  }
+
+  // The un-numbered transferred-resource question at the end of Q24.
+  for (const [index, transferred] of activeEntries(
+    resources.transferredResources,
+  ).entries()) {
+    const prefix = `resources.transferred.${index}`;
+    text(`${prefix}.member_id`, transferred.memberId);
+    text(`${prefix}.description`, transferred.description);
+    if (transferred.estimatedValue !== undefined) {
+      fields.push(entry(`${prefix}.estimated_value`, transferred.estimatedValue));
     }
   }
 
