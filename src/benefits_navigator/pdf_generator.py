@@ -442,12 +442,24 @@ class Saws2PlusFieldAdapter:
 
         "applicant.phone": "Text20 PG 1",
         "applicant.email": "Text22 PG 1",
+
+        # Reviewed against the printed page-1 layout:
+        #   name row  -> Text1 (name) | Text2 (other names) | Text3 (SSN)
+        #   phone row -> Text20 (home) | Text21 (work/alternate/message)
+        #                | Text22 (email)
+        # Text3 is the SSN and is never written; see saws2_plus_inventory.
+        "applicant.other_names": "Text2 PG 1",
+        "applicant.alternate_phone": "Text21 PG 1",
+
+        # "What programs are you applying for?" -> ... | Other ____
+        "programs.other_description": "Text26B PG 1",
     }
 
     PROGRAM_FIELDS: dict[str, str] = {
         "programs.calfresh": "Check Box23 PG 1",
         "programs.calworks": "Check Box24PG 1",
         "programs.medi_cal": "Check Box25 PG 1",
+        "programs.other": "Check Box26 PG 1",
     }
 
     YES_NO_FIELDS: dict[str, tuple[str, str]] = {
@@ -863,6 +875,166 @@ class Saws2PlusFieldAdapter:
         "immunizations_up_to_date": 6,
     }
 
+
+    # -----------------------------------------------------------------------
+    # Page 16 — program integrity, other services, third-party liability
+    # -----------------------------------------------------------------------
+    #
+    # Reviewed against the printed page and the widget coordinates: page 16
+    # holds ten aligned Yes/No pairs at x=467 (Yes) / x=500 (No) plus three
+    # question-specific pairs and five free-text lines. Rows were matched by
+    # descending y against the printed question order:
+    #
+    #   y=732  Q35 fleeing felon            Box1 / Box2   (+ Text3  "who?")
+    #   y=677  Q36 probation/parole         Box4 / Box5   (+ Text6  "who?")
+    #   y=619  Q37 special-need payment     Box7 / Box8   (+ Text9/Text10)
+    #   y=485  Q38A CHDP information        Box11 / Box12
+    #   y=473  Q38A CHDP medical            Box13 / Box14
+    #   y=461  Q38A CHDP dental             Box15 / Box16
+    #   y=449  Q38A CHDP appointment help   Box17 / Box18
+    #   y=427  Q38B immunization            Box19 / Box20
+    #   y=393  Q38C pregnancy help          Box21 / Box22
+    #   y=371  Q38D breastfeeding           Box23 / Box24
+    #   y=358  Q38D gave birth <12 months   Box25 / Box26
+    #   y=302  Q38E family planning         Box27 / Box28
+    #   y=233  Q39 third-party liability    Box29 / Box30 (+ Text31..Text34)
+
+    PAGE_16_YES_NO: dict[str, tuple[str, str]] = {
+        "integrity.fleeing_felon": ("Check Box1 PG 16", "Check Box2 PG 16"),
+        "integrity.probation_or_parole_violation": (
+            "Check Box4 PG 16",
+            "Check Box5 PG 16",
+        ),
+        "services.special_needs_payment": ("Check Box7 PG 16", "Check Box8 PG 16"),
+        "services.chdp_more_information": ("Check Box11 PG 16", "Check Box12 PG 16"),
+        "services.chdp_medical": ("Check Box13 PG 16", "Check Box14 PG 16"),
+        "services.chdp_dental": ("Check Box15 PG 16", "Check Box16 PG 16"),
+        "services.chdp_appointment_help": ("Check Box17 PG 16", "Check Box18 PG 16"),
+        "services.immunization_information": (
+            "Check Box19 PG 16",
+            "Check Box20 PG 16",
+        ),
+        "services.pregnancy_assistance": ("Check Box21 PG 16", "Check Box22 PG 16"),
+        "services.breastfeeding": ("Check Box23 PG 16", "Check Box24 PG 16"),
+        "services.gave_birth_last_twelve_months": (
+            "Check Box25 PG 16",
+            "Check Box26 PG 16",
+        ),
+        "services.family_planning": ("Check Box27 PG 16", "Check Box28 PG 16"),
+        "services.third_party_liability": (
+            "Check Box29 PG 16",
+            "Check Box30 PG 16",
+        ),
+    }
+
+    PAGE_16_TEXT: dict[str, str] = {
+        "integrity.fleeing_felon_who": "Text3 PG 16",
+        "integrity.probation_or_parole_who": "Text6 PG 16",
+        "services.special_needs_explanation": "Text9 PG 16",
+        "services.third_party_liability_who": "Text31 PG 16",
+    }
+
+
+    # -----------------------------------------------------------------------
+    # Page 9 — Q8 earned income, Q8 job-change block, Q8a self-employment
+    # -----------------------------------------------------------------------
+    #
+    # Verification basis: every column band below was confirmed by extracting the
+    # printed header text with coordinates and matching each header's x-position
+    # to the widget column it sits above, independently of field numbering.
+    #
+    #   header                                   header x   widget x-range
+    #   "Person Working"                            56        32-141
+    #   "Employer's Name and Address"              156/166   147-233
+    #   "Employer's Phone Number"                  242/251   240-305
+    #   "Hourly Rate"                              321/325   318-357
+    #   "Average hours per week"                   361/371   361-400
+    #   "How Often Paid? (Once weekly, monthly)"   411/427   406-472
+    #   "Total Gross Earned Income Received
+    #    This Month?"                              477/486   480-525
+    #   "Expect to Continue? (Check Yes or No)"    529/532   537-550 (stacked)
+    #
+    # The Q8 table has exactly four printed rows and Q8a exactly three. Records
+    # beyond those counts have nowhere to go on this page and are not written;
+    # the form directs applicants to attach an additional sheet.
+
+    #: Q8 rows: (person, employer name/address, employer phone, hourly rate,
+    #: hours per week, how often paid, gross received this month,
+    #: expect-to-continue Yes, expect-to-continue No)
+    PAGE_9_EARNED_ROWS = (
+        (
+            "Text3 PG 9", "Text4 PG 9", "Text5 PG 9", "Text6 PG 9",
+            "Text7 PG 9", "Text8 PG 9", "Text9 PG 9",
+            "Check Box10 PG 9", "Check Box11 PG 9",
+        ),
+        (
+            "Text12 PG 9", "Text13 PG 9", "Text14 PG 9", "Text15 PG 9",
+            "Text16 PG 9", "Text17 PG 9", "Text18 PG 9",
+            "Check Box19 PG 9", "Check Box20 PG 9",
+        ),
+        (
+            "Text21 PG 9", "Text22 PG 9", "Text23 PG 9", "Text24 PG 9",
+            "Text25 PG 9", "Text26 PG 9", "Text27 PG 9",
+            "Check Box28 PG 9", "Check Box29 PG 9",
+        ),
+        (
+            "Text30 PG 9", "Text31 PG 9", "Text32 PG 9", "Text33 PG 9",
+            "Text34 PG 9", "Text35 PG 9", "Text36 PG 9",
+            "Check Box37 PG 9", "Check Box38 PG 9",
+        ),
+    )
+
+    #: Q8 gateway "Does anyone get income from a job?" (Yes x=300, No x=332).
+    PAGE_9_EARNED_GATEWAY = ("Check Box1 PG 9", "Check Box2 PG 9")
+
+    #: Q8 job-change block. Yes/No pairs verified against the printed prompts.
+    PAGE_9_JOB_CHANGE_GATEWAY = ("Check Box40 PG 9", "Check Box41 PG 9")
+
+    #: "IF YES, WHO?" / "DATE OF JOB LOSS, QUIT, OR CHANGE" / "REASON?"
+    PAGE_9_JOB_CHANGE_WHO = "Text46 PG 9"
+    PAGE_9_JOB_CHANGE_DATE = "Text47 PG 9"
+    PAGE_9_JOB_CHANGE_REASON = "Text49 PG 9"
+
+    #: Q8a rows: (person, business name, type, date started, gross monthly,
+    #: net monthly, 40%-flat box, actual-expenses box, monthly-average box,
+    #: actual-expenses amount, monthly-average amount)
+    PAGE_9_SELF_EMPLOYMENT_ROWS = (
+        (
+            "Text56 PG 9", "Text57 PG 9", "Text58 PG 9", "Text59 PG 9",
+            "Text60 PG 9", "Text66 PG 9",
+            "Check Box61 PG 9", "Check Box62 PG 9", "Check Box63 PG 9",
+            "Text64 PG 9", "Text65 PG 9",
+        ),
+        (
+            "Text67 PG 9", "Text68 PG 9", "Text69 PG 9", "Text70 PG 9",
+            "Text71 PG 9", "Text77 PG 9",
+            "Check Box72 PG 9", "Check Box73 PG 9", "Check Box74 PG 9",
+            "Text75 PG 9", "Text76 PG 9",
+        ),
+        (
+            "Text78 PG 9", "Text79 PG 9", "Text80 PG 9", "Text81 PG 9",
+            "Text82 PG 9", "Text88 PG 9",
+            "Check Box83 PG 9", "Check Box84 PG 9", "Check Box85 PG 9",
+            "Text86 PG 9", "Text87 PG 9",
+        ),
+    )
+
+    #: Printed wording for the "How Often Paid?" column.
+    PAY_FREQUENCY_LABELS = {
+        "weekly": "Weekly",
+        "every_two_weeks": "Every two weeks",
+        "twice_a_month": "Twice a month",
+        "monthly": "Monthly",
+        "irregular": "Irregular",
+    }
+
+    #: Column index of each self-employment expense option.
+    SELF_EMPLOYMENT_EXPENSE_INDEX = {
+        "standard_40_percent": 0,
+        "actual_expenses": 1,
+        "monthly_average": 2,
+    }
+
     SAFE_FIELDS = frozenset(
         {
             # Page 1 applicant name.
@@ -874,6 +1046,22 @@ class Saws2PlusFieldAdapter:
 
             *TEXT_FIELDS.values(),
             *PROGRAM_FIELDS.values(),
+            *PAGE_16_TEXT.values(),
+
+            # Page 9 earned income, job-change block, and self-employment.
+            *PAGE_9_EARNED_GATEWAY,
+            *PAGE_9_JOB_CHANGE_GATEWAY,
+            PAGE_9_JOB_CHANGE_WHO,
+            PAGE_9_JOB_CHANGE_DATE,
+            PAGE_9_JOB_CHANGE_REASON,
+            *(field for row in PAGE_9_EARNED_ROWS for field in row),
+            *(field for row in PAGE_9_SELF_EMPLOYMENT_ROWS for field in row),
+
+            *(
+                field
+                for pair in PAGE_16_YES_NO.values()
+                for field in pair
+            ),
 
             *(
                 field
@@ -1061,6 +1249,180 @@ class Saws2PlusFieldAdapter:
                     pdf_field,
                     "/Yes",
                 )
+
+        # -------------------------------------------------------------------
+        # Page 9 — Q8 earned income
+        # -------------------------------------------------------------------
+        earned_gateway = canonical_values.get("income.has_earned_income")
+
+        if isinstance(earned_gateway, bool):
+            yes_field, no_field = self.PAGE_9_EARNED_GATEWAY
+            set_field(yes_field if earned_gateway else no_field, "/Yes")
+
+        for row_index, row in enumerate(self.PAGE_9_EARNED_ROWS):
+            prefix = f"income.earned.{row_index}"
+
+            # A record only reaches this point when its gateway is Yes; the
+            # TypeScript field plan omits inactive records entirely.
+            if not any(
+                key.startswith(f"{prefix}.") for key in canonical_values
+            ):
+                continue
+
+            (
+                person_field,
+                employer_field,
+                phone_field,
+                hourly_field,
+                hours_field,
+                frequency_field,
+                monthly_field,
+                continue_yes,
+                continue_no,
+            ) = row
+
+            set_field(person_field, canonical_values.get(f"{prefix}.person_name"))
+
+            # "Employer's Name and Address" is one printed column.
+            employer_parts = [
+                _none_to_blank(canonical_values.get(f"{prefix}.employer_name")),
+                _none_to_blank(canonical_values.get(f"{prefix}.employer_address")),
+            ]
+            set_field(
+                employer_field,
+                ", ".join(part for part in employer_parts if part),
+            )
+
+            set_field(phone_field, canonical_values.get(f"{prefix}.employer_phone"))
+            set_field(hourly_field, canonical_values.get(f"{prefix}.hourly_rate"))
+            set_field(hours_field, canonical_values.get(f"{prefix}.hours_per_week"))
+
+            frequency = str(
+                canonical_values.get(f"{prefix}.pay_frequency") or ""
+            ).strip()
+            set_field(
+                frequency_field,
+                self.PAY_FREQUENCY_LABELS.get(frequency, ""),
+            )
+
+            # Only the month total may go in the month column. A per-period
+            # amount is a different fact and is never converted.
+            set_field(
+                monthly_field,
+                canonical_values.get(f"{prefix}.gross_received_this_month"),
+            )
+
+            expect = canonical_values.get(f"{prefix}.expected_to_continue")
+            if isinstance(expect, bool):
+                set_field(continue_yes if expect else continue_no, "/Yes")
+
+        # Q8 job-change block.
+        job_change_gateway = canonical_values.get("income.recent_job_change")
+
+        if isinstance(job_change_gateway, bool):
+            yes_field, no_field = self.PAGE_9_JOB_CHANGE_GATEWAY
+            set_field(yes_field if job_change_gateway else no_field, "/Yes")
+
+        # The printed block has room for a single job change.
+        set_field(
+            self.PAGE_9_JOB_CHANGE_WHO,
+            canonical_values.get("income.recent_job_change.0.person_name"),
+        )
+        set_field(
+            self.PAGE_9_JOB_CHANGE_DATE,
+            canonical_values.get("income.recent_job_change.0.change_date"),
+        )
+        set_field(
+            self.PAGE_9_JOB_CHANGE_REASON,
+            canonical_values.get("income.recent_job_change.0.reason"),
+        )
+
+        # -------------------------------------------------------------------
+        # Page 9 — Q8a self-employment
+        # -------------------------------------------------------------------
+        for row_index, row in enumerate(self.PAGE_9_SELF_EMPLOYMENT_ROWS):
+            prefix = f"income.self_employment.{row_index}"
+
+            if not any(
+                key.startswith(f"{prefix}.") for key in canonical_values
+            ):
+                continue
+
+            (
+                person_field,
+                business_name_field,
+                business_type_field,
+                start_date_field,
+                gross_field,
+                net_field,
+                flat_rate_box,
+                actual_box,
+                average_box,
+                actual_amount_field,
+                average_amount_field,
+            ) = row
+
+            set_field(person_field, canonical_values.get(f"{prefix}.person_name"))
+            set_field(
+                business_name_field,
+                canonical_values.get(f"{prefix}.business_name"),
+            )
+            set_field(
+                business_type_field,
+                canonical_values.get(f"{prefix}.business_type"),
+            )
+            set_field(
+                start_date_field,
+                _format_date(
+                    str(canonical_values.get(f"{prefix}.start_date") or "")
+                ),
+            )
+            set_field(gross_field, canonical_values.get(f"{prefix}.gross_monthly"))
+            set_field(net_field, canonical_values.get(f"{prefix}.net_monthly"))
+
+            method = str(
+                canonical_values.get(f"{prefix}.expense_method") or ""
+            ).strip()
+            option_index = self.SELF_EMPLOYMENT_EXPENSE_INDEX.get(method)
+
+            if option_index is not None:
+                set_field(
+                    (flat_rate_box, actual_box, average_box)[option_index],
+                    "/Yes",
+                )
+
+                amount = canonical_values.get(f"{prefix}.expense_amount")
+
+                if option_index == 1:
+                    set_field(actual_amount_field, amount)
+                elif option_index == 2:
+                    set_field(average_amount_field, amount)
+
+        # -------------------------------------------------------------------
+        # Page 16 — program integrity, other services, third-party liability
+        # -------------------------------------------------------------------
+        #
+        # An unanswered question stays blank: only a real boolean ticks a box, so
+        # "not asked" is never rendered as an explicit No.
+        for (
+            key,
+            (yes_field, no_field),
+        ) in self.PAGE_16_YES_NO.items():
+            value = canonical_values.get(key)
+
+            if not isinstance(value, bool):
+                continue
+
+            set_field(
+                yes_field if value else no_field,
+                "/Yes",
+            )
+
+        for key, pdf_field in self.PAGE_16_TEXT.items():
+            set_field(
+                pdf_field,
+                canonical_values.get(key),
+            )
 
         # -------------------------------------------------------------------
         # Build semantic household-person records.
