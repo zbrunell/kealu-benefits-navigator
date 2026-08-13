@@ -22,6 +22,7 @@
  *   from applicant data, so no PII can leak into an id, a log, or a DOM id.
  */
 
+import { QUESTION_META_FROM_SCHEMA } from '@/lib/saws2-schema';
 import type { Saws2PlusApplicationData } from '@/types/application';
 import {
   APPLICANT_MEMBER_ID,
@@ -219,117 +220,20 @@ export type UnstampedQuestion = Omit<
  * no single corresponding question, and that omission is deliberate: it is
  * better to record "no confident mapping" than to invent one.
  */
+/**
+ * Priority and printed SAWS question number for every question we ask.
+ *
+ * Derived from the canonical schema rather than restated here. This table used
+ * to be a second, independent record of what the form means, which is how three
+ * different health questions ended up all labelled "Q22": the number was
+ * corrected in one place and stayed wrong in the other.
+ *
+ * Manual-only concepts (SSN, signatures) are excluded by the schema itself, so
+ * they can never become questions.
+ */
 export const QUESTION_META: Readonly<
   Record<string, { tier: QuestionTier; saws?: string }>
-> = {
-  // ── Tier 1: filing, identity, core application (Q1, Q6 identity) ────────
-  'household.applicant_name': { tier: 1, saws: 'Q1' },
-  'household.applicant_dob': { tier: 1, saws: 'Q6' },
-
-  // ── Tier 2: eligibility-critical (Q6 detail, Q7-Q9, Q15, Q24) ──────────
-  'income.unearned': { tier: 2, saws: 'Q7' }, // Unearned Income (page 8)
-  'income.earned': { tier: 2, saws: 'Q8' },
-  'income.self_employment': { tier: 2, saws: 'Q8a' },
-  // Q9 "Other Income" — housing/utilities/food/clothing received free or for
-  // work. Distinct from Q7 (unearned) and Q8 (earned).
-  'income.in_kind': { tier: 2, saws: 'Q9' },
-  'income.varies_during_year': { tier: 2, saws: 'Q10' },
-  'expenses.household': { tier: 2, saws: 'Q15' }, // Household Expenses (page 11)
-  'resources.accounts': { tier: 2, saws: 'Q24' }, // Household's Resources (page 14)
-  'circumstances.food_together': { tier: 2, saws: 'Q21' },
-  'circumstances.california_resident': { tier: 2, saws: 'Q6q' },
-
-  // ── Tier 3: supporting — improves the calculation or completes a section ─
-  'circumstances.authorized_representative': { tier: 3, saws: 'Q2' },
-  'circumstances.prior_public_assistance': { tier: 3, saws: 'Q5' },
-  'circumstances.planned_absence': { tier: 3, saws: 'Q6r' },
-  'circumstances.military_service': { tier: 3, saws: 'Q6d' },
-  'circumstances.absent_parents': { tier: 3, saws: 'Q6g' },
-  'circumstances.caretaker_relative': { tier: 3, saws: 'Q6h' },
-  'circumstances.students': { tier: 3, saws: 'Q6l' },
-  'circumstances.foster_care': { tier: 3, saws: 'Q6p' },
-  'circumstances.institutional_living': { tier: 3, saws: 'Q19' },
-  'circumstances.ihss': { tier: 3, saws: 'Q20' },
-  'circumstances.other_food_program': { tier: 3, saws: 'Q18' },
-  /*
-   * The job-loss / hours-change block is printed inside Q8's area but is not the
-   * earned-income table and carries no number of its own, so it is labelled
-   * distinctly rather than conflated with Q8.
-   */
-  'income.recent_job_change': { tier: 3, saws: 'Q8 (job change)' },
-  'expenses.dependent_care': { tier: 3, saws: 'Q11' },
-  'expenses.child_support_paid': { tier: 3, saws: 'Q12' },
-  'expenses.spousal_support_paid': { tier: 3, saws: 'Q13' },
-  'expenses.medical': { tier: 3, saws: 'Q16' },
-  'expenses.other_tax_deductible': { tier: 3, saws: 'Q17' },
-  /*
-   * The printed form asks four separate health-coverage questions, and they are
-   * numbered separately. Labelling three of them "Q22" made the flow look like
-   * it was asking the same question over and over: an applicant who answered
-   * Q22 "No" was then shown two more questions badged "SAWS 2 PLUS Q22".
-   *
-   * Verified against the printed page (PDF page 19):
-   *
-   *   Q22  "Is anyone enrolled in health coverage now from the following?"
-   *   Q22a "Is anyone listed on this application offered health care coverage
-   *         from a job?" — a Yes here is what adds Appendix A.
-   *   Q22b "Is anyone's health insurance expected to end or has it ended in the
-   *         last 90 days?"
-   *   Q22c "Does anyone want help for medical bills from the last three months?"
-   *
-   * None of them is a follow-up to Q22: each is independently applicable, so
-   * answering Q22 No must not suppress any of the other three.
-   */
-  'health.current_coverage': { tier: 3, saws: 'Q22' },
-  'health.employer_coverage': { tier: 3, saws: 'Q22a' },
-  'health.coverage_ending': { tier: 3, saws: 'Q22b' },
-  'health.retroactive_medical': { tier: 3, saws: 'Q22c' },
-  'health.tax_filer': { tier: 3, saws: 'Q23' },
-  // Q23c is the only tax sub-question we currently ask; it is genuinely a
-  // follow-up, printed under "complete for each person who plans to file".
-  'health.spouse_filing_jointly': { tier: 3, saws: 'Q23c' },
-  'health.renewal_authorization': { tier: 3, saws: 'Q23f' },
-  'health.american_indian': { tier: 3, saws: 'Q3' },
-  'resources.vehicles': { tier: 3, saws: 'Q26' },
-  'resources.real_property': { tier: 3, saws: 'Q27' },
-  /*
-   * The transferred-resource question is printed at the end of Q24, above the
-   * "25. Personal Property" heading, and carries no number of its own. It was
-   * previously labelled Q25, which is a different question (personal property).
-   */
-  'resources.transferred': { tier: 3, saws: 'Q24 (transferred resources)' },
-  'resources.diversion_payment': { tier: 3, saws: 'Q28' },
-  'appendices.tribal_name': { tier: 3, saws: 'Appendix B' },
-  'appendices.employment_history': { tier: 3, saws: 'Appendix D' },
-
-  // Program-integrity questions (Q29-Q36). They bear on eligibility but do not
-  // block a useful draft, so they sit in tier 3.
-  'integrity.duplicate_benefits': { tier: 3, saws: 'Q29' },
-  'integrity.trafficking': { tier: 3, saws: 'Q30' },
-  'integrity.drugs': { tier: 3, saws: 'Q31' },
-  'integrity.firearms': { tier: 3, saws: 'Q32' },
-  'integrity.welfare_fraud': { tier: 3, saws: 'Q33' },
-  'integrity.sanction': { tier: 3, saws: 'Q34' },
-  'integrity.fleeing_felon': { tier: 3, saws: 'Q35' },
-  'integrity.probation_violation': { tier: 3, saws: 'Q36' },
-  'integrity.fleeing_felon_who': { tier: 3, saws: 'Q35' },
-  'integrity.probation_who': { tier: 3, saws: 'Q36' },
-
-  // ── Tier 4: optional — the form says these do not affect eligibility ────
-  'integrity.special_needs_payment': { tier: 4, saws: 'Q37' },
-  'integrity.special_needs_explanation': { tier: 4, saws: 'Q37' },
-  'integrity.third_party_liability': { tier: 4, saws: 'Q39' },
-  'integrity.third_party_who': { tier: 4, saws: 'Q39' },
-  'services.chdp_information': { tier: 4, saws: 'Q38A' },
-  'services.chdp_medical': { tier: 4, saws: 'Q38A' },
-  'services.chdp_dental': { tier: 4, saws: 'Q38A' },
-  'services.chdp_transport': { tier: 4, saws: 'Q38A' },
-  'services.immunization': { tier: 4, saws: 'Q38B' },
-  'services.pregnancy_assistance': { tier: 4, saws: 'Q38C' },
-  'services.breastfeeding': { tier: 4, saws: 'Q38D' },
-  'services.gave_birth_recently': { tier: 4, saws: 'Q38D' },
-  'services.family_planning': { tier: 4, saws: 'Q38E' },
-};
+> = QUESTION_META_FROM_SCHEMA;
 
 /** Tier for a question id, defaulting to supporting. */
 export function tierFor(id: string): QuestionTier {

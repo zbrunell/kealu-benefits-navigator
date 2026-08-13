@@ -147,6 +147,8 @@ describe('privacy boundary', () => {
         'names Social Security as an example of an unearned-income source; it never asks for a number',
       'lib/saws2-readiness.ts':
         'states the 42 CFR 435.910 SSN requirement as a manual-completion item the applicant writes by hand; it never collects or stores one',
+      'lib/saws2-schema.ts':
+        'declares Q6c SSN as manual-only with no path, no canonical key and no PDF destination — the declaration is what forbids collection',
       'i18n/messages/en.ts': 'manual-completion instruction shown after generation',
       'i18n/messages/es.ts': 'Spanish translation of the same instruction',
       'i18n/messages/zh-CN.ts': 'Chinese translation of the same instruction',
