@@ -21,11 +21,13 @@ import {
 } from "@/lib/saws2-question-planner";
 import {
   back as navigatorBack,
+  canSkip,
   currentQuestion,
   draftKind,
   resync,
   setDraft as setNavigatorDraft,
   shouldSubmitOnKey,
+  skipCurrent,
   startFlow,
   submitChoice,
   submitDraft,
@@ -349,6 +351,189 @@ const NUMBER_KEYS = new Set([
   "monthlyPayment",
 ]);
 
+
+/**
+ * Three-state Yes/No control. An explicit click commits and advances.
+ *
+ * Declared at module scope on purpose. A component defined inside the parent
+ * gets a new function identity on every render, so React treats it as a
+ * different component type, unmounts the previous one and destroys its DOM —
+ * which is what previously made record inputs lose focus after one keystroke.
+ */
+function TriStateControl({
+  value,
+  onAnswer,
+}: {
+  value: boolean | undefined;
+  onAnswer: (answer: boolean) => void;
+}) {
+  return (
+    <div className="mt-3 flex items-center gap-2">
+      {[
+        { label: "Yes", answer: true },
+        { label: "No", answer: false },
+      ].map((option) => (
+        <button
+          key={option.label}
+          type="button"
+          onClick={() => onAnswer(option.answer)}
+          aria-pressed={value === option.answer}
+          className={`rounded-lg border px-5 py-2 text-sm font-medium ${
+            value === option.answer
+              ? "border-green-700 bg-green-700 text-white"
+              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+
+      {value === undefined && (
+        <span className="text-xs text-slate-500">Not answered yet</span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Editor for one repeatable record, derived from the record's own shape.
+ *
+ * Module scope for the same reason as TriStateControl: a stable component
+ * identity is what lets its inputs keep focus and cursor position while typing.
+ */
+function RecordEditor({
+  record,
+  memberName,
+  onFieldChange,
+  onRemove,
+  index,
+}: {
+  record: Record<string, unknown>;
+  memberName: string | null;
+  onFieldChange: (key: string, value: unknown) => void;
+  onRemove: () => void;
+  index: number;
+}) {
+  return (
+    <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-slate-800">
+          {memberName ? memberName : `Entry ${index + 1}`}
+        </p>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="text-xs font-medium text-red-700 underline hover:text-red-900"
+        >
+          Remove
+        </button>
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        {Object.keys(record)
+          .filter((key) => key !== "id" && key !== "memberId")
+          .map((key) => {
+            const value = record[key];
+            const options = CHOICE_OPTIONS[key];
+
+            if (options) {
+              return (
+                <label key={key} className="block">
+                  <span className="text-sm font-medium text-slate-700">
+                    {labelFor(key)}
+                  </span>
+                  <select
+                    value={String(value ?? "")}
+                    onChange={(event) =>
+                      onFieldChange(key, event.target.value || undefined)
+                    }
+                    className={INPUT_CLASS}
+                  >
+                    <option value="">Not answered</option>
+                    {options.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              );
+            }
+
+            if (NUMBER_KEYS.has(key)) {
+              return (
+                <label key={key} className="block">
+                  <span className="text-sm font-medium text-slate-700">
+                    {labelFor(key)}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={value === undefined || value === null ? "" : String(value)}
+                    onChange={(event) =>
+                      onFieldChange(
+                        key,
+                        event.target.value === ""
+                          ? undefined
+                          : Number(event.target.value),
+                      )
+                    }
+                    className={INPUT_CLASS}
+                  />
+                </label>
+              );
+            }
+
+            if (typeof value === "boolean" || value === undefined) {
+              return (
+                <div key={key}>
+                  <span className="text-sm font-medium text-slate-700">
+                    {labelFor(key)}
+                  </span>
+                  <div className="mt-1 flex gap-2">
+                    {[
+                      { label: "Yes", answer: true },
+                      { label: "No", answer: false },
+                    ].map((option) => (
+                      <button
+                        key={option.label}
+                        type="button"
+                        onClick={() => onFieldChange(key, option.answer)}
+                        aria-pressed={value === option.answer}
+                        className={`rounded-lg border px-3 py-1 text-sm ${
+                          value === option.answer
+                            ? "border-green-700 bg-green-700 text-white"
+                            : "border-slate-300 bg-white text-slate-700"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <label key={key} className="block">
+                <span className="text-sm font-medium text-slate-700">
+                  {labelFor(key)}
+                </span>
+                <input
+                  type={DATE_KEYS.has(key) ? "date" : "text"}
+                  value={String(value ?? "")}
+                  onChange={(event) => onFieldChange(key, event.target.value)}
+                  className={INPUT_CLASS}
+                />
+              </label>
+            );
+          })}
+      </div>
+    </div>
+  );
+}
+
 interface QuestionnaireStepProps {
   application: Saws2PlusApplicationData;
   onChange: (next: Saws2PlusApplicationData) => void;
@@ -423,6 +608,11 @@ export default function QuestionnaireStep({
     setFlow(result.state);
   }
 
+  /** Skip a non-required question: writes nothing, leaves the PDF field blank. */
+  function skipQuestion() {
+    setFlow(skipCurrent(application, flow));
+  }
+
   /** Question-level Back; leaves the step only at the very beginning. */
   function goBack() {
     const result = navigatorBack(application, flow);
@@ -483,213 +673,15 @@ export default function QuestionnaireStep({
     const existing = safeEntries<unknown>(readAnswer(entriesPath)).slice();
     existing[index] = { ...(existing[index] as Record<string, unknown>), [key]: value };
 
-    applyData({
+    /*
+     * Editing a field inside a record changes no gateway, so navigation is not
+     * recomputed here. Re-running the flow on every keystroke is what used to
+     * reconstruct the active question mid-typing.
+     */
+    onChange({
       ...application,
       questionnaire: writePath(application.questionnaire, entriesPath, existing),
     });
-  }
-
-  /** Three-state Yes/No control. An explicit click commits and advances. */
-  function TriStateControl({ path }: { path: string }) {
-    const value = readAnswer(path) as boolean | undefined;
-
-    return (
-      <div className="mt-3 flex items-center gap-2">
-        {[
-          { label: "Yes", answer: true },
-          { label: "No", answer: false },
-        ].map((option) => (
-          <button
-            key={option.label}
-            type="button"
-            onClick={() => commitChoice(path, option.answer)}
-            aria-pressed={value === option.answer}
-            className={`rounded-lg border px-5 py-2 text-sm font-medium ${
-              value === option.answer
-                ? "border-green-700 bg-green-700 text-white"
-                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-
-        {value === undefined && (
-          <span className="text-xs text-slate-500">Not answered yet</span>
-        )}
-      </div>
-    );
-  }
-
-  /** Editor for one repeatable record, derived from the record's own shape. */
-  function RecordEditor({
-    entriesPath,
-    index,
-    record,
-  }: {
-    entriesPath: string;
-    index: number;
-    record: Record<string, unknown>;
-  }) {
-    const memberName =
-      members.find((member) => member.id === record.memberId)?.label ?? null;
-
-    return (
-      <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-slate-800">
-            {memberName ? memberName : `Entry ${index + 1}`}
-          </p>
-          <button
-            type="button"
-            onClick={() => removeRecord(entriesPath, index)}
-            className="text-xs font-medium text-red-700 underline hover:text-red-900"
-          >
-            Remove
-          </button>
-        </div>
-
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {Object.keys(record)
-            .filter((key) => key !== "id" && key !== "memberId")
-            .map((key) => {
-              const value = record[key];
-              const options = CHOICE_OPTIONS[key];
-
-              if (options) {
-                return (
-                  <label key={key} className="block">
-                    <span className="text-sm font-medium text-slate-700">
-                      {labelFor(key)}
-                    </span>
-                    <select
-                      value={String(value ?? "")}
-                      onChange={(event) =>
-                        updateRecordField(
-                          entriesPath,
-                          index,
-                          key,
-                          event.target.value || undefined,
-                        )
-                      }
-                      className={INPUT_CLASS}
-                    >
-                      <option value="">Not answered</option>
-                      {options.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                );
-              }
-
-              if (typeof value === "boolean" || value === undefined) {
-                if (NUMBER_KEYS.has(key)) {
-                  return (
-                    <label key={key} className="block">
-                      <span className="text-sm font-medium text-slate-700">
-                        {labelFor(key)}
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={value === undefined ? "" : String(value)}
-                        onChange={(event) =>
-                          updateRecordField(
-                            entriesPath,
-                            index,
-                            key,
-                            event.target.value === ""
-                              ? undefined
-                              : Number(event.target.value),
-                          )
-                        }
-                        className={INPUT_CLASS}
-                      />
-                    </label>
-                  );
-                }
-
-                return (
-                  <div key={key}>
-                    <span className="text-sm font-medium text-slate-700">
-                      {labelFor(key)}
-                    </span>
-                    <div className="mt-1 flex gap-2">
-                      {[
-                        { label: "Yes", answer: true },
-                        { label: "No", answer: false },
-                      ].map((option) => (
-                        <button
-                          key={option.label}
-                          type="button"
-                          onClick={() =>
-                            updateRecordField(entriesPath, index, key, option.answer)
-                          }
-                          aria-pressed={value === option.answer}
-                          className={`rounded-lg border px-3 py-1 text-sm ${
-                            value === option.answer
-                              ? "border-green-700 bg-green-700 text-white"
-                              : "border-slate-300 bg-white text-slate-700"
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
-
-              if (typeof value === "number") {
-                return (
-                  <label key={key} className="block">
-                    <span className="text-sm font-medium text-slate-700">
-                      {labelFor(key)}
-                    </span>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={String(value)}
-                      onChange={(event) =>
-                        updateRecordField(
-                          entriesPath,
-                          index,
-                          key,
-                          event.target.value === ""
-                            ? undefined
-                            : Number(event.target.value),
-                        )
-                      }
-                      className={INPUT_CLASS}
-                    />
-                  </label>
-                );
-              }
-
-              return (
-                <label key={key} className="block">
-                  <span className="text-sm font-medium text-slate-700">
-                    {labelFor(key)}
-                  </span>
-                  <input
-                    type={DATE_KEYS.has(key) ? "date" : "text"}
-                    value={String(value ?? "")}
-                    onChange={(event) =>
-                      updateRecordField(entriesPath, index, key, event.target.value)
-                    }
-                    className={INPUT_CLASS}
-                  />
-                </label>
-              );
-            })}
-        </div>
-      </div>
-    );
   }
 
   function renderRecordsQuestion(current: PlannedQuestion) {
@@ -702,9 +694,15 @@ export default function QuestionnaireStep({
         {records.map((record, index) => (
           <RecordEditor
             key={String(record.id ?? index)}
-            entriesPath={current.path}
             index={index}
             record={record}
+            memberName={
+              members.find((member) => member.id === record.memberId)?.label ?? null
+            }
+            onFieldChange={(key, value) =>
+              updateRecordField(current.path, index, key, value)
+            }
+            onRemove={() => removeRecord(current.path, index)}
           />
         ))}
 
@@ -764,6 +762,7 @@ export default function QuestionnaireStep({
     return (
       <div>
         <input
+          key={current.id}
           type={kind === "date" ? "date" : kind === "number" ? "number" : "text"}
           {...(kind === "number" ? { min: 0, step: "0.01" } : {})}
           value={flow.draft}
@@ -813,6 +812,33 @@ export default function QuestionnaireStep({
           {question ? question.prompt : "Everything we need is answered"}
         </h1>
 
+        {question && (
+          <p className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <span
+              className={`rounded-full border px-2 py-0.5 font-medium ${
+                question.requirement === "required"
+                  ? "border-red-200 bg-red-50 text-red-800"
+                  : question.requirement === "important"
+                    ? "border-amber-200 bg-amber-50 text-amber-800"
+                    : "border-slate-200 bg-slate-50 text-slate-600"
+              }`}
+              data-testid="question-requirement"
+            >
+              {question.requirement === "required"
+                ? "Needed to file"
+                : question.requirement === "important"
+                  ? "Speeds up your determination"
+                  : "Optional"}
+            </span>
+
+            {question.sawsQuestion && (
+              <span className="text-slate-500">
+                SAWS 2 PLUS {question.sawsQuestion}
+              </span>
+            )}
+          </p>
+        )}
+
         {question?.help && (
           <p className="mt-2 text-sm text-slate-600">{question.help}</p>
         )}
@@ -850,7 +876,12 @@ export default function QuestionnaireStep({
 
         {/* The question on screen */}
         <div className="mt-5" data-testid="questionnaire-questions">
-          {question?.kind === "gateway" && <TriStateControl path={question.path} />}
+          {question?.kind === "gateway" && (
+            <TriStateControl
+              value={readAnswer(question.path) as boolean | undefined}
+              onAnswer={(answer) => commitChoice(question.path, answer)}
+            />
+          )}
           {question?.kind === "records" && renderRecordsQuestion(question)}
           {question && usesDraft(question) && renderDraftQuestion(question)}
         </div>
@@ -895,12 +926,23 @@ export default function QuestionnaireStep({
             </button>
           )}
 
+          {canSkip(question) && (
+            <button
+              type="button"
+              onClick={skipQuestion}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              data-testid="question-skip"
+            >
+              Skip this question
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onContinue}
             className="ml-auto rounded-lg px-3 py-2 text-sm font-medium text-slate-600 underline hover:text-slate-800"
           >
-            {question ? "Skip the rest for now" : "Continue to review"}
+            {question ? "Finish and review" : "Continue to review"}
           </button>
         </div>
       </div>
