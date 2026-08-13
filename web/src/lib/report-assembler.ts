@@ -359,6 +359,25 @@ function extractStructuredApplicationOutput(
 }
 
 /**
+ * Remove the `## Structured Application Output` section from content shown to
+ * the user.
+ *
+ * The section is a machine-readable JSON block consumed by
+ * extractStructuredApplicationOutput() to build the SAWS 2 PLUS
+ * recommendations. It is parsed first and then stripped here: the data keeps
+ * flowing through the pipeline, it simply stops being rendered in the report.
+ */
+function stripStructuredApplicationOutput(content: string): string {
+  return content
+    .replace(
+      /^##\s+Structured Application Output\s*\n[\s\S]*?(?=\n##\s|$(?![\s\S]))/m,
+      "",
+    )
+    .replace(/\n{3,}/g, "\n\n")
+    .trimEnd();
+}
+
+/**
  * Assemble the report payload from phase output files in the run directory.
  *
  * Throws an AssembleError with:
@@ -420,7 +439,8 @@ export async function assembleReport(
     sections.push({
       phaseName,
       displayName: PHASE_DISPLAY_NAMES[phaseName] ?? phaseName,
-      content,
+      // The structured JSON block is parsed above and is not shown to the user.
+      content: stripStructuredApplicationOutput(content),
       expanded: phaseName === "action-plan",
     });
   }
