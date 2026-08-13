@@ -110,7 +110,10 @@ const RECORD_FACTORIES: Record<string, (id: string, memberId: string) => Record<
     id,
     memberId,
     source: "",
-    amountMonthly: undefined,
+    // The form asks how much and how often, so both are collected as reported
+    // rather than asking the applicant to convert to a monthly figure.
+    reportedAmount: undefined,
+    reportedFrequency: undefined,
   }),
   "income.inKindSupport.entries": (id, memberId) => ({
     id,
@@ -252,6 +255,8 @@ const FIELD_LABELS: Record<string, string> = {
   netMonthly: "Net monthly income",
   expenseMethod: "How you claim expenses",
   amountMonthly: "Monthly amount",
+  reportedAmount: "Amount received",
+  reportedFrequency: "How often it is received",
   estimatedMonthlyValue: "Estimated monthly value",
   providedBy: "Provided by",
   providerName: "Provider name",
@@ -285,6 +290,18 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 const CHOICE_OPTIONS: Record<string, Array<{ value: string; label: string }>> = {
+  /*
+   * Labels here match FREQUENCY_LABELS in reported-amounts.ts, which is what
+   * gets printed in the form's "How often?" columns — so the applicant picks
+   * the words that end up on the page.
+   */
+  reportedFrequency: [
+    { value: "weekly", label: "Weekly" },
+    { value: "every_two_weeks", label: "Every two weeks" },
+    { value: "twice_a_month", label: "Twice a month" },
+    { value: "monthly", label: "Monthly" },
+    { value: "irregular", label: "Irregular" },
+  ],
   payFrequency: [
     { value: "weekly", label: "Weekly" },
     { value: "every_two_weeks", label: "Every two weeks" },

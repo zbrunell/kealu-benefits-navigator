@@ -1,5 +1,6 @@
 import { householdSizeFromMembers } from "@/lib/household";
 import { planHouseholdRows } from "@/lib/household-rows";
+import { monthlyForBudget, printableAmount } from "@/lib/reported-amounts";
 import { activeEntries, memberOptions } from "@/lib/saws2-question-planner";
 import type { Saws2PlusApplicationData } from "@/types/application";
 
@@ -851,8 +852,30 @@ function mapQuestionnaire(
     text(`${prefix}.member_id`, source.memberId);
     text(`${prefix}.person_name`, personName(source.memberId));
     text(`${prefix}.source`, source.source);
-    if (source.amountMonthly !== undefined) {
-      fields.push(entry(`${prefix}.amount_monthly`, source.amountMonthly));
+
+    /*
+     * The form's "HOW MUCH?" and "HOW OFTEN?" columns want the applicant's own
+     * words. `printableAmount` returns the reported pair when it exists and
+     * falls back to the legacy monthly figure otherwise; it never invents a
+     * frequency, so an amount with no known frequency leaves that column blank.
+     *
+     * The monthly equivalent is emitted separately for budgeting and is never a
+     * destination for either printed column.
+     */
+    const printable = printableAmount(source);
+
+    if (printable.amount !== undefined) {
+      fields.push(entry(`${prefix}.reported_amount`, printable.amount));
+    }
+
+    if (printable.frequency !== undefined) {
+      fields.push(entry(`${prefix}.reported_frequency`, printable.frequency));
+    }
+
+    const monthly = monthlyForBudget(source);
+
+    if (monthly !== undefined) {
+      fields.push(entry(`${prefix}.amount_monthly`, monthly));
     }
   }
 

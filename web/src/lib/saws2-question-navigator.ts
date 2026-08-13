@@ -80,6 +80,7 @@ const DATE_KEYS = new Set(['startDate', 'endDate', 'changeDate', 'dateOfBirth'])
 /** Record-field keys the form prints as an amount. */
 const NUMBER_KEYS = new Set([
   'grossPerPeriod',
+  'reportedAmount',
   'grossReceivedThisMonth',
   'hourlyRate',
   'hoursPerWeek',

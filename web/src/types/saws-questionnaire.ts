@@ -108,6 +108,22 @@ export interface UnearnedIncomeEntry {
   memberId: string;
   /** e.g. "Unemployment", "SSI", "Child support", "Retirement". */
   source: string;
+  /**
+   * The amount exactly as the applicant reported it, for the form's
+   * "HOW MUCH?" column.
+   *
+   * Paired with `reportedFrequency` for the "HOW OFTEN?" column. These are the
+   * facts the applicant signs their name under, so they are stored and printed
+   * as stated — never converted. A monthly equivalent for budgeting is derived
+   * on demand by `monthlyForBudget`.
+   */
+  reportedAmount?: number;
+  reportedFrequency?: PayFrequency;
+  /**
+   * Legacy monthly figure from before amount and frequency were collected
+   * separately. The questionnaire labelled it "Monthly amount", so a value here
+   * genuinely was reported monthly and may still be printed as such.
+   */
   amountMonthly?: number;
 }
 

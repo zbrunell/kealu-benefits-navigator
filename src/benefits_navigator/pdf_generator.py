@@ -1764,14 +1764,24 @@ class Saws2PlusFieldAdapter:
             set_field(person, canonical_values.get(f"{prefix}.person_name"))
             set_field(from_where, canonical_values.get(f"{prefix}.source"))
 
-            amount = canonical_values.get(f"{prefix}.amount_monthly")
-            set_field(how_much, amount)
+            # "HOW MUCH?" and "HOW OFTEN?" are the applicant's reported facts,
+            # not an internal normalization. The canonical layer decides what
+            # those words are; the frequency column is written only when the
+            # applicant actually stated one, so a known amount with an unknown
+            # frequency prints the amount and leaves the frequency blank rather
+            # than asserting "Monthly".
+            #
+            # `income.unearned.N.amount_monthly` is deliberately NOT read here:
+            # it is the derived budgeting figure and must never reach the form.
+            set_field(
+                how_much,
+                canonical_values.get(f"{prefix}.reported_amount"),
+            )
 
-            # The application asks for a *monthly* amount, so the frequency
-            # column restates that same fact rather than inferring a new one. It
-            # is only written when there is an amount to describe.
-            if amount is not None:
-                set_field(how_often, "Monthly")
+            set_field(
+                how_often,
+                canonical_values.get(f"{prefix}.reported_frequency"),
+            )
 
             # "Expect to Continue?" is not collected for unearned income, so both
             # boxes stay blank.

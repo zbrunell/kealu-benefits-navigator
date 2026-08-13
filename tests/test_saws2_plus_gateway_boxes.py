@@ -174,3 +174,76 @@ def test_new_destinations_never_collide_with_ssn_or_signature_fields():
 
     assert not destinations & set(SSN_FIELDS)
     assert not destinations & set(SIGNATURE_FIELDS)
+
+
+# ---------------------------------------------------------------------------
+# Q7: reported amount and frequency, never an internal normalization
+# ---------------------------------------------------------------------------
+
+#: (person, from where, how much, how often, continuing-yes, continuing-no)
+Q7_ROW_0 = Saws2PlusFieldAdapter.PAGE_8_UNEARNED_ROWS[0]
+
+
+def _unearned(available_fields: set[str], **row) -> dict[str, str]:
+    plan = {
+        "income.has_unearned_income": True,
+        "income.unearned.0.person_name": "Maria Delgado",
+        "income.unearned.0.source": "Unemployment",
+    }
+    plan.update({f"income.unearned.0.{k}": v for k, v in row.items()})
+
+    return _map(plan, available_fields)
+
+
+@pytest.mark.parametrize(
+    "amount,frequency",
+    [
+        (200, "Weekly"),
+        (300, "Every two weeks"),
+        (400, "Twice a month"),
+        (650, "Monthly"),
+        (1200, "Irregular"),
+    ],
+)
+def test_q7_prints_the_reported_amount_and_frequency(
+    amount, frequency, available_fields
+):
+    """The form asks HOW MUCH and HOW OFTEN. Both are the applicant's words."""
+    values = _unearned(
+        available_fields, reported_amount=amount, reported_frequency=frequency
+    )
+
+    assert values[Q7_ROW_0[2]] == str(amount)
+    assert values[Q7_ROW_0[3]] == frequency
+
+
+def test_q7_never_writes_the_derived_monthly_figure(available_fields):
+    """$300 every two weeks is $650/month; the form must show 300, not 650."""
+    values = _unearned(
+        available_fields,
+        reported_amount=300,
+        reported_frequency="Every two weeks",
+        amount_monthly=650,
+    )
+
+    assert values[Q7_ROW_0[2]] == "300"
+    assert values[Q7_ROW_0[3]] == "Every two weeks"
+    assert "650" not in values.values()
+
+
+def test_q7_leaves_frequency_blank_when_none_was_reported(available_fields):
+    """Better a blank column than an asserted 'Monthly' the applicant never said."""
+    values = _unearned(available_fields, reported_amount=500)
+
+    assert values[Q7_ROW_0[2]] == "500"
+    assert Q7_ROW_0[3] not in values
+
+
+def test_q7_writes_nothing_for_a_record_with_no_amount(available_fields):
+    values = _unearned(available_fields)
+
+    assert Q7_ROW_0[2] not in values
+    assert Q7_ROW_0[3] not in values
+    # The person and source columns still fill.
+    assert values[Q7_ROW_0[0]] == "Maria Delgado"
+    assert values[Q7_ROW_0[1]] == "Unemployment"

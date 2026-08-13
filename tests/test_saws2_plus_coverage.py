@@ -1157,12 +1157,20 @@ def q7_pdf(tmp_path_factory):
         **_APPLICANT_CORE,
         "programs.calfresh": True,
         "income.has_unearned_income": True,
+        # SSI arrives monthly, so the reported pair says so.
         "income.unearned.0.person_name": "Maria Delgado",
         "income.unearned.0.source": "SSI",
+        "income.unearned.0.reported_amount": 943,
+        "income.unearned.0.reported_frequency": "Monthly",
         "income.unearned.0.amount_monthly": 943,
+        # Unemployment is paid every two weeks. The printed columns must show
+        # what was reported — 400 every two weeks — not the 866.67 monthly
+        # equivalent the budget uses.
         "income.unearned.1.person_name": "Luis Delgado",
         "income.unearned.1.source": "Unemployment Insurance",
-        "income.unearned.1.amount_monthly": 400,
+        "income.unearned.1.reported_amount": 400,
+        "income.unearned.1.reported_frequency": "Every two weeks",
+        "income.unearned.1.amount_monthly": 866.67,
     }
     return _generate(plan, tmp_path_factory.mktemp("saws-q7"))
 
@@ -1177,7 +1185,8 @@ def test_q7_first_row_columns(q7_pdf):
     assert q7_pdf[_q7(0, Q7_PERSON)] == "Maria Delgado"
     assert q7_pdf[_q7(0, Q7_FROM)] == "SSI"
     assert q7_pdf[_q7(0, Q7_AMOUNT)] == "943"
-    # The application collects a monthly amount, so the frequency column says so.
+    # HOW OFTEN is the applicant's reported frequency, not a restatement of an
+    # internal monthly normalization.
     assert q7_pdf[_q7(0, Q7_OFTEN)] == "Monthly"
 
 
@@ -1185,6 +1194,9 @@ def test_q7_second_row_is_distinct(q7_pdf):
     assert q7_pdf[_q7(1, Q7_PERSON)] == "Luis Delgado"
     assert q7_pdf[_q7(1, Q7_FROM)] == "Unemployment Insurance"
     assert q7_pdf[_q7(1, Q7_AMOUNT)] == "400"
+    assert q7_pdf[_q7(1, Q7_OFTEN)] == "Every two weeks"
+    # The monthly equivalent used for budgeting never reaches the page.
+    assert "866.67" not in q7_pdf.values()
 
 
 def test_q7_unused_rows_stay_blank(q7_pdf):
