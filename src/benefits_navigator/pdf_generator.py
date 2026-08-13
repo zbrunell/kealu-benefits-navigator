@@ -1214,8 +1214,152 @@ class Saws2PlusFieldAdapter:
     PAGE_14_TRANSFERRED_WORTH = "Text38 PG 14"
     # "WHEN?" (Text36) and "HOW MUCH DID YOU GET FOR IT" (Text39) are not modeled.
 
+    # -----------------------------------------------------------------------
+    # Gateway Yes/No pairs — expenses, household circumstances, health, taxes
+    # -----------------------------------------------------------------------
+    #
+    # Every pair below was located the same way: extract each text run with its
+    # device coordinates, find the printed "Yes" and "No" glyphs on the
+    # question's own baseline band, and take the checkbox widgets whose x
+    # positions match those glyphs (within ~2pt). Both the printed question text
+    # and the matching x coordinates are recorded so the mapping can be
+    # re-checked without repeating the search.
+    #
+    # A question whose printed form has no gateway Yes/No box is absent here
+    # rather than pointed at an approximate destination:
+    #
+    # - Q27 (real property) is a table of rows with no gateway checkbox at all,
+    #   so `resources.has_real_property` has nowhere correct to go.
+    #
+    #: canonical key -> (Yes destination, No destination)
+    GATEWAY_YES_NO = {
+        # Q11 "Does anyone pay for care of a child, disabled adult, or other
+        # dependent so you or the other person can go to work, school, or look
+        # for a job?"  Yes glyph x=141.8 / No glyph x=175.5.
+        # (The form spells this page suffix in lower case.)
+        "expenses.has_dependent_care": (
+            "Check Box35 pg 10",
+            "Check Box36 pg 10",
+        ),
+
+        # Q12 "Is anyone listed in question 6 legally obligated to pay child
+        # support, including back child support?"  Yes x=469.5 / No x=503.0.
+        "expenses.pays_child_support": (
+            "Check Box63 PG 10",
+            "Check Box64 PG 10",
+        ),
+
+        # Q13 "Is anyone listed in question 6 legally obligated to pay spousal
+        # support/alimony?"  Yes x=399.2 / No x=433.0.
+        "expenses.pays_spousal_support": (
+            "Check Box1 PG 11",
+            "Check Box2 PG 11",
+        ),
+
+        # Q16 "Are you or anyone you buy and prepare food with an elderly (60 or
+        # older) or disabled person that has any out-of-pocket medical
+        # expenses?"  Yes x=161.8 / No x=195.5.
+        "expenses.has_medical_expenses": (
+            "Check Box1 PG 12",
+            "Check Box2 PG 12",
+        ),
+
+        # Q17 "Other Tax-Deductible Expenses".  Yes x=221.5 / No x=255.2.
+        "expenses.other_tax_deductible": (
+            "Check Box28 PG 12",
+            "Check Box29 PG 12",
+        ),
+
+        # Q19 "Does anyone in question 6 live at any of the following?" — the
+        # printed list is Homeless Shelter, Group living arrangement for the
+        # blind/disabled, Shelter for battered women, Federally subsidized
+        # housing, which is the question the application asks.
+        # Yes x=320.5 / No x=354.2.
+        "household.institutional_living": (
+            "Check Box46 PG 12",
+            "Check Box47 PG 12",
+        ),
+
+        # Q20 "Is anyone getting In-Home Supportive Services (IHSS)?"
+        # Yes x=325.2 / No x=358.8.
+        "household.receives_ihss": (
+            "Check Box1 PG 13",
+            "Check Box2 PG 13",
+        ),
+
+        # Q21 "Does everyone listed in question 6 buy and prepare food with
+        # you?"  Yes x=371.5 / No x=405.0.
+        "household.buys_and_prepares_food_together": (
+            "Check Box5 PG 13",
+            "Check Box6 PG 13",
+        ),
+
+        # Q22 "Is anyone enrolled in health coverage now from the following?"
+        # Yes glyph x=157.0 / No glyph x=190.5.
+        "health.has_current_coverage": (
+            "Check Box14 PG 13",
+            "Check Box15 PG 13",
+        ),
+
+        # Q22a "Is anyone listed on this application offered health care
+        # coverage from a job?"  Yes x=421.5 / No x=455.0.
+        "health.has_employer_coverage": (
+            "Check Box44 PG 13",
+            "Check Box45 PG 13",
+        ),
+
+        # Q22b "Is anyone's health insurance expected to end or has it ended in
+        # the last 90 days?"  Yes x=441.0 / No x=474.8.
+        "health.coverage_ending": (
+            "Check Box46 PG 13",
+            "Check Box47 PG 13",
+        ),
+
+        # Q22c "Does anyone want help for medical bills from the last three
+        # months?"  Yes x=388.0 / No x=421.8.
+        "health.retroactive_medical_help": (
+            "Check Box56 PG 13",
+            "Check Box57 PG 13",
+        ),
+
+        # Q23 "Does anyone listed in question 6 plan to file a federal income
+        # tax return next year?"  Yes x=445.8 / No x=479.2.
+        "health.tax_filer": (
+            "Check Box59 PG 13",
+            "Check Box60 PG 13",
+        ),
+
+        # Q23c "Will this person file jointly with a spouse?"
+        # Yes x=254.2 / No x=288.0.
+        "health.spouse_filing_jointly": (
+            "Check Box62 PG 13",
+            "Check Box63 PG 13",
+        ),
+
+        # Q26 "Does anyone own, have the use of, or have their name on any
+        # registration of any motor vehicle ... even if it isn't running?"
+        # Yes x=411.5 / No x=445.2.
+        "resources.has_vehicles": (
+            "Check Box1 PG 15",
+            "Check Box2 PG 15",
+        ),
+
+        # Q28 "Has anyone received a Diversion cash payment or non-cash services
+        # from any county or other state?"  Yes x=499.0 / No x=532.8.
+        "resources.received_diversion_payment": (
+            "Check Box21 PG 15",
+            "Check Box22 PG 15",
+        ),
+    }
+
     SAFE_FIELDS = frozenset(
         {
+            *(
+                field
+                for pair in GATEWAY_YES_NO.values()
+                for field in pair
+            ),
+
             # Page 1 applicant name.
             "Text1 PG 1",
 
@@ -1779,6 +1923,33 @@ class Saws2PlusFieldAdapter:
             set_field(
                 pdf_field,
                 canonical_values.get(key),
+            )
+
+        # -------------------------------------------------------------------
+        # Gateway Yes/No questions across the expense, household, health and
+        # tax sections.
+        # -------------------------------------------------------------------
+        #
+        # `isinstance(value, bool)` is the whole point: an explicit No is a real
+        # answer and ticks the No box, while a question that was never answered
+        # (or was skipped) leaves both boxes blank. Truthiness here would make a
+        # No indistinguishable from silence.
+
+        for (
+            key,
+            (yes_field, no_field),
+        ) in self.GATEWAY_YES_NO.items():
+            value = canonical_values.get(key)
+
+            if not isinstance(
+                value,
+                bool,
+            ):
+                continue
+
+            set_field(
+                yes_field if value else no_field,
+                "/Yes",
             )
 
         # -------------------------------------------------------------------
