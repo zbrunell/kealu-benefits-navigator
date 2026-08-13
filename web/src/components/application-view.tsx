@@ -11,6 +11,8 @@ import { buildInitialApplicationData } from "@/lib/application-data";
 import { householdSizeFromMembers } from "@/lib/household";
 
 import ApplicantStep from "./application/applicant-step";
+import { evaluateApplicationReadiness } from "@/lib/saws2-readiness";
+
 import DraftCompletionGuide from "./application/draft-completion-guide";
 import EligibilityStep from "./application/eligibility-step";
 import HouseholdStep from "./application/household-step";
@@ -108,6 +110,17 @@ export default function ApplicationView({
   const householdSize = householdSizeFromMembers(
     applicationData.householdMembers.length,
   );
+
+  /**
+   * What the generated draft still leaves for the applicant to do by hand.
+   *
+   * Derived from the semantic inventory rather than a field count, so the
+   * completion guide can name the printed questions rather than gesture at them.
+   */
+  const draftCompleteness = evaluateApplicationReadiness(
+    applicationData,
+    applicationData.selectedPrograms,
+  ).draftCompleteness;
 
   function toggleProgram(program: Saws2PlusProgram) {
     setSelectedPrograms((current) => ({
@@ -613,6 +626,16 @@ export default function ApplicationView({
                 includesHealthCoverage={applicationData.selectedPrograms.includes(
                   "medi_cal",
                 )}
+                /*
+                 * Named rather than summarised: readiness knows exactly which
+                 * printed questions this draft leaves blank, so the applicant
+                 * gets a checklist instead of "complete anything we missed".
+                 */
+                questionsToCompleteByHand={[
+                  ...draftCompleteness.answeredButNotWritable,
+                  ...draftCompleteness.notModeled,
+                  ...draftCompleteness.overflow,
+                ].map((item) => item.requirement)}
               />
             )}
           </div>

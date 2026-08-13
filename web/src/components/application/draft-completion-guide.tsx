@@ -35,6 +35,13 @@ interface DraftCompletionGuideProps {
   county: string;
   /** Whether the application includes a health-coverage program. */
   includesHealthCoverage: boolean;
+  /**
+   * Printed questions this draft leaves blank, in the applicant's words.
+   *
+   * Naming them is the difference between "complete anything we missed" and a
+   * checklist the applicant can actually work through.
+   */
+  questionsToCompleteByHand: string[];
 }
 
 const MANUAL_STEPS: Array<{ title: string; detail: string }> = [
@@ -59,9 +66,9 @@ const MANUAL_STEPS: Array<{ title: string; detail: string }> = [
       "Page 1 states that you are signing under penalty of perjury and confirming you read the Rights and Responsibilities and the Program Rules and Penalties. Read those pages before signing.",
   },
   {
-    title: "Answer any question we did not ask you",
+    title: "Answer the questions listed below",
     detail:
-      "If a later page asks about something we did not collect — for example detailed income, expense, or property questions — complete it by hand so the county does not have to contact you for it.",
+      "Some printed questions are left blank because we did not collect them, or because the form has no box we can safely fill. They are listed underneath so you can complete them by hand.",
   },
   {
     title: "Attach your supporting documents",
@@ -74,6 +81,7 @@ export default function DraftCompletionGuide({
   draftUrl,
   county,
   includesHealthCoverage,
+  questionsToCompleteByHand,
 }: DraftCompletionGuideProps) {
   const countyLabel = county.trim();
 
@@ -142,6 +150,23 @@ export default function DraftCompletionGuide({
             </li>
           ))}
         </ol>
+
+        {questionsToCompleteByHand.length > 0 && (
+          <div
+            className="mt-4 rounded-lg border border-amber-300 bg-white p-3"
+            data-testid="questions-to-complete-by-hand"
+          >
+            <p className="text-sm font-medium text-amber-900">
+              Printed questions left blank ({questionsToCompleteByHand.length})
+            </p>
+
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-800">
+              {questionsToCompleteByHand.map((question) => (
+                <li key={question}>{question}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* ── Where to submit ─────────────────────────────────────────────── */}

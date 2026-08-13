@@ -33,6 +33,8 @@
  *   because the record is not yet complete.
  */
 
+import { planHouseholdRows } from '@/lib/household-rows';
+import { blockersToReviewAndSign } from '@/lib/saws2-inventory';
 import {
   getRequiredApplicationQuestions,
   householdHasElderlyOrDisabledMember,
@@ -81,10 +83,45 @@ export interface ProgramReadiness {
   missingForDetermination: Requirement[];
 }
 
+/**
+ * Why a generated draft is not yet "review, add SSNs, and sign".
+ *
+ * Answering every question the flow asks is not the same as producing a
+ * complete document: a question can be answered and still have nowhere on the
+ * printed form to go, and a printed question the product does not model at all
+ * never becomes a question in the first place. Both leave the applicant with
+ * blanks, so both are reported rather than hidden behind a single boolean.
+ */
+export interface DraftCompleteness {
+  /**
+   * True only when nothing but SSNs and signatures remains.
+   *
+   * Deliberately conservative: it is false while any applicable printed
+   * question is unanswered, unmapped, unmodeled, or overflowing a printed
+   * table. Claiming otherwise would tell the applicant a half-blank form is
+   * finished.
+   */
+  reviewAndSignOnly: boolean;
+  /** Answers the applicant gave that the form cannot yet receive. */
+  answeredButNotWritable: Requirement[];
+  /** Printed questions the product has no model for. */
+  notModeled: Requirement[];
+  /** Repeated records beyond the rows the printed form provides. */
+  overflow: Requirement[];
+}
+
 export interface ApplicationReadiness {
   filingReady: boolean;
   determinationReady: boolean;
+  /**
+   * Nothing Kealu can safely answer is still outstanding in the questionnaire.
+   *
+   * This is a statement about the *interview*, not about the document. See
+   * `draftCompleteness.reviewAndSignOnly` for whether the generated PDF is
+   * actually finished.
+   */
   fullyPrefilled: boolean;
+  draftCompleteness: DraftCompleteness;
   selectedPrograms: {
     calfresh?: ProgramReadiness;
     calworks?: ProgramReadiness;
@@ -516,6 +553,79 @@ const PROGRAM_KEYS = {
   medi_cal: 'mediCal',
 } as const;
 
+/** Printed rows the SAWS 2 PLUS household tables provide. */
+const PRINTED_HOUSEHOLD_ROWS = 5;
+
+/**
+ * What still stands between the generated PDF and a review-and-sign draft.
+ *
+ * Reads the semantic inventory rather than a field count, because the two are
+ * unrelated: one printed question can own thirty widgets or none.
+ */
+function draftCompleteness(
+  data: Saws2PlusApplicationData,
+  questionnaireComplete: boolean,
+): DraftCompleteness {
+  const answeredButNotWritable: Requirement[] = [];
+  const notModeled: Requirement[] = [];
+
+  for (const entry of blockersToReviewAndSign()) {
+    const requirement: Requirement = {
+      id: `draft.${entry.saws.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
+      program: 'all',
+      requirement: `${entry.saws}: ${entry.label}.${
+        entry.note ? ` ${entry.note}` : ''
+      }`,
+      stage: 'determination',
+      effect: 'allows_filing_requires_follow_up',
+      source: SOURCE.CF_FILING,
+    };
+
+    if (entry.status === 'collected_not_mapped') {
+      answeredButNotWritable.push(requirement);
+    } else {
+      notModeled.push(requirement);
+    }
+  }
+
+  // Overflow: more people than the printed tables can hold.
+  const rows = planHouseholdRows(data);
+  const overflow: Requirement[] = [];
+
+  for (const [table, assignments] of [
+    ['adult', rows.adults],
+    ['child', rows.children],
+  ] as const) {
+    const extra = assignments.length - PRINTED_HOUSEHOLD_ROWS;
+
+    if (extra <= 0) continue;
+
+    overflow.push({
+      id: `draft.overflow.${table}`,
+      program: 'all',
+      requirement:
+        `The printed ${table} table has ${PRINTED_HOUSEHOLD_ROWS} rows and this ` +
+        `household has ${assignments.length} ${table}s. The ${extra} extra ` +
+        'must be listed on an attached sheet — they are not dropped silently, ' +
+        'but the form cannot hold them.',
+      stage: 'filing',
+      effect: 'allows_filing_requires_follow_up',
+      source: SOURCE.CF_FILING,
+    });
+  }
+
+  return {
+    reviewAndSignOnly:
+      questionnaireComplete &&
+      answeredButNotWritable.length === 0 &&
+      notModeled.length === 0 &&
+      overflow.length === 0,
+    answeredButNotWritable,
+    notModeled,
+    overflow,
+  };
+}
+
 /**
  * Evaluate how ready an application is, per program and overall.
  *
@@ -570,11 +680,13 @@ export function evaluateApplicationReadiness(
    * excluded by construction because they are never planned questions.
    */
   const plan = getRequiredApplicationQuestions(data);
+  const completeness = draftCompleteness(data, plan.outstanding.length === 0);
 
   return {
     filingReady,
     determinationReady: filingReady && missingForDetermination.length === 0,
     fullyPrefilled: plan.outstanding.length === 0,
+    draftCompleteness: completeness,
     selectedPrograms: selected,
     missingForFiling: sharedFiling,
     missingForDetermination,
