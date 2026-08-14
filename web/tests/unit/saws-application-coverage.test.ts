@@ -149,6 +149,8 @@ describe('privacy boundary', () => {
         'states the 42 CFR 435.910 SSN requirement as a manual-completion item the applicant writes by hand; it never collects or stores one',
       'lib/saws2-schema.ts':
         'declares Q6c SSN as manual-only with no path, no canonical key and no PDF destination — the declaration is what forbids collection',
+      'types/saws-questionnaire.ts':
+        'documents that Appendix A item 2 (the employee SSN) has deliberately no field in the model, which is what makes it unstorable',
       'lib/saws2-inventory.ts':
         'classifies printed question Q6c as manual_ssn so readiness can report it as the applicant’s own step; it holds no SSN value',
       'i18n/messages/en.ts': 'manual-completion instruction shown after generation',

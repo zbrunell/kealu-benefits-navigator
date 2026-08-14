@@ -896,3 +896,183 @@ def test_appendix_a_employee_ssn_stays_blank(available_fields):
 
     for field in APPENDIX_A_SSN:
         assert field not in values, field
+
+
+# ---------------------------------------------------------------------------
+# Appendix A — employer health coverage
+# ---------------------------------------------------------------------------
+
+A_TEXT = Saws2PlusFieldAdapter.APPENDIX_A_TEXT
+A_YN = Saws2PlusFieldAdapter.APPENDIX_A_YES_NO
+A_FREQ = Saws2PlusFieldAdapter.APPENDIX_A_PREMIUM_FREQUENCY
+A_FREQ2 = Saws2PlusFieldAdapter.APPENDIX_A_CHANGED_PREMIUM_FREQUENCY
+A_CHANGE = Saws2PlusFieldAdapter.APPENDIX_A_PLAN_CHANGE
+
+
+def _apx_a(**fields) -> dict:
+    return {f"appendices.employer_coverage.0.{k}": v for k, v in fields.items()}
+
+
+def test_appendix_a_destinations_exist_and_are_unique(available_fields):
+    seen: set[str] = set()
+    everything = [
+        *A_TEXT.values(),
+        *Saws2PlusFieldAdapter.APPENDIX_A_OTHER_ELIGIBLE,
+        *(f for pair in A_YN.values() for f in pair),
+        *A_FREQ.values(),
+        *A_FREQ2.values(),
+        Saws2PlusFieldAdapter.APPENDIX_A_NO_WELLNESS,
+        *A_CHANGE.values(),
+    ]
+
+    for field in everything:
+        assert field in available_fields, field
+        assert field not in seen, f"{field} used twice"
+        seen.add(field)
+
+
+def test_appendix_a_item_13_prints_no_before_yes():
+    """Item 13's printed order is No then Yes, the opposite of every other pair
+    on this form, because a No stops the section. The tuple stays (yes, no)."""
+    yes, no = A_YN["eligible_now_or_soon"]
+
+    assert yes == "Check Box20 PG 18"
+    assert no == "Check Box19 PG 18"
+
+
+def test_appendix_a_fills_the_employer_identity_rows(available_fields):
+    values = _map(
+        _apx_a(
+            employee_name="Luis Delgado",
+            employer_name="Acme Diner",
+            employer_ein="95-1234567",
+            employer_address="1 Main St",
+            employer_phone="323-555-0100",
+            employer_city="Los Angeles",
+            employer_state="CA",
+            employer_zip_code="90001",
+            employer_email="hr@acme.example",
+        ),
+        available_fields,
+    )
+
+    assert values["Text1 PG 18"] == "Luis Delgado"
+    assert values["Text5 PG 18"] == "Acme Diner"
+    assert values["Text6 PG 18"] == "95-1234567"
+    assert values["Text8 PG 18"] == "1 Main St"
+    assert values["Text12 PG 18"] == "Los Angeles"
+    assert values["Text13 PG 18"] == "CA"
+    assert values["Text14 PG 18"] == "90001"
+    assert values["Text18 PG 18"] == "hr@acme.example"
+
+
+def test_appendix_a_employee_ssn_stays_blank_with_neighbours_populated(
+    available_fields,
+):
+    """The three SSN boxes sit between the identity rows this test fills."""
+    values = _map(
+        _apx_a(
+            employee_name="Luis Delgado",
+            employer_name="Acme Diner",
+            employer_ein="95-1234567",
+            employer_address="1 Main St",
+            employer_phone="323-555-0100",
+            employer_city="Los Angeles",
+            employer_state="CA",
+            employer_zip_code="90001",
+            employer_email="hr@acme.example",
+            eligible_now_or_soon=True,
+            meets_minimum_value_standard=True,
+            lowest_cost_premium=120,
+            lowest_cost_premium_frequency="monthly",
+        ),
+        available_fields,
+    )
+
+    # Plenty was written around them.
+    assert len(values) > 8
+
+    for field in ("Text2 PG 18", "Text3 PG 18", "Text4 PG 18"):
+        assert field not in values, field
+        assert field not in Saws2PlusFieldAdapter.SAFE_FIELDS, field
+
+
+def test_appendix_a_eligibility_and_plan_answers(available_fields):
+    values = _map(
+        _apx_a(
+            employer_name="Acme Diner",
+            eligible_now_or_soon=True,
+            waiting_period_enrollment_date="2026-10-01",
+            meets_minimum_value_standard=True,
+            is_state_employee_benefit_plan=False,
+            lowest_cost_premium=120,
+            lowest_cost_premium_frequency="twice_a_month",
+            no_wellness_programs=True,
+            plan_change="will_start_offering_or_change_premium",
+            changed_premium=140,
+            changed_premium_frequency="monthly",
+            plan_change_date="2027-01-01",
+        ),
+        available_fields,
+    )
+
+    assert values.get("Check Box20 PG 18") == "/Yes"   # eligible: Yes
+    assert "Check Box19 PG 18" not in values
+    assert values["Text21 PG 18"] == "2026-10-01"
+    assert values.get("Check Box25 PG 18") == "/Yes"   # minimum value: Yes
+    assert values.get("Check Box28 PG 18") == "/Yes"   # State plan: No
+    assert values["Text29 PG 18"] == "120"
+    assert values.get(A_FREQ["twice_a_month"]) == "/Yes"
+    assert values.get("Check Box36 PG 18") == "/Yes"   # no wellness programs
+    assert values.get(A_CHANGE["will_start_offering_or_change_premium"]) == "/Yes"
+    assert values["Text39 PG 18"] == "140"
+    assert values.get(A_FREQ2["monthly"]) == "/Yes"
+    assert values["Text46 PG 18"] == "2027-01-01"
+
+
+def test_appendix_a_ineligible_stops_the_section(available_fields):
+    values = _map(
+        _apx_a(employer_name="Acme Diner", eligible_now_or_soon=False),
+        available_fields,
+    )
+
+    assert values.get("Check Box19 PG 18") == "/Yes"   # No
+    assert "Check Box20 PG 18" not in values
+    # Nothing below item 13 is written.
+    for field in (
+        "Text21 PG 18", "Text29 PG 18", "Text39 PG 18", "Text46 PG 18",
+        *A_FREQ.values(), *A_FREQ2.values(), *A_CHANGE.values(),
+    ):
+        assert field not in values, field
+
+
+def test_appendix_a_other_eligible_name_slots(available_fields):
+    values = _map(
+        _apx_a(
+            employer_name="Acme Diner",
+            **{
+                "other_eligible.0": "Maria Delgado",
+                "other_eligible.1": "Sofia Delgado",
+            },
+        ),
+        available_fields,
+    )
+
+    assert values["Text22 PG 18"] == "Maria Delgado"
+    assert values["Text23 PG 18"] == "Sofia Delgado"
+    assert "Text24 PG 18" not in values
+
+
+def test_appendix_a_unresolved_items_10_and_11_are_never_written(available_fields):
+    """Text15-17 belong to printed items 10 and 11, whose labels do not extract
+    with a usable text matrix, so they stay manual rather than guessed."""
+    for field in ("Text15 PG 18", "Text16 PG 18", "Text17 PG 18"):
+        assert field in available_fields, field
+        assert field not in Saws2PlusFieldAdapter.SAFE_FIELDS, field
+
+
+def test_appendix_a_writes_nothing_without_an_employer(available_fields):
+    values = _map({}, available_fields)
+
+    for field in (*A_TEXT.values(), *A_FREQ.values(), *A_CHANGE.values()):
+        assert field not in values, field

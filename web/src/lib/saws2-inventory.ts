@@ -250,10 +250,6 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
     saws: 'Appendix A',
     label: 'Employer health coverage details',
     page: 24,
-    status: 'not_modeled',
-    note:
-      'Activated when Q22a is Yes. The appendix’s own fields are not collected ' +
-      'or mapped.',
   },
   { saws: 'Appendix B', label: 'American Indian / Alaska Native details', page: 25 },
   {

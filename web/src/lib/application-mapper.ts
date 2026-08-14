@@ -1268,6 +1268,82 @@ function mapQuestionnaire(
   tri("health.has_current_coverage", health.currentCoverage.answer);
   tri("health.coverage_ending", health.coverageEnding.answer);
   tri("health.has_employer_coverage", health.employerCoverage.answer);
+
+  /*
+   * Appendix A: one printed page per employer that offers coverage. Emitted
+   * only while Q22a is Yes, so detail left behind by an earlier Yes cannot
+   * reach the appendix.
+   *
+   * The employee's Social Security Number is item 2 of the appendix and is
+   * never emitted — there is no field for it in the model, so nothing can
+   * reach the three printed SSN boxes.
+   */
+  for (const [index, employer] of activeEntries(health.employerCoverage).entries()) {
+    const prefix = `appendices.employer_coverage.${index}`;
+
+    text(`${prefix}.employee_name`, personName(employer?.memberId ?? ""));
+    text(`${prefix}.employer_name`, employer?.employerName ?? "");
+    text(`${prefix}.employer_ein`, employer?.employerIdentificationNumber ?? "");
+    text(`${prefix}.employer_address`, employer?.employerAddress ?? "");
+    text(`${prefix}.employer_phone`, employer?.employerPhone ?? "");
+    text(`${prefix}.employer_city`, employer?.employerCity ?? "");
+    text(`${prefix}.employer_state`, employer?.employerState ?? "");
+    text(`${prefix}.employer_zip_code`, employer?.employerZipCode ?? "");
+    text(`${prefix}.employer_email`, employer?.employerEmail ?? "");
+
+    tri(`${prefix}.eligible_now_or_soon`, employer?.eligibleNowOrSoon);
+
+    /*
+     * Everything below item 13 is printed only when the person is eligible now
+     * or soon — the appendix says "No (stop here for this section)".
+     */
+    if (employer?.eligibleNowOrSoon === true) {
+      text(
+        `${prefix}.waiting_period_enrollment_date`,
+        employer?.waitingPeriodEnrollmentDate ?? "",
+      );
+
+      for (const [slot, memberId] of (
+        employer?.otherEligibleMemberIds ?? []
+      ).entries()) {
+        text(`${prefix}.other_eligible.${slot}`, personName(memberId));
+      }
+
+      tri(`${prefix}.meets_minimum_value_standard`, employer?.meetsMinimumValueStandard);
+      tri(`${prefix}.is_state_employee_benefit_plan`, employer?.isStateEmployeeBenefitPlan);
+
+      if (employer?.lowestCostPremium !== undefined) {
+        fields.push(entry(`${prefix}.lowest_cost_premium`, employer.lowestCostPremium));
+      }
+
+      if (employer?.lowestCostPremiumFrequency) {
+        text(`${prefix}.lowest_cost_premium_frequency`, employer.lowestCostPremiumFrequency);
+      }
+
+      if (employer?.noWellnessPrograms === true) {
+        fields.push(entry(`${prefix}.no_wellness_programs`, true));
+      }
+
+      if (employer?.planChange) {
+        text(`${prefix}.plan_change`, employer.planChange);
+      }
+
+      // The changed premium only makes sense for the change that alters it.
+      if (employer?.planChange === "will_start_offering_or_change_premium") {
+        if (employer?.changedPremium !== undefined) {
+          fields.push(entry(`${prefix}.changed_premium`, employer.changedPremium));
+        }
+
+        if (employer?.changedPremiumFrequency) {
+          text(`${prefix}.changed_premium_frequency`, employer.changedPremiumFrequency);
+        }
+      }
+
+      if (employer?.planChange && employer.planChange !== "no_changes_expected") {
+        text(`${prefix}.plan_change_date`, employer?.planChangeDate ?? "");
+      }
+    }
+  }
   tri("health.retroactive_medical_help", health.retroactiveMedicalHelp);
   tri("health.tax_filer", health.taxFiler);
   tri("health.american_indian_or_alaska_native", health.americanIndianOrAlaskaNative);

@@ -1495,6 +1495,31 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     note: 'Appendix B destinations not yet reviewed.',
   },
   {
+    id: 'appendices.employer_coverage',
+    saws: 'Appendix A',
+    label:
+      'Employer health coverage detail: employer identity and contact, ' +
+      'eligibility now or soon, others eligible from the same job, minimum ' +
+      'value standard, lowest-cost premium and frequency, and the change ' +
+      'expected for the new plan year',
+    section: 'health',
+    tier: 3,
+    kind: 'records',
+    support: 'askable',
+    pdf: 'mapped',
+    // No path of its own: the appendix is detail carried on the Q22a record,
+    // whose gateway path belongs to health.employer_coverage.
+    canonicalKey: 'appendices.employer_coverage.0.employer_name',
+    note:
+      'One printed page per employer that offers coverage, so the appendix ' +
+      'fields live on the Q22a record. Item 2 is the employee’s Social Security ' +
+      'Number: it has no field in the model and its three destinations are in ' +
+      'SSN_FIELDS, so nothing can reach them. Printed items 10 and 11 (Text15-17) ' +
+      'are left manual — their labels do not extract with a usable text matrix, ' +
+      'so the rows were not resolved. One printed page; a second employer is ' +
+      'reported as overflow.',
+  },
+  {
     id: 'appendices.vehicle_details',
     saws: 'Appendix E',
     label:

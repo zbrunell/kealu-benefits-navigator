@@ -590,8 +590,44 @@ export interface HealthCoverageEntry {
   endDate: string;
 }
 
+/**
+ * Appendix A premium frequency, exactly as the appendix prints its six options.
+ *
+ * Deliberately not PayFrequency: Appendix A offers Quarterly and Yearly, which
+ * the income sections do not, and omits "irregular", which they do. Reusing the
+ * income enum would let a value be selected that the appendix cannot print.
+ */
+export type AppendixAPremiumFrequency =
+  | 'weekly'
+  | 'bi_weekly'
+  | 'twice_a_month'
+  | 'monthly'
+  | 'quarterly'
+  | 'yearly';
+
+/** Appendix A item 16: what the employer will change for the new plan year. */
+export type EmployerPlanChange =
+  | 'will_no_longer_provide'
+  | 'will_start_offering_or_change_premium'
+  | 'no_changes_expected';
+
+/**
+ * One employer that offers health coverage — Q22a, detailed by Appendix A.
+ *
+ * The appendix is one printed page per such employer, so its fields live on this
+ * record rather than in a parallel structure. Employee, employer and
+ * covered-person identities stay separate: `memberId` is the employee this page
+ * is about, `otherEligibleMemberIds` are other household people the same job
+ * would cover, and the employer is described by its own name/address/contact
+ * fields.
+ *
+ * The employee's Social Security Number is item 2 of the appendix and is
+ * deliberately absent from this model — there is nowhere to store one, so
+ * nothing can reach the three printed SSN boxes.
+ */
 export interface EmployerCoverageEntry {
   id: string;
+  /** The employee this Appendix A page is about. */
   memberId: string;
   employerName: string;
   employerPhone: string;
@@ -602,6 +638,36 @@ export interface EmployerCoverageEntry {
   /** Lowest-cost employee-only premium, when the applicant knows it. */
   lowestCostPremium?: number;
   premiumFrequency?: PayFrequency;
+
+  // ── Appendix A detail ──────────────────────────────────────────────────
+  /** Item 4, "EMPLOYER IDENTIFICATION NUMBER (EIN)". */
+  employerIdentificationNumber: string;
+  /** Items 5 and 7-9. */
+  employerAddress: string;
+  employerCity: string;
+  employerState: string;
+  employerZipCode: string;
+  /** Item 12, the employer representative's email address. */
+  employerEmail: string;
+  /** Item 13a, when enrolment is possible if in a waiting period. */
+  waitingPeriodEnrollmentDate: string;
+  /** Other household people the same job would cover (three printed slots). */
+  otherEligibleMemberIds: string[];
+  /** Item 14, "meets the minimum value standard". */
+  meetsMinimumValueStandard?: TriState;
+  /** Item 14a, "Is this a State employee benefit plan?" */
+  isStateEmployeeBenefitPlan?: TriState;
+  /** Item 15b, the frequency printed beside the lowest-cost premium. */
+  lowestCostPremiumFrequency?: AppendixAPremiumFrequency;
+  /** Item 15, "The employer doesn't offer wellness programs." */
+  noWellnessPrograms?: boolean;
+  /** Item 16, the change expected for the new plan year. */
+  planChange?: EmployerPlanChange;
+  /** Item 16a/16b, the premium after the change. */
+  changedPremium?: number;
+  changedPremiumFrequency?: AppendixAPremiumFrequency;
+  /** Item 16c, "Date of change (mm/dd/yyyy)". */
+  planChangeDate: string;
 }
 
 /**

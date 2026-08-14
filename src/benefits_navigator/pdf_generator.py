@@ -1875,6 +1875,110 @@ class Saws2PlusFieldAdapter:
         },
     )
 
+    # -----------------------------------------------------------------------
+    # Appendix A — employer health coverage
+    # -----------------------------------------------------------------------
+    #
+    # One printed page per employer that offers coverage. Verified against
+    # printed page 18 (PDF page 24) by matching each numbered label to the
+    # widget beneath it:
+    #
+    #   1. EMPLOYEE NAME                    Text1 PG 18   @38
+    #   2. EMPLOYEE SOCIAL SECURITY NUMBER  Text2/3/4     @422/483/516  <- NEVER
+    #   3. EMPLOYER NAME                    Text5         @39
+    #   4. EMPLOYER IDENTIFICATION (EIN)    Text6/Text7   @420/452
+    #   5. EMPLOYER ADDRESS                 Text8         @39
+    #   6. EMPLOYER PHONE NUMBER            Text9/Text10  @434/467
+    #   7. CITY / 8. STATE / 9. ZIP CODE    Text12/13/14  @39/329/421
+    #  12. EMPLOYER'S EMAIL ADDRESS         Text18        @328
+    #  13. eligible now or in three months  No  Check Box19, Yes Check Box20
+    #      NOTE the printed order is No first, then Yes — the opposite of every
+    #      other pair on this form, because a No stops the section.
+    #  13a. waiting-period enrolment date   Text21        @433
+    #      names of others eligible         Text22/23/24  @92/263/427
+    #  14. meets minimum value standard     Yes Check Box25 @472 / No Box26 @506
+    #  14a. State employee benefit plan     Yes Check Box27 @249 / No Box28 @282
+    #  15a. premium amount                  Text29        @388
+    #  15b. how often                       Check Box30-35 @151/222/295/385/450/515
+    #      matching printed Weekly@163, Bi-weekly@235, Twice a month@307,
+    #      Monthly@398, Quarterly@463, Yearly@532
+    #  15.  no wellness programs            Check Box36   @38
+    #  16.  will no longer provide          Check Box37   @59
+    #       will start offering / change    Check Box38   @58
+    #  16a. changed premium                 Text39        @389
+    #  16b. how often                       Check Box40-45 @149/221/293/384/448/515
+    #  16c. date of change                  Text46        @206
+    #       no changes expected             Check Box47   @36
+    #
+    # Text15, Text16 and Text17 (printed items 10 and 11) are deliberately
+    # absent: their labels do not extract with a usable text matrix, so the
+    # rows they belong to were not resolved and are left for manual completion
+    # rather than guessed.
+    #
+    # Items 2's three boxes appear nowhere below. They are in SSN_FIELDS and
+    # therefore not in SAFE_FIELDS, so set_field() would raise on them.
+    APPENDIX_A_EMPLOYEE_NAME = "Text1 PG 18"
+
+    #: canonical suffix -> printed text destination
+    APPENDIX_A_TEXT = {
+        "employee_name": "Text1 PG 18",
+        "employer_name": "Text5 PG 18",
+        "employer_ein": "Text6 PG 18",
+        "employer_address": "Text8 PG 18",
+        "employer_phone": "Text9 PG 18",
+        "employer_city": "Text12 PG 18",
+        "employer_state": "Text13 PG 18",
+        "employer_zip_code": "Text14 PG 18",
+        "employer_email": "Text18 PG 18",
+        "waiting_period_enrollment_date": "Text21 PG 18",
+        "lowest_cost_premium": "Text29 PG 18",
+        "changed_premium": "Text39 PG 18",
+        "plan_change_date": "Text46 PG 18",
+    }
+
+    #: The three printed "Name:" slots for others eligible from the same job.
+    APPENDIX_A_OTHER_ELIGIBLE = (
+        "Text22 PG 18",
+        "Text23 PG 18",
+        "Text24 PG 18",
+    )
+
+    #: canonical suffix -> (Yes destination, No destination)
+    APPENDIX_A_YES_NO = {
+        # Item 13 prints No first; the tuple stays (yes, no) so every caller
+        # reads it the same way.
+        "eligible_now_or_soon": ("Check Box20 PG 18", "Check Box19 PG 18"),
+        "meets_minimum_value_standard": ("Check Box25 PG 18", "Check Box26 PG 18"),
+        "is_state_employee_benefit_plan": ("Check Box27 PG 18", "Check Box28 PG 18"),
+    }
+
+    #: Appendix A prints six premium frequencies, including Quarterly and Yearly.
+    APPENDIX_A_PREMIUM_FREQUENCY = {
+        "weekly": "Check Box30 PG 18",
+        "bi_weekly": "Check Box31 PG 18",
+        "twice_a_month": "Check Box32 PG 18",
+        "monthly": "Check Box33 PG 18",
+        "quarterly": "Check Box34 PG 18",
+        "yearly": "Check Box35 PG 18",
+    }
+
+    APPENDIX_A_CHANGED_PREMIUM_FREQUENCY = {
+        "weekly": "Check Box40 PG 18",
+        "bi_weekly": "Check Box41 PG 18",
+        "twice_a_month": "Check Box42 PG 18",
+        "monthly": "Check Box43 PG 18",
+        "quarterly": "Check Box44 PG 18",
+        "yearly": "Check Box45 PG 18",
+    }
+
+    APPENDIX_A_NO_WELLNESS = "Check Box36 PG 18"
+
+    APPENDIX_A_PLAN_CHANGE = {
+        "will_no_longer_provide": "Check Box37 PG 18",
+        "will_start_offering_or_change_premium": "Check Box38 PG 18",
+        "no_changes_expected": "Check Box47 PG 18",
+    }
+
     #: Q14's two printed free-text lines.
     PAGE_11_SPECIAL_NEED_TEXT = {
         # "Please list the name of the person with the special need and explain"
@@ -1940,6 +2044,13 @@ class Saws2PlusFieldAdapter:
             *PAGE_2_INTERVIEW_PREFERENCE.values(),
             *PAGE_3_SAME_CONTACT_GATEWAY,
             *PAGE_14_PERSONAL_PROPERTY_GATEWAY,
+            *APPENDIX_A_TEXT.values(),
+            *APPENDIX_A_OTHER_ELIGIBLE,
+            *(f for pair in APPENDIX_A_YES_NO.values() for f in pair),
+            *APPENDIX_A_PREMIUM_FREQUENCY.values(),
+            *APPENDIX_A_CHANGED_PREMIUM_FREQUENCY.values(),
+            APPENDIX_A_NO_WELLNESS,
+            *APPENDIX_A_PLAN_CHANGE.values(),
             *(
                 field
                 for column in APPENDIX_E_VEHICLES
@@ -2556,6 +2667,89 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # -------------------------------------------------------------------
+        # Appendix A — employer health coverage
+        # -------------------------------------------------------------------
+        #
+        # The form provides one printed page, so only the first employer record
+        # can be written; a second employer needs another copy of the appendix
+        # and is reported as overflow.
+        appendix_a_prefix = "appendices.employer_coverage.0"
+
+        if any(
+            key.startswith(f"{appendix_a_prefix}.")
+            for key in canonical_values
+        ):
+            for canonical_suffix, pdf_field in self.APPENDIX_A_TEXT.items():
+                set_field(
+                    pdf_field,
+                    canonical_values.get(
+                        f"{appendix_a_prefix}.{canonical_suffix}"
+                    ),
+                )
+
+            for slot, pdf_field in enumerate(
+                self.APPENDIX_A_OTHER_ELIGIBLE
+            ):
+                set_field(
+                    pdf_field,
+                    canonical_values.get(
+                        f"{appendix_a_prefix}.other_eligible.{slot}"
+                    ),
+                )
+
+            for (
+                canonical_suffix,
+                (yes_field, no_field),
+            ) in self.APPENDIX_A_YES_NO.items():
+                value = canonical_values.get(
+                    f"{appendix_a_prefix}.{canonical_suffix}"
+                )
+
+                if not isinstance(
+                    value,
+                    bool,
+                ):
+                    continue
+
+                set_field(
+                    yes_field if value else no_field,
+                    "/Yes",
+                )
+
+            for canonical_suffix, table in (
+                ("lowest_cost_premium_frequency", self.APPENDIX_A_PREMIUM_FREQUENCY),
+                (
+                    "changed_premium_frequency",
+                    self.APPENDIX_A_CHANGED_PREMIUM_FREQUENCY,
+                ),
+                ("plan_change", self.APPENDIX_A_PLAN_CHANGE),
+            ):
+                choice = str(
+                    canonical_values.get(
+                        f"{appendix_a_prefix}.{canonical_suffix}"
+                    )
+                    or ""
+                ).strip()
+
+                pdf_field = table.get(
+                    choice
+                )
+
+                if pdf_field is not None:
+                    set_field(
+                        pdf_field,
+                        "/Yes",
+                    )
+
+            if canonical_values.get(
+                f"{appendix_a_prefix}.no_wellness_programs"
+            ) is True:
+                set_field(
+                    self.APPENDIX_A_NO_WELLNESS,
+                    "/Yes",
+                )
 
         # -------------------------------------------------------------------
         # Appendix E — vehicle detail
