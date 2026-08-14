@@ -1093,7 +1093,7 @@ export function getRequiredApplicationQuestions(
 
       if (
         questionnaire.circumstances.elderlyUnableToPrepareMealsSeparately === true &&
-        !questionnaire.circumstances.elderlyUnableToPrepareMealsWho.trim()
+        !(questionnaire.circumstances.elderlyUnableToPrepareMealsWho ?? '').trim()
       ) {
         totalCount += 1;
         push({
@@ -1118,7 +1118,7 @@ export function getRequiredApplicationQuestions(
 
     if (
       !questionnaire.health.taxFilerMemberId &&
-      !questionnaire.health.taxFilerName.trim()
+      !(questionnaire.health.taxFilerName ?? '').trim()
     ) {
       push({
         id: 'health.tax_filer_person',
@@ -1151,7 +1151,7 @@ export function getRequiredApplicationQuestions(
 
       if (
         questionnaire.health.spouseFilingJointly === true &&
-        !questionnaire.health.spouseName.trim()
+        !(questionnaire.health.spouseName ?? '').trim()
       ) {
         totalCount += 1;
         push({
@@ -1167,7 +1167,7 @@ export function getRequiredApplicationQuestions(
     // Q23d — dependents, and Q23e's relationship for each one.
     totalCount += 1;
 
-    if (unanswered(questionnaire.health.taxDependents.answer)) {
+    if (unanswered(questionnaire.health.taxDependents?.answer)) {
       push({
         id: 'health.tax_dependents',
         section: 'health',
@@ -1180,12 +1180,12 @@ export function getRequiredApplicationQuestions(
     } else {
       answeredCount += 1;
 
-      if (questionnaire.health.taxDependents.answer === true) {
+      if (questionnaire.health.taxDependents?.answer === true) {
         const dependents = safeEntries<{
           name?: string;
           memberId?: string;
           relationshipToFiler?: string;
-        }>(questionnaire.health.taxDependents.entries);
+        }>(questionnaire.health.taxDependents?.entries);
 
         if (dependents.length === 0) {
           totalCount += 1;

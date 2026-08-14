@@ -285,3 +285,77 @@ describe('schema and inventory', () => {
     },
   );
 });
+
+// ---------------------------------------------------------------------------
+// Payloads written against an older shape
+// ---------------------------------------------------------------------------
+
+/**
+ * `applicationData` arrives as JSON from the client, so a session that started
+ * before these fields existed sends a questionnaire without them. The draft
+ * endpoint must still generate a PDF rather than returning a 500 — this is the
+ * exact failure the live E2E caught after the tax block was added.
+ */
+describe('a questionnaire missing the new fields', () => {
+  function legacy(): Saws2PlusApplicationData {
+    const data = write(seed(), 'health.taxFiler', true);
+    const health = { ...data.questionnaire.health } as Record<string, unknown>;
+
+    // Simulate the older payload: these keys simply are not present.
+    delete health.taxDependents;
+    delete health.taxFilerName;
+    delete health.taxFilerMemberId;
+    delete health.spouseName;
+
+    const circumstances = { ...data.questionnaire.circumstances } as Record<
+      string,
+      unknown
+    >;
+    delete circumstances.elderlyUnableToPrepareMealsWho;
+
+    return {
+      ...data,
+      questionnaire: {
+        ...data.questionnaire,
+        health: health as unknown as typeof data.questionnaire.health,
+        circumstances:
+          circumstances as unknown as typeof data.questionnaire.circumstances,
+      },
+    };
+  }
+
+  it('builds a field plan without throwing', () => {
+    expect(() => buildApplicationFieldPlan(legacy(), {})).not.toThrow();
+  });
+
+  it('plans questions without throwing', () => {
+    expect(() => getRequiredApplicationQuestions(legacy())).not.toThrow();
+  });
+
+  it('still asks for the missing tax answers', () => {
+    const ids = outstanding(legacy());
+
+    expect(ids.has('health.tax_filer_person')).toBe(true);
+    expect(ids.has('health.tax_dependents')).toBe(true);
+  });
+
+  it('emits no tax dependent answer it does not have', () => {
+    expect(planValue(legacy(), 'health.has_tax_dependents')).toBeUndefined();
+    expect(planValue(legacy(), 'health.tax_dependent_names')).toBeUndefined();
+  });
+
+  it('survives a spouse-name read when joint filing is Yes', () => {
+    const data = write(legacy(), 'health.spouseFilingJointly', true);
+
+    expect(() => buildApplicationFieldPlan(data, {})).not.toThrow();
+    expect(planValue(data, 'health.spouse_name')).toBeUndefined();
+  });
+
+  it('survives the Q21a who-line read', () => {
+    let data = write(legacy(), 'circumstances.buysAndPreparesFoodTogether', false);
+    data = write(data, 'circumstances.elderlyUnableToPrepareMealsSeparately', true);
+
+    expect(() => getRequiredApplicationQuestions(data)).not.toThrow();
+    expect(() => buildApplicationFieldPlan(data, {})).not.toThrow();
+  });
+})

@@ -805,7 +805,7 @@ function mapQuestionnaire(
   if (circumstances.elderlyUnableToPrepareMealsSeparately === true) {
     text(
       "household.elderly_unable_to_prepare_meals_who",
-      circumstances.elderlyUnableToPrepareMealsWho,
+      circumstances.elderlyUnableToPrepareMealsWho ?? "",
     );
   }
 
@@ -1011,15 +1011,21 @@ function mapQuestionnaire(
    * dependent list on the form.
    */
   if (health.taxFiler === true) {
+    /*
+     * `applicationData` arrives as JSON from the client, so a payload written
+     * against an older shape can omit fields the current types declare. Every
+     * read here tolerates that: the alternative is a 500 on the draft endpoint
+     * for anyone whose session predates this block.
+     */
     text("health.tax_filer_name", health.taxFilerMemberId
       ? personName(health.taxFilerMemberId)
-      : health.taxFilerName);
+      : health.taxFilerName ?? "");
 
     if (health.spouseFilingJointly === true) {
-      text("health.spouse_name", health.spouseName);
+      text("health.spouse_name", health.spouseName ?? "");
     }
 
-    tri("health.has_tax_dependents", health.taxDependents.answer);
+    tri("health.has_tax_dependents", health.taxDependents?.answer);
 
     const dependents = activeEntries(health.taxDependents);
 
@@ -1028,14 +1034,16 @@ function mapQuestionnaire(
     // needing its own printed row.
     const names = dependents
       .map((dependent) =>
-        dependent.memberId ? personName(dependent.memberId) : dependent.name,
+        dependent?.memberId
+          ? personName(dependent.memberId)
+          : dependent?.name ?? "",
       )
       .filter((name) => name.trim());
 
     if (names.length > 0) text("health.tax_dependent_names", names.join(", "));
 
     const relationships = dependents
-      .map((dependent) => dependent.relationshipToFiler)
+      .map((dependent) => dependent?.relationshipToFiler ?? "")
       .filter((relationship) => relationship.trim());
 
     if (relationships.length > 0) {
