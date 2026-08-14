@@ -861,3 +861,38 @@ def test_appendix_e_writes_nothing_without_a_vehicle(available_fields):
     for column in APX_E:
         for field in _apx_e_fields(column):
             assert field not in values, field
+
+
+# ---------------------------------------------------------------------------
+# Appendix A employee SSN — classified, and unreachable
+# ---------------------------------------------------------------------------
+
+APPENDIX_A_SSN = ("Text2 PG 18", "Text3 PG 18", "Text4 PG 18")
+
+
+def test_appendix_a_employee_ssn_is_classified(available_fields):
+    """Appendix A item 2 is "EMPLOYEE SOCIAL SECURITY NUMBER" in three boxes.
+
+    They were already unwritable, but until they were classified the privacy
+    tests did not cover them and a later mapping pass could have added them.
+    """
+    from benefits_navigator.saws2_plus_inventory import SSN_FIELDS
+
+    for field in APPENDIX_A_SSN:
+        assert field in available_fields, field
+        assert field in SSN_FIELDS, field
+
+
+def test_no_ssn_destination_is_ever_writable():
+    from benefits_navigator.saws2_plus_inventory import SSN_FIELDS
+
+    assert not set(SSN_FIELDS) & set(Saws2PlusFieldAdapter.SAFE_FIELDS)
+
+
+def test_appendix_a_employee_ssn_stays_blank(available_fields):
+    """Even asked for directly, an SSN destination cannot be written."""
+    plan = {f"appendix_a.employee_ssn_part_{i}": "123" for i in range(3)}
+    values = _map(plan, available_fields)
+
+    for field in APPENDIX_A_SSN:
+        assert field not in values, field

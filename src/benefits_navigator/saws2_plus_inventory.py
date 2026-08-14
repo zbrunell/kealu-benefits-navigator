@@ -80,6 +80,17 @@ SSN_FIELDS: frozenset[str] = frozenset(
         "Text57 PG 4",
         "Text76 PG 4",
         "Text95 PG 4",
+        # Appendix A item 2, "EMPLOYEE SOCIAL SECURITY NUMBER", split across the
+        # classic three boxes. Found while mapping the appendix: the printed
+        # label sits at y=669.3 x=422.3 above widgets at x=422.3/483/516.
+        #
+        # These were already unreachable — nothing added them to SAFE_FIELDS —
+        # but they were not *classified*, so the privacy tests that assert every
+        # SSN destination stays blank did not cover them and a later mapping pass
+        # could have added them without the gate noticing.
+        "Text2 PG 18",
+        "Text3 PG 18",
+        "Text4 PG 18",
     }
 )
 
