@@ -74,6 +74,30 @@ EXPECTED = {
     # Note the lower-case "pg 10".
     "income.varies_during_year": ("Q10", "Check Box27 pg 10", "Check Box28 pg 10"),
     "household.other_food_program": ("Q18", "Check Box40 PG 12", "Check Box41 PG 12"),
+    # Newly modeled household circumstances.
+    "household.health_coverage_representative": (
+        "Q2a",
+        "Check Box13 PG 2",
+        "Check Box14 PG 2",
+    ),
+    "household.disability_limits_activities": (
+        "Q6i",
+        "Check Box26 PG 6",
+        "Check Box27 PG 6",
+    ),
+    "household.needs_care_from_member": ("Q6k", "Check Box56 PG 6", "Check Box57 PG 6"),
+    "household.pregnant_or_teen_parent": (
+        "Q6m",
+        "Check Box 13 PG 7",
+        "Check Box 14 PG 7",
+    ),
+    "household.cal_learn_history": ("Q6n", "Check Box 42 PG 7", "Check Box 43 PG 7"),
+    "household.ever_in_foster_care": ("Q6o", "Check Box 50 PG 7", "Check Box 51 PG 7"),
+    "household.elderly_unable_to_prepare_meals": (
+        "Q21a",
+        "Check Box11 PG 13",
+        "Check Box12 PG 13",
+    ),
 }
 
 
@@ -294,3 +318,53 @@ def test_field_names_preserve_the_forms_own_typography(available_fields):
     for odd in ("Check Box 1 PG 7", "Check Box9  PG 8", "Check Box27 pg 10"):
         assert odd in available_fields, odd
         assert odd in Saws2PlusFieldAdapter.SAFE_FIELDS, odd
+
+
+def test_q2a_is_independent_of_q2(available_fields):
+    """Q2 appoints a CalFresh representative; Q2a a health-coverage one.
+
+    The printed form asks them as two separate questions with separate
+    checkboxes, so answering one must never tick the other's box.
+    """
+    values = _map({"household.authorized_representative": False}, available_fields)
+
+    assert values.get("Check Box2 PG 2") == "/Yes"      # Q2 No
+    assert "Check Box13 PG 2" not in values            # Q2a untouched
+    assert "Check Box14 PG 2" not in values
+
+    values = _map({"household.health_coverage_representative": True}, available_fields)
+
+    assert values.get("Check Box13 PG 2") == "/Yes"     # Q2a Yes
+    assert "Check Box1 PG 2" not in values              # Q2 untouched
+    assert "Check Box2 PG 2" not in values
+
+
+def test_q21a_who_line_is_written_only_with_a_value(available_fields):
+    who = Saws2PlusFieldAdapter.PAGE_13_ELDERLY_SEPARATE_MEALS_WHO
+
+    values = _map(
+        {
+            "household.elderly_unable_to_prepare_meals": True,
+            "household.elderly_unable_to_prepare_meals_who": "Rosa Marin",
+        },
+        available_fields,
+    )
+    assert values[who] == "Rosa Marin"
+    assert values.get("Check Box11 PG 13") == "/Yes"
+
+    # No name given: the Yes box still ticks, the line stays blank.
+    values = _map({"household.elderly_unable_to_prepare_meals": True}, available_fields)
+    assert who not in values
+
+
+def test_q6o_and_q6p_are_distinct_questions(available_fields):
+    """Past foster care versus a foster child living in the home now."""
+    values = _map(
+        {"household.ever_in_foster_care": True, "household.foster_care": False},
+        available_fields,
+    )
+
+    assert values.get("Check Box 50 PG 7") == "/Yes"   # Q6o Yes
+    assert values.get("Check Box2 PG 8") == "/Yes"     # Q6p No
+    assert "Check Box 51 PG 7" not in values
+    assert "Check Box1 PG 8" not in values

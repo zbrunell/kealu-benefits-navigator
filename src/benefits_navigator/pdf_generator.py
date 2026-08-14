@@ -1445,7 +1445,66 @@ class Saws2PlusFieldAdapter:
             "Check Box40 PG 12",
             "Check Box41 PG 12",
         ),
+
+        # -- Newly modeled household circumstances --------------------------
+
+        # Q2a "Do you want to choose an authorized representative for the health
+        # insurance part of your application?"  Yes x=133.2 / No x=176.0.
+        # Independent of Q2, which appoints a CalFresh representative.
+        "household.health_coverage_representative": (
+            "Check Box13 PG 2",
+            "Check Box14 PG 2",
+        ),
+
+        # Q6i "Does anyone listed in question 6 have a physical, mental,
+        # emotional, or developmental disability that causes limitations in
+        # activities?"  Yes x=361.0 / No x=394.8.
+        "household.disability_limits_activities": (
+            "Check Box26 PG 6",
+            "Check Box27 PG 6",
+        ),
+
+        # Q6k "Is there a child or disabled person in the household who needs
+        # care from another household member?"  Yes x=78.8 / No x=112.2.
+        "household.needs_care_from_member": (
+            "Check Box56 PG 6",
+            "Check Box57 PG 6",
+        ),
+
+        # Q6m "Is anyone listed in question 6 or 6b pregnant or a teen parent?"
+        # Yes x=362.8 / No x=396.2.
+        "household.pregnant_or_teen_parent": (
+            "Check Box 13 PG 7",
+            "Check Box 14 PG 7",
+        ),
+
+        # Q6n "Has anyone ever gotten a cash bonus or penalty, or help with child
+        # care, transportation or other service from the Cal-Learn Program?"
+        # Yes x=176.8 / No x=210.5.
+        "household.cal_learn_history": (
+            "Check Box 42 PG 7",
+            "Check Box 43 PG 7",
+        ),
+
+        # Q6o "Was anyone listed in question 6 ever in foster care?"
+        # Yes x=309.0 / No x=342.5. Distinct from Q6p, which asks about a foster
+        # child living in the home now.
+        "household.ever_in_foster_care": (
+            "Check Box 50 PG 7",
+            "Check Box 51 PG 7",
+        ),
+
+        # Q21a "Is anyone living with you age 60 or older and unable to buy food
+        # and fix meals separately because of a disability?"
+        # Yes x=83.8 / No x=117.5.
+        "household.elderly_unable_to_prepare_meals": (
+            "Check Box11 PG 13",
+            "Check Box12 PG 13",
+        ),
     }
+
+    #: Q21a "If yes, who:" — the text line beside the Yes/No pair, x=197.8.
+    PAGE_13_ELDERLY_SEPARATE_MEALS_WHO = "Text13 PG 13"
 
     # -----------------------------------------------------------------------
     # Verified as UNMAPPABLE — recorded so the search is not repeated
@@ -1476,6 +1535,7 @@ class Saws2PlusFieldAdapter:
                 for pair in GATEWAY_YES_NO.values()
                 for field in pair
             ),
+            PAGE_13_ELDERLY_SEPARATE_MEALS_WHO,
 
             # Page 1 applicant name.
             "Text1 PG 1",
@@ -2061,6 +2121,14 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # Q21a's "who" line, printed only when the answer is Yes.
+        set_field(
+            self.PAGE_13_ELDERLY_SEPARATE_MEALS_WHO,
+            canonical_values.get(
+                "household.elderly_unable_to_prepare_meals_who"
+            ),
+        )
 
         for (
             key,

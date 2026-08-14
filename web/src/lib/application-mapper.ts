@@ -789,6 +789,26 @@ function mapQuestionnaire(
   tri("household.students", circumstances.students.answer);
   tri("household.foster_care", circumstances.fosterCare.answer);
 
+  // Newly modeled household circumstances.
+  tri("household.health_coverage_representative", circumstances.healthCoverageRepresentative);
+  tri("household.disability_limits_activities", circumstances.disabilityLimitsActivities);
+  tri("household.needs_care_from_member", circumstances.needsCareFromHouseholdMember);
+  tri("household.pregnant_or_teen_parent", circumstances.pregnantOrTeenParent);
+  tri("household.cal_learn_history", circumstances.calLearnHistory);
+  tri("household.ever_in_foster_care", circumstances.everInFosterCare);
+  tri(
+    "household.elderly_unable_to_prepare_meals",
+    circumstances.elderlyUnableToPrepareMealsSeparately,
+  );
+
+  // The "who" line is printed only when the answer is Yes.
+  if (circumstances.elderlyUnableToPrepareMealsSeparately === true) {
+    text(
+      "household.elderly_unable_to_prepare_meals_who",
+      circumstances.elderlyUnableToPrepareMealsWho,
+    );
+  }
+
   for (const [index, representative] of activeEntries(
     circumstances.authorizedRepresentative,
   ).entries()) {

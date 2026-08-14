@@ -345,6 +345,49 @@ const SIMPLE_GATEWAYS: GatewaySpec[] = [
   },
   {
     section: 'circumstances',
+    id: 'circumstances.health_coverage_representative',
+    path: 'circumstances.healthCoverageRepresentative',
+    prompt:
+      'Do you want someone to act for you on the health-coverage part of this application?',
+    help:
+      'This is separate from a CalFresh representative — the form asks about them independently.',
+  },
+  {
+    section: 'circumstances',
+    id: 'circumstances.disability_limits_activities',
+    path: 'circumstances.disabilityLimitsActivities',
+    prompt:
+      'Does anyone have a disability that limits daily activities such as bathing, dressing, or chores?',
+  },
+  {
+    section: 'circumstances',
+    id: 'circumstances.needs_care_from_member',
+    path: 'circumstances.needsCareFromHouseholdMember',
+    prompt:
+      'Is there a child or disabled person who needs care from another household member?',
+  },
+  {
+    section: 'circumstances',
+    id: 'circumstances.pregnant_or_teen_parent',
+    path: 'circumstances.pregnantOrTeenParent',
+    prompt: 'Is anyone in the household pregnant or a teen parent?',
+  },
+  {
+    section: 'circumstances',
+    id: 'circumstances.cal_learn',
+    path: 'circumstances.calLearnHistory',
+    prompt:
+      'Has anyone received a cash bonus, penalty, or help with child care or transport from Cal-Learn?',
+  },
+  {
+    section: 'circumstances',
+    id: 'circumstances.ever_in_foster_care',
+    path: 'circumstances.everInFosterCare',
+    prompt: 'Was anyone in the household ever in foster care?',
+    help: 'This is about the past — a foster child living with you now is a separate question.',
+  },
+  {
+    section: 'circumstances',
     id: 'circumstances.ihss',
     path: 'circumstances.receivesIhss',
     prompt: 'Is anyone getting In-Home Supportive Services (IHSS)?',
@@ -1023,6 +1066,44 @@ export function getRequiredApplicationQuestions(
       });
     } else {
       answeredCount += 1;
+    }
+  }
+
+  /*
+   * Q21a follows Q21. The printed question asks whether someone 60+ cannot buy
+   * food and cook separately because of a disability — a CalFresh
+   * separate-household rule that only arises when the household does NOT all
+   * buy and prepare food together. Asking it of a household that already eats
+   * together would be asking about a situation they have just ruled out.
+   */
+  if (questionnaire.circumstances.buysAndPreparesFoodTogether === false) {
+    totalCount += 1;
+
+    if (unanswered(questionnaire.circumstances.elderlyUnableToPrepareMealsSeparately)) {
+      push({
+        id: 'circumstances.elderly_separate_meals',
+        section: 'circumstances',
+        kind: 'gateway',
+        prompt:
+          'Is anyone living with you 60 or older and unable to buy food and fix meals separately because of a disability?',
+        path: 'circumstances.elderlyUnableToPrepareMealsSeparately',
+      });
+    } else {
+      answeredCount += 1;
+
+      if (
+        questionnaire.circumstances.elderlyUnableToPrepareMealsSeparately === true &&
+        !questionnaire.circumstances.elderlyUnableToPrepareMealsWho.trim()
+      ) {
+        totalCount += 1;
+        push({
+          id: 'circumstances.elderly_separate_meals_who',
+          section: 'circumstances',
+          kind: 'field',
+          prompt: 'Who is that?',
+          path: 'circumstances.elderlyUnableToPrepareMealsWho',
+        });
+      }
     }
   }
 

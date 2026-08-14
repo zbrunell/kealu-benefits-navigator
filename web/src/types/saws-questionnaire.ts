@@ -358,6 +358,45 @@ export interface HouseholdCircumstances {
   buysAndPreparesFoodTogether: TriState;
   /** Anyone living in a shelter, group home, or institution. */
   institutionalLiving: TriState;
+  /**
+   * Q2a: an authorized representative for the health-coverage part only.
+   *
+   * Independent of Q2, which appoints a representative for the CalFresh case.
+   * The printed form asks them as two separate questions with separate
+   * checkboxes, so a No to one says nothing about the other.
+   */
+  healthCoverageRepresentative: TriState;
+  /**
+   * Q6i: anyone with a physical, mental, emotional or developmental disability
+   * that limits daily activities such as bathing, dressing or chores.
+   *
+   * Distinct from the per-person `disabled` flag in the Q6 household table:
+   * that records disability status, this records activity limitation, and the
+   * form asks them in different places for different purposes.
+   */
+  disabilityLimitsActivities: TriState;
+  /** Q6k: a child or disabled person needs care from another household member. */
+  needsCareFromHouseholdMember: TriState;
+  /** Q6m: anyone pregnant or a teen parent. */
+  pregnantOrTeenParent: TriState;
+  /** Q6n: anyone has received a Cal-Learn bonus, penalty or support service. */
+  calLearnHistory: TriState;
+  /**
+   * Q6o: anyone was ever in foster care. Distinct from Q6p, which asks about a
+   * foster child living in the home now.
+   */
+  everInFosterCare: TriState;
+  /**
+   * Q21a: someone 60 or older who cannot buy food and cook separately because
+   * of a disability.
+   *
+   * A CalFresh separate-household rule. Age and disability are known per person,
+   * but whether the two combine this way is a judgement only the applicant can
+   * make, so it is asked rather than inferred.
+   */
+  elderlyUnableToPrepareMealsSeparately: TriState;
+  /** Q21a follow-up: who that person is. */
+  elderlyUnableToPrepareMealsWho: string;
   /** Anyone receiving In-Home Supportive Services (Q20). */
   receivesIhss: TriState;
   /** Anyone taking part in another food program. */
@@ -380,6 +419,14 @@ export function emptyHouseholdCircumstances(): HouseholdCircumstances {
     plannedAbsence: undefined,
     buysAndPreparesFoodTogether: undefined,
     institutionalLiving: undefined,
+    healthCoverageRepresentative: undefined,
+    disabilityLimitsActivities: undefined,
+    needsCareFromHouseholdMember: undefined,
+    pregnantOrTeenParent: undefined,
+    calLearnHistory: undefined,
+    everInFosterCare: undefined,
+    elderlyUnableToPrepareMealsSeparately: undefined,
+    elderlyUnableToPrepareMealsWho: '',
     receivesIhss: undefined,
     otherFoodProgram: undefined,
     caretakerRelative: undefined,

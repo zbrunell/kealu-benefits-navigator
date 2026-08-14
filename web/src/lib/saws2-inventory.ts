@@ -86,8 +86,6 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
     saws: 'Q2a',
     label: 'Health insurance authorized representatives',
     page: 8,
-    status: 'not_modeled',
-    note: 'A separate representative for health coverage is not modeled.',
   },
   { saws: 'Q3', label: 'American Indian or Alaska Native', page: 8 },
   {
@@ -139,10 +137,6 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
     saws: 'Q6i',
     label: 'Anyone with a physical, mental, emotional or developmental disability',
     page: 12,
-    status: 'not_modeled',
-    note:
-      'Per-person disability is modeled in the Q6 adult/child rows but the Q6i ' +
-      'question itself has no gateway in the questionnaire.',
   },
   {
     saws: 'Q6j',
@@ -155,32 +149,22 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
     saws: 'Q6k',
     label: 'A child or disabled person who needs care from another person',
     page: 12,
-    status: 'not_modeled',
-    note: 'Overlaps Q11 dependent care but is a distinct printed question.',
   },
   { saws: 'Q6l', label: 'Students', page: 13 },
   {
     saws: 'Q6m',
     label: 'Anyone pregnant or a teen parent',
     page: 13,
-    status: 'conditional',
-    note:
-      'Pregnancy is collected on page 1 and mapped there. The Q6m destination ' +
-      'has not been reviewed.',
   },
   {
     saws: 'Q6n',
     label: 'Cash bonus, penalty, or help with child care/transport (Cal-Learn)',
     page: 13,
-    status: 'not_modeled',
-    note: 'Cal-Learn participation history is not collected.',
   },
   {
     saws: 'Q6o',
     label: 'Was anyone ever in foster care?',
     page: 13,
-    status: 'not_modeled',
-    note: 'Distinct from Q6p, which asks about a foster child living there now.',
   },
   { saws: 'Q6p', label: 'Foster child currently living in the home', page: 14 },
   { saws: 'Q6q', label: 'Everyone lives in California and expects to stay', page: 14 },
@@ -211,10 +195,6 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
     saws: 'Q21a',
     label: 'Someone 60+ unable to buy food and cook separately due to disability',
     page: 19,
-    status: 'not_modeled',
-    note:
-      'A CalFresh separate-household rule. Age and disability are known per ' +
-      'person, but the combined judgement is not something we may infer.',
   },
   { saws: 'Q22', label: 'Currently enrolled in health coverage', page: 19 },
   { saws: 'Q22a', label: 'Offered health coverage from a job', page: 19 },
