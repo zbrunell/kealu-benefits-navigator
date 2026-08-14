@@ -345,6 +345,14 @@ const SIMPLE_GATEWAYS: GatewaySpec[] = [
   },
   {
     section: 'circumstances',
+    id: 'circumstances.same_contact_information',
+    path: 'circumstances.everyoneHasSameContactInformation',
+    prompt: 'Does everyone in your household have the same contact information?',
+    help:
+      'If someone has a different phone, address, or email, the form has space for theirs.',
+  },
+  {
+    section: 'circumstances',
     id: 'circumstances.health_coverage_representative',
     path: 'circumstances.healthCoverageRepresentative',
     prompt:

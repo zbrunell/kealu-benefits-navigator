@@ -404,3 +404,128 @@ def test_never_writes_an_ssn_destination_for_any_row(available_fields):
     ):
         assert destination not in values
         assert destination not in Saws2PlusFieldAdapter.SAFE_FIELDS
+
+
+# ---------------------------------------------------------------------------
+# Q6a — per-person contact blocks
+# ---------------------------------------------------------------------------
+
+BLOCKS = Saws2PlusFieldAdapter.PAGE_3_CONTACT_BLOCKS
+
+
+def _contact(index: int, **fields) -> dict:
+    prefix = f"household.members.{index}.contact"
+    return {f"{prefix}.{k}": v for k, v in fields.items()}
+
+
+def test_q6a_gateway(available_fields):
+    yes, no = Saws2PlusFieldAdapter.PAGE_3_SAME_CONTACT_GATEWAY
+
+    assert _map({"household.same_contact_information": True}, available_fields).get(yes) == "/Yes"
+    assert _map({"household.same_contact_information": False}, available_fields).get(no) == "/Yes"
+    # Unanswered leaves both blank.
+    values = _map({}, available_fields)
+    assert yes not in values and no not in values
+
+
+def test_a_member_with_no_differing_contact_leaves_the_block_blank(available_fields):
+    """Q6a Yes must not repeat the applicant's details in every printed row."""
+    plan = {
+        **_applicant(),
+        **_counts(1),
+        **_member(0, first_name="Luis", last_name="Delgado"),
+        "household.same_contact_information": True,
+    }
+
+    values = _map(plan, available_fields)
+
+    for field in BLOCKS[0] + BLOCKS[1]:
+        assert field not in values, field
+
+
+def test_contact_details_land_in_the_right_columns(available_fields):
+    plan = {
+        **_applicant(),
+        **_counts(1),
+        **_member(0, first_name="Luis", last_name="Delgado"),
+        "household.same_contact_information": False,
+        **_contact(
+            0,
+            home_phone="323-555-0101",
+            alternate_phone="323-555-0202",
+            email="luis@example.com",
+            **{
+                "home_address.street": "9 Oak St",
+                "home_address.apartment": "2",
+                "home_address.city": "Los Angeles",
+                "home_address.state": "CA",
+                "home_address.zip_code": "90001",
+                "mailing_address.street": "PO Box 5",
+                "mailing_address.apartment": "",
+                "mailing_address.city": "Los Angeles",
+                "mailing_address.state": "CA",
+                "mailing_address.zip_code": "90002",
+            },
+        ),
+    }
+
+    values = _map(plan, available_fields)
+    block = BLOCKS[0]
+
+    # The Q6a block header reads "NAME (FIRST, MIDDLE, AND LAST)", unlike the
+    # Q6 table which is "Last, First, Middle Initial".
+    assert values[block[0]] == "Luis Delgado"        # name
+    assert values[block[1]] == "9 Oak St"            # home street
+    assert values[block[2]] == "2"                   # home apartment
+    assert values[block[3]] == "Los Angeles"         # home city
+    assert values[block[4]] == "CA"                  # home state
+    assert values[block[5]] == "90001"               # home zip
+    assert values[block[6]] == "323-555-0101"        # home phone
+    assert values[block[7]] == "PO Box 5"            # mailing street
+    assert values[block[9]] == "Los Angeles"         # mailing city
+    assert values[block[11]] == "90002"              # mailing zip
+    assert values[block[12]] == "323-555-0202"       # alternate phone
+    assert values[block[13]] == "luis@example.com"   # email
+
+    # The second printed block is untouched.
+    for field in BLOCKS[1]:
+        assert field not in values, field
+
+
+def test_two_members_occupy_separate_contact_blocks(available_fields):
+    plan = {
+        **_applicant(),
+        **_counts(2),
+        **_member(0, first_name="Luis", last_name="Delgado"),
+        **_member(1, first_name="Rosa", last_name="Marin"),
+        "household.same_contact_information": False,
+        **_contact(0, home_phone="323-555-0101"),
+        **_contact(1, home_phone="323-555-0303"),
+    }
+    plan["household.members.1.table_row"] = 2
+
+    values = _map(plan, available_fields)
+
+    assert values[BLOCKS[0][0]] == "Luis Delgado"
+    assert values[BLOCKS[0][6]] == "323-555-0101"
+    assert values[BLOCKS[1][0]] == "Rosa Marin"
+    assert values[BLOCKS[1][6]] == "323-555-0303"
+
+
+def test_a_third_differing_member_does_not_overwrite_a_block(available_fields):
+    """The form has two blocks; a third person is left for manual completion."""
+    plan = {
+        **_applicant(),
+        **_counts(3),
+        "household.same_contact_information": False,
+    }
+    for i in range(3):
+        plan.update(_member(i, first_name=f"P{i}", last_name="Test"))
+        plan["household.members.%d.table_row" % i] = i + 1
+        plan.update(_contact(i, home_phone=f"555-000{i}"))
+
+    values = _map(plan, available_fields)
+
+    assert values[BLOCKS[0][6]] == "555-0000"
+    assert values[BLOCKS[1][6]] == "555-0001"
+    assert "555-0002" not in values.values()

@@ -76,6 +76,37 @@ export interface ApplicantInformation {
   householdDetails: AdultApplicationDetails;
 }
 
+/**
+ * Q6a per-member contact information.
+ *
+ * Q6a asks "Does everyone listed in question 6 have the same contact
+ * information?" and, when the answer is No, gives two printed blocks for the
+ * people whose details differ. So this is deliberately optional per member:
+ * absent means "same as the applicant", which is what Yes means, and the
+ * printed block stays blank rather than repeating the applicant's own details
+ * in every row.
+ */
+export interface MemberContactInformation {
+  homePhone: string;
+  /** The form's "WORK/ALTERNATE/MESSAGE PHONE" column. */
+  alternatePhone: string;
+  email: string;
+  homeAddress: ApplicationAddress;
+  mailingAddressSameAsHome: boolean;
+  mailingAddress: ApplicationAddress;
+}
+
+export function emptyMemberContactInformation(): MemberContactInformation {
+  return {
+    homePhone: '',
+    alternatePhone: '',
+    email: '',
+    homeAddress: { ...EMPTY_ADDRESS },
+    mailingAddressSameAsHome: true,
+    mailingAddress: { ...EMPTY_ADDRESS },
+  };
+}
+
 export interface HouseholdMember {
   id: string;
   firstName: string;
@@ -84,6 +115,11 @@ export interface HouseholdMember {
   dateOfBirth: string;
   age?: number;
   relationshipToApplicant: string;
+  /**
+   * Set only when this member's contact details differ from the applicant's
+   * (Q6a answered No). Absent means "same as the applicant".
+   */
+  contact?: MemberContactInformation;
   adultDetails?: AdultApplicationDetails;
   childDetails?: ChildApplicationDetails;
 }

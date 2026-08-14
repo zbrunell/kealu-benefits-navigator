@@ -404,6 +404,14 @@ export interface HouseholdCircumstances {
   /** Anyone living in a shelter, group home, or institution. */
   institutionalLiving: TriState;
   /**
+   * Q6a: does everyone listed in question 6 have the same contact information?
+   *
+   * A No unlocks the two printed per-person contact blocks. Those details are
+   * stored on the members themselves (HouseholdMember.contact) rather than
+   * here, so they stay attached to the right person.
+   */
+  everyoneHasSameContactInformation: TriState;
+  /**
    * Q2a: an authorized representative for the health-coverage part only.
    *
    * Independent of Q2, which appoints a representative for the CalFresh case.
@@ -464,6 +472,7 @@ export function emptyHouseholdCircumstances(): HouseholdCircumstances {
     plannedAbsence: undefined,
     buysAndPreparesFoodTogether: undefined,
     institutionalLiving: undefined,
+    everyoneHasSameContactInformation: undefined,
     healthCoverageRepresentative: undefined,
     disabilityLimitsActivities: undefined,
     needsCareFromHouseholdMember: undefined,

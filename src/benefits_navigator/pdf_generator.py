@@ -1561,6 +1561,47 @@ class Saws2PlusFieldAdapter:
         "applicant.needs_disability_interview_arrangements": "Check Box46 PG 2",
     }
 
+    # -----------------------------------------------------------------------
+    # Q6a — per-person contact blocks
+    # -----------------------------------------------------------------------
+    #
+    # The printed form provides two blocks for people whose contact details
+    # differ from the applicant's. Each block is fourteen fields in three rows,
+    # and the column x positions match the printed headers exactly:
+    #
+    #   row A  NAME@36  HOME (STREET) ADDRESS@237  APARTMENT#@434  CITY@492
+    #          STATE@603  ZIP CODE@670
+    #   row B  HOME PHONE@36  MAILING ADDRESS@237  APARTMENT#@434  CITY@492
+    #          STATE@603  ZIP CODE@670
+    #   row C  WORK/ALTERNATE/MESSAGE PHONE@36   EMAIL ADDRESS (OPTIONAL)@237
+    #
+    # Which member occupies which block is decided by the canonical layer, the
+    # same way household rows are, so contact details can never land in another
+    # person's block.
+    #
+    #: (name, home street, home apt, home city, home state, home zip,
+    #:  home phone, mailing street, mailing apt, mailing city, mailing state,
+    #:  mailing zip, alternate phone, email)
+    PAGE_3_CONTACT_BLOCKS = (
+        (
+            "Text92 PG 3", "Text93 PG 3", "Text94 PG 3", "Text95 PG 3",
+            "Text96 PG 3", "Text97 PG 3",
+            "Text98 PG 3", "Text99 PG 3", "Text100 PG 3", "Text101 PG 3",
+            "Text102 PG 3", "Text103 PG 3",
+            "Text104 PG 3", "Text105 PG 3",
+        ),
+        (
+            "Text106 PG 3", "Text107 PG 3", "Text108 PG 3", "Text109 PG 3",
+            "Text110 PG 3", "Text111 PG 3",
+            "Text112 PG 3", "Text113 PG 3", "Text114 PG 3", "Text115 PG 3",
+            "Text116 PG 3", "Text117 PG 3",
+            "Text118 PG 3", "Text119 PG 3",
+        ),
+    )
+
+    #: Q6a gateway. Yes x=385.5 / No x=428.4 on the printed line.
+    PAGE_3_SAME_CONTACT_GATEWAY = ("Check Box90 PG 3", "Check Box91 PG 3")
+
     #: Q14's two printed free-text lines.
     PAGE_11_SPECIAL_NEED_TEXT = {
         # "Please list the name of the person with the special need and explain"
@@ -1624,6 +1665,8 @@ class Saws2PlusFieldAdapter:
             PAGE_13_ELDERLY_SEPARATE_MEALS_WHO,
             *PAGE_13_TAX_TEXT.values(),
             *PAGE_2_INTERVIEW_PREFERENCE.values(),
+            *PAGE_3_SAME_CONTACT_GATEWAY,
+            *(field for block in PAGE_3_CONTACT_BLOCKS for field in block),
             *PAGE_11_SPECIAL_NEED_TEXT.values(),
 
             # Page 1 applicant name.
@@ -2410,6 +2453,85 @@ class Saws2PlusFieldAdapter:
                     or ""
                 ).strip(),
             )
+
+        # -------------------------------------------------------------------
+        # Q6a — per-person contact blocks
+        # -------------------------------------------------------------------
+        same_contact = canonical_values.get(
+            "household.same_contact_information"
+        )
+
+        if isinstance(
+            same_contact,
+            bool,
+        ):
+            yes_field, no_field = self.PAGE_3_SAME_CONTACT_GATEWAY
+            set_field(
+                yes_field if same_contact else no_field,
+                "/Yes",
+            )
+
+        # Members whose details differ, in the order the canonical layer
+        # assigned them. A member with no contact block emits no keys at all,
+        # so the printed block stays blank rather than repeating the
+        # applicant's own details.
+        contact_block_index = 0
+
+        for index in range(
+            member_count
+        ):
+            if contact_block_index >= len(
+                self.PAGE_3_CONTACT_BLOCKS
+            ):
+                break
+
+            prefix = (
+                f"household.members.{index}.contact"
+            )
+
+            if not any(
+                key.startswith(f"{prefix}.")
+                for key in canonical_values
+            ):
+                continue
+
+            block = self.PAGE_3_CONTACT_BLOCKS[
+                contact_block_index
+            ]
+            contact_block_index += 1
+
+            member_prefix = (
+                f"household.members.{index}"
+            )
+
+            columns = (
+                _full_name(
+                    canonical_values,
+                    member_prefix,
+                ),
+                canonical_values.get(f"{prefix}.home_address.street"),
+                canonical_values.get(f"{prefix}.home_address.apartment"),
+                canonical_values.get(f"{prefix}.home_address.city"),
+                canonical_values.get(f"{prefix}.home_address.state"),
+                canonical_values.get(f"{prefix}.home_address.zip_code"),
+                canonical_values.get(f"{prefix}.home_phone"),
+                canonical_values.get(f"{prefix}.mailing_address.street"),
+                canonical_values.get(f"{prefix}.mailing_address.apartment"),
+                canonical_values.get(f"{prefix}.mailing_address.city"),
+                canonical_values.get(f"{prefix}.mailing_address.state"),
+                canonical_values.get(f"{prefix}.mailing_address.zip_code"),
+                canonical_values.get(f"{prefix}.alternate_phone"),
+                canonical_values.get(f"{prefix}.email"),
+            )
+
+            for pdf_field, value in zip(
+                block,
+                columns,
+            ):
+                set_field(
+                    pdf_field,
+                    value,
+                )
 
         # -------------------------------------------------------------------
         # Page 3 — adult household rows

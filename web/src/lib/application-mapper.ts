@@ -303,6 +303,37 @@ function mapHousehold(
     }
 
     /**
+     * Q6a per-member contact block.
+     *
+     * Emitted only for members who actually have differing details, so the
+     * printed blocks stay blank rather than repeating the applicant's own
+     * contact information in every row.
+     */
+    const contact = member.contact;
+
+    if (contact) {
+      const memberMailing = contact.mailingAddressSameAsHome
+        ? contact.homeAddress
+        : contact.mailingAddress;
+
+      fields.push(
+        entry(`${prefix}.contact.home_phone`, contact.homePhone ?? ""),
+        entry(`${prefix}.contact.alternate_phone`, contact.alternatePhone ?? ""),
+        entry(`${prefix}.contact.email`, contact.email ?? ""),
+        entry(`${prefix}.contact.home_address.street`, contact.homeAddress?.street ?? ""),
+        entry(`${prefix}.contact.home_address.apartment`, contact.homeAddress?.apartment ?? ""),
+        entry(`${prefix}.contact.home_address.city`, contact.homeAddress?.city ?? ""),
+        entry(`${prefix}.contact.home_address.state`, contact.homeAddress?.state ?? ""),
+        entry(`${prefix}.contact.home_address.zip_code`, contact.homeAddress?.zipCode ?? ""),
+        entry(`${prefix}.contact.mailing_address.street`, memberMailing?.street ?? ""),
+        entry(`${prefix}.contact.mailing_address.apartment`, memberMailing?.apartment ?? ""),
+        entry(`${prefix}.contact.mailing_address.city`, memberMailing?.city ?? ""),
+        entry(`${prefix}.contact.mailing_address.state`, memberMailing?.state ?? ""),
+        entry(`${prefix}.contact.mailing_address.zip_code`, memberMailing?.zipCode ?? ""),
+      );
+    }
+
+    /**
      * Adult-specific SAWS household information.
      *
      * All nullable booleans preserve the distinction between:
@@ -799,6 +830,10 @@ function mapQuestionnaire(
   tri("household.foster_care", circumstances.fosterCare.answer);
 
   // Newly modeled household circumstances.
+  tri(
+    "household.same_contact_information",
+    circumstances.everyoneHasSameContactInformation,
+  );
   tri("household.health_coverage_representative", circumstances.healthCoverageRepresentative);
   tri("household.disability_limits_activities", circumstances.disabilityLimitsActivities);
   tri("household.needs_care_from_member", circumstances.needsCareFromHouseholdMember);

@@ -99,11 +99,6 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
     saws: 'Q6a',
     label: 'Does everyone in question 6 have the same contact information?',
     page: 9,
-    status: 'not_modeled',
-    note:
-      'Per-member phone, address and email are not in the household model, so ' +
-      'the per-person contact blocks stay blank rather than repeating the ' +
-      'applicant’s own details in every row.',
   },
   { saws: 'Q6b', label: 'Household’s information: children', page: 10 },
   {

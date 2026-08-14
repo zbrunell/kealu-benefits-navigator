@@ -901,6 +901,23 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     canonicalKey: 'household.other_food_program',
   },
   {
+    id: 'circumstances.same_contact_information',
+    saws: 'Q6a',
+    label: 'Does everyone in question 6 have the same contact information?',
+    section: 'circumstances',
+    tier: 3,
+    kind: 'boolean',
+    support: 'askable',
+    pdf: 'mapped',
+    path: 'circumstances.everyoneHasSameContactInformation',
+    canonicalKey: 'household.same_contact_information',
+    note:
+      'A No unlocks the two printed per-person contact blocks. Those details ' +
+      'live on the members themselves so they stay attached to the right ' +
+      'person, and a member with none leaves their block blank rather than ' +
+      'repeating the applicant’s own details.',
+  },
+  {
     id: 'circumstances.health_coverage_representative',
     saws: 'Q2a',
     label:
