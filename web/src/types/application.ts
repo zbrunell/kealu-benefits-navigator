@@ -160,19 +160,18 @@ export interface ApplicationPreferences {
   emailCaseMessages?: boolean;
 
   needsDisabilityApplicationHelp?: boolean;
+  /**
+   * Q4 interview preference. Two independent printed checkboxes — neither is a
+   * Yes/No pair, so `false` and `undefined` both leave the box unticked.
+   */
+  prefersInPersonInterview?: boolean;
+  needsDisabilityInterviewArrangements?: boolean;
 
   homeless?: boolean;
 
   deafOrHardOfHearing?: boolean;
 }
 
-export interface ApplicationPreferences {
-  emailApplicationInformation?: boolean;
-  emailCaseMessages?: boolean;
-  needsDisabilityApplicationHelp?: boolean;
-  homeless?: boolean;
-  deafOrHardOfHearing?: boolean;
-}
 
 export interface ExpeditedServiceInformation {
   grossIncomeUnder150AndResourcesUnder100?: boolean;

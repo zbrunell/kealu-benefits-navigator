@@ -99,6 +99,21 @@ EXPECTED = {
         "Check Box12 PG 13",
     ),
     "health.has_tax_dependents": ("Q23d", "Check Box65 PG 13", "Check Box66 PG 13"),
+    # Q14: six independent printed questions under one heading.
+    "expenses.special_need.diet": ("Q14", "Check Box9 PG 11", "Check Box10 PG 11"),
+    "expenses.special_need.phone_or_equipment": (
+        "Q14",
+        "Check Box11 PG 11",
+        "Check Box12 PG 11",
+    ),
+    "expenses.special_need.housework": ("Q14", "Check Box13 PG 11", "Check Box14 PG 11"),
+    "expenses.special_need.high_utility_use": (
+        "Q14",
+        "Check Box15 PG 11",
+        "Check Box16 PG 11",
+    ),
+    "expenses.special_need.laundry": ("Q14", "Check Box17 PG 11", "Check Box18 PG 11"),
+    "expenses.special_need.other": ("Q14", "Check Box19 PG 11", "Check Box20 PG 11"),
 }
 
 
@@ -433,4 +448,61 @@ def test_a_household_that_does_not_file_writes_no_tax_lines(available_fields):
 
     assert values.get("Check Box60 PG 13") == "/Yes"  # Q23 No
     for field in Saws2PlusFieldAdapter.PAGE_13_TAX_TEXT.values():
+        assert field not in values, field
+
+
+# ---------------------------------------------------------------------------
+# Q4 — interview preference (standalone checkboxes, not Yes/No pairs)
+# ---------------------------------------------------------------------------
+
+
+def test_q4_boxes_tick_only_on_an_explicit_yes(available_fields):
+    table = Saws2PlusFieldAdapter.PAGE_2_INTERVIEW_PREFERENCE
+
+    for key, field in table.items():
+        assert field in available_fields, field
+
+        assert _map({key: True}, available_fields).get(field) == "/Yes"
+        # The form has no "no" box: False and unanswered both leave it blank.
+        assert field not in _map({key: False}, available_fields)
+        assert field not in _map({}, available_fields)
+
+
+def test_q4_boxes_are_independent(available_fields):
+    values = _map({"applicant.prefers_in_person_interview": True}, available_fields)
+
+    assert values.get("Check Box45 PG 2") == "/Yes"
+    assert "Check Box46 PG 2" not in values
+
+
+def test_q14_free_text_lines(available_fields):
+    values = _map(
+        {
+            "expenses.special_need.housework": True,
+            "expenses.special_need.person": "Rosa Marin - limited mobility",
+            "expenses.special_need.other": True,
+            "expenses.special_need.other_description": "Wheelchair ramp",
+        },
+        available_fields,
+    )
+
+    assert values["Text22 PG 11"] == "Rosa Marin - limited mobility"
+    assert values["Text21 PG 11"] == "Wheelchair ramp"
+    assert values.get("Check Box13 PG 11") == "/Yes"
+    assert values.get("Check Box19 PG 11") == "/Yes"
+
+
+def test_q14_answers_are_independent(available_fields):
+    """A No to one special need says nothing about the other five."""
+    values = _map({"expenses.special_need.diet": False}, available_fields)
+
+    assert values.get("Check Box10 PG 11") == "/Yes"
+    for field in (
+        "Check Box9 PG 11",
+        "Check Box11 PG 11", "Check Box12 PG 11",
+        "Check Box13 PG 11", "Check Box14 PG 11",
+        "Check Box15 PG 11", "Check Box16 PG 11",
+        "Check Box17 PG 11", "Check Box18 PG 11",
+        "Check Box19 PG 11", "Check Box20 PG 11",
+    ):
         assert field not in values, field

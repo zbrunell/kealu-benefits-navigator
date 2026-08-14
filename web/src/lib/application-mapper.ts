@@ -543,6 +543,15 @@ function mapApplicationPreferences(
 
   return [
     entry(
+      // Q4 interview preference: two independent printed checkboxes.
+      "applicant.prefers_in_person_interview",
+      application.preferences?.prefersInPersonInterview ?? null,
+    ),
+    entry(
+      "applicant.needs_disability_interview_arrangements",
+      application.preferences?.needsDisabilityInterviewArrangements ?? null,
+    ),
+    entry(
       "applicant.email_application_information",
       preferences.emailApplicationInformation ?? null,
     ),
@@ -1049,6 +1058,40 @@ function mapQuestionnaire(
     if (relationships.length > 0) {
       text("health.tax_dependent_relationships", relationships.join(", "));
     }
+  }
+
+  /*
+   * Q14 special needs. Six independent answers; the shared explanation line is
+   * emitted only when at least one of them is Yes, so a household that answered
+   * all six No cannot leave a stale name on the form.
+   */
+  const specialNeeds = expenses.specialNeedsExpenses;
+
+  tri("expenses.special_need.diet", specialNeeds?.specialDiet);
+  tri("expenses.special_need.phone_or_equipment", specialNeeds?.specialPhoneOrEquipment);
+  tri("expenses.special_need.housework", specialNeeds?.housework);
+  tri("expenses.special_need.high_utility_use", specialNeeds?.highUtilityUse);
+  tri("expenses.special_need.laundry", specialNeeds?.specialLaundry);
+  tri("expenses.special_need.other", specialNeeds?.otherSpecialNeed);
+
+  const anySpecialNeed = [
+    specialNeeds?.specialDiet,
+    specialNeeds?.specialPhoneOrEquipment,
+    specialNeeds?.housework,
+    specialNeeds?.highUtilityUse,
+    specialNeeds?.specialLaundry,
+    specialNeeds?.otherSpecialNeed,
+  ].some((value) => value === true);
+
+  if (anySpecialNeed) {
+    text("expenses.special_need.person", specialNeeds?.personAndExplanation ?? "");
+  }
+
+  if (specialNeeds?.otherSpecialNeed === true) {
+    text(
+      "expenses.special_need.other_description",
+      specialNeeds?.otherSpecialNeedDescription ?? "",
+    );
   }
 
   tri("health.has_current_coverage", health.currentCoverage.answer);

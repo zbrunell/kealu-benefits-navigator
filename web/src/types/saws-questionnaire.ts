@@ -220,6 +220,48 @@ export interface MedicalExpenseEntry {
   amountMonthly?: number;
 }
 
+/**
+ * Q14 Special Needs Expenses.
+ *
+ * The printed form asks six independent Yes/No questions under one heading —
+ * not one gateway with six details. A household can need a special diet and
+ * nothing else, so each is stored separately and a No to one says nothing
+ * about the others.
+ */
+export interface SpecialNeedsExpenses {
+  /** "Special diet prescribed by a doctor?" */
+  specialDiet: TriState;
+  /** "Special phone or other equipment?" */
+  specialPhoneOrEquipment: TriState;
+  /** "Housework (no one in the home can do it)?" */
+  housework: TriState;
+  /** "Very high use of utilities?" */
+  highUtilityUse: TriState;
+  /** "Special laundry service?" */
+  specialLaundry: TriState;
+  /** "Other special need? (specify)" */
+  otherSpecialNeed: TriState;
+  /**
+   * The two printed free-text lines: "Please list the name of the person with
+   * the special need and explain".
+   */
+  personAndExplanation: string;
+  otherSpecialNeedDescription: string;
+}
+
+export function emptySpecialNeedsExpenses(): SpecialNeedsExpenses {
+  return {
+    specialDiet: undefined,
+    specialPhoneOrEquipment: undefined,
+    housework: undefined,
+    highUtilityUse: undefined,
+    specialLaundry: undefined,
+    otherSpecialNeed: undefined,
+    personAndExplanation: '',
+    otherSpecialNeedDescription: '',
+  };
+}
+
 export interface ExpenseSections {
   household: GatewaySection<HouseholdExpenseEntry>;
   dependentCare: GatewaySection<CareExpenseEntry>;
@@ -228,6 +270,8 @@ export interface ExpenseSections {
   /** Q16: only asked when the household has an elderly or disabled member. */
   medical: GatewaySection<MedicalExpenseEntry>;
   specialNeeds: GatewaySection<HouseholdExpenseEntry>;
+  /** Q14: six independent special-need questions. */
+  specialNeedsExpenses: SpecialNeedsExpenses;
   otherTaxDeductible: GatewaySection<HouseholdExpenseEntry>;
 }
 
@@ -239,6 +283,7 @@ export function emptyExpenseSections(): ExpenseSections {
     spousalSupportPaid: emptyGateway(),
     medical: emptyGateway(),
     specialNeeds: emptyGateway(),
+    specialNeedsExpenses: emptySpecialNeedsExpenses(),
     otherTaxDeductible: emptyGateway(),
   };
 }

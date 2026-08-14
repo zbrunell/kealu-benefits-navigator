@@ -1306,6 +1306,115 @@ export function getRequiredApplicationQuestions(
     }
   }
 
+  /*
+   * Q4 interview preference and Q14 special-needs expenses.
+   *
+   * Both are sets of independent printed checkboxes rather than gateways, so
+   * each is asked on its own and a No to one says nothing about the others.
+   * Reads tolerate a missing field: a stored session predating these questions
+   * has no value there, and that must mean "still to ask", not a crash.
+   */
+  for (const spec of [
+    {
+      id: 'preferences.in_person_interview',
+      path: 'applicant.preferences.prefersInPersonInterview',
+      prompt: 'Would you prefer an in-person interview for CalFresh?',
+      value: application.preferences?.prefersInPersonInterview,
+    },
+    {
+      id: 'preferences.interview_disability_arrangements',
+      path: 'applicant.preferences.needsDisabilityInterviewArrangements',
+      prompt: 'Do you need other arrangements for the interview because of a disability?',
+      value: application.preferences?.needsDisabilityInterviewArrangements,
+    },
+  ]) {
+    totalCount += 1;
+
+    if (unanswered(spec.value)) {
+      push({
+        id: spec.id,
+        section: 'household',
+        kind: 'gateway',
+        prompt: spec.prompt,
+        path: spec.path,
+      });
+    } else {
+      answeredCount += 1;
+    }
+  }
+
+  const specialNeeds = questionnaire.expenses.specialNeedsExpenses;
+
+  for (const spec of [
+    { key: 'specialDiet', prompt: 'Does anyone need a special diet prescribed by a doctor?' },
+    { key: 'specialPhoneOrEquipment', prompt: 'Does anyone need a special phone or other equipment?' },
+    { key: 'housework', prompt: 'Does anyone need help with housework because no one at home can do it?' },
+    { key: 'highUtilityUse', prompt: 'Does a medical condition cause very high use of utilities?' },
+    { key: 'specialLaundry', prompt: 'Does anyone need a special laundry service?' },
+    { key: 'otherSpecialNeed', prompt: 'Is there any other special need caused by a medical condition?' },
+  ] as const) {
+    totalCount += 1;
+    const value = specialNeeds?.[spec.key];
+
+    if (unanswered(value)) {
+      push({
+        id: `expenses.special_needs.${spec.key}`,
+        section: 'expenses',
+        kind: 'gateway',
+        prompt: spec.prompt,
+        path: `expenses.specialNeedsExpenses.${spec.key}`,
+      });
+    } else {
+      answeredCount += 1;
+    }
+  }
+
+  /*
+   * The form gives one free-text line for "the name of the person with the
+   * special need and explain", so it is asked once any special need is Yes
+   * rather than per sub-question.
+   */
+  const anySpecialNeed = [
+    specialNeeds?.specialDiet,
+    specialNeeds?.specialPhoneOrEquipment,
+    specialNeeds?.housework,
+    specialNeeds?.highUtilityUse,
+    specialNeeds?.specialLaundry,
+    specialNeeds?.otherSpecialNeed,
+  ].some((value) => value === true);
+
+  if (anySpecialNeed) {
+    totalCount += 1;
+
+    if (!(specialNeeds?.personAndExplanation ?? '').trim()) {
+      push({
+        id: 'expenses.special_needs.person',
+        section: 'expenses',
+        kind: 'field',
+        prompt: 'Who has the special need, and what is it?',
+        path: 'expenses.specialNeedsExpenses.personAndExplanation',
+      });
+    } else {
+      answeredCount += 1;
+    }
+  }
+
+  if (specialNeeds?.otherSpecialNeed === true) {
+    totalCount += 1;
+
+    if (!(specialNeeds?.otherSpecialNeedDescription ?? '').trim()) {
+      push({
+        id: 'expenses.special_needs.other_description',
+        section: 'expenses',
+        kind: 'field',
+        prompt: 'What is the other special need?',
+        path: 'expenses.specialNeedsExpenses.otherSpecialNeedDescription',
+      });
+    } else {
+      answeredCount += 1;
+    }
+  }
+
   // ── Record gateways ─────────────────────────────────────────────────────
   for (const spec of RECORD_GATEWAYS) {
     // Medical expenses are only asked when the household includes an elderly or

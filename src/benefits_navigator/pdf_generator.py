@@ -1508,6 +1508,65 @@ class Saws2PlusFieldAdapter:
             "Check Box65 PG 13",
             "Check Box66 PG 13",
         ),
+
+        # -- Q14 Special Needs Expenses -------------------------------------
+        #
+        # Six independent printed questions under one heading, each with its
+        # own Yes/No pair at x=215.8 / x=249.2 (the "other" row sits to the
+        # right at x=443.8 / x=477.2). They are NOT a gateway plus details: a
+        # household can need a special diet and nothing else.
+        "expenses.special_need.diet": (
+            "Check Box9 PG 11",
+            "Check Box10 PG 11",
+        ),
+        "expenses.special_need.phone_or_equipment": (
+            "Check Box11 PG 11",
+            "Check Box12 PG 11",
+        ),
+        "expenses.special_need.housework": (
+            "Check Box13 PG 11",
+            "Check Box14 PG 11",
+        ),
+        "expenses.special_need.high_utility_use": (
+            "Check Box15 PG 11",
+            "Check Box16 PG 11",
+        ),
+        "expenses.special_need.laundry": (
+            "Check Box17 PG 11",
+            "Check Box18 PG 11",
+        ),
+        "expenses.special_need.other": (
+            "Check Box19 PG 11",
+            "Check Box20 PG 11",
+        ),
+    }
+
+    # -----------------------------------------------------------------------
+    # Q4 — interview preference
+    # -----------------------------------------------------------------------
+    #
+    # Two standalone printed checkboxes, not a Yes/No pair. Both sit at x=57.1
+    # with the same ~7pt baseline offset above their printed line, in printed
+    # order:
+    #
+    #   y=168.5 "prefer an in-person interview for CalFresh"  Check Box45, y=175.6
+    #   y=154.5 "need other arrangements due to a disability" Check Box46, y=161.4
+    #
+    # A False answer leaves the box unticked, exactly like an unanswered one:
+    # the form offers no way to say "no" beyond leaving it blank.
+    #
+    #: canonical key -> single checkbox destination
+    PAGE_2_INTERVIEW_PREFERENCE = {
+        "applicant.prefers_in_person_interview": "Check Box45 PG 2",
+        "applicant.needs_disability_interview_arrangements": "Check Box46 PG 2",
+    }
+
+    #: Q14's two printed free-text lines.
+    PAGE_11_SPECIAL_NEED_TEXT = {
+        # "Please list the name of the person with the special need and explain"
+        "expenses.special_need.person": "Text22 PG 11",
+        # The line beside "Other special need? (specify)".
+        "expenses.special_need.other_description": "Text21 PG 11",
     }
 
     #: Q21a "If yes, who:" — the text line beside the Yes/No pair, x=197.8.
@@ -1564,6 +1623,8 @@ class Saws2PlusFieldAdapter:
             ),
             PAGE_13_ELDERLY_SEPARATE_MEALS_WHO,
             *PAGE_13_TAX_TEXT.values(),
+            *PAGE_2_INTERVIEW_PREFERENCE.values(),
+            *PAGE_11_SPECIAL_NEED_TEXT.values(),
 
             # Page 1 applicant name.
             "Text1 PG 1",
@@ -2149,6 +2210,22 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # Q4 interview preference: standalone boxes, ticked only on an
+        # explicit Yes.
+        for key, pdf_field in self.PAGE_2_INTERVIEW_PREFERENCE.items():
+            if canonical_values.get(key) is True:
+                set_field(
+                    pdf_field,
+                    "/Yes",
+                )
+
+        # Q14's free-text lines.
+        for key, pdf_field in self.PAGE_11_SPECIAL_NEED_TEXT.items():
+            set_field(
+                pdf_field,
+                canonical_values.get(key),
+            )
 
         # Q23b-Q23e text lines. The canonical layer already suppresses these
         # when Q23 is not Yes, so nothing stale can arrive here.
