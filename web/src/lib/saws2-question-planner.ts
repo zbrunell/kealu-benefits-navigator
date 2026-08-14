@@ -1107,8 +1107,35 @@ export function getRequiredApplicationQuestions(
     }
   }
 
-  // Follow-up: spouse filing jointly only matters for a tax filer.
+  /*
+   * The tax-household block. Everything here hangs off Q23: a household that
+   * does not plan to file has no filer, no joint spouse and no dependents to
+   * describe, and the printed form says outright "if no, skip to 23f".
+   */
   if (questionnaire.health.taxFiler === true) {
+    // Q23b — who is filing.
+    totalCount += 1;
+
+    if (
+      !questionnaire.health.taxFilerMemberId &&
+      !questionnaire.health.taxFilerName.trim()
+    ) {
+      push({
+        id: 'health.tax_filer_person',
+        section: 'health',
+        kind: 'choice',
+        prompt: 'Who plans to file a federal income tax return?',
+        path: 'health.taxFilerMemberId',
+        options: memberOptions(application).map((member) => ({
+          value: member.id,
+          label: member.label,
+        })),
+      });
+    } else {
+      answeredCount += 1;
+    }
+
+    // Q23c — joint filing, and the spouse's name once the answer is Yes.
     totalCount += 1;
 
     if (unanswered(questionnaire.health.spouseFilingJointly)) {
@@ -1121,6 +1148,73 @@ export function getRequiredApplicationQuestions(
       });
     } else {
       answeredCount += 1;
+
+      if (
+        questionnaire.health.spouseFilingJointly === true &&
+        !questionnaire.health.spouseName.trim()
+      ) {
+        totalCount += 1;
+        push({
+          id: 'health.spouse_name',
+          section: 'health',
+          kind: 'field',
+          prompt: 'What is your spouse’s name?',
+          path: 'health.spouseName',
+        });
+      }
+    }
+
+    // Q23d — dependents, and Q23e's relationship for each one.
+    totalCount += 1;
+
+    if (unanswered(questionnaire.health.taxDependents.answer)) {
+      push({
+        id: 'health.tax_dependents',
+        section: 'health',
+        kind: 'gateway',
+        prompt: 'Will this person claim any dependents on their tax return?',
+        help:
+          'A tax dependent does not have to live with you — you can claim someone who lives elsewhere.',
+        path: 'health.taxDependents.answer',
+      });
+    } else {
+      answeredCount += 1;
+
+      if (questionnaire.health.taxDependents.answer === true) {
+        const dependents = safeEntries<{
+          name?: string;
+          memberId?: string;
+          relationshipToFiler?: string;
+        }>(questionnaire.health.taxDependents.entries);
+
+        if (dependents.length === 0) {
+          totalCount += 1;
+          push({
+            id: 'health.tax_dependents.records',
+            section: 'health',
+            kind: 'records',
+            prompt: 'Who will be claimed as a dependent?',
+            path: 'health.taxDependents.entries',
+            minimumRecords: 1,
+          });
+        }
+
+        dependents.forEach((dependent, index) => {
+          // Q23e is asked per dependent: the county wants the relationship of
+          // each claimed person, and a tax relationship is not the household
+          // relationship already recorded in Q6.
+          if (!dependent?.relationshipToFiler?.trim()) {
+            totalCount += 1;
+            push({
+              id: `health.tax_dependents.${index}.relationshipToFiler`,
+              section: 'health',
+              kind: 'field',
+              prompt: `How is dependent ${index + 1} related to the tax filer?`,
+              path: `health.taxDependents.entries.${index}.relationshipToFiler`,
+            });
+          }
+        });
+      }
     }
   }
 

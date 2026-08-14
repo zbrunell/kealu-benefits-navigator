@@ -976,6 +976,63 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     canonicalKey: 'health.tax_filer',
   },
   {
+    id: 'health.tax_filer_person',
+    saws: 'Q23b',
+    label: 'Name of the person planning to file a federal income tax return',
+    section: 'health',
+    tier: 3,
+    kind: 'enum',
+    support: 'askable',
+    pdf: 'mapped',
+    path: 'health.taxFilerMemberId',
+    canonicalKey: 'health.tax_filer_name',
+    note:
+      'A household member id where possible so the printed name stays in step ' +
+      'with the Q6 table; taxFilerName covers a filer outside the household.',
+  },
+  {
+    id: 'health.spouse_name',
+    saws: 'Q23c',
+    label: 'Name of the spouse filing jointly',
+    section: 'health',
+    tier: 3,
+    kind: 'text',
+    support: 'askable',
+    pdf: 'mapped',
+    path: 'health.spouseName',
+    canonicalKey: 'health.spouse_name',
+  },
+  {
+    id: 'health.tax_dependents',
+    saws: 'Q23d',
+    label: 'Will the filer claim any dependents on their tax return?',
+    section: 'health',
+    tier: 3,
+    kind: 'records',
+    support: 'askable',
+    pdf: 'mapped',
+    path: 'health.taxDependents.answer',
+    canonicalKey: 'health.has_tax_dependents',
+    note:
+      'A tax dependent need not be a household member, so each record carries ' +
+      'either a member id or a name rather than forcing a wrong identity.',
+  },
+  {
+    id: 'health.tax_dependent_relationships',
+    saws: 'Q23e',
+    label: 'How each dependent is related to the tax filer',
+    section: 'health',
+    tier: 3,
+    kind: 'text',
+    support: 'askable',
+    pdf: 'mapped',
+    canonicalKey: 'health.tax_dependent_relationships',
+    note:
+      'Collected per dependent and joined for the single printed line. A tax ' +
+      'relationship is not the Q6 household relationship and is never inferred ' +
+      'from it.',
+  },
+  {
     id: 'health.spouse_filing_jointly',
     saws: 'Q23c',
     label: 'Will this person file jointly with a spouse?',

@@ -1501,10 +1501,37 @@ class Saws2PlusFieldAdapter:
             "Check Box11 PG 13",
             "Check Box12 PG 13",
         ),
+
+        # Q23d "Will this person claim any dependents on their tax return?"
+        # Yes x=320.0 / No x=353.5.
+        "health.has_tax_dependents": (
+            "Check Box65 PG 13",
+            "Check Box66 PG 13",
+        ),
     }
 
     #: Q21a "If yes, who:" — the text line beside the Yes/No pair, x=197.8.
     PAGE_13_ELDERLY_SEPARATE_MEALS_WHO = "Text13 PG 13"
+
+    # -----------------------------------------------------------------------
+    # Q23b-Q23e — the tax household
+    # -----------------------------------------------------------------------
+    #
+    # Each of these text destinations sits alone on its printed line, so the
+    # widget rectangle identifies it without ambiguity:
+    #
+    #   Q23b "Name of person planning to file ..."   Text61 PG 13, x=321.3
+    #   Q23c "If yes, name of spouse: ..."           Text64 PG 13, x=177.5
+    #   Q23d "If yes, please list the name(s) ..."   Text67 PG 13, x=347.3
+    #   Q23e "How is the dependent(s) ... related"   Text68 PG 13, x=405.5
+    #
+    #: canonical key -> printed text destination
+    PAGE_13_TAX_TEXT = {
+        "health.tax_filer_name": "Text61 PG 13",
+        "health.spouse_name": "Text64 PG 13",
+        "health.tax_dependent_names": "Text67 PG 13",
+        "health.tax_dependent_relationships": "Text68 PG 13",
+    }
 
     # -----------------------------------------------------------------------
     # Verified as UNMAPPABLE — recorded so the search is not repeated
@@ -1536,6 +1563,7 @@ class Saws2PlusFieldAdapter:
                 for field in pair
             ),
             PAGE_13_ELDERLY_SEPARATE_MEALS_WHO,
+            *PAGE_13_TAX_TEXT.values(),
 
             # Page 1 applicant name.
             "Text1 PG 1",
@@ -2121,6 +2149,14 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # Q23b-Q23e text lines. The canonical layer already suppresses these
+        # when Q23 is not Yes, so nothing stale can arrive here.
+        for key, pdf_field in self.PAGE_13_TAX_TEXT.items():
+            set_field(
+                pdf_field,
+                canonical_values.get(key),
+            )
 
         # Q21a's "who" line, printed only when the answer is Yes.
         set_field(

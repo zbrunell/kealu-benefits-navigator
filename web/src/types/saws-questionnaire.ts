@@ -461,9 +461,27 @@ export interface EmployerCoverageEntry {
   premiumFrequency?: PayFrequency;
 }
 
+/**
+ * A person the tax filer will claim as a dependent (Q23d/Q23e).
+ *
+ * A tax dependent is not necessarily a household member — a filer can claim a
+ * child who lives with an ex-partner, or a parent living elsewhere. So the
+ * person is identified either by a household member id or, when they are
+ * outside the household, by name. Forcing an unrelated person into a member id
+ * would attach the wrong identity to a signed government form.
+ *
+ * A tax relationship is also not a household relationship: "son" in the Q6
+ * table and "son" on a tax return happen to coincide often, but the county asks
+ * Q23e separately, so it is collected separately rather than inferred.
+ */
 export interface TaxDependentEntry {
   id: string;
-  memberId: string;
+  /** Set when the dependent is someone already in the household. */
+  memberId?: string;
+  /** Used when the dependent is not a household member. */
+  name: string;
+  /** Q23e: how this dependent is related to the tax filer. */
+  relationshipToFiler: string;
 }
 
 export interface HealthAndTaxSections {
@@ -476,6 +494,17 @@ export interface HealthAndTaxSections {
   taxFiler: TriState;
   /** Whether a spouse will file jointly. */
   spouseFilingJointly: TriState;
+  /** Q23c follow-up: the spouse's name, printed beside the joint-filing answer. */
+  spouseName: string;
+  /**
+   * Q23b: who plans to file.
+   *
+   * A household member id where possible, so the printed name stays in step
+   * with the Q6 table. `taxFilerName` covers a filer outside the household.
+   */
+  taxFilerMemberId?: string;
+  taxFilerName: string;
+  /** Q23d/Q23e: dependents the filer will claim. */
   taxDependents: GatewaySection<TaxDependentEntry>;
   /** Permission to use tax data to renew coverage automatically. */
   renewalAuthorization: TriState;
@@ -489,6 +518,9 @@ export function emptyHealthAndTaxSections(): HealthAndTaxSections {
     coverageEnding: emptyGateway(),
     employerCoverage: emptyGateway(),
     retroactiveMedicalHelp: undefined,
+    spouseName: '',
+    taxFilerMemberId: undefined,
+    taxFilerName: '',
     taxFiler: undefined,
     spouseFilingJointly: undefined,
     taxDependents: emptyGateway(),

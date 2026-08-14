@@ -98,6 +98,7 @@ EXPECTED = {
         "Check Box11 PG 13",
         "Check Box12 PG 13",
     ),
+    "health.has_tax_dependents": ("Q23d", "Check Box65 PG 13", "Check Box66 PG 13"),
 }
 
 
@@ -368,3 +369,68 @@ def test_q6o_and_q6p_are_distinct_questions(available_fields):
     assert values.get("Check Box2 PG 8") == "/Yes"     # Q6p No
     assert "Check Box 51 PG 7" not in values
     assert "Check Box1 PG 8" not in values
+
+
+# ---------------------------------------------------------------------------
+# Q23b-Q23e — the tax household
+# ---------------------------------------------------------------------------
+
+
+def test_tax_text_destinations_exist_and_are_distinct(available_fields):
+    table = Saws2PlusFieldAdapter.PAGE_13_TAX_TEXT
+
+    assert set(table) == {
+        "health.tax_filer_name",
+        "health.spouse_name",
+        "health.tax_dependent_names",
+        "health.tax_dependent_relationships",
+    }
+    assert len(set(table.values())) == len(table)
+
+    for field in table.values():
+        assert field in available_fields, field
+
+
+def test_tax_household_lines_are_written(available_fields):
+    values = _map(
+        {
+            "health.tax_filer": True,
+            "health.tax_filer_name": "Maria Delgado",
+            "health.spouse_filing_jointly": True,
+            "health.spouse_name": "Luis Delgado",
+            "health.has_tax_dependents": True,
+            "health.tax_dependent_names": "Sofia Delgado, Mateo Ruiz",
+            "health.tax_dependent_relationships": "Daughter, Nephew",
+        },
+        available_fields,
+    )
+
+    assert values["Text61 PG 13"] == "Maria Delgado"
+    assert values["Text64 PG 13"] == "Luis Delgado"
+    assert values["Text67 PG 13"] == "Sofia Delgado, Mateo Ruiz"
+    assert values["Text68 PG 13"] == "Daughter, Nephew"
+    assert values.get("Check Box65 PG 13") == "/Yes"
+
+
+def test_no_tax_dependents_ticks_no_and_leaves_the_name_lines_blank(
+    available_fields,
+):
+    values = _map(
+        {"health.tax_filer": True, "health.has_tax_dependents": False},
+        available_fields,
+    )
+
+    assert values.get("Check Box66 PG 13") == "/Yes"
+    assert "Check Box65 PG 13" not in values
+    assert "Text67 PG 13" not in values
+    assert "Text68 PG 13" not in values
+
+
+def test_a_household_that_does_not_file_writes_no_tax_lines(available_fields):
+    """The canonical layer suppresses these when Q23 is No; nothing stale
+    can reach the adapter."""
+    values = _map({"health.tax_filer": False}, available_fields)
+
+    assert values.get("Check Box60 PG 13") == "/Yes"  # Q23 No
+    for field in Saws2PlusFieldAdapter.PAGE_13_TAX_TEXT.values():
+        assert field not in values, field

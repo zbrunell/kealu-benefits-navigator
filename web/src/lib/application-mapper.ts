@@ -1005,6 +1005,44 @@ function mapQuestionnaire(
   }
 
   // ── Health coverage and taxes ──────────────────────────────────────────
+  /*
+   * The tax household. Everything is emitted only while Q23 is Yes, so a
+   * household that stopped planning to file cannot leave a stale filer name or
+   * dependent list on the form.
+   */
+  if (health.taxFiler === true) {
+    text("health.tax_filer_name", health.taxFilerMemberId
+      ? personName(health.taxFilerMemberId)
+      : health.taxFilerName);
+
+    if (health.spouseFilingJointly === true) {
+      text("health.spouse_name", health.spouseName);
+    }
+
+    tri("health.has_tax_dependents", health.taxDependents.answer);
+
+    const dependents = activeEntries(health.taxDependents);
+
+    // The form prints one line for all dependent names and one for all
+    // relationships, so the collected records are joined rather than each
+    // needing its own printed row.
+    const names = dependents
+      .map((dependent) =>
+        dependent.memberId ? personName(dependent.memberId) : dependent.name,
+      )
+      .filter((name) => name.trim());
+
+    if (names.length > 0) text("health.tax_dependent_names", names.join(", "));
+
+    const relationships = dependents
+      .map((dependent) => dependent.relationshipToFiler)
+      .filter((relationship) => relationship.trim());
+
+    if (relationships.length > 0) {
+      text("health.tax_dependent_relationships", relationships.join(", "));
+    }
+  }
+
   tri("health.has_current_coverage", health.currentCoverage.answer);
   tri("health.coverage_ending", health.coverageEnding.answer);
   tri("health.has_employer_coverage", health.employerCoverage.answer);

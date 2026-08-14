@@ -212,27 +212,17 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
     saws: 'Q23b',
     label: 'Name of person planning to file',
     page: 19,
-    status: 'not_modeled',
-    note: 'The tax filer is not identified by name; only "does anyone file".',
   },
   { saws: 'Q23c', label: 'Will this person file jointly with a spouse?', page: 19 },
   {
     saws: 'Q23d',
     label: 'Will this person claim dependents?',
     page: 19,
-    status: 'not_modeled',
-    note:
-      'Tax dependents are not derivable from household relationships and are ' +
-      'not collected.',
   },
   {
     saws: 'Q23e',
     label: 'How the dependents relate to the tax filer',
     page: 19,
-    status: 'not_modeled',
-    note:
-      'Depends on Q23d, which is not collected. A tax relationship is not the ' +
-      'same as a household relationship and must not be inferred from one.',
   },
   { saws: 'Q23f', label: 'Consent to renew coverage from tax data', page: 19 },
   { saws: 'Q24', label: 'Household’s resources', page: 20 },
