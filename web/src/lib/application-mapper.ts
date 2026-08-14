@@ -829,6 +829,47 @@ function mapQuestionnaire(
   tri("household.students", circumstances.students.answer);
   tri("household.foster_care", circumstances.fosterCare.answer);
 
+  /*
+   * Q6j per-disabled-person detail. Emitted only while Q6i is Yes, so detail
+   * left behind by an earlier Yes cannot reach the form.
+   */
+  if (circumstances.disabilityLimitsActivities === true) {
+    for (const [index, detail] of activeEntries(
+      circumstances.disabilityDetails,
+    ).entries()) {
+      const prefix = `household.disability_detail.${index}`;
+
+      text(`${prefix}.member_id`, detail?.memberId ?? "");
+      text(`${prefix}.person_name`, personName(detail?.memberId ?? ""));
+      tri(`${prefix}.needs_care_for_others_to_work`, detail?.needsCareForOthersToWork);
+      tri(`${prefix}.needs_help_daily_living`, detail?.needsHelpWithDailyLiving);
+      tri(`${prefix}.works_with_medical_expenses`, detail?.worksWithMedicalExpenses);
+      tri(`${prefix}.in_medical_facility`, detail?.inMedicalFacility);
+
+      if (detail?.needsHelpWithDailyLiving === true) {
+        text(
+          `${prefix}.needs_help_daily_living_explanation`,
+          detail?.needsHelpWithDailyLivingExplanation ?? "",
+        );
+      }
+
+      if (detail?.worksWithMedicalExpenses === true) {
+        text(
+          `${prefix}.works_with_medical_expenses_explanation`,
+          detail?.worksWithMedicalExpensesExplanation ?? "",
+        );
+      }
+
+      if (detail?.inMedicalFacility === true) {
+        text(`${prefix}.medical_facility_name`, detail?.medicalFacilityName ?? "");
+      }
+
+      if (detail?.expectedDuration) {
+        text(`${prefix}.expected_duration`, detail.expectedDuration);
+      }
+    }
+  }
+
   // Newly modeled household circumstances.
   tri(
     "household.same_contact_information",

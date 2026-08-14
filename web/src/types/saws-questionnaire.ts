@@ -387,12 +387,51 @@ export interface FosterCareEntry {
   monthlyPayment?: number;
 }
 
+/** Q6j: how long a disability is expected to last, as the form offers it. */
+export type DisabilityDuration = 'thirty_days_or_more' | 'twelve_months_or_more';
+
+/**
+ * Q6j "Complete for each disabled person listed in question 6."
+ *
+ * Four independent Yes/No questions plus a duration choice, asked per disabled
+ * person. They are deliberately not collapsed into one `disabled` flag: the
+ * county uses them for different rules (dependent care, IHSS, the CalFresh
+ * medical deduction, institutional status), and the printed form asks each
+ * separately.
+ *
+ * `memberId` ties the answers to a stable household person, so a detail can
+ * never drift onto someone else when rows are reordered.
+ */
+export interface DisabilityDetailEntry {
+  id: string;
+  memberId: string;
+  /** "Does this person need care so that someone else can work or attend school?" */
+  needsCareForOthersToWork?: TriState;
+  /** "Does this person need help with activities of daily living...?" */
+  needsHelpWithDailyLiving?: TriState;
+  needsHelpWithDailyLivingExplanation: string;
+  /** "Does this person work and have medical expenses that help them keep working?" */
+  worksWithMedicalExpenses?: TriState;
+  worksWithMedicalExpensesExplanation: string;
+  /** "Is this person in a medical facility or nursing home?" */
+  inMedicalFacility?: TriState;
+  /**
+   * Name of the facility. Only the second printed block has a field for this —
+   * see the adapter's note — so for the first person it is manual work.
+   */
+  medicalFacilityName: string;
+  /** "Disability is expected to last:" 30 days or more / 12 months or more. */
+  expectedDuration?: DisabilityDuration;
+}
+
 export interface HouseholdCircumstances {
   authorizedRepresentative: GatewaySection<AuthorizedRepresentative>;
   militaryService: GatewaySection<MilitaryServiceEntry>;
   students: GatewaySection<StudentEntry>;
   absentParents: GatewaySection<AbsentParentEntry>;
   fosterCare: GatewaySection<FosterCareEntry>;
+  /** Q6j: per-disabled-person detail, unlocked by Q6i. */
+  disabilityDetails: GatewaySection<DisabilityDetailEntry>;
   /** Q6: has anyone in the household received public assistance before? */
   priorPublicAssistance: TriState;
   /** Everyone listed lives in California and intends to stay. */
@@ -467,6 +506,7 @@ export function emptyHouseholdCircumstances(): HouseholdCircumstances {
     students: emptyGateway(),
     absentParents: emptyGateway(),
     fosterCare: emptyGateway(),
+    disabilityDetails: emptyGateway(),
     priorPublicAssistance: undefined,
     californiaResident: undefined,
     plannedAbsence: undefined,

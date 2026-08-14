@@ -950,6 +950,26 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
       'disability status, this records activity limitation.',
   },
   {
+    id: 'circumstances.disability_details',
+    saws: 'Q6j',
+    label:
+      'Per-disabled-person detail: needs care so someone else can work, needs ' +
+      'help with daily living, works with medical expenses, lives in a medical ' +
+      'facility, and how long the disability is expected to last',
+    section: 'circumstances',
+    tier: 3,
+    kind: 'records',
+    support: 'askable',
+    pdf: 'mapped',
+    path: 'circumstances.disabilityDetails.answer',
+    canonicalKey: 'household.disability_detail.0.person_name',
+    note:
+      'Asked per person once Q6i is Yes, keyed by stable member id. The printed ' +
+      'page provides two person blocks; a third disabled person is manual work. ' +
+      'The first block has no facility-name widget at all — a form omission, so ' +
+      'that one value stays manual even when collected.',
+  },
+  {
     id: 'circumstances.needs_care_from_member',
     saws: 'Q6k',
     label:

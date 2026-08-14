@@ -1423,6 +1423,57 @@ export function getRequiredApplicationQuestions(
     }
   }
 
+  /*
+   * Q6j "Complete for each disabled person listed in question 6."
+   *
+   * Conditional on Q6i: the form only asks for per-person disability detail once
+   * the household has said someone has a disability that limits activities. The
+   * printed page provides two person blocks.
+   */
+  if (questionnaire.circumstances.disabilityLimitsActivities === true) {
+    const details = questionnaire.circumstances.disabilityDetails;
+
+    totalCount += 1;
+
+    if (safeEntries(details?.entries).length === 0) {
+      push({
+        id: 'circumstances.disability_details.records',
+        section: 'circumstances',
+        kind: 'records',
+        prompt: 'Who has the disability?',
+        path: 'circumstances.disabilityDetails.entries',
+        minimumRecords: 1,
+      });
+    } else {
+      answeredCount += 1;
+
+      safeEntries<Record<string, unknown>>(details?.entries).forEach(
+        (detail, index) => {
+          for (const field of [
+            { key: 'needsCareForOthersToWork', prompt: 'need care so someone else can work or attend school' },
+            { key: 'needsHelpWithDailyLiving', prompt: 'need help with activities of daily living' },
+            { key: 'worksWithMedicalExpenses', prompt: 'work and have medical expenses that help them keep working' },
+            { key: 'inMedicalFacility', prompt: 'live in a medical facility or nursing home' },
+          ]) {
+            totalCount += 1;
+
+            if (unanswered(detail?.[field.key] as TriState)) {
+              push({
+                id: `circumstances.disability_details.${index}.${field.key}`,
+                section: 'circumstances',
+                kind: 'gateway',
+                prompt: `Does person ${index + 1} ${field.prompt}?`,
+                path: `circumstances.disabilityDetails.entries.${index}.${field.key}`,
+              });
+            } else {
+              answeredCount += 1;
+            }
+          }
+        },
+      );
+    }
+  }
+
   // ── Record gateways ─────────────────────────────────────────────────────
   for (const spec of RECORD_GATEWAYS) {
     // Medical expenses are only asked when the household includes an elderly or

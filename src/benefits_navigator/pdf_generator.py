@@ -1602,6 +1602,71 @@ class Saws2PlusFieldAdapter:
     #: Q6a gateway. Yes x=385.5 / No x=428.4 on the printed line.
     PAGE_3_SAME_CONTACT_GATEWAY = ("Check Box90 PG 3", "Check Box91 PG 3")
 
+    # -----------------------------------------------------------------------
+    # Q6j — per-disabled-person detail blocks
+    # -----------------------------------------------------------------------
+    #
+    # Printed page 6 (PDF page 12) holds two person blocks, offset by about
+    # 111pt. The two-column layout interleaves in text extraction, so each
+    # column below was resolved by matching the printed label's x position to
+    # the widget rectangle within its own block:
+    #
+    #   label "Name of person"@36           block1 y=417.5 -> Text30   y=403.5
+    #                                       block2 y=306.5 -> Text43   y=292.5
+    #   "need care so someone else..."@36   block1 Yes/No glyphs y=326.2 @36/@69.5
+    #                                         -> Check Box39/40 (x=33.4/65.1)
+    #                                       block2 glyphs y=198.2 @36/@69.5
+    #                                         -> Check Box52/53 (x=32.5/64.3)
+    #   "need help with ADLs..."@266        block1 glyphs @333.5/@367.2
+    #                                         -> Check Box31/32 (x=332.2/363.0)
+    #                                       block2 -> Check Box44/45 (329.7/362.2)
+    #   "work and have medical expenses"    block1 glyphs @268.5/@302.0
+    #                                         -> Check Box36/37 (265.4/297.9)
+    #                                       block2 -> Check Box49/50 (263.7/296.3)
+    #   "in a medical facility..."@266      block1 glyphs @449.5/@483.2
+    #                                         -> Check Box41/42 (445.7/479.0)
+    #                                       block2 -> Check Box54/55 (445.7/479.0)
+    #   "Disability is expected to last"    block1 30d Check Box34, 12mo Box35
+    #                                       block2 30d "BOX 47 PG 6", 12mo Box48
+    #
+    # NOTE the literal field name "BOX 47 PG 6" — upper case, no "Check". The
+    # AcroForm key is whatever the form author typed.
+    #
+    # The facility-name line is asymmetric and that is a genuine form omission,
+    # not a gap in this mapping: block 2's label at y=218.5 x=266.3 has
+    # "Text55A PG 6" at y=201.1 x=266.2, but block 1's label at y=330.5 x=266.3
+    # has NO widget anywhere in its band. So a first-listed person's facility
+    # name has nowhere to be written and stays manual work.
+    #
+    #: one dict per printed person block
+    PAGE_6_DISABILITY_BLOCKS = (
+        {
+            "person_name": "Text30 PG 6",
+            "needs_care": ("Check Box39 PG 6", "Check Box40 PG 6"),
+            "daily_living": ("Check Box31 PG 6", "Check Box32 PG 6"),
+            "daily_living_explanation": "Text33 PG 6",
+            "works_with_medical": ("Check Box36 PG 6", "Check Box37 PG 6"),
+            "works_with_medical_explanation": "Text38 PG 6",
+            "in_facility": ("Check Box41 PG 6", "Check Box42 PG 6"),
+            # No writable widget exists for this block's facility name.
+            "facility_name": None,
+            "duration_thirty_days": "Check Box34 PG 6",
+            "duration_twelve_months": "Check Box35 PG 6",
+        },
+        {
+            "person_name": "Text43 PG 6",
+            "needs_care": ("Check Box52 PG 6", "Check Box53 PG 6"),
+            "daily_living": ("Check Box44 PG 6", "Check Box45 PG 6"),
+            "daily_living_explanation": "Text46 PG 6",
+            "works_with_medical": ("Check Box49 PG 6", "Check Box50 PG 6"),
+            "works_with_medical_explanation": "Text51 PG 6",
+            "in_facility": ("Check Box54 PG 6", "Check Box55 PG 6"),
+            "facility_name": "Text55A PG 6",
+            "duration_thirty_days": "BOX 47 PG 6",
+            "duration_twelve_months": "Check Box48 PG 6",
+        },
+    )
+
     #: Q14's two printed free-text lines.
     PAGE_11_SPECIAL_NEED_TEXT = {
         # "Please list the name of the person with the special need and explain"
@@ -1666,6 +1731,17 @@ class Saws2PlusFieldAdapter:
             *PAGE_13_TAX_TEXT.values(),
             *PAGE_2_INTERVIEW_PREFERENCE.values(),
             *PAGE_3_SAME_CONTACT_GATEWAY,
+            *(
+                field
+                for block in PAGE_6_DISABILITY_BLOCKS
+                for value in block.values()
+                for field in (
+                    value
+                    if isinstance(value, tuple)
+                    else (value,)
+                )
+                if field is not None
+            ),
             *(field for block in PAGE_3_CONTACT_BLOCKS for field in block),
             *PAGE_11_SPECIAL_NEED_TEXT.values(),
 
@@ -2253,6 +2329,90 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # -------------------------------------------------------------------
+        # Q6j — per-disabled-person detail
+        # -------------------------------------------------------------------
+        for block_index, block in enumerate(
+            self.PAGE_6_DISABILITY_BLOCKS
+        ):
+            prefix = (
+                f"household.disability_detail.{block_index}"
+            )
+
+            if not any(
+                key.startswith(f"{prefix}.")
+                for key in canonical_values
+            ):
+                continue
+
+            set_field(
+                block["person_name"],
+                canonical_values.get(f"{prefix}.person_name"),
+            )
+
+            for canonical_suffix, pair_key in (
+                ("needs_care_for_others_to_work", "needs_care"),
+                ("needs_help_daily_living", "daily_living"),
+                ("works_with_medical_expenses", "works_with_medical"),
+                ("in_medical_facility", "in_facility"),
+            ):
+                value = canonical_values.get(
+                    f"{prefix}.{canonical_suffix}"
+                )
+
+                if not isinstance(
+                    value,
+                    bool,
+                ):
+                    continue
+
+                yes_field, no_field = block[pair_key]
+                set_field(
+                    yes_field if value else no_field,
+                    "/Yes",
+                )
+
+            set_field(
+                block["daily_living_explanation"],
+                canonical_values.get(
+                    f"{prefix}.needs_help_daily_living_explanation"
+                ),
+            )
+
+            set_field(
+                block["works_with_medical_explanation"],
+                canonical_values.get(
+                    f"{prefix}.works_with_medical_expenses_explanation"
+                ),
+            )
+
+            # Only the second printed block has a facility-name field.
+            if block["facility_name"] is not None:
+                set_field(
+                    block["facility_name"],
+                    canonical_values.get(
+                        f"{prefix}.medical_facility_name"
+                    ),
+                )
+
+            duration = str(
+                canonical_values.get(
+                    f"{prefix}.expected_duration"
+                )
+                or ""
+            ).strip()
+
+            if duration == "thirty_days_or_more":
+                set_field(
+                    block["duration_thirty_days"],
+                    "/Yes",
+                )
+            elif duration == "twelve_months_or_more":
+                set_field(
+                    block["duration_twelve_months"],
+                    "/Yes",
+                )
 
         # Q4 interview preference: standalone boxes, ticked only on an
         # explicit Yes.

@@ -135,8 +135,6 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
     saws: 'Q6j',
     label: 'Details for each disabled person',
     page: 12,
-    status: 'not_modeled',
-    note: 'Disability detail rows are not collected.',
   },
   {
     saws: 'Q6k',

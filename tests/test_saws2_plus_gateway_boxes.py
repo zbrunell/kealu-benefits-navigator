@@ -506,3 +506,112 @@ def test_q14_answers_are_independent(available_fields):
         "Check Box19 PG 11", "Check Box20 PG 11",
     ):
         assert field not in values, field
+
+
+# ---------------------------------------------------------------------------
+# Q6j — per-disabled-person detail blocks
+# ---------------------------------------------------------------------------
+
+DIS = Saws2PlusFieldAdapter.PAGE_6_DISABILITY_BLOCKS
+
+
+def _detail(index: int, **fields) -> dict:
+    prefix = f"household.disability_detail.{index}"
+    return {f"{prefix}.{k}": v for k, v in fields.items()}
+
+
+def test_q6j_every_destination_exists_and_is_unique(available_fields):
+    seen: set[str] = set()
+
+    for block in DIS:
+        for value in block.values():
+            for field in (value if isinstance(value, tuple) else (value,)):
+                if field is None:
+                    continue
+                assert field in available_fields, field
+                assert field not in seen, f"{field} used twice"
+                seen.add(field)
+
+
+def test_q6j_preserves_the_forms_literal_field_name(available_fields):
+    """The second block's 30-day box is named "BOX 47 PG 6" — upper case, no
+    "Check". The AcroForm key is whatever the form author typed."""
+    assert DIS[1]["duration_thirty_days"] == "BOX 47 PG 6"
+    assert "BOX 47 PG 6" in available_fields
+
+
+def test_q6j_first_person_fills_the_first_block(available_fields):
+    values = _map(
+        _detail(
+            0,
+            person_name="Rosa Marin",
+            needs_care_for_others_to_work=True,
+            needs_help_daily_living=False,
+            works_with_medical_expenses=True,
+            works_with_medical_expenses_explanation="Wheelchair",
+            in_medical_facility=False,
+            expected_duration="twelve_months_or_more",
+        ),
+        available_fields,
+    )
+
+    assert values["Text30 PG 6"] == "Rosa Marin"
+    assert values.get("Check Box39 PG 6") == "/Yes"   # needs care: Yes
+    assert values.get("Check Box32 PG 6") == "/Yes"   # daily living: No
+    assert "Check Box31 PG 6" not in values
+    assert values.get("Check Box36 PG 6") == "/Yes"   # works+medical: Yes
+    assert values["Text38 PG 6"] == "Wheelchair"
+    assert values.get("Check Box42 PG 6") == "/Yes"   # in facility: No
+    assert values.get("Check Box35 PG 6") == "/Yes"   # 12 months or more
+    assert "Check Box34 PG 6" not in values           # 30 days unticked
+
+    # The second block is untouched.
+    assert "Text43 PG 6" not in values
+
+
+def test_q6j_second_person_fills_the_second_block(available_fields):
+    plan = {
+        **_detail(0, person_name="Rosa Marin"),
+        **_detail(1, person_name="Ana Ruiz", in_medical_facility=True,
+                  medical_facility_name="Sunrise Care", expected_duration="thirty_days_or_more"),
+    }
+
+    values = _map(plan, available_fields)
+
+    assert values["Text30 PG 6"] == "Rosa Marin"
+    assert values["Text43 PG 6"] == "Ana Ruiz"
+    assert values.get("Check Box54 PG 6") == "/Yes"
+    assert values["Text55A PG 6"] == "Sunrise Care"
+    assert values.get("BOX 47 PG 6") == "/Yes"
+
+
+def test_q6j_first_block_facility_name_has_no_widget(available_fields):
+    """A genuine form omission: block 1's facility-name label has no widget, so
+    the value stays manual rather than being written somewhere approximate."""
+    assert DIS[0]["facility_name"] is None
+
+    values = _map(
+        _detail(0, in_medical_facility=True, medical_facility_name="Sunrise Care"),
+        available_fields,
+    )
+
+    assert values.get("Check Box41 PG 6") == "/Yes"
+    assert "Sunrise Care" not in values.values()
+
+
+def test_q6j_unanswered_sub_questions_leave_both_boxes_blank(available_fields):
+    values = _map(_detail(0, person_name="Rosa Marin"), available_fields)
+
+    for block_key in ("needs_care", "daily_living", "works_with_medical", "in_facility"):
+        for field in DIS[0][block_key]:
+            assert field not in values, field
+
+
+def test_q6j_writes_nothing_without_a_record(available_fields):
+    values = _map({}, available_fields)
+
+    for block in DIS:
+        for value in block.values():
+            for field in (value if isinstance(value, tuple) else (value,)):
+                if field is not None:
+                    assert field not in values, field
