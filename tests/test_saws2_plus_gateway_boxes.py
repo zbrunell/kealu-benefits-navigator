@@ -711,3 +711,153 @@ def test_q25_writes_nothing_when_unanswered(available_fields):
     values = _map({}, available_fields)
     for field in (*PP_CATS.values(), *(f for r in PP_ROWS for f in r)):
         assert field not in values, field
+
+
+# ---------------------------------------------------------------------------
+# Appendix E — vehicle detail, three printed columns
+# ---------------------------------------------------------------------------
+
+APX_E = Saws2PlusFieldAdapter.APPENDIX_E_VEHICLES
+
+
+def _apx_e_fields(column: dict):
+    for value in column.values():
+        if isinstance(value, dict):
+            yield from value.values()
+        elif isinstance(value, tuple):
+            yield from value
+        else:
+            yield value
+
+
+def test_appendix_e_destinations_exist_and_are_unique(available_fields):
+    seen: set[str] = set()
+
+    for column in APX_E:
+        for field in _apx_e_fields(column):
+            assert field in available_fields, field
+            assert field not in seen, f"{field} used twice"
+            seen.add(field)
+
+
+def test_appendix_e_has_three_columns_with_the_same_shape():
+    assert len(APX_E) == 3
+    assert {k for k in APX_E[0]} == {k for k in APX_E[1]} == {k for k in APX_E[2]}
+
+
+def test_appendix_e_owner_and_user_are_separate_columns(available_fields):
+    """The form asks for the owner and the user as two different columns."""
+    values = _map(
+        {
+            "appendices.vehicle.0.owner_name": "Maria Delgado",
+            "appendices.vehicle.0.user_name": "Luis Delgado",
+        },
+        available_fields,
+    )
+
+    assert values["Text1 appxE"] == "Maria Delgado"
+    assert values["Text4 appxE"] == "Luis Delgado"
+
+
+def test_appendix_e_first_vehicle_fills_the_first_column(available_fields):
+    values = _map(
+        {
+            "appendices.vehicle.0.owner_name": "Maria Delgado",
+            "appendices.vehicle.0.year_make_model": "2012 Toyota Corolla",
+            "appendices.vehicle.0.license_number": "7ABC123",
+            "appendices.vehicle.0.is_gift_donation_or_transfer": True,
+            "appendices.vehicle.0.transfer_kind": "family_transfer",
+            "appendices.vehicle.0.fair_market_value": 4500,
+            "appendices.vehicle.0.fair_market_value_source": "kelly_blue_book",
+            "appendices.vehicle.0.amount_owed": 0,
+            "appendices.vehicle.0.amount_owed_source": "last_bill",
+            "appendices.vehicle.0.is_leased": False,
+            "appendices.vehicle.0.used_for_exempt_purpose": False,
+            "appendices.vehicle.0.used_by_child_under_18": False,
+        },
+        available_fields,
+    )
+
+    assert values["Text28 appx E"] == "2012 Toyota Corolla"
+    assert values["Text31 appx E"] == "7ABC123"
+    assert values.get("Check Box13 appx E") == "/Yes"    # transfer: Yes
+    assert values.get("Check Box15 appx E") == "/Yes"    # family transfer
+    assert "Check Box14 appx E" not in values            # not a gift
+    assert values["Text34 appx E"] == "4500"
+    assert values.get("Check Box41 appx E") == "/Yes"    # Kelly blue book
+    assert values.get("Check Box67 appx E") == "/Yes"    # last bill
+    assert values.get("Check Box83 appx E") == "/Yes"    # leased: No
+    assert values.get("Check Box2 appx E") == "/Yes"     # exempt use: No
+    assert values.get("Check Box8 appx E") == "/Yes"     # child use: No
+
+    # Columns two and three untouched.
+    for column in APX_E[1:]:
+        for field in _apx_e_fields(column):
+            assert field not in values, field
+
+
+def test_appendix_e_second_and_third_vehicles_use_their_own_columns(
+    available_fields,
+):
+    values = _map(
+        {
+            "appendices.vehicle.0.owner_name": "A",
+            "appendices.vehicle.1.owner_name": "B",
+            "appendices.vehicle.2.owner_name": "C",
+        },
+        available_fields,
+    )
+
+    assert values["Text1 appxE"] == "A"
+    assert values["Text2 appxE"] == "B"
+    assert values["Text3 appxE"] == "C"
+
+
+def test_appendix_e_unknown_value_boxes(available_fields):
+    values = _map(
+        {
+            "appendices.vehicle.0.owner_name": "Maria",
+            "appendices.vehicle.0.fair_market_value_unknown": True,
+            "appendices.vehicle.0.amount_owed_unknown": True,
+        },
+        available_fields,
+    )
+
+    assert values.get("Check Box35 appx E") == "/Yes"
+    assert values.get("Check Box62 appx E") == "/Yes"
+
+
+def test_appendix_e_other_source_text(available_fields):
+    values = _map(
+        {
+            "appendices.vehicle.0.owner_name": "Maria",
+            "appendices.vehicle.0.fair_market_value_source": "other",
+            "appendices.vehicle.0.fair_market_value_source_other": "Dealer quote",
+            "appendices.vehicle.0.amount_owed_source": "other",
+            "appendices.vehicle.0.amount_owed_source_other": "Credit union app",
+        },
+        available_fields,
+    )
+
+    assert values.get("Check Box44 appx E") == "/Yes"
+    assert values["Text45 appx E"] == "Dealer quote"
+    assert values.get("Check Box70 appx E") == "/Yes"
+    assert values["Text71 appx E"] == "Credit union app"
+
+
+def test_appendix_e_unresolved_boxes_are_never_written(available_fields):
+    """Check Box46/53/60 have no label coordinate matching resolves."""
+    plan = {f"appendices.vehicle.{i}.owner_name": "X" for i in range(3)}
+    values = _map(plan, available_fields)
+
+    for field in ("Check Box46 appx E", "Check Box53 appx E", "Check Box60 appx E"):
+        assert field not in values, field
+        assert field not in Saws2PlusFieldAdapter.SAFE_FIELDS, field
+
+
+def test_appendix_e_writes_nothing_without_a_vehicle(available_fields):
+    values = _map({}, available_fields)
+
+    for column in APX_E:
+        for field in _apx_e_fields(column):
+            assert field not in values, field

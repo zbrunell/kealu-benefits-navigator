@@ -1054,6 +1054,67 @@ function mapQuestionnaire(
    * independent: the form asks the applicant to tick every category they hold
    * and then describe individual items.
    */
+  /*
+   * Appendix E vehicle detail. Emitted only while Q26 is Yes, so detail left
+   * behind by an earlier Yes cannot reach the printed appendix.
+   */
+  if (resources.vehicles?.answer === true) {
+    for (const [index, vehicle] of activeEntries(
+      application.questionnaire.appendices?.vehicleDetails,
+    ).entries()) {
+      const prefix = `appendices.vehicle.${index}`;
+
+      text(`${prefix}.owner_name`, personName(vehicle?.ownerMemberId ?? ""));
+      text(`${prefix}.user_name`, personName(vehicle?.userMemberId ?? ""));
+      text(`${prefix}.year_make_model`, vehicle?.yearMakeModel ?? "");
+      text(`${prefix}.license_number`, vehicle?.vehicleLicenseNumber ?? "");
+      tri(`${prefix}.used_for_exempt_purpose`, vehicle?.usedForExemptPurpose);
+      tri(`${prefix}.used_by_child_under_18`, vehicle?.usedByChildUnder18);
+      tri(`${prefix}.is_gift_donation_or_transfer`, vehicle?.isGiftDonationOrTransfer);
+      tri(`${prefix}.is_leased`, vehicle?.isLeased);
+
+      // The transfer kind is printed only when the transfer answer is Yes.
+      if (vehicle?.isGiftDonationOrTransfer === true && vehicle?.transferKind) {
+        text(`${prefix}.transfer_kind`, vehicle.transferKind);
+      }
+
+      if (vehicle?.fairMarketValue !== undefined) {
+        fields.push(entry(`${prefix}.fair_market_value`, vehicle.fairMarketValue));
+      }
+
+      if (vehicle?.fairMarketValueUnknown === true) {
+        fields.push(entry(`${prefix}.fair_market_value_unknown`, true));
+      }
+
+      if (vehicle?.fairMarketValueSource) {
+        text(`${prefix}.fair_market_value_source`, vehicle.fairMarketValueSource);
+
+        if (vehicle.fairMarketValueSource === "other") {
+          text(
+            `${prefix}.fair_market_value_source_other`,
+            vehicle?.fairMarketValueSourceOther ?? "",
+          );
+        }
+      }
+
+      if (vehicle?.amountOwed !== undefined) {
+        fields.push(entry(`${prefix}.amount_owed`, vehicle.amountOwed));
+      }
+
+      if (vehicle?.amountOwedUnknown === true) {
+        fields.push(entry(`${prefix}.amount_owed_unknown`, true));
+      }
+
+      if (vehicle?.amountOwedSource) {
+        text(`${prefix}.amount_owed_source`, vehicle.amountOwedSource);
+
+        if (vehicle.amountOwedSource === "other") {
+          text(`${prefix}.amount_owed_source_other`, vehicle?.amountOwedSourceOther ?? "");
+        }
+      }
+    }
+  }
+
   tri("resources.has_personal_property", resources.personalProperty?.answer);
 
   if (resources.personalProperty?.answer === true) {

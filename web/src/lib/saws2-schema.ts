@@ -1495,6 +1495,27 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     note: 'Appendix B destinations not yet reviewed.',
   },
   {
+    id: 'appendices.vehicle_details',
+    saws: 'Appendix E',
+    label:
+      'Vehicle detail: owner, user, year/make/model, licence number, gift or ' +
+      'transfer, fair market value and its source, amount owed and its source, ' +
+      'lease, and exempt or child-related use',
+    section: 'appendices',
+    tier: 3,
+    kind: 'records',
+    support: 'askable',
+    pdf: 'mapped',
+    path: 'appendices.vehicleDetails.answer',
+    canonicalKey: 'appendices.vehicle.0.owner_name',
+    note:
+      'Applies where the printed page says so: cash aid, or health care with ' +
+      'someone 65 or older or disabled. Owner and user are separate columns on ' +
+      'the form and stay separate here. Three printed columns; a fourth vehicle ' +
+      'is manual work. Check Box46/53/60 have no label that coordinate matching ' +
+      'resolves and are deliberately left unwritten.',
+  },
+  {
     id: 'appendices.employment_history',
     saws: 'Appendix D',
     label: 'Employment history for CalWORKs',

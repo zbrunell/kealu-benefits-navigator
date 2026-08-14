@@ -1514,6 +1514,62 @@ export function getRequiredApplicationQuestions(
     }
   }
 
+  /*
+   * Appendix E vehicle detail.
+   *
+   * The printed page states its own applicability: required for cash aid, and
+   * for health care only where someone applying is 65 or older or disabled. The
+   * existing detailedVehicleInformationRequired helper already encodes that, so
+   * this asks only when it holds and Q26 said there is a vehicle.
+   */
+  if (
+    questionnaire.resources.vehicles?.answer === true &&
+    appendixEApplies(application)
+  ) {
+    const vehicles = questionnaire.appendices.vehicleDetails;
+
+    totalCount += 1;
+
+    if (safeEntries(vehicles?.entries).length === 0) {
+      push({
+        id: 'appendices.vehicle_details.records',
+        section: 'appendices',
+        kind: 'records',
+        prompt: 'Tell us about each vehicle',
+        help: 'Appendix E asks for the owner, value and use of every vehicle.',
+        path: 'appendices.vehicleDetails.entries',
+        minimumRecords: 1,
+      });
+    } else {
+      answeredCount += 1;
+
+      safeEntries<Record<string, unknown>>(vehicles?.entries).forEach(
+        (vehicle, index) => {
+          for (const field of [
+            { key: 'isGiftDonationOrTransfer', prompt: 'a gift, donation or family transfer' },
+            { key: 'isLeased', prompt: 'leased' },
+            { key: 'usedForExemptPurpose', prompt: 'used as a home, for self-employment, to transport a disabled member, or to fetch fuel or water' },
+            { key: 'usedByChildUnder18', prompt: 'used by a child under 18 for school, work, training or a job search' },
+          ]) {
+            totalCount += 1;
+
+            if (unanswered(vehicle?.[field.key] as TriState)) {
+              push({
+                id: `appendices.vehicle_details.${index}.${field.key}`,
+                section: 'appendices',
+                kind: 'gateway',
+                prompt: `Is vehicle ${index + 1} ${field.prompt}?`,
+                path: `appendices.vehicleDetails.entries.${index}.${field.key}`,
+              });
+            } else {
+              answeredCount += 1;
+            }
+          }
+        },
+      );
+    }
+  }
+
   // ── Record gateways ─────────────────────────────────────────────────────
   for (const spec of RECORD_GATEWAYS) {
     // Medical expenses are only asked when the household includes an elderly or
@@ -1753,11 +1809,15 @@ export function getActiveAppendices(
     });
   }
 
+  /*
+   * Appendix E attaches as soon as the household says it has a vehicle. It used
+   * to require a filled Q26 row, which meant the appendix could not be offered
+   * until the applicant had already described a vehicle — and left the appendix
+   * list disagreeing with the questionnaire about whether it applied.
+   */
   if (
-    activeEntries(questionnaire.resources.vehicles).length > 0 &&
-    (questionnaire.appendices.detailedVehicleInformationRequired === true ||
-      application.selectedPrograms.includes('calworks') ||
-      householdHasElderlyOrDisabledMember(application))
+    questionnaire.resources.vehicles?.answer === true &&
+    appendixEApplies(application)
   ) {
     active.push({
       id: 'E',
@@ -1768,6 +1828,25 @@ export function getActiveAppendices(
   }
 
   return active;
+}
+
+/**
+ * Appendix E: detailed vehicle information is required.
+ *
+ * The printed page states its own rule at the top: required for cash aid, and
+ * for health care only where someone applying is 65 or older or disabled. This
+ * is the single definition — the appendix list and the questionnaire both use
+ * it, so they cannot disagree about whether the appendix is active.
+ */
+export function appendixEApplies(
+  application: Saws2PlusApplicationData,
+): boolean {
+  return (
+    application.questionnaire.appendices?.detailedVehicleInformationRequired ===
+      true ||
+    application.selectedPrograms.includes('calworks') ||
+    householdHasElderlyOrDisabledMember(application)
+  );
 }
 
 /** Appendix D: cash aid requested and at least two adults applying. */

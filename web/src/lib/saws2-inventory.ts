@@ -268,10 +268,6 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
     saws: 'Appendix E',
     label: 'Detailed vehicle information',
     page: 28,
-    status: 'not_modeled',
-    note:
-      'Activated by Q26 for CalWORKs. Owner, valuation, debt and use details ' +
-      'are not collected.',
   },
 ] as const;
 

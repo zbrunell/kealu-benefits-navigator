@@ -768,8 +768,71 @@ export interface EmploymentHistoryEntry {
 }
 
 /** Appendix D is only requested for cash aid with two or more adults applying. */
+/** Appendix E: how a gift/donation vehicle was transferred. */
+export type VehicleTransferKind = 'gift' | 'donation' | 'family_transfer';
+
+/** Appendix E: how the applicant established the vehicle's fair market value. */
+export type FairMarketValueSource =
+  | 'for_sale_ads'
+  | 'kelly_blue_book'
+  | 'mechanic'
+  | 'purchase_price'
+  | 'other';
+
+/** Appendix E: how the applicant established the amount still owed. */
+export type AmountOwedSource =
+  | 'last_bill'
+  | 'lender_statement'
+  | 'estimate'
+  | 'other';
+
+/**
+ * One Appendix E vehicle.
+ *
+ * Appendix E applies when the household is applying for cash aid, or for health
+ * care where someone is 65 or older or disabled — the printed page says so at
+ * the top. Each vehicle is its own record so the three printed columns cannot
+ * blend two vehicles together.
+ *
+ * `ownerMemberId` and `userMemberId` are separate on purpose: the form asks for
+ * the owner and the person who uses the vehicle as two different columns.
+ */
+export interface VehicleDetailEntry {
+  id: string;
+  /** "Owner of vehicle". */
+  ownerMemberId: string;
+  /** "Name of person who uses this vehicle" — often, but not always, the owner. */
+  userMemberId: string;
+  /** "Year/Make/Model" — one printed column, so one value. */
+  yearMakeModel: string;
+  vehicleLicenseNumber: string;
+  /** "Is this vehicle: used as a home / for self-employment / ..." group answer. */
+  usedForExemptPurpose?: TriState;
+  /** "Is this vehicle used by a child under age 18 to: ..." group answer. */
+  usedByChildUnder18?: TriState;
+  /** "Is this vehicle a gift, donation, or family transfer?" */
+  isGiftDonationOrTransfer?: TriState;
+  transferKind?: VehicleTransferKind;
+  /** "Estimated value of vehicle ... Fair Market Value." */
+  fairMarketValue?: number;
+  /** The printed "I don't know / I need help finding out the value" box. */
+  fairMarketValueUnknown?: boolean;
+  fairMarketValueSource?: FairMarketValueSource;
+  fairMarketValueSourceOther: string;
+  /** "How much I owe on the vehicle". */
+  amountOwed?: number;
+  /** The printed "I don't know / I need help finding out the amount owed" box. */
+  amountOwedUnknown?: boolean;
+  amountOwedSource?: AmountOwedSource;
+  amountOwedSourceOther: string;
+  /** "Is this a leased vehicle?" */
+  isLeased?: TriState;
+}
+
 export interface AppendixSections {
   employmentHistory: GatewaySection<EmploymentHistoryEntry>;
+  /** Appendix E vehicle detail, one record per vehicle. */
+  vehicleDetails: GatewaySection<VehicleDetailEntry>;
   /** Appendix B detail, only when americanIndianOrAlaskaNative is true. */
   tribalName: string;
   /** Appendix E: extra vehicle detail for 65+/disabled or cash aid. */
@@ -779,6 +842,7 @@ export interface AppendixSections {
 export function emptyAppendixSections(): AppendixSections {
   return {
     employmentHistory: emptyGateway(),
+    vehicleDetails: emptyGateway(),
     tribalName: '',
     detailedVehicleInformationRequired: undefined,
   };

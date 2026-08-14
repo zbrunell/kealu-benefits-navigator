@@ -1726,6 +1726,155 @@ class Saws2PlusFieldAdapter:
          "Text66 PG 14", "Text67 PG 14"),
     )
 
+    # -----------------------------------------------------------------------
+    # Appendix E — vehicle detail, three printed columns
+    # -----------------------------------------------------------------------
+    #
+    # The appendix is a three-column table (one column per vehicle) at
+    # x≈167/304/441 for text and x≈169-187/308-332/443-463 for boxes. Each
+    # printed row label sits in the left margin at x≈39-40 and its option glyphs
+    # in column 1 at x≈170-187, which is what pairs label to widget:
+    #
+    #   "Owner of vehicle"                       y=632.0  -> Text1/2/3   y=635.7
+    #   "Name of person who uses this vehicle"   y=614.0  -> Text4/5/6   y=613.5
+    #   "Is this vehicle: used as a home / ..."  y=589.3, Yes glyph y=590.5 x=186.5
+    #                                            -> Check Box1/2         y=595.4
+    #   "Is this vehicle used by a child ..."    y=491.4, Yes glyph y=489.8
+    #                                            -> Check Box7/8         y=495.9
+    #   "Is this vehicle a gift, donation ..."   y=414.9; Yes y=410.5,
+    #        Gift y=398.5, Family Transfer y=386.5, all x=186.5
+    #                                            -> Yes Box13 / No Box16,
+    #                                               Gift Box14 / Donation Box17,
+    #                                               Family Transfer Box15
+    #   "Year/Make/Model"                        y=323.0  -> Text28/29/30 y=324.1
+    #   "Vehicle License Number"                 y=301.8  -> Text31/32/33 y=301.9
+    #   "Estimated value ... Fair Market Value"  $ y=274.5 -> Text34      y=280.9
+    #        "I don't know/I need help" y=264.5   -> Check Box35          y=269.7
+    #   "How I found out the Fair Market Value"  For sale ads y=235.8,
+    #        Kelly blue Book y=225.8, Mechanic y=215.8,
+    #        Purchase price y=205.8, Other y=195.8
+    #                                            -> Box40/41/42/43/44 + Text45
+    #   "How much I owe on the vehicle"          $ y=178.5 -> Text61      y=182.2
+    #        "I don't know/I need help" y=168.5   -> Check Box62          y=173.6
+    #   "What I used to find the amount owed"    Last Bill y=139.0,
+    #        Lender statement y=129.0, Estimate y=119.0, Other y=109.0
+    #                                            -> Box67/68/69/70 + Text71
+    #   "Is this a leased vehicle?"              Yes glyph y=88.8 x=187.5
+    #                                            -> Check Box82/83        y=93.2
+    #
+    # Check Box46 / Box53 / Box60 (y=241.4, at a second x within each column)
+    # have no printed label that coordinate matching resolves, so they are left
+    # out rather than guessed.
+    #
+    # The sub-options of the two "Is this vehicle:" groups are printed with "G"
+    # bullet glyphs, not widgets, so only each group's Yes/No pair is fillable.
+    #
+    #: one dict per printed vehicle column
+    APPENDIX_E_VEHICLES = (
+        {
+            "owner": "Text1 appxE",
+            "user": "Text4 appxE",
+            "exempt_use": ("Check Box1 appx E", "Check Box2 appx E"),
+            "child_use": ("Check Box7 appx E", "Check Box8 appx E"),
+            "transfer": ("Check Box13 appx E", "Check Box16 appx E"),
+            "transfer_kind": {
+                "gift": "Check Box14 appx E",
+                "donation": "Check Box17 appx E",
+                "family_transfer": "Check Box15 appx E",
+            },
+            "year_make_model": "Text28 appx E",
+            "license": "Text31 appx E",
+            "value": "Text34 appx E",
+            "value_unknown": "Check Box35 appx E",
+            "value_source": {
+                "for_sale_ads": "Check Box40 appx E",
+                "kelly_blue_book": "Check Box41 appx E",
+                "mechanic": "Check Box42 appx E",
+                "purchase_price": "Check Box43 appx E",
+                "other": "Check Box44 appx E",
+            },
+            "value_source_other": "Text45 appx E",
+            "owed": "Text61 appx E",
+            "owed_unknown": "Check Box62 appx E",
+            "owed_source": {
+                "last_bill": "Check Box67 appx E",
+                "lender_statement": "Check Box68 appx E",
+                "estimate": "Check Box69 appx E",
+                "other": "Check Box70 appx E",
+            },
+            "owed_source_other": "Text71 appx E",
+            "leased": ("Check Box82 appx E", "Check Box83 appx E"),
+        },
+        {
+            "owner": "Text2 appxE",
+            "user": "Text5 appxE",
+            "exempt_use": ("Check Box3 appx E", "Check Box4 appx E"),
+            "child_use": ("Check Box9 appx E", "Check Box10 appx E"),
+            "transfer": ("Check Box18 appx E", "Check Box21 appx E"),
+            "transfer_kind": {
+                "gift": "Check Box19 appx E",
+                "donation": "Check Box22 appx E",
+                "family_transfer": "Check Box20 appx E",
+            },
+            "year_make_model": "Text29 appx E",
+            "license": "Text32 appx E",
+            "value": "Text36 appx E",
+            "value_unknown": "Check Box37 appx E",
+            "value_source": {
+                "for_sale_ads": "Check Box47 appx E",
+                "kelly_blue_book": "Check Box48 appx E",
+                "mechanic": "Check Box49 appx E",
+                "purchase_price": "Check Box50 appx E",
+                "other": "Check Box51 appx E",
+            },
+            "value_source_other": "Text52 appx E",
+            "owed": "Text63 appx E",
+            "owed_unknown": "Check Box64 appx E",
+            "owed_source": {
+                "last_bill": "Check Box72 appx E",
+                "lender_statement": "Check Box73 appx E",
+                "estimate": "Check Box74 appx E",
+                "other": "Check Box75 appx E",
+            },
+            "owed_source_other": "Text76 appx E",
+            "leased": ("Check Box84 appx E", "Check Box85 appx E"),
+        },
+        {
+            "owner": "Text3 appxE",
+            "user": "Text6 appxE",
+            "exempt_use": ("Check Box5 appx E", "Check Box6 appx E"),
+            "child_use": ("Check Box11 appx E", "Check Box12 appx E"),
+            "transfer": ("Check Box23 appx E", "Check Box26 appx E"),
+            "transfer_kind": {
+                "gift": "Check Box24 appx E",
+                "donation": "Check Box27 appx E",
+                "family_transfer": "Check Box25 appx E",
+            },
+            "year_make_model": "Text30 appx E",
+            "license": "Text33 appx E",
+            "value": "Text38 appx E",
+            "value_unknown": "Check Box39 appx E",
+            "value_source": {
+                "for_sale_ads": "Check Box54 appx E",
+                "kelly_blue_book": "Check Box55 appx E",
+                "mechanic": "Check Box56 appx E",
+                "purchase_price": "Check Box57 appx E",
+                "other": "Check Box58 appx E",
+            },
+            "value_source_other": "Text59 appx E",
+            "owed": "Text65 appx E",
+            "owed_unknown": "Check Box66 appx E",
+            "owed_source": {
+                "last_bill": "Check Box77 appx E",
+                "lender_statement": "Check Box78 appx E",
+                "estimate": "Check Box79 appx E",
+                "other": "Check Box80 appx E",
+            },
+            "owed_source_other": "Text81 appx E",
+            "leased": ("Check Box86 appx E", "Check Box87 appx E"),
+        },
+    )
+
     #: Q14's two printed free-text lines.
     PAGE_11_SPECIAL_NEED_TEXT = {
         # "Please list the name of the person with the special need and explain"
@@ -1791,6 +1940,18 @@ class Saws2PlusFieldAdapter:
             *PAGE_2_INTERVIEW_PREFERENCE.values(),
             *PAGE_3_SAME_CONTACT_GATEWAY,
             *PAGE_14_PERSONAL_PROPERTY_GATEWAY,
+            *(
+                field
+                for column in APPENDIX_E_VEHICLES
+                for value in column.values()
+                for field in (
+                    tuple(value.values())
+                    if isinstance(value, dict)
+                    else value
+                    if isinstance(value, tuple)
+                    else (value,)
+                )
+            ),
             *PAGE_14_PERSONAL_PROPERTY_CATEGORIES.values(),
             *(
                 field
@@ -2395,6 +2556,98 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # -------------------------------------------------------------------
+        # Appendix E — vehicle detail
+        # -------------------------------------------------------------------
+        for column_index, column in enumerate(
+            self.APPENDIX_E_VEHICLES
+        ):
+            prefix = (
+                f"appendices.vehicle.{column_index}"
+            )
+
+            if not any(
+                key.startswith(f"{prefix}.")
+                for key in canonical_values
+            ):
+                continue
+
+            for canonical_suffix, column_key in (
+                ("owner_name", "owner"),
+                ("user_name", "user"),
+                ("year_make_model", "year_make_model"),
+                ("license_number", "license"),
+                ("fair_market_value", "value"),
+                ("amount_owed", "owed"),
+                ("fair_market_value_source_other", "value_source_other"),
+                ("amount_owed_source_other", "owed_source_other"),
+            ):
+                set_field(
+                    column[column_key],
+                    canonical_values.get(
+                        f"{prefix}.{canonical_suffix}"
+                    ),
+                )
+
+            for canonical_suffix, column_key in (
+                ("used_for_exempt_purpose", "exempt_use"),
+                ("used_by_child_under_18", "child_use"),
+                ("is_gift_donation_or_transfer", "transfer"),
+                ("is_leased", "leased"),
+            ):
+                value = canonical_values.get(
+                    f"{prefix}.{canonical_suffix}"
+                )
+
+                if not isinstance(
+                    value,
+                    bool,
+                ):
+                    continue
+
+                yes_field, no_field = column[column_key]
+                set_field(
+                    yes_field if value else no_field,
+                    "/Yes",
+                )
+
+            # Single-choice option groups: gift kind, and how the value and the
+            # amount owed were established.
+            for canonical_suffix, column_key in (
+                ("transfer_kind", "transfer_kind"),
+                ("fair_market_value_source", "value_source"),
+                ("amount_owed_source", "owed_source"),
+            ):
+                choice = str(
+                    canonical_values.get(
+                        f"{prefix}.{canonical_suffix}"
+                    )
+                    or ""
+                ).strip()
+
+                pdf_field = column[column_key].get(
+                    choice
+                )
+
+                if pdf_field is not None:
+                    set_field(
+                        pdf_field,
+                        "/Yes",
+                    )
+
+            # The two "I don't know / I need help finding out" boxes.
+            for canonical_suffix, column_key in (
+                ("fair_market_value_unknown", "value_unknown"),
+                ("amount_owed_unknown", "owed_unknown"),
+            ):
+                if canonical_values.get(
+                    f"{prefix}.{canonical_suffix}"
+                ) is True:
+                    set_field(
+                        column[column_key],
+                        "/Yes",
+                    )
 
         # -------------------------------------------------------------------
         # Q25 — Personal Property
