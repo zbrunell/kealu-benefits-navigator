@@ -320,12 +320,59 @@ export interface RealPropertyEntry {
   estimatedValue?: number;
 }
 
+/**
+ * Q25 personal-property categories, exactly as the printed form lists them.
+ *
+ * "Tools" and "Personal tools" are two separate printed boxes in two separate
+ * columns and stay separate here: collapsing them would tick a box the
+ * applicant did not choose.
+ */
+export type PersonalPropertyCategory =
+  | 'tools'
+  | 'business_inventory'
+  | 'livestock'
+  | 'business_equipment'
+  | 'sporting_equipment_guns'
+  | 'non_motor_boats_or_trailers'
+  | 'camper_shells'
+  | 'personal_tools'
+  | 'jewelry_artwork_or_collections';
+
+/**
+ * One Q25 personal-property item.
+ *
+ * Q25 is deliberately separate from Q24: Q24 covers cash, accounts and other
+ * liquid resources, Q25 covers physical personal and business property, and the
+ * form prints them as different questions with different columns.
+ */
+export interface PersonalPropertyEntry {
+  id: string;
+  /** Owner, so member-owned or joint property stays attributed. */
+  memberId: string;
+  /** The printed "Item" column. */
+  item: string;
+  /** The printed "Is it listed for Sale?" column. */
+  listedForSale?: TriState;
+  /** The printed "Purchase Price or Current Value" column. */
+  purchasePriceOrCurrentValue?: number;
+  /** The printed "Amount Owed" column. */
+  amountOwed?: number;
+}
+
 export interface ResourceSections {
   accounts: GatewaySection<ResourceEntry>;
   vehicles: GatewaySection<VehicleEntry>;
   realProperty: GatewaySection<RealPropertyEntry>;
   /** Q25: a resource sold, traded, or given away in the last 30 months. */
   transferredResources: GatewaySection<RealPropertyEntry>;
+  /** Q25 personal property. Distinct from Q24 household resources. */
+  personalProperty: GatewaySection<PersonalPropertyEntry>;
+  /**
+   * Q25's printed category checklist. Independent of the item rows: the form
+   * asks the applicant to tick every category they hold and then describe
+   * individual items.
+   */
+  personalPropertyCategories: PersonalPropertyCategory[];
   /** Whether the household received a CalWORKs diversion payment. */
   receivedDiversionPayment: TriState;
 }
@@ -336,6 +383,8 @@ export function emptyResourceSections(): ResourceSections {
     vehicles: emptyGateway(),
     realProperty: emptyGateway(),
     transferredResources: emptyGateway(),
+    personalProperty: emptyGateway(),
+    personalPropertyCategories: [],
     receivedDiversionPayment: undefined,
   };
 }

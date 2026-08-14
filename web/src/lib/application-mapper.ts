@@ -1048,6 +1048,40 @@ function mapQuestionnaire(
   tri("resources.has_vehicles", resources.vehicles.answer);
   tri("resources.has_real_property", resources.realProperty.answer);
   tri("resources.transferred_resources", resources.transferredResources.answer);
+
+  /*
+   * Q25 personal property, separate from Q24. Category ticks and item rows are
+   * independent: the form asks the applicant to tick every category they hold
+   * and then describe individual items.
+   */
+  tri("resources.has_personal_property", resources.personalProperty?.answer);
+
+  if (resources.personalProperty?.answer === true) {
+    for (const category of resources.personalPropertyCategories ?? []) {
+      fields.push(entry(`resources.personal_property.category.${category}`, true));
+    }
+
+    for (const [index, item] of activeEntries(
+      resources.personalProperty,
+    ).entries()) {
+      const prefix = `resources.personal_property.${index}`;
+
+      text(`${prefix}.member_id`, item?.memberId ?? "");
+      text(`${prefix}.person_name`, personName(item?.memberId ?? ""));
+      text(`${prefix}.item`, item?.item ?? "");
+      tri(`${prefix}.listed_for_sale`, item?.listedForSale);
+
+      if (item?.purchasePriceOrCurrentValue !== undefined) {
+        fields.push(
+          entry(`${prefix}.purchase_price_or_current_value`, item.purchasePriceOrCurrentValue),
+        );
+      }
+
+      if (item?.amountOwed !== undefined) {
+        fields.push(entry(`${prefix}.amount_owed`, item.amountOwed));
+      }
+    }
+  }
   tri("resources.received_diversion_payment", resources.receivedDiversionPayment);
 
   // Q24 Household's Resources.

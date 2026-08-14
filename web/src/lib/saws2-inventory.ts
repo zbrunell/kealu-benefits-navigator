@@ -219,8 +219,6 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
     saws: 'Q25',
     label: 'Personal property',
     page: 20,
-    status: 'not_modeled',
-    note: 'Distinct from Q24 resources; personal-property rows are not collected.',
   },
   { saws: 'Q26', label: 'Vehicles', page: 21 },
   { saws: 'Q27', label: 'Home, land or other property', page: 21 },

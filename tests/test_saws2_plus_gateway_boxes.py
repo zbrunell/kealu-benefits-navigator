@@ -615,3 +615,99 @@ def test_q6j_writes_nothing_without_a_record(available_fields):
             for field in (value if isinstance(value, tuple) else (value,)):
                 if field is not None:
                     assert field not in values, field
+
+
+# ---------------------------------------------------------------------------
+# Q25 — Personal Property (separate from Q24)
+# ---------------------------------------------------------------------------
+
+PP_GATE = Saws2PlusFieldAdapter.PAGE_14_PERSONAL_PROPERTY_GATEWAY
+PP_CATS = Saws2PlusFieldAdapter.PAGE_14_PERSONAL_PROPERTY_CATEGORIES
+PP_ROWS = Saws2PlusFieldAdapter.PAGE_14_PERSONAL_PROPERTY_ROWS
+
+
+def test_q25_destinations_exist_and_are_unique(available_fields):
+    seen: set[str] = set()
+    for field in (*PP_GATE, *PP_CATS.values(), *(f for r in PP_ROWS for f in r)):
+        assert field in available_fields, field
+        assert field not in seen, field
+        seen.add(field)
+
+
+def test_q25_keeps_tools_and_personal_tools_distinct():
+    """Two separate printed boxes in two separate columns."""
+    assert PP_CATS["tools"] != PP_CATS["personal_tools"]
+    assert PP_CATS["tools"] == "Check Box44 PG 14"
+    assert PP_CATS["personal_tools"] == "Check Box51 PG 14"
+
+
+def test_q25_gateway(available_fields):
+    yes, no = PP_GATE
+    assert _map({"resources.has_personal_property": True}, available_fields).get(yes) == "/Yes"
+    assert _map({"resources.has_personal_property": False}, available_fields).get(no) == "/Yes"
+    blank = _map({}, available_fields)
+    assert yes not in blank and no not in blank
+
+
+def test_q25_is_independent_of_q24(available_fields):
+    """Q24 resources and Q25 personal property never share a destination."""
+    q24 = set(Saws2PlusFieldAdapter.PAGE_14_RESOURCES_GATEWAY)
+    q24 |= set(Saws2PlusFieldAdapter.PAGE_14_RESOURCE_TYPE_BOXES.values())
+    q24 |= {f for r in Saws2PlusFieldAdapter.PAGE_14_RESOURCE_ROWS for f in r}
+
+    q25 = set(PP_GATE) | set(PP_CATS.values()) | {f for r in PP_ROWS for f in r}
+
+    assert not q24 & q25
+
+    # Answering one leaves the other untouched.
+    values = _map({"resources.has_accounts": True}, available_fields)
+    assert PP_GATE[0] not in values and PP_GATE[1] not in values
+
+
+def test_q25_categories_tick_only_what_was_chosen(available_fields):
+    values = _map(
+        {
+            "resources.has_personal_property": True,
+            "resources.personal_property.category.livestock": True,
+            "resources.personal_property.category.camper_shells": True,
+        },
+        available_fields,
+    )
+
+    assert values.get(PP_CATS["livestock"]) == "/Yes"
+    assert values.get(PP_CATS["camper_shells"]) == "/Yes"
+    for name, field in PP_CATS.items():
+        if name not in ("livestock", "camper_shells"):
+            assert field not in values, name
+
+
+def test_q25_item_rows_fill_their_own_columns(available_fields):
+    plan = {
+        "resources.has_personal_property": True,
+        "resources.personal_property.0.item": "Table saw",
+        "resources.personal_property.0.listed_for_sale": False,
+        "resources.personal_property.0.purchase_price_or_current_value": 600,
+        "resources.personal_property.0.amount_owed": 0,
+        "resources.personal_property.1.item": "Trailer",
+        "resources.personal_property.1.listed_for_sale": True,
+        "resources.personal_property.1.purchase_price_or_current_value": 2500,
+    }
+
+    values = _map(plan, available_fields)
+
+    assert values[PP_ROWS[0][0]] == "Table saw"
+    assert values.get(PP_ROWS[0][2]) == "/Yes"      # not for sale
+    assert PP_ROWS[0][1] not in values
+    assert values[PP_ROWS[0][3]] == "600"
+    assert values[PP_ROWS[1][0]] == "Trailer"
+    assert values.get(PP_ROWS[1][1]) == "/Yes"      # for sale
+    assert PP_ROWS[1][2] not in values
+    # Third row untouched.
+    for field in PP_ROWS[2]:
+        assert field not in values, field
+
+
+def test_q25_writes_nothing_when_unanswered(available_fields):
+    values = _map({}, available_fields)
+    for field in (*PP_CATS.values(), *(f for r in PP_ROWS for f in r)):
+        assert field not in values, field

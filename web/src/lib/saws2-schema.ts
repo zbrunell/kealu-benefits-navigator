@@ -1242,6 +1242,26 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     note: 'Printed at the end of Q24, above the Q25 heading; carries no number.',
   },
   {
+    id: 'resources.personal_property',
+    saws: 'Q25',
+    label:
+      'Personal or business property: tools, business inventory or equipment, ' +
+      'livestock, sporting equipment or guns, non-motor boats or trailers, ' +
+      'camper shells, personal tools, and jewellery, artwork or collections',
+    section: 'resources',
+    tier: 3,
+    kind: 'records',
+    support: 'askable',
+    pdf: 'mapped',
+    path: 'resources.personalProperty.answer',
+    canonicalKey: 'resources.has_personal_property',
+    note:
+      'Separate from Q24: that question covers cash and accounts, this one ' +
+      'physical property, and the form prints them with different columns. ' +
+      '"Tools" and "Personal tools" are two distinct printed boxes and are not ' +
+      'collapsed. Three printed item rows; a fourth item is manual work.',
+  },
+  {
     id: 'resources.vehicles',
     saws: 'Q26',
     label: 'Does anyone own or use a vehicle?',

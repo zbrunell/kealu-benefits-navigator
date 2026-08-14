@@ -1667,6 +1667,65 @@ class Saws2PlusFieldAdapter:
         },
     )
 
+    # -----------------------------------------------------------------------
+    # Q25 — Personal Property
+    # -----------------------------------------------------------------------
+    #
+    # Separate from Q24: Q24 is cash/accounts, Q25 is physical personal and
+    # business property with its own gateway, category checklist and item table.
+    #
+    # Gateway "Does anyone own any personal or business-related property?"
+    # Yes glyph x=339.5 / No glyph x=373.2.
+    PAGE_14_PERSONAL_PROPERTY_GATEWAY = (
+        "Check Box42 PG 14",
+        "Check Box43 PG 14",
+    )
+
+    # The printed checklist runs in two columns. Left column x=34.5, right
+    # column x=220.4; each label sits about 3.6pt below its box centre, which is
+    # what pairs them:
+    #
+    #   Tools                     box y=313.0  label y=308.8 @37.0
+    #   Business inventory        box y=300.4  label y=296.8 @37.0
+    #   Livestock                 box y=289.2  label y=284.8 @37.0
+    #   Business equipment        box y=276.8  label y=272.8 @37.0
+    #   Sporting equipment, Guns  box y=315.2  label y=310.2 @222.2
+    #   Non-Motor boats/trailers  box y=302.8  label y=296.8 @222.2
+    #   Camper shells             box y=290.6  label y=284.8 @222.2
+    #   Personal tools            box y=278.5  label y=272.8 @222.2
+    #   Jewelry/Artwork/etc.      box y=266.2  label y=262.2 @222.2
+    #
+    # "Tools" and "Personal tools" are two separate printed boxes in two
+    # separate columns and stay separate here.
+    #
+    #: category -> checkbox destination
+    PAGE_14_PERSONAL_PROPERTY_CATEGORIES = {
+        "tools": "Check Box44 PG 14",
+        "business_inventory": "Check Box45 PG 14",
+        "livestock": "Check Box46 PG 14",
+        "business_equipment": "Check Box47 PG 14",
+        "sporting_equipment_guns": "Check Box48 PG 14",
+        "non_motor_boats_or_trailers": "Check Box49 PG 14",
+        "camper_shells": "Check Box50 PG 14",
+        "personal_tools": "Check Box51 PG 14",
+        "jewelry_artwork_or_collections": "Check Box52 PG 14",
+    }
+
+    # Three printed item rows. Columns, left to right:
+    #   Item (x=37.3), listed-for-sale Yes (x=284.8) / No (x=313.8),
+    #   Purchase Price or Current Value (x=353.0), Amount Owed (x=494.5).
+    # The sale Yes/No glyphs sit at x=285.2 / x=315.5, matching the boxes.
+    #
+    #: (item, sale yes, sale no, value, amount owed)
+    PAGE_14_PERSONAL_PROPERTY_ROWS = (
+        ("Text53 PG 14", "Check Box54 PG 14", "Check Box55 PG 14",
+         "Text56 PG 14", "Text57 PG 14"),
+        ("Text58 PG 14", "Check Box59 PG 14", "Check Box60 PG 14",
+         "Text61 PG 14", "Text62 PG 14"),
+        ("Text63 PG 14", "Check Box64 PG 14", "Check Box65 PG 14",
+         "Text66 PG 14", "Text67 PG 14"),
+    )
+
     #: Q14's two printed free-text lines.
     PAGE_11_SPECIAL_NEED_TEXT = {
         # "Please list the name of the person with the special need and explain"
@@ -1731,6 +1790,13 @@ class Saws2PlusFieldAdapter:
             *PAGE_13_TAX_TEXT.values(),
             *PAGE_2_INTERVIEW_PREFERENCE.values(),
             *PAGE_3_SAME_CONTACT_GATEWAY,
+            *PAGE_14_PERSONAL_PROPERTY_GATEWAY,
+            *PAGE_14_PERSONAL_PROPERTY_CATEGORIES.values(),
+            *(
+                field
+                for row in PAGE_14_PERSONAL_PROPERTY_ROWS
+                for field in row
+            ),
             *(
                 field
                 for block in PAGE_6_DISABILITY_BLOCKS
@@ -2329,6 +2395,80 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # -------------------------------------------------------------------
+        # Q25 — Personal Property
+        # -------------------------------------------------------------------
+        personal_property_gateway = canonical_values.get(
+            "resources.has_personal_property"
+        )
+
+        if isinstance(
+            personal_property_gateway,
+            bool,
+        ):
+            yes_field, no_field = self.PAGE_14_PERSONAL_PROPERTY_GATEWAY
+            set_field(
+                yes_field if personal_property_gateway else no_field,
+                "/Yes",
+            )
+
+        for (
+            category,
+            pdf_field,
+        ) in self.PAGE_14_PERSONAL_PROPERTY_CATEGORIES.items():
+            if canonical_values.get(
+                f"resources.personal_property.category.{category}"
+            ) is True:
+                set_field(
+                    pdf_field,
+                    "/Yes",
+                )
+
+        for row_index, row in enumerate(
+            self.PAGE_14_PERSONAL_PROPERTY_ROWS
+        ):
+            prefix = (
+                f"resources.personal_property.{row_index}"
+            )
+
+            if not any(
+                key.startswith(f"{prefix}.")
+                for key in canonical_values
+            ):
+                continue
+
+            item, sale_yes, sale_no, value, owed = row
+
+            set_field(
+                item,
+                canonical_values.get(f"{prefix}.item"),
+            )
+
+            listed = canonical_values.get(
+                f"{prefix}.listed_for_sale"
+            )
+
+            if isinstance(
+                listed,
+                bool,
+            ):
+                set_field(
+                    sale_yes if listed else sale_no,
+                    "/Yes",
+                )
+
+            set_field(
+                value,
+                canonical_values.get(
+                    f"{prefix}.purchase_price_or_current_value"
+                ),
+            )
+
+            set_field(
+                owed,
+                canonical_values.get(f"{prefix}.amount_owed"),
+            )
 
         # -------------------------------------------------------------------
         # Q6j — per-disabled-person detail

@@ -1474,6 +1474,46 @@ export function getRequiredApplicationQuestions(
     }
   }
 
+  /*
+   * Q25 personal property. Kept separate from Q24: Q24 covers cash, accounts
+   * and other liquid resources; Q25 covers physical personal and business
+   * property, and the printed form gives them different columns.
+   */
+  {
+    const property = questionnaire.resources.personalProperty;
+
+    totalCount += 1;
+
+    if (unanswered(property?.answer)) {
+      push({
+        id: 'resources.personal_property',
+        section: 'resources',
+        kind: 'gateway',
+        prompt: 'Does anyone own any personal or business property?',
+        help:
+          'For example tools, business equipment or inventory, livestock, a camper shell, a non-motor boat or trailer, sporting equipment or guns, or jewellery, artwork or collections.',
+        path: 'resources.personalProperty.answer',
+      });
+    } else {
+      answeredCount += 1;
+
+      if (
+        property?.answer === true &&
+        safeEntries(property?.entries).length === 0
+      ) {
+        totalCount += 1;
+        push({
+          id: 'resources.personal_property.records',
+          section: 'resources',
+          kind: 'records',
+          prompt: 'Tell us about each item',
+          path: 'resources.personalProperty.entries',
+          minimumRecords: 1,
+        });
+      }
+    }
+  }
+
   // ── Record gateways ─────────────────────────────────────────────────────
   for (const spec of RECORD_GATEWAYS) {
     // Medical expenses are only asked when the household includes an elderly or
