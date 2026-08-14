@@ -1979,6 +1979,61 @@ class Saws2PlusFieldAdapter:
         "no_changes_expected": "Check Box47 PG 18",
     }
 
+    # -----------------------------------------------------------------------
+    # Appendix B — American Indian / Alaska Native
+    # -----------------------------------------------------------------------
+    #
+    # Two person columns at x≈250 and x≈415. Verified on printed page
+    # "APPENDIX B" (PDF page 25) by matching each printed marker to the widget:
+    #
+    #   1. Name        "First Middle" y=587.5 -> Text1  y=578.3
+    #                  "Last"         y=564.2 -> Text2b y=555.7
+    #   2. Member of a federally recognized tribe?
+    #                  Yes y=534.2 x=251.2 -> Check Box5 y=537.9
+    #                  No  y=498.0 x=251.2 -> Check Box7 y=501.7
+    #                  "If yes, tribe name" y=523.4 -> Text6 y=515.1
+    #   3. Ever got a service from the Indian Health Service?
+    #                  Yes y=463.5 -> Check Box11 y=467.8
+    #                  No  y=448.8 -> Check Box12 y=452.2
+    #      "If NO, is this person eligible to get services ..." — note the
+    #      follow-up hangs off a No, not a Yes:
+    #                  Yes y=369.5 x=268.2 -> Check Box13 y=373.0
+    #                  no  y=369.5 x=315.5 -> Check Box14 y=373.0
+    #   4. Certain money may not be counted ...
+    #                  "Yes - if yes, please complete" y=345.5 -> Check Box19
+    #                  "None to report"                y=320.0 -> Check Box20
+    #                  "$______"     y=298.5 -> Text21 y=302.1
+    #                  "How often?"  y=244.5 -> Text22 y=247.7
+    #
+    # NOTE the field names all read "APPX A" even though this is Appendix B.
+    # That is the form author's error and the AcroForm key is what it is.
+    #
+    #: one dict per printed person column
+    APPENDIX_B_PEOPLE = (
+        {
+            "first_middle_name": "Text1 APPX A",
+            "last_name": "Text2b APPX A",
+            "member_of_tribe": ("Check Box5 APPX A", "Check Box7 APPX A"),
+            "tribe_name": "Text6 APPX A",
+            "received_ihs": ("Check Box11 APPX A", "Check Box12 APPX A"),
+            "eligible_for_ihs": ("Check Box13 APPX A", "Check Box14 APPX A"),
+            "tribal_income": ("Check Box19 APPX A", "Check Box20 APPX A"),
+            "tribal_income_amount": "Text21 APPX A",
+            "tribal_income_frequency": "Text22 APPX A",
+        },
+        {
+            "first_middle_name": "Text3 APPX A",
+            "last_name": "Text4 APPX A",
+            "member_of_tribe": ("Check Box8 APPX A", "Check Box10 APPX A"),
+            "tribe_name": "Text9 APPX A",
+            "received_ihs": ("Check Box15 APPX A", "Check Box16 APPX A"),
+            "eligible_for_ihs": ("Check Box17 APPX A", "Check Box18 APPX A"),
+            "tribal_income": ("Check Box23 APPX A", "Check Box24 APPX A"),
+            "tribal_income_amount": "Text25 APPX A",
+            "tribal_income_frequency": "Text26 APPX A",
+        },
+    )
+
     #: Q14's two printed free-text lines.
     PAGE_11_SPECIAL_NEED_TEXT = {
         # "Please list the name of the person with the special need and explain"
@@ -2044,6 +2099,16 @@ class Saws2PlusFieldAdapter:
             *PAGE_2_INTERVIEW_PREFERENCE.values(),
             *PAGE_3_SAME_CONTACT_GATEWAY,
             *PAGE_14_PERSONAL_PROPERTY_GATEWAY,
+            *(
+                field
+                for column in APPENDIX_B_PEOPLE
+                for value in column.values()
+                for field in (
+                    value
+                    if isinstance(value, tuple)
+                    else (value,)
+                )
+            ),
             *APPENDIX_A_TEXT.values(),
             *APPENDIX_A_OTHER_ELIGIBLE,
             *(f for pair in APPENDIX_A_YES_NO.values() for f in pair),
@@ -2667,6 +2732,75 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # -------------------------------------------------------------------
+        # Appendix B — American Indian / Alaska Native
+        # -------------------------------------------------------------------
+        for column_index, column in enumerate(
+            self.APPENDIX_B_PEOPLE
+        ):
+            prefix = (
+                f"appendices.tribal.{column_index}"
+            )
+
+            if not any(
+                key.startswith(f"{prefix}.")
+                for key in canonical_values
+            ):
+                continue
+
+            # The printed column splits the name across two lines.
+            name = str(
+                canonical_values.get(f"{prefix}.person_name")
+                or ""
+            ).strip()
+
+            if name:
+                parts = name.split()
+                set_field(
+                    column["first_middle_name"],
+                    " ".join(parts[:-1]) if len(parts) > 1 else name,
+                )
+
+                if len(parts) > 1:
+                    set_field(
+                        column["last_name"],
+                        parts[-1],
+                    )
+
+            for canonical_suffix, column_key in (
+                ("member_of_tribe", "member_of_tribe"),
+                ("received_indian_health_service", "received_ihs"),
+                ("eligible_for_indian_health_service", "eligible_for_ihs"),
+                ("has_excludable_tribal_income", "tribal_income"),
+            ):
+                value = canonical_values.get(
+                    f"{prefix}.{canonical_suffix}"
+                )
+
+                if not isinstance(
+                    value,
+                    bool,
+                ):
+                    continue
+
+                yes_field, no_field = column[column_key]
+                set_field(
+                    yes_field if value else no_field,
+                    "/Yes",
+                )
+
+            for canonical_suffix, column_key in (
+                ("tribe_name", "tribe_name"),
+                ("tribal_income_amount", "tribal_income_amount"),
+                ("tribal_income_frequency", "tribal_income_frequency"),
+            ):
+                set_field(
+                    column[column_key],
+                    canonical_values.get(
+                        f"{prefix}.{canonical_suffix}"
+                    ),
+                )
 
         # -------------------------------------------------------------------
         # Appendix A — employer health coverage

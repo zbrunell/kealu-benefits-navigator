@@ -1570,6 +1570,76 @@ export function getRequiredApplicationQuestions(
     }
   }
 
+  /*
+   * Appendix B, for American Indian and Alaska Native people. The printed form
+   * activates it from Q3 "and applying for health care".
+   */
+  if (
+    questionnaire.health.americanIndianOrAlaskaNative === true &&
+    application.selectedPrograms.includes('medi_cal')
+  ) {
+    const tribal = questionnaire.appendices.tribalMembership;
+
+    totalCount += 1;
+
+    if (safeEntries(tribal?.entries).length === 0) {
+      push({
+        id: 'appendices.tribal_membership.records',
+        section: 'appendices',
+        kind: 'records',
+        prompt: 'Who is American Indian or Alaska Native?',
+        path: 'appendices.tribalMembership.entries',
+        minimumRecords: 1,
+      });
+    } else {
+      answeredCount += 1;
+
+      safeEntries<Record<string, unknown>>(tribal?.entries).forEach(
+        (person, index) => {
+          for (const field of [
+            { key: 'memberOfFederallyRecognizedTribe', prompt: 'a member of a federally recognized tribe' },
+            { key: 'hasReceivedIndianHealthService', prompt: 'someone who has received a service from the Indian Health Service or a tribal health program' },
+            { key: 'hasExcludableTribalIncome', prompt: 'receiving per-capita tribal payments or income from natural resources, farming, ranching, fishing, leases or royalties' },
+          ]) {
+            totalCount += 1;
+
+            if (unanswered(person?.[field.key] as TriState)) {
+              push({
+                id: `appendices.tribal_membership.${index}.${field.key}`,
+                section: 'appendices',
+                kind: 'gateway',
+                prompt: `Is person ${index + 1} ${field.prompt}?`,
+                path: `appendices.tribalMembership.entries.${index}.${field.key}`,
+              });
+            } else {
+              answeredCount += 1;
+            }
+          }
+
+          /*
+           * Item 3's follow-up is conditional on a No, not a Yes: "if no, is
+           * this person eligible to get services from ...".
+           */
+          if (person?.hasReceivedIndianHealthService === false) {
+            totalCount += 1;
+
+            if (unanswered(person?.eligibleForIndianHealthService as TriState)) {
+              push({
+                id: `appendices.tribal_membership.${index}.eligibleForIndianHealthService`,
+                section: 'appendices',
+                kind: 'gateway',
+                prompt: `Is person ${index + 1} eligible to get services from the Indian Health Service, a tribal health program, or an urban Indian health program?`,
+                path: `appendices.tribalMembership.entries.${index}.eligibleForIndianHealthService`,
+              });
+            } else {
+              answeredCount += 1;
+            }
+          }
+        },
+      );
+    }
+  }
+
   // ── Record gateways ─────────────────────────────────────────────────────
   for (const spec of RECORD_GATEWAYS) {
     // Medical expenses are only asked when the household includes an elderly or

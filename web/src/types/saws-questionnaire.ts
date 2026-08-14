@@ -895,8 +895,39 @@ export interface VehicleDetailEntry {
   isLeased?: TriState;
 }
 
+/**
+ * One person's Appendix B answers (American Indian / Alaska Native).
+ *
+ * Activated by Q3 when health care is being applied for. The appendix asks four
+ * things per person, and item 3's follow-up is conditional on a *No*: "if no, is
+ * this person eligible to get services from ...". That inversion is preserved
+ * rather than normalised, because a Yes and a No lead to different questions.
+ */
+export interface TribalMembershipEntry {
+  id: string;
+  memberId: string;
+  /** Item 2, "Member of a federally recognized tribe?" */
+  memberOfFederallyRecognizedTribe?: TriState;
+  /** Item 2 follow-up, printed only for a Yes. */
+  tribeName: string;
+  /** Item 3, has ever received a service from the Indian Health Service. */
+  hasReceivedIndianHealthService?: TriState;
+  /** Item 3 follow-up, printed only for a No: is this person eligible to. */
+  eligibleForIndianHealthService?: TriState;
+  /**
+   * Item 4, whether there is tribal income of the kinds the appendix lists.
+   * `false` corresponds to the printed "None to report" box.
+   */
+  hasExcludableTribalIncome?: TriState;
+  /** Item 4 detail: the amount and how often, as the applicant reported them. */
+  tribalIncomeAmount?: number;
+  tribalIncomeFrequency: string;
+}
+
 export interface AppendixSections {
   employmentHistory: GatewaySection<EmploymentHistoryEntry>;
+  /** Appendix B, one record per American Indian / Alaska Native person. */
+  tribalMembership: GatewaySection<TribalMembershipEntry>;
   /** Appendix E vehicle detail, one record per vehicle. */
   vehicleDetails: GatewaySection<VehicleDetailEntry>;
   /** Appendix B detail, only when americanIndianOrAlaskaNative is true. */
@@ -908,6 +939,7 @@ export interface AppendixSections {
 export function emptyAppendixSections(): AppendixSections {
   return {
     employmentHistory: emptyGateway(),
+    tribalMembership: emptyGateway(),
     vehicleDetails: emptyGateway(),
     tribalName: '',
     detailedVehicleInformationRequired: undefined,

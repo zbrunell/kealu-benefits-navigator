@@ -1076,3 +1076,90 @@ def test_appendix_a_writes_nothing_without_an_employer(available_fields):
 
     for field in (*A_TEXT.values(), *A_FREQ.values(), *A_CHANGE.values()):
         assert field not in values, field
+
+
+# ---------------------------------------------------------------------------
+# Appendix B — American Indian / Alaska Native
+# ---------------------------------------------------------------------------
+
+APX_B = Saws2PlusFieldAdapter.APPENDIX_B_PEOPLE
+
+
+def _apx_b(index: int, **fields) -> dict:
+    return {f"appendices.tribal.{index}.{k}": v for k, v in fields.items()}
+
+
+def test_appendix_b_destinations_exist_and_are_unique(available_fields):
+    seen: set[str] = set()
+
+    for column in APX_B:
+        for value in column.values():
+            for field in (value if isinstance(value, tuple) else (value,)):
+                assert field in available_fields, field
+                assert field not in seen, f"{field} used twice"
+                seen.add(field)
+
+
+def test_appendix_b_field_names_say_appx_a():
+    """The form author suffixed Appendix B's fields "APPX A". Preserved as-is."""
+    assert APX_B[0]["last_name"] == "Text2b APPX A"
+
+
+def test_appendix_b_first_person_column(available_fields):
+    values = _map(
+        _apx_b(
+            0,
+            person_name="Rosa Marin",
+            member_of_tribe=True,
+            tribe_name="Yurok",
+            received_indian_health_service=False,
+            eligible_for_indian_health_service=True,
+            has_excludable_tribal_income=True,
+            tribal_income_amount=250,
+            tribal_income_frequency="Yearly",
+        ),
+        available_fields,
+    )
+
+    assert values["Text1 APPX A"] == "Rosa"
+    assert values["Text2b APPX A"] == "Marin"
+    assert values.get("Check Box5 APPX A") == "/Yes"    # tribe member: Yes
+    assert values["Text6 APPX A"] == "Yurok"
+    assert values.get("Check Box12 APPX A") == "/Yes"   # received IHS: No
+    assert values.get("Check Box13 APPX A") == "/Yes"   # eligible: Yes
+    assert values.get("Check Box19 APPX A") == "/Yes"   # tribal income: Yes
+    assert values["Text21 APPX A"] == "250"
+    assert values["Text22 APPX A"] == "Yearly"
+
+    # Second column untouched.
+    assert "Text3 APPX A" not in values
+
+
+def test_appendix_b_none_to_report_uses_the_no_box(available_fields):
+    values = _map(
+        _apx_b(0, person_name="Rosa Marin", has_excludable_tribal_income=False),
+        available_fields,
+    )
+
+    assert values.get("Check Box20 APPX A") == "/Yes"
+    assert "Check Box19 APPX A" not in values
+
+
+def test_appendix_b_second_person_uses_its_own_column(available_fields):
+    values = _map(
+        {**_apx_b(0, person_name="Rosa Marin"), **_apx_b(1, person_name="Ana Ruiz")},
+        available_fields,
+    )
+
+    assert values["Text1 APPX A"] == "Rosa"
+    assert values["Text3 APPX A"] == "Ana"
+    assert values["Text4 APPX A"] == "Ruiz"
+
+
+def test_appendix_b_writes_nothing_without_a_person(available_fields):
+    values = _map({}, available_fields)
+
+    for column in APX_B:
+        for value in column.values():
+            for field in (value if isinstance(value, tuple) else (value,)):
+                assert field not in values, field

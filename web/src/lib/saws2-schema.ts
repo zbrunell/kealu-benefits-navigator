@@ -1484,15 +1484,24 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
 
   // Appendices.
   {
-    id: 'appendices.tribal_name',
+    id: 'appendices.tribal_membership',
     saws: 'Appendix B',
-    label: 'Tribal membership details',
+    label:
+      'American Indian / Alaska Native detail: tribal membership and tribe ' +
+      'name, Indian Health Service use or eligibility, and excludable tribal ' +
+      'income with its reported amount and frequency',
     section: 'appendices',
     tier: 3,
-    kind: 'text',
+    kind: 'records',
     support: 'askable',
-    pdf: 'unreviewed',
-    note: 'Appendix B destinations not yet reviewed.',
+    pdf: 'mapped',
+    path: 'appendices.tribalMembership.answer',
+    canonicalKey: 'appendices.tribal.0.person_name',
+    note:
+      'Activated by Q3 when health care is requested. Item 3’s follow-up hangs ' +
+      'off a No, not a Yes — "if no, is this person eligible to get services" — ' +
+      'and that inversion is preserved. Two printed person columns; a third ' +
+      'person is overflow.',
   },
   {
     id: 'appendices.employer_coverage',

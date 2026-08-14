@@ -1347,6 +1347,42 @@ function mapQuestionnaire(
   tri("health.retroactive_medical_help", health.retroactiveMedicalHelp);
   tri("health.tax_filer", health.taxFiler);
   tri("health.american_indian_or_alaska_native", health.americanIndianOrAlaskaNative);
+
+  /*
+   * Appendix B. Emitted only while Q3 is Yes, so detail left behind by an
+   * earlier Yes cannot reach the appendix.
+   */
+  if (health.americanIndianOrAlaskaNative === true) {
+    for (const [index, person] of activeEntries(
+      application.questionnaire.appendices?.tribalMembership,
+    ).entries()) {
+      const prefix = `appendices.tribal.${index}`;
+
+      text(`${prefix}.person_name`, personName(person?.memberId ?? ""));
+      tri(`${prefix}.member_of_tribe`, person?.memberOfFederallyRecognizedTribe);
+      tri(`${prefix}.received_indian_health_service`, person?.hasReceivedIndianHealthService);
+      tri(`${prefix}.has_excludable_tribal_income`, person?.hasExcludableTribalIncome);
+
+      // The tribe name is printed only for a Yes on item 2.
+      if (person?.memberOfFederallyRecognizedTribe === true) {
+        text(`${prefix}.tribe_name`, person?.tribeName ?? "");
+      }
+
+      // Item 3's follow-up is printed only for a No.
+      if (person?.hasReceivedIndianHealthService === false) {
+        tri(`${prefix}.eligible_for_indian_health_service`, person?.eligibleForIndianHealthService);
+      }
+
+      if (person?.hasExcludableTribalIncome === true) {
+        if (person?.tribalIncomeAmount !== undefined) {
+          fields.push(entry(`${prefix}.tribal_income_amount`, person.tribalIncomeAmount));
+        }
+
+        // Reported frequency, printed as the applicant stated it.
+        text(`${prefix}.tribal_income_frequency`, person?.tribalIncomeFrequency ?? "");
+      }
+    }
+  }
   tri("health.renewal_authorization", health.renewalAuthorization);
 
   if (health.taxFiler === true) {
