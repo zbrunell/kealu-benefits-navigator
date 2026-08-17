@@ -155,6 +155,10 @@ describe('privacy boundary', () => {
         'classifies printed question Q6c as manual_ssn so readiness can report it as the applicant’s own step; it holds no SSN value',
       'lib/draft-completion.ts':
         'locates each printed SSN blank this draft leaves for a person to fill and names whose it is; it never carries a number, which is the reason the box was left blank',
+      'lib/completion-guide.ts':
+        'section heading and standing explanation for the SSN blanks the guide lists; it reads locations from draft-completion and never a value',
+      'lib/completion-guide-html.ts':
+        'closing note on the printed guide restating that Kealu never writes an SSN onto a form; it renders text it is given and holds none of its own',
       'i18n/messages/en.ts': 'manual-completion instruction shown after generation',
       'i18n/messages/es.ts': 'Spanish translation of the same instruction',
       'i18n/messages/zh-CN.ts': 'Chinese translation of the same instruction',

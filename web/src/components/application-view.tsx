@@ -69,6 +69,8 @@ export default function ApplicationView({
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [draftUrl, setDraftUrl] = useState<string | null>(null);
+  const [guideUrl, setGuideUrl] = useState<string>("");
+  const [draftReference, setDraftReference] = useState<string>("");
   const [generationError, setGenerationError] = useState<string | null>(null);
 
   /**
@@ -482,6 +484,8 @@ export default function ApplicationView({
 
       const result = (await response.json()) as {
         draftUrl?: string;
+        guideUrl?: string;
+        draftReference?: string;
         error?: string;
       };
 
@@ -492,6 +496,8 @@ export default function ApplicationView({
       }
 
       setDraftUrl(result.draftUrl);
+      setGuideUrl(result.guideUrl ?? `/api/workflow/${runId}/guide`);
+      setDraftReference(result.draftReference ?? "");
     } catch (error) {
       setGenerationError(
         error instanceof Error
@@ -622,6 +628,8 @@ export default function ApplicationView({
             {draftUrl && (
               <DraftCompletionGuide
                 draftUrl={draftUrl}
+                guideUrl={guideUrl}
+                draftReference={draftReference}
                 county={prefill?.county ?? ""}
                 includesHealthCoverage={applicationData.selectedPrograms.includes(
                   "medi_cal",

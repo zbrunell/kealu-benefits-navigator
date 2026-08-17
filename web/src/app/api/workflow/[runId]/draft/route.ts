@@ -218,13 +218,22 @@ if (!result) {
   );
 }
 
+/*
+ * Record what this draft was generated from, so the completion guide can
+ * describe the PDF the applicant actually downloaded rather than whatever the
+ * client holds by the time they ask for the guide.
+ */
 sessionStore.update(
   session.sessionId,
   {
     draftPath: result.path,
     draftFormType: result.formType,
+    draftApplicationData: applicationData,
+    draftGeneratedAt: new Date().toISOString(),
   },
 );
+
+const { draftReferenceFrom } = await import('@/lib/completion-guide');
 
 return NextResponse.json(
   {
@@ -233,6 +242,10 @@ return NextResponse.json(
     formType: result.formType,
     draftUrl:
       `/api/workflow/${runId}/draft`,
+    // The guide for this draft, and the reference printed on both.
+    guideUrl:
+      `/api/workflow/${runId}/guide`,
+    draftReference: draftReferenceFrom(runId),
   },
   {
     status: 201,

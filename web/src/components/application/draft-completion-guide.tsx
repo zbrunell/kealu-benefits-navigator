@@ -31,6 +31,15 @@ const COVERED_CA_URL = "https://www.coveredca.com/";
 interface DraftCompletionGuideProps {
   /** URL of the generated draft on this session's run. */
   draftUrl: string;
+  /**
+   * URL of the printable completion guide for this same draft.
+   *
+   * Built server-side from the state the PDF was generated from, so the two
+   * always describe the same document.
+   */
+  guideUrl: string;
+  /** Short, non-sensitive identifier printed on both the guide and shown here. */
+  draftReference: string;
   /** County resolved from the applicant's ZIP code, or "" when unresolved. */
   county: string;
   /** Whether the application includes a health-coverage program. */
@@ -79,6 +88,8 @@ const MANUAL_STEPS: Array<{ title: string; detail: string }> = [
 
 export default function DraftCompletionGuide({
   draftUrl,
+  guideUrl,
+  draftReference,
   county,
   includesHealthCoverage,
   questionsToCompleteByHand,
@@ -119,6 +130,62 @@ export default function DraftCompletionGuide({
             Download draft
           </a>
         </div>
+
+        <p className="mt-3 text-xs text-green-800">
+          Draft reference{" "}
+          <span className="font-mono font-semibold">{draftReference}</span>. The
+          same reference is printed on the guide below, so you can tell which
+          guide goes with which draft if you generate more than one.
+        </p>
+      </div>
+
+      {/* ── The printable guide for this draft ───────────────────────────── */}
+      <div
+        className="rounded-lg border border-slate-300 bg-white p-4"
+        data-testid="completion-guide-download"
+      >
+        <h2 className="text-sm font-semibold text-slate-900">
+          Take the step-by-step guide with you
+        </h2>
+
+        <p className="mt-1 text-sm text-slate-700">
+          A one-page-per-section checklist of everything left to do on this
+          exact draft — every blank, which PDF page it is on, and what goes in
+          it. Print it and keep it beside the form while you finish it.
+        </p>
+
+        <div className="mt-3 flex flex-wrap gap-3">
+          <a
+            href={guideUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900"
+          >
+            Open printable guide
+          </a>
+
+          <a
+            href={`${guideUrl}?download=1`}
+            download
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
+          >
+            Download guide
+          </a>
+
+          <a
+            href={`${guideUrl}?audience=associate`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
+          >
+            Guide for someone helping you
+          </a>
+        </div>
+
+        <p className="mt-3 text-xs text-slate-600">
+          Open the guide and use your browser&rsquo;s Print command to print it
+          or save it as a PDF. It is laid out for US Letter paper.
+        </p>
       </div>
 
       {/* ── What you must finish by hand ─────────────────────────────────── */}

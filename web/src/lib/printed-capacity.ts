@@ -235,6 +235,11 @@ export interface DroppedRecord {
   explanation: string;
 }
 
+/** Capitalise a row noun that is starting a sentence. */
+function sentenceCase(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 /** Indices the plan emits under one canonical prefix, in ascending order. */
 function emittedIndices(
   plan: readonly ApplicationFieldPlanEntry[],
@@ -300,8 +305,8 @@ export function findPrintedOverflow(
             `${block.saws} prints ${block.capacity} ` +
             `${block.capacity === 1 ? `${block.rowNoun} row` : `${block.rowNoun} rows`} ` +
             `and this household reported ${indices.length}. ` +
-            `${block.rowNoun} ${position + 1} must be written on a separate ` +
-            'sheet and attached.',
+            `${sentenceCase(block.rowNoun)} ${position + 1} must be written ` +
+            'on a separate sheet and attached.',
         });
       }
 
@@ -395,8 +400,9 @@ export function findHouseholdOverflow(
         reason: 'beyond_printed_rows',
         explanation:
           `${saws} prints ${PRINTED_HOUSEHOLD_ROWS} ${table} rows and this ` +
-          `household has ${count} ${table}s. ${table === 'adult' ? 'Adult' : 'Child'} ` +
-          `${row + 1} must be listed on a separate sheet and attached.`,
+          `household has ${count} ${table === 'adult' ? 'adults' : 'children'}. ` +
+          `${table === 'adult' ? 'Adult' : 'Child'} ${row + 1} must be listed ` +
+          'on a separate sheet and attached.',
       });
     }
   }

@@ -14,6 +14,8 @@
  * Keep this file free of runtime logic — it is imported by both server and client bundles.
  */
 
+import type { Saws2PlusApplicationData } from '@/types/application';
+
 /**
  * HouseholdVars — maps 1:1 to the `variables:` block in benefits-navigator.yaml,
  * plus `annual_income` which is an extra runtime var passed via `--var` at run time.
@@ -185,4 +187,15 @@ export interface Session {
    * "worksheet" for the fallback worksheet PDF. null when no draft was generated.
    */
   draftFormType?: 'official' | 'worksheet' | null;
+  /**
+   * The application state the current draft was generated from.
+   *
+   * Kept so the completion guide describes *that* draft rather than whatever
+   * the client happens to hold when the guide is requested. Editing an answer
+   * without regenerating must not silently change the guide out from under the
+   * PDF the applicant already downloaded.
+   */
+  draftApplicationData?: Saws2PlusApplicationData | null;
+  /** ISO 8601 instant the current draft was generated. */
+  draftGeneratedAt?: string | null;
 }
