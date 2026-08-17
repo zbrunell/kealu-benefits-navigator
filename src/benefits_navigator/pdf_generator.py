@@ -2265,6 +2265,52 @@ class Saws2PlusFieldAdapter:
         },
     )
 
+    # -----------------------------------------------------------------------
+    # Appendix C — the health-insurance authorized representative
+    # -----------------------------------------------------------------------
+    #
+    # PDF page 26, printed "APPENDIX C". Its widgets read "APPX B", one letter
+    # behind the printed appendix, like every other appendix on this form.
+    #
+    # The page has two blocks. The upper one identifies the representative and
+    # is filled from the answers the applicant already gave:
+    #
+    #   "1. Name of authorized representative"  y=678.1 -> Text1  y=654.1
+    #   "2. Address"                            y=642.1 -> Text2  y=618.4
+    #   "3. Apartment or Suite number"  x=437.5 -> Text3  x=437.5
+    #   "4. City" / "5. State" / "6. Zip code"  -> Text4 / Text5 / Text6
+    #   "7. Phone number"                       y=570.1 -> Text7 (area code,
+    #                                              x=54.2-81.3, 27.1pt) and
+    #                                              Text8 (x=86.5-256.5)
+    #   "8. Organization name (if applicable)"  -> Text9
+    #   "9. I.D. Number (if applicable)"        -> Text10
+    #
+    # Items 10 and 11 are the applicant's own signature and its date. The
+    # signature line has no widget; Text11 is the date box beside it and stays
+    # blank, because dating a signature is part of signing it.
+    #
+    # The lower block is headed "For Certified Application Counselors,
+    # Navigators, Agents and Brokers Only" (Text12-15). Nothing in the model
+    # describes the person filling the form in on someone else's behalf, so it
+    # is left for them and reported as manual.
+    #
+    #: canonical suffix -> printed text destination
+    APPENDIX_C_REPRESENTATIVE = {
+        "name": "Text1 APPX B",
+        "address": "Text2 APPX B",
+        "organization": "Text9 APPX B",
+    }
+
+    #: Item 7, split like Appendix A's: (area code, remaining digits).
+    APPENDIX_C_PHONE = ("Text7 APPX B", "Text8 APPX B")
+
+    # Not written, and recorded so the search is not repeated:
+    #   Text3 (apartment), Text4-6 (city/state/zip) — the model holds one
+    #     address string and splitting it would be guessing which part is which.
+    #   Text10 (I.D. number) — not collected.
+    #   Text11 — the date beside item 10's signature.
+    #   Text12-15 — the counsellor/navigator block.
+
     #: Q14's two printed free-text lines.
     PAGE_11_SPECIAL_NEED_TEXT = {
         # "Please list the name of the person with the special need and explain"
@@ -2361,6 +2407,8 @@ class Saws2PlusFieldAdapter:
             ),
             *APPENDIX_A_TEXT.values(),
             *APPENDIX_A_PHONE,
+            *APPENDIX_C_REPRESENTATIVE.values(),
+            *APPENDIX_C_PHONE,
             *APPENDIX_A_OTHER_ELIGIBLE,
             *(f for pair in APPENDIX_A_YES_NO.values() for f in pair),
             *APPENDIX_A_PREMIUM_FREQUENCY.values(),
@@ -2983,6 +3031,38 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # -------------------------------------------------------------------
+        # Appendix C — the health-insurance authorized representative
+        # -------------------------------------------------------------------
+        appendix_c_prefix = "appendices.representative"
+
+        if any(
+            key.startswith(f"{appendix_c_prefix}.")
+            for key in canonical_values
+        ):
+            for canonical_suffix, pdf_field in (
+                self.APPENDIX_C_REPRESENTATIVE.items()
+            ):
+                set_field(
+                    pdf_field,
+                    canonical_values.get(
+                        f"{appendix_c_prefix}.{canonical_suffix}"
+                    ),
+                )
+
+            digits = "".join(
+                character
+                for character in str(
+                    canonical_values.get(f"{appendix_c_prefix}.phone") or ""
+                )
+                if character.isdigit()
+            )
+
+            if len(digits) == 10:
+                area_code_field, number_field = self.APPENDIX_C_PHONE
+                set_field(area_code_field, digits[:3])
+                set_field(number_field, f"{digits[3:6]}-{digits[6:]}")
 
         # -------------------------------------------------------------------
         # Appendix D — employment history

@@ -241,7 +241,12 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
   {
     saws: 'Q40 (signature block)',
     label: 'Applicant and other adult signatures and dates',
-    page: 23,
+    /*
+     * The signature block is at the foot of PDF page 7, not on the last page:
+     * the form asks for the signature before the questions, and the two DATE
+     * widgets beside the ruled lines are "Text61 PG 1" and "Text62 PG 1".
+     */
+    page: 7,
     status: 'manual_signature',
   },
 
@@ -299,6 +304,12 @@ function statusFromSchema(fields: Saws2Field[]): InventoryStatus {
   }
 
   if (fields.some((f) => f.pdf === 'no_widget')) return 'no_writable_widget';
+  /*
+   * Reviewed and rejected, rather than not yet looked at. Keeping these two
+   * apart matters: "not mapped yet" reads as work outstanding, and Q23f's
+   * single ambiguous checkbox is a decision, not a to-do.
+   */
+  if (fields.some((f) => f.pdf === 'ambiguous')) return 'mapping_uncertain';
   if (fields.some((f) => f.pdf === 'unreviewed')) return 'collected_not_mapped';
 
   // Everything left is mapped. Prefillable entries need no question at all.

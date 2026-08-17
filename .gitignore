@@ -12,3 +12,6 @@ build/
 .env
 .worktrees/
 .vercel
+
+# Archived .workforce run directories, saved during manual debugging.
+run-*.tar.gz

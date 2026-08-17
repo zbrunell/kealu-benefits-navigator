@@ -338,6 +338,36 @@ describe('appendices do not leak into each other', () => {
   });
 });
 
+describe('Appendix C', () => {
+  const plan = planFor('health_authorized_representative');
+  const value = (key: string) => plan.find((e) => e.key === key)?.value;
+
+  it('carries the representative appointed for health coverage', () => {
+    expect(value('appendices.representative.name')).toBe('Priya Raman');
+    expect(value('appendices.representative.organization')).toBe(
+      'Valley Health Navigators',
+    );
+    expect(value('appendices.representative.phone')).toBe('5595550199');
+  });
+
+  it('leaves the CalFresh-only representative off the appendix', () => {
+    // Both are still recorded against Q2; only one belongs on Appendix C.
+    expect(JSON.stringify(plan)).toContain('Dana Okafor');
+    expect(value('appendices.representative.name')).not.toBe('Dana Okafor');
+  });
+
+  it('still reports the appendix signature and its date as manual', () => {
+    const completion = completionFor('health_authorized_representative');
+
+    expect(
+      completion.byReason.signature.map((i) => i.saws),
+    ).toContain('Appendix C item 10');
+    expect(
+      completion.byReason.signature_date.map((i) => i.saws),
+    ).toContain('Appendix C item 11');
+  });
+});
+
 describe('appendices stay shut when they do not apply', () => {
   it('writes no appendix keys for a single-person CalFresh household', () => {
     expect(

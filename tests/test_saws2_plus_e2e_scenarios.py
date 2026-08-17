@@ -68,6 +68,7 @@ EXPECTED_WRITES = {
     "appendix_d_capacity": 79,
     "appendix_d_overflow": 67,
     "employer_coverage": 32,
+    "health_authorized_representative": 25,
     "tribal_membership": 33,
     "appendix_e_overflow": 39,
     "q25_personal_property_overflow": 18,
@@ -148,6 +149,7 @@ def test_the_matrix_covers_the_structural_boundaries(scenarios):
         "appendix_d_capacity",
         "appendix_d_overflow",
         "employer_coverage",
+        "health_authorized_representative",
         "tribal_membership",
         "appendix_e_overflow",
         "q25_personal_property_overflow",
@@ -494,3 +496,47 @@ def test_shrinking_leaves_values_that_already_fit_alone(scenarios, tmp_path_fact
     # Text7 is the narrow DATE OF BIRTH column and had to come down.
     assert sizes["Text7 PG 3"] is not None
     assert sizes["Text7 PG 3"] < 10
+
+
+def test_appendix_c_carries_the_health_representative(written_by_scenario):
+    """Appendix C names the representative appointed for health coverage.
+
+    Only that one: the printed page says it is for "the health insurance part
+    of this application", so a representative appointed only for CalFresh has
+    no business on it even though Q2 records them both.
+    """
+    written = written_by_scenario["health_authorized_representative"]
+
+    assert written["Text1 APPX B"] == "Priya Raman"
+    assert written["Text9 APPX B"] == "Valley Health Navigators"
+    assert "Dana Okafor" not in written.values()
+
+    # Item 7's phone splits like Appendix A's, into the printed "(   )".
+    assert written["Text7 APPX B"] == "559"
+    assert written["Text8 APPX B"] == "555-0199"
+
+
+def test_appendix_c_leaves_the_signature_and_assister_block_blank(
+    written_by_scenario,
+):
+    """Item 11 dates a signature, and the lower block belongs to a counsellor."""
+    written = written_by_scenario["health_authorized_representative"]
+
+    for field in (
+        "Text11 APPX B",  # 11. Date, beside "10. Your signature"
+        "Text12 APPX B",  # counsellor/navigator block, items 1-4
+        "Text13 APPX B",
+        "Text14 APPX B",
+        "Text15 APPX B",
+    ):
+        assert field not in written, field
+
+
+def test_appendix_c_leaves_the_split_address_boxes_blank(written_by_scenario):
+    """One address string cannot be split into city/state/ZIP without guessing."""
+    written = written_by_scenario["health_authorized_representative"]
+
+    assert written["Text2 APPX B"] == "44 Cedar Avenue, Fresno CA 93702"
+
+    for field in ("Text3 APPX B", "Text4 APPX B", "Text5 APPX B", "Text6 APPX B"):
+        assert field not in written, field

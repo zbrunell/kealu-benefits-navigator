@@ -912,6 +912,26 @@ function mapQuestionnaire(
     tri(`${prefix}.for_health_coverage`, representative.forHealthCoverage);
   }
 
+  /*
+   * Appendix C names the representative who may act on the *health-insurance*
+   * part of the application, which is what the printed page says it is for.
+   * A representative appointed only for CalFresh does not belong on it, and
+   * the appendix has one printed block, so the first such person takes it.
+   */
+  const healthRepresentative = activeEntries(
+    circumstances.authorizedRepresentative,
+  ).find((representative) => representative.forHealthCoverage === true);
+
+  if (healthRepresentative) {
+    text("appendices.representative.name", healthRepresentative.name);
+    text("appendices.representative.address", healthRepresentative.address);
+    text(
+      "appendices.representative.organization",
+      healthRepresentative.organization,
+    );
+    text("appendices.representative.phone", healthRepresentative.phone);
+  }
+
   // ── Income ─────────────────────────────────────────────────────────────
   tri("income.has_earned_income", income.earned.answer);
   tri("income.has_self_employment", income.selfEmployment.answer);

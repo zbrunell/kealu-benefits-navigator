@@ -343,6 +343,39 @@ export const SCENARIOS: readonly Scenario[] = [
     ]),
   },
   {
+    id: 'health_authorized_representative',
+    purpose:
+      'Appendix C active: a representative appointed for health coverage, ' +
+      'alongside one appointed only for CalFresh who must not appear on it.',
+    county: 'Fresno',
+    data: writes(base(['calfresh', 'medi_cal']), [
+      ['circumstances.authorizedRepresentative.answer', true],
+      [
+        'circumstances.authorizedRepresentative.entries',
+        [
+          {
+            id: 'rep-food',
+            name: 'Dana Okafor',
+            organization: 'Neighborhood Food Bank',
+            phone: '5595550188',
+            address: '900 Elm Street, Fresno CA 93701',
+            forCalFresh: true,
+            forHealthCoverage: false,
+          },
+          {
+            id: 'rep-health',
+            name: 'Priya Raman',
+            organization: 'Valley Health Navigators',
+            phone: '5595550199',
+            address: '44 Cedar Avenue, Fresno CA 93702',
+            forCalFresh: false,
+            forHealthCoverage: true,
+          },
+        ],
+      ],
+    ]),
+  },
+  {
     id: 'appendix_e_overflow',
     purpose:
       'Four vehicles against Appendix E’s three printed columns, with Q26 ' +

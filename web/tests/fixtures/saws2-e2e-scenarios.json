@@ -3838,6 +3838,231 @@
     }
   },
   {
+    "id": "health_authorized_representative",
+    "purpose": "Appendix C active: a representative appointed for health coverage, alongside one appointed only for CalFresh who must not appear on it.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "applicant.household.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 0
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 1
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.size",
+        "value": 1
+      },
+      {
+        "key": "programs.calfresh",
+        "value": true
+      },
+      {
+        "key": "programs.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.authorized_representative",
+        "value": true
+      },
+      {
+        "key": "household.authorized_representative.0.name",
+        "value": "Dana Okafor"
+      },
+      {
+        "key": "household.authorized_representative.0.organization",
+        "value": "Neighborhood Food Bank"
+      },
+      {
+        "key": "household.authorized_representative.0.phone",
+        "value": "5595550188"
+      },
+      {
+        "key": "household.authorized_representative.0.address",
+        "value": "900 Elm Street, Fresno CA 93701"
+      },
+      {
+        "key": "household.authorized_representative.0.for_calfresh",
+        "value": true
+      },
+      {
+        "key": "household.authorized_representative.0.for_health_coverage",
+        "value": false
+      },
+      {
+        "key": "household.authorized_representative.1.name",
+        "value": "Priya Raman"
+      },
+      {
+        "key": "household.authorized_representative.1.organization",
+        "value": "Valley Health Navigators"
+      },
+      {
+        "key": "household.authorized_representative.1.phone",
+        "value": "5595550199"
+      },
+      {
+        "key": "household.authorized_representative.1.address",
+        "value": "44 Cedar Avenue, Fresno CA 93702"
+      },
+      {
+        "key": "household.authorized_representative.1.for_calfresh",
+        "value": false
+      },
+      {
+        "key": "household.authorized_representative.1.for_health_coverage",
+        "value": true
+      },
+      {
+        "key": "appendices.representative.name",
+        "value": "Priya Raman"
+      },
+      {
+        "key": "appendices.representative.address",
+        "value": "44 Cedar Avenue, Fresno CA 93702"
+      },
+      {
+        "key": "appendices.representative.organization",
+        "value": "Valley Health Navigators"
+      },
+      {
+        "key": "appendices.representative.phone",
+        "value": "5595550199"
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "ssn.adult.0",
+      "signature.appendix_c",
+      "signature.appendix_c_date",
+      "unsupported.appendix_c_assister"
+    ],
+    "manualCounts": {
+      "ssn": 2,
+      "signature": 2,
+      "signature_date": 2,
+      "write_in": 0,
+      "overflow": 0,
+      "unsupported": 1,
+      "missing_answer": 68
+    }
+  },
+  {
     "id": "appendix_e_overflow",
     "purpose": "Four vehicles against Appendix E’s three printed columns, with Q26 open and cash aid making the appendix apply.",
     "county": "Fresno",

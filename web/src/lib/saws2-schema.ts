@@ -71,6 +71,14 @@ export type PdfStatus =
   | 'mapped'
   | 'unreviewed'
   | 'no_widget'
+  /**
+   * A destination exists but writing it would assert something the applicant
+   * did not say — the search is finished, and the answer is no. Distinct from
+   * `unreviewed`, which means nobody has looked yet: reporting Q23f as
+   * unreviewed invited a future pass to "finish" a mapping that was already
+   * decided against.
+   */
+  | 'ambiguous'
   | 'manual';
 
 /** Why an entry is manual-only. Required whenever support is `manual_only`. */
@@ -1217,7 +1225,7 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     tier: 3,
     kind: 'boolean',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'ambiguous',
     path: 'health.renewalAuthorization',
     canonicalKey: 'health.renewal_authorization',
     note:
@@ -1739,6 +1747,26 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     pdf: 'manual',
     manualReason: 'signature',
   },
+  {
+    id: 'appendices.representative_detail',
+    saws: 'Appendix C',
+    label:
+      'Authorized representative detail: name, address, phone and ' +
+      'organization, for the person appointed for health coverage',
+    section: 'circumstances',
+    tier: 3,
+    kind: 'records',
+    support: 'prefillable',
+    pdf: 'mapped',
+    canonicalKey: 'appendices.representative.name',
+    note:
+      'Items 1, 2, 7 and 8 are filled from the appointment the applicant ' +
+      'already described. Items 3-6 (apartment, city, state, ZIP) stay blank ' +
+      'because the model holds one address string and splitting it would be ' +
+      'guessing which part is which; item 9 (I.D. number) is not collected. ' +
+      'The appendix still requires the applicant’s signature, which is why ' +
+      'the printed question remains manual overall.',
+  },
 ];
 
 /** Fast lookup by semantic id. */
@@ -1761,6 +1789,18 @@ export function collectedButUnmappedFields(): Saws2Field[] {
   return SAWS2_FIELDS.filter(
     (field) => field.support === 'askable' && field.pdf === 'unreviewed',
   );
+}
+
+/**
+ * Entries whose destination was searched for and rejected.
+ *
+ * Distinct from `collectedButUnmappedFields`, which is work not yet done.
+ * These are decisions: writing the destination would assert something the
+ * applicant did not say, so it stays blank however many passes are made over
+ * the form.
+ */
+export function verifiedUnmappableFields(): Saws2Field[] {
+  return SAWS2_FIELDS.filter((field) => field.pdf === 'ambiguous');
 }
 
 /** Entries that must never be prefilled, with the reason. */

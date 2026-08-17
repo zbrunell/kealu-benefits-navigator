@@ -22,6 +22,7 @@ import {
   SAWS2_FIELDS,
   SAWS2_FIELD_BY_ID,
   collectedButUnmappedFields,
+  verifiedUnmappableFields,
   manualOnlyFields,
   mappedFields,
   type Saws2Field,
@@ -302,6 +303,7 @@ describe('coverage reporting', () => {
     const buckets: Array<Saws2Field[]> = [
       mappedFields(),
       collectedButUnmappedFields(),
+      verifiedUnmappableFields(),
       manualOnlyFields(),
     ];
 
@@ -316,15 +318,26 @@ describe('coverage reporting', () => {
     expect(counted.size + rest.length).toBe(SAWS2_FIELDS.length);
   });
 
-  it('reports the collected-but-unmapped gap explicitly', () => {
-    // These are the honest production gap: answered by the applicant, blank on
-    // the printed form. Readiness must be able to name them.
-    const gap = collectedButUnmappedFields();
+  it('has nothing left that is merely unreviewed', () => {
+    /*
+     * This bucket means "a destination might exist and nobody has looked". It
+     * being empty is the production milestone: every askable concept has now
+     * either been mapped or searched for and rejected. A new entry landing here
+     * is unfinished work, which is why the assertion is zero rather than a
+     * ceiling.
+     */
+    expect(collectedButUnmappedFields().map((f) => f.id)).toEqual([]);
+  });
 
-    expect(gap.length).toBeGreaterThan(0);
+  it('says why each verified-unmappable entry stays blank', () => {
+    const rejected = verifiedUnmappableFields();
 
-    for (const field of gap) {
+    expect(rejected.length).toBeGreaterThan(0);
+
+    for (const field of rejected) {
       expect(field.note, `${field.id} must say why it is unmapped`).toBeTruthy();
+      // The reason must be a finding about the form, not a to-do.
+      expect(field.note).toMatch(/verified|ambiguous|opposite|no .*checkbox/i);
     }
   });
 });
