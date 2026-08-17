@@ -153,6 +153,8 @@ describe('privacy boundary', () => {
         'documents that Appendix A item 2 (the employee SSN) has deliberately no field in the model, which is what makes it unstorable',
       'lib/saws2-inventory.ts':
         'classifies printed question Q6c as manual_ssn so readiness can report it as the applicant’s own step; it holds no SSN value',
+      'lib/draft-completion.ts':
+        'locates each printed SSN blank this draft leaves for a person to fill and names whose it is; it never carries a number, which is the reason the box was left blank',
       'i18n/messages/en.ts': 'manual-completion instruction shown after generation',
       'i18n/messages/es.ts': 'Spanish translation of the same instruction',
       'i18n/messages/zh-CN.ts': 'Chinese translation of the same instruction',

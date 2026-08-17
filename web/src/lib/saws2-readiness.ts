@@ -33,8 +33,11 @@
  *   because the record is not yet complete.
  */
 
-import { planHouseholdRows } from '@/lib/household-rows';
-import { blockersToReviewAndSign } from '@/lib/saws2-inventory';
+import {
+  assessDraftCompletion,
+  type DraftCompletion,
+  type ManualItem,
+} from '@/lib/draft-completion';
 import {
   getRequiredApplicationQuestions,
   householdHasElderlyOrDisabledMember,
@@ -91,15 +94,21 @@ export interface ProgramReadiness {
  * printed form to go, and a printed question the product does not model at all
  * never becomes a question in the first place. Both leave the applicant with
  * blanks, so both are reported rather than hidden behind a single boolean.
+ *
+ * The fields here now come from `assessDraftCompletion`, which inspects the
+ * draft that was actually generated, rather than from the semantic inventory,
+ * which describes the product's capabilities and gave every household the same
+ * answer. `completion` carries the full per-item detail; the three lists below
+ * are the same information shaped for the readiness UI.
  */
 export interface DraftCompleteness {
   /**
-   * True only when nothing but SSNs and signatures remains.
+   * True only when nothing but signatures and their dates remains.
    *
-   * Deliberately conservative: it is false while any applicable printed
-   * question is unanswered, unmapped, unmodeled, or overflowing a printed
-   * table. Claiming otherwise would tell the applicant a half-blank form is
-   * finished.
+   * Literal, and therefore usually false: every draft leaves at least the page
+   * 1 Social Security box for the applicant. Use `completion.readyForSignature`
+   * for "Kealu has done everything it can", and always show the manual items
+   * beside either one.
    */
   reviewAndSignOnly: boolean;
   /** Answers the applicant gave that the form cannot yet receive. */
@@ -108,6 +117,8 @@ export interface DraftCompleteness {
   notModeled: Requirement[];
   /** Repeated records beyond the rows the printed form provides. */
   overflow: Requirement[];
+  /** The per-draft detail every guide is generated from. */
+  completion: DraftCompletion;
 }
 
 export interface ApplicationReadiness {
@@ -553,76 +564,45 @@ const PROGRAM_KEYS = {
   medi_cal: 'mediCal',
 } as const;
 
-/** Printed rows the SAWS 2 PLUS household tables provide. */
-const PRINTED_HOUSEHOLD_ROWS = 5;
+/** One manual item, shaped as a readiness requirement. */
+function requirementFor(item: ManualItem): Requirement {
+  const where = item.page
+    ? ` (${item.printedPage}, PDF page ${item.page})`
+    : '';
+
+  return {
+    id: `draft.${item.id}`,
+    program: 'all',
+    requirement: `${item.saws}: ${item.printedLabel}${where}. ${item.instruction}`,
+    stage: item.reason === 'missing_answer' ? 'determination' : 'filing',
+    effect: 'allows_filing_requires_follow_up',
+    source: SOURCE.CF_FILING,
+    manualOnly:
+      item.reason === 'ssn' ||
+      item.reason === 'signature' ||
+      item.reason === 'signature_date',
+  };
+}
 
 /**
  * What still stands between the generated PDF and a review-and-sign draft.
  *
- * Reads the semantic inventory rather than a field count, because the two are
- * unrelated: one printed question can own thirty widgets or none.
+ * Delegates to `assessDraftCompletion`, which walks the draft that was actually
+ * produced. This used to read the semantic inventory instead, which describes
+ * what the *product* can do rather than what *this document* contains — so it
+ * reported the same blockers to every household regardless of their answers,
+ * and reported none at all for a household whose eighth job simply fell off the
+ * end of a four-row table.
  */
-function draftCompleteness(
-  data: Saws2PlusApplicationData,
-  questionnaireComplete: boolean,
-): DraftCompleteness {
-  const answeredButNotWritable: Requirement[] = [];
-  const notModeled: Requirement[] = [];
-
-  for (const entry of blockersToReviewAndSign()) {
-    const requirement: Requirement = {
-      id: `draft.${entry.saws.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
-      program: 'all',
-      requirement: `${entry.saws}: ${entry.label}.${
-        entry.note ? ` ${entry.note}` : ''
-      }`,
-      stage: 'determination',
-      effect: 'allows_filing_requires_follow_up',
-      source: SOURCE.CF_FILING,
-    };
-
-    if (entry.status === 'collected_not_mapped') {
-      answeredButNotWritable.push(requirement);
-    } else {
-      notModeled.push(requirement);
-    }
-  }
-
-  // Overflow: more people than the printed tables can hold.
-  const rows = planHouseholdRows(data);
-  const overflow: Requirement[] = [];
-
-  for (const [table, assignments] of [
-    ['adult', rows.adults],
-    ['child', rows.children],
-  ] as const) {
-    const extra = assignments.length - PRINTED_HOUSEHOLD_ROWS;
-
-    if (extra <= 0) continue;
-
-    overflow.push({
-      id: `draft.overflow.${table}`,
-      program: 'all',
-      requirement:
-        `The printed ${table} table has ${PRINTED_HOUSEHOLD_ROWS} rows and this ` +
-        `household has ${assignments.length} ${table}s. The ${extra} extra ` +
-        'must be listed on an attached sheet — they are not dropped silently, ' +
-        'but the form cannot hold them.',
-      stage: 'filing',
-      effect: 'allows_filing_requires_follow_up',
-      source: SOURCE.CF_FILING,
-    });
-  }
+function draftCompleteness(data: Saws2PlusApplicationData): DraftCompleteness {
+  const completion = assessDraftCompletion(data);
 
   return {
-    reviewAndSignOnly:
-      questionnaireComplete &&
-      answeredButNotWritable.length === 0 &&
-      notModeled.length === 0 &&
-      overflow.length === 0,
-    answeredButNotWritable,
-    notModeled,
-    overflow,
+    reviewAndSignOnly: completion.reviewAndSignOnly,
+    answeredButNotWritable: completion.byReason.write_in.map(requirementFor),
+    notModeled: completion.byReason.unsupported.map(requirementFor),
+    overflow: completion.byReason.overflow.map(requirementFor),
+    completion,
   };
 }
 
@@ -680,7 +660,7 @@ export function evaluateApplicationReadiness(
    * excluded by construction because they are never planned questions.
    */
   const plan = getRequiredApplicationQuestions(data);
-  const completeness = draftCompleteness(data, plan.outstanding.length === 0);
+  const completeness = draftCompleteness(data);
 
   return {
     filingReady,
