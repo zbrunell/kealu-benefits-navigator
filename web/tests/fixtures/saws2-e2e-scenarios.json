@@ -1,0 +1,5033 @@
+[
+  {
+    "id": "single_person",
+    "purpose": "One adult, one program. The smallest document the flow produces.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 0
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 1
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.size",
+        "value": 1
+      },
+      {
+        "key": "programs.calfresh",
+        "value": true
+      },
+      {
+        "key": "income.has_earned_income",
+        "value": false
+      },
+      {
+        "key": "income.has_unearned_income",
+        "value": false
+      },
+      {
+        "key": "resources.has_vehicles",
+        "value": false
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "ssn.adult.0"
+    ],
+    "manualCounts": {
+      "ssn": 2,
+      "signature": 1,
+      "signature_date": 1,
+      "write_in": 0,
+      "overflow": 0,
+      "unsupported": 0,
+      "missing_answer": 66
+    }
+  },
+  {
+    "id": "multi_person",
+    "purpose": "Two adults and two children across all three programs.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "applicant.household.applying_for.calworks",
+        "value": true
+      },
+      {
+        "key": "applicant.household.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.0.present",
+        "value": true
+      },
+      {
+        "key": "household.members.0.first_name",
+        "value": "Luis"
+      },
+      {
+        "key": "household.members.0.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.0.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.0.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.0.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.0.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.0.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.1.present",
+        "value": true
+      },
+      {
+        "key": "household.members.1.first_name",
+        "value": "Sofia"
+      },
+      {
+        "key": "household.members.1.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.1.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.1.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.1.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.1.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.1.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.1.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.1.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.1.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.2.present",
+        "value": true
+      },
+      {
+        "key": "household.members.2.first_name",
+        "value": "Ana"
+      },
+      {
+        "key": "household.members.2.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.2.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.2.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.2.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.2.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.2.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.2.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.2.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.2.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 3
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 2
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 2
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.members.0.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.0.table_row",
+        "value": 1
+      },
+      {
+        "key": "household.members.1.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.1.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.members.2.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.2.table_row",
+        "value": 1
+      },
+      {
+        "key": "household.size",
+        "value": 4
+      },
+      {
+        "key": "programs.calfresh",
+        "value": true
+      },
+      {
+        "key": "programs.calworks",
+        "value": true
+      },
+      {
+        "key": "programs.medi_cal",
+        "value": true
+      },
+      {
+        "key": "income.has_earned_income",
+        "value": true
+      },
+      {
+        "key": "income.earned.0.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.0.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.0.employer_name",
+        "value": "Employer 1"
+      },
+      {
+        "key": "income.earned.0.expected_to_continue",
+        "value": true
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "signature.second_adult",
+      "signature.second_adult_date",
+      "ssn.adult.0",
+      "ssn.adult.1",
+      "ssn.child.0",
+      "ssn.child.1"
+    ],
+    "manualCounts": {
+      "ssn": 5,
+      "signature": 2,
+      "signature_date": 2,
+      "write_in": 0,
+      "overflow": 0,
+      "unsupported": 0,
+      "missing_answer": 69
+    }
+  },
+  {
+    "id": "max_household_rows",
+    "purpose": "Exactly five adults and five children — both printed tables full, with nothing overflowing.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.0.present",
+        "value": true
+      },
+      {
+        "key": "household.members.0.first_name",
+        "value": "Adult0"
+      },
+      {
+        "key": "household.members.0.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.0.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.0.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.0.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.0.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.0.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.1.present",
+        "value": true
+      },
+      {
+        "key": "household.members.1.first_name",
+        "value": "Adult1"
+      },
+      {
+        "key": "household.members.1.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.1.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.1.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.1.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.1.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.1.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.2.present",
+        "value": true
+      },
+      {
+        "key": "household.members.2.first_name",
+        "value": "Adult2"
+      },
+      {
+        "key": "household.members.2.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.2.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.2.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.2.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.2.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.2.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.3.present",
+        "value": true
+      },
+      {
+        "key": "household.members.3.first_name",
+        "value": "Adult3"
+      },
+      {
+        "key": "household.members.3.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.3.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.3.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.3.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.3.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.3.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.4.present",
+        "value": true
+      },
+      {
+        "key": "household.members.4.first_name",
+        "value": "Child0"
+      },
+      {
+        "key": "household.members.4.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.4.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.4.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.4.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.4.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.4.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.4.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.4.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.4.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.5.present",
+        "value": true
+      },
+      {
+        "key": "household.members.5.first_name",
+        "value": "Child1"
+      },
+      {
+        "key": "household.members.5.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.5.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.5.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.5.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.5.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.5.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.5.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.5.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.5.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.6.present",
+        "value": true
+      },
+      {
+        "key": "household.members.6.first_name",
+        "value": "Child2"
+      },
+      {
+        "key": "household.members.6.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.6.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.6.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.6.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.6.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.6.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.6.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.6.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.6.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.7.present",
+        "value": true
+      },
+      {
+        "key": "household.members.7.first_name",
+        "value": "Child3"
+      },
+      {
+        "key": "household.members.7.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.7.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.7.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.7.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.7.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.7.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.7.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.7.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.7.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.8.present",
+        "value": true
+      },
+      {
+        "key": "household.members.8.first_name",
+        "value": "Child4"
+      },
+      {
+        "key": "household.members.8.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.8.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.8.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.8.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.8.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.8.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.8.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.8.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.8.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 9
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 5
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 5
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.members.0.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.0.table_row",
+        "value": 1
+      },
+      {
+        "key": "household.members.1.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.1.table_row",
+        "value": 2
+      },
+      {
+        "key": "household.members.2.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.2.table_row",
+        "value": 3
+      },
+      {
+        "key": "household.members.3.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.3.table_row",
+        "value": 4
+      },
+      {
+        "key": "household.members.4.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.4.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.members.5.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.5.table_row",
+        "value": 1
+      },
+      {
+        "key": "household.members.6.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.6.table_row",
+        "value": 2
+      },
+      {
+        "key": "household.members.7.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.7.table_row",
+        "value": 3
+      },
+      {
+        "key": "household.members.8.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.8.table_row",
+        "value": 4
+      },
+      {
+        "key": "household.size",
+        "value": 10
+      },
+      {
+        "key": "programs.calfresh",
+        "value": true
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "signature.second_adult",
+      "signature.second_adult_date",
+      "ssn.adult.0",
+      "ssn.adult.1",
+      "ssn.adult.2",
+      "ssn.adult.3",
+      "ssn.adult.4",
+      "ssn.child.0",
+      "ssn.child.1",
+      "ssn.child.2",
+      "ssn.child.3",
+      "ssn.child.4"
+    ],
+    "manualCounts": {
+      "ssn": 11,
+      "signature": 2,
+      "signature_date": 2,
+      "write_in": 0,
+      "overflow": 0,
+      "unsupported": 0,
+      "missing_answer": 69
+    }
+  },
+  {
+    "id": "household_overflow",
+    "purpose": "Seven adults and six children — both printed tables overflow, and the extra people must be reported rather than dropped.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.0.present",
+        "value": true
+      },
+      {
+        "key": "household.members.0.first_name",
+        "value": "Adult0"
+      },
+      {
+        "key": "household.members.0.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.0.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.0.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.0.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.0.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.0.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.1.present",
+        "value": true
+      },
+      {
+        "key": "household.members.1.first_name",
+        "value": "Adult1"
+      },
+      {
+        "key": "household.members.1.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.1.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.1.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.1.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.1.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.1.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.2.present",
+        "value": true
+      },
+      {
+        "key": "household.members.2.first_name",
+        "value": "Adult2"
+      },
+      {
+        "key": "household.members.2.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.2.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.2.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.2.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.2.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.2.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.3.present",
+        "value": true
+      },
+      {
+        "key": "household.members.3.first_name",
+        "value": "Adult3"
+      },
+      {
+        "key": "household.members.3.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.3.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.3.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.3.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.3.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.3.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.4.present",
+        "value": true
+      },
+      {
+        "key": "household.members.4.first_name",
+        "value": "Adult4"
+      },
+      {
+        "key": "household.members.4.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.4.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.4.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.4.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.4.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.4.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.5.present",
+        "value": true
+      },
+      {
+        "key": "household.members.5.first_name",
+        "value": "Adult5"
+      },
+      {
+        "key": "household.members.5.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.5.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.5.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.5.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.5.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.5.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.6.present",
+        "value": true
+      },
+      {
+        "key": "household.members.6.first_name",
+        "value": "Child0"
+      },
+      {
+        "key": "household.members.6.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.6.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.6.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.6.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.6.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.6.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.6.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.6.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.6.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.7.present",
+        "value": true
+      },
+      {
+        "key": "household.members.7.first_name",
+        "value": "Child1"
+      },
+      {
+        "key": "household.members.7.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.7.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.7.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.7.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.7.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.7.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.7.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.7.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.7.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.8.present",
+        "value": true
+      },
+      {
+        "key": "household.members.8.first_name",
+        "value": "Child2"
+      },
+      {
+        "key": "household.members.8.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.8.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.8.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.8.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.8.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.8.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.8.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.8.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.8.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.9.present",
+        "value": true
+      },
+      {
+        "key": "household.members.9.first_name",
+        "value": "Child3"
+      },
+      {
+        "key": "household.members.9.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.9.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.9.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.9.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.9.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.9.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.9.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.9.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.9.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.10.present",
+        "value": true
+      },
+      {
+        "key": "household.members.10.first_name",
+        "value": "Child4"
+      },
+      {
+        "key": "household.members.10.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.10.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.10.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.10.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.10.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.10.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.10.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.10.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.10.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.11.present",
+        "value": true
+      },
+      {
+        "key": "household.members.11.first_name",
+        "value": "Child5"
+      },
+      {
+        "key": "household.members.11.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.11.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.11.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.11.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.11.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.11.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.11.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.11.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.11.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 12
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 7
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 6
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.members.0.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.0.table_row",
+        "value": 1
+      },
+      {
+        "key": "household.members.1.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.1.table_row",
+        "value": 2
+      },
+      {
+        "key": "household.members.2.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.2.table_row",
+        "value": 3
+      },
+      {
+        "key": "household.members.3.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.3.table_row",
+        "value": 4
+      },
+      {
+        "key": "household.members.4.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.4.table_row",
+        "value": 5
+      },
+      {
+        "key": "household.members.5.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.5.table_row",
+        "value": 6
+      },
+      {
+        "key": "household.members.6.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.6.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.members.7.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.7.table_row",
+        "value": 1
+      },
+      {
+        "key": "household.members.8.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.8.table_row",
+        "value": 2
+      },
+      {
+        "key": "household.members.9.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.9.table_row",
+        "value": 3
+      },
+      {
+        "key": "household.members.10.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.10.table_row",
+        "value": 4
+      },
+      {
+        "key": "household.members.11.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.11.table_row",
+        "value": 5
+      },
+      {
+        "key": "household.size",
+        "value": 13
+      },
+      {
+        "key": "programs.calfresh",
+        "value": true
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "signature.second_adult",
+      "signature.second_adult_date",
+      "ssn.adult.0",
+      "ssn.adult.1",
+      "ssn.adult.2",
+      "ssn.adult.3",
+      "ssn.adult.4",
+      "overflow.household.adults.6",
+      "overflow.household.adults.7",
+      "ssn.child.0",
+      "ssn.child.1",
+      "ssn.child.2",
+      "ssn.child.3",
+      "ssn.child.4",
+      "overflow.household.childs.6"
+    ],
+    "manualCounts": {
+      "ssn": 11,
+      "signature": 2,
+      "signature_date": 2,
+      "write_in": 0,
+      "overflow": 3,
+      "unsupported": 0,
+      "missing_answer": 69
+    }
+  },
+  {
+    "id": "no_employment",
+    "purpose": "Q8 answered No. The gateway must tick No and no job row may be written anywhere.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 0
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 1
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.size",
+        "value": 1
+      },
+      {
+        "key": "programs.calfresh",
+        "value": true
+      },
+      {
+        "key": "income.has_earned_income",
+        "value": false
+      },
+      {
+        "key": "income.has_self_employment",
+        "value": false
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "ssn.adult.0"
+    ],
+    "manualCounts": {
+      "ssn": 2,
+      "signature": 1,
+      "signature_date": 1,
+      "write_in": 0,
+      "overflow": 0,
+      "unsupported": 0,
+      "missing_answer": 67
+    }
+  },
+  {
+    "id": "one_job",
+    "purpose": "A single earned-income record filling the first printed row.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 0
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 1
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.size",
+        "value": 1
+      },
+      {
+        "key": "programs.calfresh",
+        "value": true
+      },
+      {
+        "key": "income.has_earned_income",
+        "value": true
+      },
+      {
+        "key": "income.earned.0.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.0.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.0.employer_name",
+        "value": "Employer 1"
+      },
+      {
+        "key": "income.earned.0.expected_to_continue",
+        "value": true
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "ssn.adult.0"
+    ],
+    "manualCounts": {
+      "ssn": 2,
+      "signature": 1,
+      "signature_date": 1,
+      "write_in": 0,
+      "overflow": 0,
+      "unsupported": 0,
+      "missing_answer": 68
+    }
+  },
+  {
+    "id": "earned_income_at_capacity",
+    "purpose": "Four earned records — exactly the four printed rows on Q8.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 0
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 1
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.size",
+        "value": 1
+      },
+      {
+        "key": "programs.calfresh",
+        "value": true
+      },
+      {
+        "key": "income.has_earned_income",
+        "value": true
+      },
+      {
+        "key": "income.earned.0.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.0.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.0.employer_name",
+        "value": "Employer 1"
+      },
+      {
+        "key": "income.earned.0.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.1.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.1.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.1.employer_name",
+        "value": "Employer 2"
+      },
+      {
+        "key": "income.earned.1.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.2.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.2.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.2.employer_name",
+        "value": "Employer 3"
+      },
+      {
+        "key": "income.earned.2.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.3.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.3.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.3.employer_name",
+        "value": "Employer 4"
+      },
+      {
+        "key": "income.earned.3.expected_to_continue",
+        "value": true
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "ssn.adult.0"
+    ],
+    "manualCounts": {
+      "ssn": 2,
+      "signature": 1,
+      "signature_date": 1,
+      "write_in": 0,
+      "overflow": 0,
+      "unsupported": 0,
+      "missing_answer": 68
+    }
+  },
+  {
+    "id": "earned_income_overflow",
+    "purpose": "Six earned records against four printed rows.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 0
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 1
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.size",
+        "value": 1
+      },
+      {
+        "key": "programs.calfresh",
+        "value": true
+      },
+      {
+        "key": "income.has_earned_income",
+        "value": true
+      },
+      {
+        "key": "income.earned.0.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.0.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.0.employer_name",
+        "value": "Employer 1"
+      },
+      {
+        "key": "income.earned.0.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.1.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.1.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.1.employer_name",
+        "value": "Employer 2"
+      },
+      {
+        "key": "income.earned.1.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.2.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.2.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.2.employer_name",
+        "value": "Employer 3"
+      },
+      {
+        "key": "income.earned.2.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.3.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.3.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.3.employer_name",
+        "value": "Employer 4"
+      },
+      {
+        "key": "income.earned.3.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.4.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.4.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.4.employer_name",
+        "value": "Employer 5"
+      },
+      {
+        "key": "income.earned.4.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.5.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "income.earned.5.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "income.earned.5.employer_name",
+        "value": "Employer 6"
+      },
+      {
+        "key": "income.earned.5.expected_to_continue",
+        "value": true
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "ssn.adult.0",
+      "overflow.income.earned.5",
+      "overflow.income.earned.6"
+    ],
+    "manualCounts": {
+      "ssn": 2,
+      "signature": 1,
+      "signature_date": 1,
+      "write_in": 0,
+      "overflow": 2,
+      "unsupported": 0,
+      "missing_answer": 68
+    }
+  },
+  {
+    "id": "appendix_d_capacity",
+    "purpose": "Cash aid, two working adults, three jobs each — Appendix D filled to exactly its printed capacity across both pages.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calworks",
+        "value": true
+      },
+      {
+        "key": "household.members.0.present",
+        "value": true
+      },
+      {
+        "key": "household.members.0.first_name",
+        "value": "Luis"
+      },
+      {
+        "key": "household.members.0.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.0.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.0.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.0.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.0.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.0.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 1
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 2
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.members.0.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.0.table_row",
+        "value": 1
+      },
+      {
+        "key": "household.size",
+        "value": 2
+      },
+      {
+        "key": "programs.calworks",
+        "value": true
+      },
+      {
+        "key": "appendices.employment.0.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.employment.0.job.0.employer",
+        "value": "History Employer 1, 1 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.0.job.0.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.0.job.0.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.0.job.0.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.0.job.0.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.0.job.0.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.0.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.0.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.0.job.0.pay_frequency",
+        "value": "hourly"
+      },
+      {
+        "key": "appendices.employment.0.job.1.employer",
+        "value": "History Employer 2, 2 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.0.job.1.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.0.job.1.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.0.job.1.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.0.job.1.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.0.job.1.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.1.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.1.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.0.job.1.pay_frequency",
+        "value": "hourly"
+      },
+      {
+        "key": "appendices.employment.0.job.2.employer",
+        "value": "History Employer 3, 3 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.0.job.2.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.0.job.2.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.0.job.2.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.0.job.2.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.0.job.2.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.2.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.2.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.0.job.2.pay_frequency",
+        "value": "hourly"
+      },
+      {
+        "key": "appendices.employment.1.person_name",
+        "value": "Luis Reyes"
+      },
+      {
+        "key": "appendices.employment.1.job.0.employer",
+        "value": "History Employer 1, 1 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.1.job.0.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.1.job.0.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.1.job.0.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.1.job.0.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.1.job.0.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.1.job.0.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.1.job.0.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.1.job.0.pay_frequency",
+        "value": "hourly"
+      },
+      {
+        "key": "appendices.employment.1.job.1.employer",
+        "value": "History Employer 2, 2 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.1.job.1.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.1.job.1.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.1.job.1.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.1.job.1.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.1.job.1.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.1.job.1.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.1.job.1.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.1.job.1.pay_frequency",
+        "value": "hourly"
+      },
+      {
+        "key": "appendices.employment.1.job.2.employer",
+        "value": "History Employer 3, 3 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.1.job.2.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.1.job.2.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.1.job.2.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.1.job.2.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.1.job.2.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.1.job.2.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.1.job.2.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.1.job.2.pay_frequency",
+        "value": "hourly"
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "signature.second_adult",
+      "signature.second_adult_date",
+      "ssn.adult.0",
+      "ssn.adult.1",
+      "write_in.appendix_d.0.0",
+      "write_in.appendix_d.0.1",
+      "write_in.appendix_d.0.2",
+      "write_in.appendix_d.1.0",
+      "write_in.appendix_d.1.1",
+      "write_in.appendix_d.1.2"
+    ],
+    "manualCounts": {
+      "ssn": 3,
+      "signature": 2,
+      "signature_date": 2,
+      "write_in": 6,
+      "overflow": 0,
+      "unsupported": 0,
+      "missing_answer": 69
+    }
+  },
+  {
+    "id": "appendix_d_overflow",
+    "purpose": "Three working adults and a fourth job for one of them — Appendix D runs past both its person and its job capacity.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calworks",
+        "value": true
+      },
+      {
+        "key": "household.members.0.present",
+        "value": true
+      },
+      {
+        "key": "household.members.0.first_name",
+        "value": "Luis"
+      },
+      {
+        "key": "household.members.0.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.0.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.0.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.0.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.0.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.0.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.1.present",
+        "value": true
+      },
+      {
+        "key": "household.members.1.first_name",
+        "value": "Nia"
+      },
+      {
+        "key": "household.members.1.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.1.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.1.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.1.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.1.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.1.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 2
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 3
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.members.0.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.0.table_row",
+        "value": 1
+      },
+      {
+        "key": "household.members.1.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.1.table_row",
+        "value": 2
+      },
+      {
+        "key": "household.size",
+        "value": 3
+      },
+      {
+        "key": "programs.calworks",
+        "value": true
+      },
+      {
+        "key": "appendices.employment.0.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.employment.0.job.0.employer",
+        "value": "History Employer 1, 1 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.0.job.0.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.0.job.0.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.0.job.0.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.0.job.0.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.0.job.0.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.0.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.0.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.0.job.0.pay_frequency",
+        "value": "hourly"
+      },
+      {
+        "key": "appendices.employment.0.job.1.employer",
+        "value": "History Employer 2, 2 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.0.job.1.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.0.job.1.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.0.job.1.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.0.job.1.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.0.job.1.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.1.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.1.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.0.job.1.pay_frequency",
+        "value": "hourly"
+      },
+      {
+        "key": "appendices.employment.0.job.2.employer",
+        "value": "History Employer 3, 3 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.0.job.2.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.0.job.2.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.0.job.2.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.0.job.2.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.0.job.2.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.2.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.2.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.0.job.2.pay_frequency",
+        "value": "hourly"
+      },
+      {
+        "key": "appendices.employment.1.person_name",
+        "value": "Luis Reyes"
+      },
+      {
+        "key": "appendices.employment.1.job.0.employer",
+        "value": "History Employer 1, 1 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.1.job.0.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.1.job.0.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.1.job.0.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.1.job.0.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.1.job.0.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.1.job.0.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.1.job.0.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.1.job.0.pay_frequency",
+        "value": "hourly"
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "signature.second_adult",
+      "signature.second_adult_date",
+      "ssn.adult.0",
+      "ssn.adult.1",
+      "ssn.adult.2",
+      "write_in.appendix_d.0.0",
+      "write_in.appendix_d.0.1",
+      "write_in.appendix_d.0.2",
+      "overflow.appendices.employment.0",
+      "overflow.appendices.employment.1",
+      "write_in.appendix_d.1.0"
+    ],
+    "manualCounts": {
+      "ssn": 4,
+      "signature": 2,
+      "signature_date": 2,
+      "write_in": 4,
+      "overflow": 2,
+      "unsupported": 0,
+      "missing_answer": 69
+    }
+  },
+  {
+    "id": "employer_coverage",
+    "purpose": "Appendix A active: an employer that offers health coverage.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.0.present",
+        "value": true
+      },
+      {
+        "key": "household.members.0.first_name",
+        "value": "Luis"
+      },
+      {
+        "key": "household.members.0.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.0.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.0.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.0.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.0.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.0.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 1
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 2
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.members.0.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.0.table_row",
+        "value": 1
+      },
+      {
+        "key": "household.size",
+        "value": 2
+      },
+      {
+        "key": "programs.medi_cal",
+        "value": true
+      },
+      {
+        "key": "health.has_employer_coverage",
+        "value": true
+      },
+      {
+        "key": "appendices.employer_coverage.0.employee_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.employer_coverage.0.employer_name",
+        "value": "Bright Star Cafe"
+      },
+      {
+        "key": "appendices.employer_coverage.0.employer_phone",
+        "value": "5595550111"
+      },
+      {
+        "key": "appendices.employer_coverage.0.eligible_now_or_soon",
+        "value": true
+      },
+      {
+        "key": "appendices.employer_coverage.0.meets_minimum_value_standard",
+        "value": true
+      },
+      {
+        "key": "appendices.employer_coverage.0.lowest_cost_premium",
+        "value": 210
+      },
+      {
+        "key": "appendices.employer_coverage.0.plan_change",
+        "value": "no_changes_expected"
+      },
+      {
+        "key": "health.employer_coverage.0.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "health.employer_coverage.0.employer_name",
+        "value": "Bright Star Cafe"
+      },
+      {
+        "key": "health.employer_coverage.0.employer_phone",
+        "value": "5595550111"
+      },
+      {
+        "key": "health.employer_coverage.0.offers_coverage",
+        "value": true
+      },
+      {
+        "key": "health.employer_coverage.0.eligible_now_or_soon",
+        "value": true
+      },
+      {
+        "key": "health.employer_coverage.0.lowest_cost_premium",
+        "value": 210
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "signature.second_adult",
+      "signature.second_adult_date",
+      "ssn.adult.0",
+      "ssn.adult.1",
+      "ssn.appendix_a_employee"
+    ],
+    "manualCounts": {
+      "ssn": 4,
+      "signature": 2,
+      "signature_date": 2,
+      "write_in": 0,
+      "overflow": 0,
+      "unsupported": 0,
+      "missing_answer": 68
+    }
+  },
+  {
+    "id": "tribal_membership",
+    "purpose": "Appendix B active, including item 3’s No-conditional follow-up.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.0.present",
+        "value": true
+      },
+      {
+        "key": "household.members.0.first_name",
+        "value": "Luis"
+      },
+      {
+        "key": "household.members.0.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.0.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.0.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.0.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.0.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.0.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 1
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 2
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.members.0.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.0.table_row",
+        "value": 1
+      },
+      {
+        "key": "household.size",
+        "value": 2
+      },
+      {
+        "key": "programs.medi_cal",
+        "value": true
+      },
+      {
+        "key": "health.american_indian_or_alaska_native",
+        "value": true
+      },
+      {
+        "key": "appendices.tribal.0.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.tribal.0.member_of_tribe",
+        "value": true
+      },
+      {
+        "key": "appendices.tribal.0.received_indian_health_service",
+        "value": false
+      },
+      {
+        "key": "appendices.tribal.0.has_excludable_tribal_income",
+        "value": true
+      },
+      {
+        "key": "appendices.tribal.0.tribe_name",
+        "value": "Yurok"
+      },
+      {
+        "key": "appendices.tribal.0.eligible_for_indian_health_service",
+        "value": true
+      },
+      {
+        "key": "appendices.tribal.0.tribal_income_amount",
+        "value": 250
+      },
+      {
+        "key": "appendices.tribal.0.tribal_income_frequency",
+        "value": "Yearly"
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "signature.second_adult",
+      "signature.second_adult_date",
+      "ssn.adult.0",
+      "ssn.adult.1"
+    ],
+    "manualCounts": {
+      "ssn": 3,
+      "signature": 2,
+      "signature_date": 2,
+      "write_in": 0,
+      "overflow": 0,
+      "unsupported": 0,
+      "missing_answer": 68
+    }
+  },
+  {
+    "id": "appendix_e_overflow",
+    "purpose": "Four vehicles against Appendix E’s three printed columns, with Q26 open and cash aid making the appendix apply.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calworks",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 0
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 1
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.size",
+        "value": 1
+      },
+      {
+        "key": "programs.calworks",
+        "value": true
+      },
+      {
+        "key": "resources.has_vehicles",
+        "value": true
+      },
+      {
+        "key": "appendices.vehicle.0.owner_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.vehicle.0.user_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.vehicle.0.year_make_model",
+        "value": "2010 Toyota Corolla"
+      },
+      {
+        "key": "appendices.vehicle.0.license_number",
+        "value": "7ABC120"
+      },
+      {
+        "key": "appendices.vehicle.0.is_leased",
+        "value": false
+      },
+      {
+        "key": "appendices.vehicle.0.fair_market_value",
+        "value": 4000
+      },
+      {
+        "key": "appendices.vehicle.0.fair_market_value_source",
+        "value": "kelly_blue_book"
+      },
+      {
+        "key": "appendices.vehicle.1.owner_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.vehicle.1.user_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.vehicle.1.year_make_model",
+        "value": "2011 Toyota Corolla"
+      },
+      {
+        "key": "appendices.vehicle.1.license_number",
+        "value": "7ABC121"
+      },
+      {
+        "key": "appendices.vehicle.1.is_leased",
+        "value": false
+      },
+      {
+        "key": "appendices.vehicle.1.fair_market_value",
+        "value": 4001
+      },
+      {
+        "key": "appendices.vehicle.1.fair_market_value_source",
+        "value": "kelly_blue_book"
+      },
+      {
+        "key": "appendices.vehicle.2.owner_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.vehicle.2.user_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.vehicle.2.year_make_model",
+        "value": "2012 Toyota Corolla"
+      },
+      {
+        "key": "appendices.vehicle.2.license_number",
+        "value": "7ABC122"
+      },
+      {
+        "key": "appendices.vehicle.2.is_leased",
+        "value": false
+      },
+      {
+        "key": "appendices.vehicle.2.fair_market_value",
+        "value": 4002
+      },
+      {
+        "key": "appendices.vehicle.2.fair_market_value_source",
+        "value": "kelly_blue_book"
+      },
+      {
+        "key": "appendices.vehicle.3.owner_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.vehicle.3.user_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.vehicle.3.year_make_model",
+        "value": "2013 Toyota Corolla"
+      },
+      {
+        "key": "appendices.vehicle.3.license_number",
+        "value": "7ABC123"
+      },
+      {
+        "key": "appendices.vehicle.3.is_leased",
+        "value": false
+      },
+      {
+        "key": "appendices.vehicle.3.fair_market_value",
+        "value": 4003
+      },
+      {
+        "key": "appendices.vehicle.3.fair_market_value_source",
+        "value": "kelly_blue_book"
+      },
+      {
+        "key": "resources.vehicles.0.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "resources.vehicles.0.year",
+        "value": "2010"
+      },
+      {
+        "key": "resources.vehicles.0.make",
+        "value": "Toyota"
+      },
+      {
+        "key": "resources.vehicles.0.model",
+        "value": "Corolla"
+      },
+      {
+        "key": "resources.vehicles.0.used_for",
+        "value": "Getting to work"
+      },
+      {
+        "key": "resources.vehicles.1.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "resources.vehicles.1.year",
+        "value": "2011"
+      },
+      {
+        "key": "resources.vehicles.1.make",
+        "value": "Toyota"
+      },
+      {
+        "key": "resources.vehicles.1.model",
+        "value": "Corolla"
+      },
+      {
+        "key": "resources.vehicles.1.used_for",
+        "value": "Getting to work"
+      },
+      {
+        "key": "resources.vehicles.2.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "resources.vehicles.2.year",
+        "value": "2012"
+      },
+      {
+        "key": "resources.vehicles.2.make",
+        "value": "Toyota"
+      },
+      {
+        "key": "resources.vehicles.2.model",
+        "value": "Corolla"
+      },
+      {
+        "key": "resources.vehicles.2.used_for",
+        "value": "Getting to work"
+      },
+      {
+        "key": "resources.vehicles.3.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "resources.vehicles.3.year",
+        "value": "2013"
+      },
+      {
+        "key": "resources.vehicles.3.make",
+        "value": "Toyota"
+      },
+      {
+        "key": "resources.vehicles.3.model",
+        "value": "Corolla"
+      },
+      {
+        "key": "resources.vehicles.3.used_for",
+        "value": "Getting to work"
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "ssn.adult.0",
+      "overflow.appendices.vehicle.4"
+    ],
+    "manualCounts": {
+      "ssn": 2,
+      "signature": 1,
+      "signature_date": 1,
+      "write_in": 0,
+      "overflow": 1,
+      "unsupported": 0,
+      "missing_answer": 80
+    }
+  },
+  {
+    "id": "q25_personal_property_overflow",
+    "purpose": "Four personal-property items against Q25’s three printed rows.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calworks",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 0
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 1
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.size",
+        "value": 1
+      },
+      {
+        "key": "programs.calworks",
+        "value": true
+      },
+      {
+        "key": "resources.has_personal_property",
+        "value": true
+      },
+      {
+        "key": "resources.personal_property.0.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "resources.personal_property.0.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "resources.personal_property.1.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "resources.personal_property.1.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "resources.personal_property.2.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "resources.personal_property.2.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "resources.personal_property.3.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "resources.personal_property.3.person_name",
+        "value": "Maria Delgado"
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "ssn.adult.0",
+      "overflow.resources.personal_property.4"
+    ],
+    "manualCounts": {
+      "ssn": 2,
+      "signature": 1,
+      "signature_date": 1,
+      "write_in": 0,
+      "overflow": 1,
+      "unsupported": 0,
+      "missing_answer": 68
+    }
+  },
+  {
+    "id": "all_conditionals_no",
+    "purpose": "Every gateway answered No. Each No box must be ticked and not one detail row may be written behind it.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "applicant.household.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 0
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 1
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 0
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.size",
+        "value": 1
+      },
+      {
+        "key": "programs.calfresh",
+        "value": true
+      },
+      {
+        "key": "programs.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.authorized_representative",
+        "value": false
+      },
+      {
+        "key": "income.has_earned_income",
+        "value": false
+      },
+      {
+        "key": "income.has_unearned_income",
+        "value": false
+      },
+      {
+        "key": "income.has_in_kind_support",
+        "value": false
+      },
+      {
+        "key": "expenses.has_dependent_care",
+        "value": false
+      },
+      {
+        "key": "expenses.pays_child_support",
+        "value": false
+      },
+      {
+        "key": "expenses.has_medical_expenses",
+        "value": false
+      },
+      {
+        "key": "resources.has_accounts",
+        "value": false
+      },
+      {
+        "key": "resources.has_vehicles",
+        "value": false
+      },
+      {
+        "key": "resources.has_personal_property",
+        "value": false
+      },
+      {
+        "key": "health.has_current_coverage",
+        "value": false
+      },
+      {
+        "key": "health.has_employer_coverage",
+        "value": false
+      },
+      {
+        "key": "health.tax_filer",
+        "value": false
+      },
+      {
+        "key": "health.american_indian_or_alaska_native",
+        "value": false
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "ssn.adult.0"
+    ],
+    "manualCounts": {
+      "ssn": 2,
+      "signature": 1,
+      "signature_date": 1,
+      "write_in": 0,
+      "overflow": 0,
+      "unsupported": 0,
+      "missing_answer": 56
+    }
+  },
+  {
+    "id": "multiple_appendices",
+    "purpose": "Appendices A, B, D and E on one document, so a mapping that leaks between them is visible.",
+    "county": "Fresno",
+    "fieldPlan": [
+      {
+        "key": "applicant.first_name",
+        "value": "Maria"
+      },
+      {
+        "key": "applicant.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "applicant.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "applicant.date_of_birth",
+        "value": "1990-01-01"
+      },
+      {
+        "key": "applicant.phone",
+        "value": "5595550100"
+      },
+      {
+        "key": "applicant.email",
+        "value": "maria@example.test"
+      },
+      {
+        "key": "applicant.preferred_language",
+        "value": "English"
+      },
+      {
+        "key": "applicant.household.sex",
+        "value": "female"
+      },
+      {
+        "key": "applicant.household.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "applicant.household.marital_status",
+        "value": "married"
+      },
+      {
+        "key": "applicant.home_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.home_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.home_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.home_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.home_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.mailing_address_same_as_home",
+        "value": true
+      },
+      {
+        "key": "applicant.mailing_address.street",
+        "value": "12 Oak Street"
+      },
+      {
+        "key": "applicant.mailing_address.apartment",
+        "value": "B"
+      },
+      {
+        "key": "applicant.mailing_address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.county",
+        "value": "Fresno"
+      },
+      {
+        "key": "applicant.mailing_address.state",
+        "value": "CA"
+      },
+      {
+        "key": "applicant.mailing_address.zip_code",
+        "value": "93701"
+      },
+      {
+        "key": "applicant.household.applying_for.calworks",
+        "value": true
+      },
+      {
+        "key": "applicant.household.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.0.present",
+        "value": true
+      },
+      {
+        "key": "household.members.0.first_name",
+        "value": "Luis"
+      },
+      {
+        "key": "household.members.0.last_name",
+        "value": "Reyes"
+      },
+      {
+        "key": "household.members.0.date_of_birth",
+        "value": "1988-05-04"
+      },
+      {
+        "key": "household.members.0.relationship_to_applicant",
+        "value": "Spouse"
+      },
+      {
+        "key": "household.members.0.adult.sex",
+        "value": "male"
+      },
+      {
+        "key": "household.members.0.adult.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.0.applying_for.calfresh",
+        "value": true
+      },
+      {
+        "key": "household.members.1.present",
+        "value": true
+      },
+      {
+        "key": "household.members.1.first_name",
+        "value": "Sofia"
+      },
+      {
+        "key": "household.members.1.last_name",
+        "value": "Delgado"
+      },
+      {
+        "key": "household.members.1.date_of_birth",
+        "value": "2018-03-02"
+      },
+      {
+        "key": "household.members.1.relationship_to_applicant",
+        "value": "Daughter"
+      },
+      {
+        "key": "household.members.1.child.sex",
+        "value": "female"
+      },
+      {
+        "key": "household.members.1.child.place_of_birth",
+        "value": "Fresno, CA"
+      },
+      {
+        "key": "household.members.1.child.citizen_or_national",
+        "value": true
+      },
+      {
+        "key": "household.members.1.child.immunizations_up_to_date",
+        "value": true
+      },
+      {
+        "key": "household.members.1.child.parent_status.none",
+        "value": true
+      },
+      {
+        "key": "household.members.1.applying_for.medi_cal",
+        "value": true
+      },
+      {
+        "key": "household.members.count",
+        "value": 2
+      },
+      {
+        "key": "household.adult_rows.count",
+        "value": 2
+      },
+      {
+        "key": "household.child_rows.count",
+        "value": 1
+      },
+      {
+        "key": "applicant.table",
+        "value": "adult"
+      },
+      {
+        "key": "applicant.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.members.0.table",
+        "value": "adult"
+      },
+      {
+        "key": "household.members.0.table_row",
+        "value": 1
+      },
+      {
+        "key": "household.members.1.table",
+        "value": "child"
+      },
+      {
+        "key": "household.members.1.table_row",
+        "value": 0
+      },
+      {
+        "key": "household.size",
+        "value": 3
+      },
+      {
+        "key": "programs.calworks",
+        "value": true
+      },
+      {
+        "key": "programs.medi_cal",
+        "value": true
+      },
+      {
+        "key": "resources.has_vehicles",
+        "value": true
+      },
+      {
+        "key": "appendices.vehicle.0.owner_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.vehicle.0.user_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.vehicle.0.year_make_model",
+        "value": "2010 Toyota Corolla"
+      },
+      {
+        "key": "appendices.vehicle.0.license_number",
+        "value": "7ABC120"
+      },
+      {
+        "key": "appendices.vehicle.0.is_leased",
+        "value": false
+      },
+      {
+        "key": "appendices.vehicle.0.fair_market_value",
+        "value": 4000
+      },
+      {
+        "key": "appendices.vehicle.0.fair_market_value_source",
+        "value": "kelly_blue_book"
+      },
+      {
+        "key": "resources.vehicles.0.member_id",
+        "value": "applicant"
+      },
+      {
+        "key": "resources.vehicles.0.year",
+        "value": "2012"
+      },
+      {
+        "key": "resources.vehicles.0.make",
+        "value": "Toyota"
+      },
+      {
+        "key": "resources.vehicles.0.model",
+        "value": "Corolla"
+      },
+      {
+        "key": "resources.vehicles.0.used_for",
+        "value": "Work"
+      },
+      {
+        "key": "health.has_employer_coverage",
+        "value": true
+      },
+      {
+        "key": "appendices.employer_coverage.0.employee_name",
+        "value": "Luis Reyes"
+      },
+      {
+        "key": "appendices.employer_coverage.0.employer_name",
+        "value": "Delta Packing"
+      },
+      {
+        "key": "appendices.employer_coverage.0.employer_phone",
+        "value": "5595550122"
+      },
+      {
+        "key": "appendices.employer_coverage.0.eligible_now_or_soon",
+        "value": false
+      },
+      {
+        "key": "health.american_indian_or_alaska_native",
+        "value": true
+      },
+      {
+        "key": "appendices.tribal.0.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.tribal.0.member_of_tribe",
+        "value": true
+      },
+      {
+        "key": "appendices.tribal.0.received_indian_health_service",
+        "value": true
+      },
+      {
+        "key": "appendices.tribal.0.has_excludable_tribal_income",
+        "value": false
+      },
+      {
+        "key": "appendices.tribal.0.tribe_name",
+        "value": "Yurok"
+      },
+      {
+        "key": "appendices.employment.0.person_name",
+        "value": "Maria Delgado"
+      },
+      {
+        "key": "appendices.employment.0.job.0.native_american",
+        "value": true
+      },
+      {
+        "key": "appendices.employment.0.job.0.tribe_name",
+        "value": "Yurok"
+      },
+      {
+        "key": "appendices.employment.0.job.0.employer",
+        "value": "History Employer 1, 1 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.0.job.0.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.0.job.0.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.0.job.0.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.0.job.0.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.0.job.0.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.0.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.0.job.0.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.0.job.0.pay_frequency",
+        "value": "hourly"
+      },
+      {
+        "key": "appendices.employment.1.person_name",
+        "value": "Luis Reyes"
+      },
+      {
+        "key": "appendices.employment.1.job.0.employer",
+        "value": "History Employer 1, 1 Market Street, Fresno CA"
+      },
+      {
+        "key": "appendices.employment.1.job.0.reason_for_leaving",
+        "value": "Hours were cut"
+      },
+      {
+        "key": "appendices.employment.1.job.0.worked_from",
+        "value": "03/2024"
+      },
+      {
+        "key": "appendices.employment.1.job.0.worked_to",
+        "value": "11/2025"
+      },
+      {
+        "key": "appendices.employment.1.job.0.hours_frequency",
+        "value": "weekly"
+      },
+      {
+        "key": "appendices.employment.1.job.0.self_employed",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.1.job.0.county_helped",
+        "value": false
+      },
+      {
+        "key": "appendices.employment.1.job.0.pay_amount",
+        "value": 18.5
+      },
+      {
+        "key": "appendices.employment.1.job.0.pay_frequency",
+        "value": "hourly"
+      },
+      {
+        "key": "health.employer_coverage.0.member_id",
+        "value": "m1"
+      },
+      {
+        "key": "health.employer_coverage.0.employer_name",
+        "value": "Delta Packing"
+      },
+      {
+        "key": "health.employer_coverage.0.employer_phone",
+        "value": "5595550122"
+      },
+      {
+        "key": "health.employer_coverage.0.offers_coverage",
+        "value": true
+      },
+      {
+        "key": "health.employer_coverage.0.eligible_now_or_soon",
+        "value": false
+      }
+    ],
+    "manualItemIds": [
+      "ssn.applicant",
+      "signature.applicant",
+      "signature.applicant_date",
+      "signature.second_adult",
+      "signature.second_adult_date",
+      "ssn.adult.0",
+      "ssn.adult.1",
+      "ssn.child.0",
+      "ssn.appendix_a_employee",
+      "write_in.appendix_d.0.0",
+      "write_in.appendix_d.1.0"
+    ],
+    "manualCounts": {
+      "ssn": 5,
+      "signature": 2,
+      "signature_date": 2,
+      "write_in": 2,
+      "overflow": 0,
+      "unsupported": 0,
+      "missing_answer": 69
+    }
+  }
+]

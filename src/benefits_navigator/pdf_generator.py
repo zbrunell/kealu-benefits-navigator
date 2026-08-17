@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import urllib.request
 import textwrap
@@ -1925,7 +1926,6 @@ class Saws2PlusFieldAdapter:
         "employer_name": "Text5 PG 18",
         "employer_ein": "Text6 PG 18",
         "employer_address": "Text8 PG 18",
-        "employer_phone": "Text9 PG 18",
         "employer_city": "Text12 PG 18",
         "employer_state": "Text13 PG 18",
         "employer_zip_code": "Text14 PG 18",
@@ -1935,6 +1935,16 @@ class Saws2PlusFieldAdapter:
         "changed_premium": "Text39 PG 18",
         "plan_change_date": "Text46 PG 18",
     }
+
+    # Item 6, "EMPLOYER PHONE NUMBER", is two boxes, not one. The page prints
+    # "(          )" at x=434.0 and Text9 sits inside those parentheses at
+    # x=433.7-464.3 — it is the area code, 30.6pt wide. Text10 at
+    # x=467.5-577.3 takes the rest. Writing all ten digits into Text9 fitted a
+    # 27.8pt string into a 26.6pt box even at the smallest legible size, which
+    # is how this was found.
+    #
+    #: (area code, remaining digits)
+    APPENDIX_A_PHONE = ("Text9 PG 18", "Text10 PG 18")
 
     #: The three printed "Name:" slots for others eligible from the same job.
     APPENDIX_A_OTHER_ELIGIBLE = (
@@ -2350,6 +2360,7 @@ class Saws2PlusFieldAdapter:
                 )
             ),
             *APPENDIX_A_TEXT.values(),
+            *APPENDIX_A_PHONE,
             *APPENDIX_A_OTHER_ELIGIBLE,
             *(f for pair in APPENDIX_A_YES_NO.values() for f in pair),
             *APPENDIX_A_PREMIUM_FREQUENCY.values(),
@@ -3123,6 +3134,23 @@ class Saws2PlusFieldAdapter:
                         f"{appendix_a_prefix}.{canonical_suffix}"
                     ),
                 )
+
+            # Item 6 splits the phone across the printed "(   )" and the line
+            # beside it. Only a recognisable ten-digit number is split; anything
+            # else leaves both boxes blank rather than guessing where to cut.
+            digits = "".join(
+                character
+                for character in str(
+                    canonical_values.get(f"{appendix_a_prefix}.employer_phone")
+                    or ""
+                )
+                if character.isdigit()
+            )
+
+            if len(digits) == 10:
+                area_code_field, number_field = self.APPENDIX_A_PHONE
+                set_field(area_code_field, digits[:3])
+                set_field(number_field, f"{digits[3:6]}-{digits[6:]}")
 
             for slot, pdf_field in enumerate(
                 self.APPENDIX_A_OTHER_ELIGIBLE
@@ -4422,6 +4450,147 @@ def generate_application_pdf(
 
     return output_path
 
+
+# ---------------------------------------------------------------------------
+# Making written values fit the boxes the form drew for them
+# ---------------------------------------------------------------------------
+
+#: Widths of the Helvetica glyphs, in 1/1000 em, for printable ASCII.
+#:
+#: From the Adobe Core 14 AFM metrics. Needed because the form declares a fixed
+#: point size per field and several of its boxes are too narrow for the value
+#: that belongs in them — the Q6 "DATE OF BIRTH" column is 47.9pt wide with
+#: "/Helv 10 Tf" set, and "01/01/1990" needs 50.0pt at that size, so the year
+#: was being cut in half on a form the applicant signs.
+_HELVETICA_WIDTHS: tuple[int, ...] = (
+    278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333,  # 32-45
+    278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278,  # 46-59
+    584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278,  # 60-73
+    500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944,  # 74-87
+    667, 667, 611, 278, 278, 278, 469, 556, 333, 556, 556, 500, 556, 556,  # 88-101
+    278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500,  # 102-115
+    278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584,                 # 116-126
+)
+
+#: Points of horizontal inset an AcroForm text field keeps inside its border.
+_FIELD_PADDING = 2.0
+
+#: Never shrink below this; smaller would be a worse outcome than clipping.
+_MIN_FONT_SIZE = 5.0
+
+
+def _helvetica_width(text: str, size: float) -> float:
+    """Rendered width of `text` in Helvetica at `size` points."""
+    total = 0
+
+    for character in text:
+        code = ord(character)
+        # Anything outside printable ASCII falls back to the digit width, which
+        # is Helvetica's most common advance.
+        total += (
+            _HELVETICA_WIDTHS[code - 32]
+            if 32 <= code <= 126
+            else 556
+        )
+
+    return total / 1000 * size
+
+
+def _shrink_overflowing_text(writer: Any, written: set[str]) -> None:
+    """Reduce the declared font size of any value too wide for its box.
+
+    The form specifies an explicit point size per field, and some of its boxes
+    are narrower than the value that belongs in them. Leaving that alone clips
+    the text — a birth year cut off, an employer name ending mid-word — on a
+    document signed under penalty of perjury.
+
+    Auto-sizing (``/Helv 0 Tf``) is not the fix: viewers that honour it grow
+    short values to fill the box height, so a one-letter "F" in the GENDER
+    column renders three times the size of its neighbours.
+
+    So the size is reduced explicitly, only for the fields this run wrote, only
+    when the value genuinely does not fit, and never below `_MIN_FONT_SIZE`.
+    Multi-line fields are left alone: their text wraps rather than clipping.
+    """
+    from pypdf.generic import NameObject, TextStringObject
+
+    for page in writer.pages:
+        for annotation in page.get("/Annots") or []:
+            field = annotation.get_object()
+            parent = field.get("/Parent")
+            parent_object = parent.get_object() if parent else None
+
+            name = field.get("/T")
+            if name is None and parent_object is not None:
+                name = parent_object.get("/T")
+
+            if str(name) not in written:
+                continue
+
+            value = field.get("/V")
+            if value is None and parent_object is not None:
+                value = parent_object.get("/V")
+
+            text = str(value or "")
+            if not text:
+                continue
+
+            flags = int(
+                field.get("/Ff")
+                or (parent_object.get("/Ff") if parent_object else 0)
+                or 0
+            )
+
+            # Bit 13 is Multiline: those wrap instead of clipping.
+            if flags & 4096:
+                continue
+
+            appearance = field.get("/DA") or (
+                parent_object.get("/DA") if parent_object else None
+            )
+
+            if appearance is None:
+                continue
+
+            parts = str(appearance).split()
+
+            try:
+                size_index = parts.index("Tf") - 1
+                size = float(parts[size_index])
+            except (ValueError, IndexError):
+                continue
+
+            # 0 means "auto size", which is the viewer's decision, not ours.
+            if size <= 0:
+                continue
+
+            rectangle = [float(value) for value in field["/Rect"]]
+            usable = abs(rectangle[2] - rectangle[0]) - _FIELD_PADDING * 2
+
+            if usable <= 0:
+                continue
+
+            required = _helvetica_width(text, size)
+
+            if required <= usable:
+                continue
+
+            # Floor to the hundredth the /DA can express. Rounding to nearest
+            # can land a hundredth of a point above the exact fit, which is
+            # still a clipped character.
+            fitted = max(
+                _MIN_FONT_SIZE,
+                math.floor(size * usable / required * 100) / 100,
+            )
+
+            if fitted >= size:
+                continue
+
+            parts[size_index] = f"{fitted:.2f}"
+            target = parent_object if field.get("/DA") is None else field
+            target[NameObject("/DA")] = TextStringObject(" ".join(parts))
+
+
 def generate_saws2_plus_pdf(
     args: dict[str, Any],
     workflow_output: str,
@@ -4560,6 +4729,8 @@ def generate_saws2_plus_pdf(
             requested_fields,
             auto_regenerate=True,
         )
+
+    _shrink_overflowing_text(writer, set(requested_fields))
 
     with output_path.open(
         "wb"
