@@ -2034,6 +2034,227 @@ class Saws2PlusFieldAdapter:
         },
     )
 
+    # -----------------------------------------------------------------------
+    # Appendix D — employment history
+    # -----------------------------------------------------------------------
+    #
+    # Two printed pages of identical shape, each one person with three job
+    # blocks:
+    #
+    #   PDF page 27, "APPENDIX D-1", printed heading "Person1"  — names "appx c"
+    #   PDF page 28, "APPENDIX D-2", printed heading "Person 2" — names "appx d2"
+    #
+    # NOTE the D-1 widgets all read "appx c". The form's appendix widget names
+    # are shifted one letter behind the printed appendix throughout: Appendix B
+    # uses "APPX A", Appendix C uses "APPX B", Appendix D-1 uses "appx c". The
+    # AcroForm key is what it is, so the literal names are used verbatim.
+    #
+    # Every destination below was resolved by matching the printed label's text
+    # matrix against the widget rectangle on the real form. The two pages are
+    # laid out identically, so the same y-bands recur; the x positions
+    # disambiguate within a row. Job 1 of Person1, as the worked example:
+    #
+    #   "NAME:"                             y=650.2 -> Text1 appx c   y=635.5
+    #   "Is this person Native American?"    y=603.5
+    #                     "Y es" x=158.5    -> Check Box1b  x=156.8
+    #                     "No"   x=191.2    -> Check Box1c  x=189.6
+    #   "Name of Tribe:"                     y=581.5 -> Text2  x=88.5
+    #   "Reason for leaving this job?"       y=609.5 x=338.2 -> Text3 x=337.5
+    #   "Name and Address of Employer:"      y=566.8 -> Text4  y=543.3
+    #   "Number of hours worked:"            y=567.5 x=419.3
+    #                     "Daily"   x=421.0 -> Check Box5 x=419.4
+    #                     "Weekly"  x=460.2 -> Check Box6 x=458.8
+    #                     "Monthly" x=508.5 -> Check Box7 x=506.8
+    #   "Was this your own business ...?"    y=530.8
+    #                     "Y es" x=38.5     -> Check Box8 x=37.4
+    #                     "No"   x=71.2     -> Check Box9 x=69.1
+    #   "From____ To____"                    y=512.8 -> Text9b x=437.8,
+    #                                                  Text9c x=501.2
+    #   "How much ... paid ... $______"      y=493.3 -> Text 10 x=252.5
+    #                                        (the literal name has a space)
+    #                     "Hourly"          x=36.2  -> Check Box11 x=35.2
+    #                     "Daily"           x=81.8  -> Check Box12 x=80.2
+    #                     "Weekly"          x=123.8 -> Check Box13 x=122.4
+    #                     "Every two weeks" x=177.0 -> Check Box14 x=175.6
+    #                     "Monthly"         x=268.8 -> Check Box15 x=266.4
+    #   "Did the County help you get this job?" y=501.8 x=335.3
+    #                     "Y es" x=337.0    -> Check Box16 x=335.4
+    #                     "No"   x=369.8    -> Check Box17 x=368.7
+    #
+    # Two source-form irregularities the coordinates caught, and which the
+    # sequential names would have got wrong:
+    #
+    #   * D-2 Job 1 "Number of hours worked" runs Daily=Check Box8, Weekly=Check
+    #     Box7, Monthly=Check Box9 — 7 and 8 are transposed relative to the
+    #     printed left-to-right order.
+    #   * D-1 Job 3 has Text41 (reason for leaving, x=336.5) before Text40 (tribe
+    #     name, x=87.1) in the annotation array.
+    #
+    # NOT WRITABLE, recorded so the search is not repeated: the printed line
+    # "Number of hours worked:" is followed only by the Daily/Weekly/Monthly
+    # checkboxes. There is no text widget for the count anywhere in either page's
+    # 61 widgets, so the frequency is written and the count is reported as a
+    # manual write-in.
+
+    #: one dict per printed person block, each with its three printed job blocks
+    APPENDIX_D_PERSONS = (
+        # ---- Appendix D-1, printed "Person1", widget suffix "appx c" --------
+        {
+            "person_name": "Text1 appx c",
+            "jobs": (
+                {
+                    "native_american": ("Check Box1b appx c", "Check Box1c appx c"),
+                    "tribe_name": "Text2 appx c",
+                    "reason_for_leaving": "Text3 appx c",
+                    "employer": "Text4 appx c",
+                    "hours_frequency": {
+                        "daily": "Check Box5 appx c",
+                        "weekly": "Check Box6 appx c",
+                        "monthly": "Check Box7 appx c",
+                    },
+                    "self_employed": ("Check Box8 appx c", "Check Box9 appx c"),
+                    "worked_from": "Text9b appx c",
+                    "worked_to": "Text9c appx c",
+                    # The literal AcroForm name contains a space after "Text".
+                    "pay_amount": "Text 10 appx c",
+                    "pay_frequency": {
+                        "hourly": "Check Box11 appx c",
+                        "daily": "Check Box12 appx c",
+                        "weekly": "Check Box13 appx c",
+                        "every_two_weeks": "Check Box14 appx c",
+                        "monthly": "Check Box15 appx c",
+                    },
+                    "county_helped": ("Check Box16 appx c", "Check Box17 appx c"),
+                },
+                {
+                    "native_american": ("Check Box18 appx c", "Check Box19 appx c"),
+                    "tribe_name": "Text20 appx c",
+                    "reason_for_leaving": "Text21 appx c",
+                    "employer": "Text22 appx c",
+                    "hours_frequency": {
+                        "daily": "Check Box23 appx c",
+                        "weekly": "Check Box24 appx c",
+                        "monthly": "Check Box25 appx c",
+                    },
+                    "self_employed": ("Check Box26 appx c", "Check Box27 appx c"),
+                    "worked_from": "Text28 appx c",
+                    "worked_to": "Text29 appx c",
+                    "pay_amount": "Text30 appx c",
+                    "pay_frequency": {
+                        "hourly": "Check Box31 appx c",
+                        "daily": "Check Box32 appx c",
+                        "weekly": "Check Box33 appx c",
+                        "every_two_weeks": "Check Box34 appx c",
+                        "monthly": "Check Box35 appx c",
+                    },
+                    "county_helped": ("Check Box36 appx c", "Check Box37 appx c"),
+                },
+                {
+                    "native_american": ("Check Box38 appx c", "Check Box39 appx c"),
+                    "tribe_name": "Text40 appx c",
+                    "reason_for_leaving": "Text41 appx c",
+                    "employer": "Text42 appx c",
+                    "hours_frequency": {
+                        "daily": "Check Box43 appx c",
+                        "weekly": "Check Box44 appx c",
+                        "monthly": "Check Box45 appx c",
+                    },
+                    "self_employed": ("Check Box46 appx c", "Check Box47 appx c"),
+                    "worked_from": "Text48 appx c",
+                    "worked_to": "Text49 appx c",
+                    "pay_amount": "Text50 appx c",
+                    "pay_frequency": {
+                        "hourly": "Check Box51 appx c",
+                        "daily": "Check Box52 appx c",
+                        "weekly": "Check Box53 appx c",
+                        "every_two_weeks": "Check Box54 appx c",
+                        "monthly": "Check Box55 appx c",
+                    },
+                    "county_helped": ("Check Box56 appx c", "Check Box57 appx c"),
+                },
+            ),
+        },
+        # ---- Appendix D-2, printed "Person 2", widget suffix "appx d2" ------
+        {
+            "person_name": "Text1 appx d2",
+            "jobs": (
+                {
+                    "native_american": ("Check Box2 appx d2", "Check Box3 appx d2"),
+                    "tribe_name": "Text4 appx d2",
+                    "reason_for_leaving": "Text5 appx d2",
+                    "employer": "Text6 appx d2",
+                    # Daily is Check Box8 and Weekly is Check Box7: the source
+                    # form transposes them relative to the printed order.
+                    "hours_frequency": {
+                        "daily": "Check Box8 appx d2",
+                        "weekly": "Check Box7 appx d2",
+                        "monthly": "Check Box9 appx d2",
+                    },
+                    "self_employed": ("Check Box10 appx d2", "Check Box11 appx d2"),
+                    "worked_from": "Text12 appx d2",
+                    "worked_to": "Text13 appx d2",
+                    "pay_amount": "Text14 appx d2",
+                    "pay_frequency": {
+                        "hourly": "Check Box15 appx d2",
+                        "daily": "Check Box16 appx d2",
+                        "weekly": "Check Box17 appx d2",
+                        "every_two_weeks": "Check Box18 appx d2",
+                        "monthly": "Check Box19 appx d2",
+                    },
+                    "county_helped": ("Check Box20 appx d2", "Check Box21 appx d2"),
+                },
+                {
+                    "native_american": ("Check Box22 appx d2", "Check Box23 appx d2"),
+                    # These four read "Appx D2" with different capitalisation
+                    # from their neighbours. The AcroForm key is case-sensitive.
+                    "tribe_name": "Text24 Appx D2",
+                    "reason_for_leaving": "Text25 Appx D2",
+                    "employer": "Text26 Appx D2",
+                    "hours_frequency": {
+                        "daily": "Check Box27 appx d2",
+                        "weekly": "Check Box28 appx d2",
+                        "monthly": "Check Box29 appx d2",
+                    },
+                    "self_employed": ("Check Box30 appx d2", "Check Box31 appx d2"),
+                    "worked_from": "Text32 Appx D2",
+                    "worked_to": "Text33 Appx D2",
+                    "pay_amount": "Text34 Appx D2",
+                    "pay_frequency": {
+                        "hourly": "Check Box35 appx d2",
+                        "daily": "Check Box36 appx d2",
+                        "weekly": "Check Box37 appx d2",
+                        "every_two_weeks": "Check Box38 appx d2",
+                        "monthly": "Check Box39 appx d2",
+                    },
+                    "county_helped": ("Check Box40 appx d2", "Check Box41 appx d2"),
+                },
+                {
+                    "native_american": ("Check Box42 appx d2", "Check Box43 appx d2"),
+                    "tribe_name": "Text44 Appx D2",
+                    "reason_for_leaving": "Text45 Appx D2",
+                    "employer": "Text46 Appx D2",
+                    "hours_frequency": {
+                        "daily": "Check Box47 appx d2",
+                        "weekly": "Check Box48 appx d2",
+                        "monthly": "Check Box49 appx d2",
+                    },
+                    "self_employed": ("Check Box50 appx d2", "Check Box51 appx d2"),
+                    "worked_from": "Text52 Appx D2",
+                    "worked_to": "Text53 Appx D2",
+                    "pay_amount": "Text54 Appx D2",
+                    "pay_frequency": {
+                        "hourly": "Check Box55 appx d2",
+                        "daily": "Check Box56 appx d2",
+                        "weekly": "Check Box57 appx d2",
+                        "every_two_weeks": "Check Box58 appx d2",
+                        "monthly": "Check Box59 appx d2",
+                    },
+                    "county_helped": ("Check Box60 appx d2", "Check Box61 appx d2"),
+                },
+            ),
+        },
+    )
+
     #: Q14's two printed free-text lines.
     PAGE_11_SPECIAL_NEED_TEXT = {
         # "Please list the name of the person with the special need and explain"
@@ -2107,6 +2328,25 @@ class Saws2PlusFieldAdapter:
                     value
                     if isinstance(value, tuple)
                     else (value,)
+                )
+            ),
+            *(
+                field
+                for person in APPENDIX_D_PERSONS
+                for field in (
+                    person["person_name"],
+                    *(
+                        destination
+                        for job in person["jobs"]
+                        for value in job.values()
+                        for destination in (
+                            tuple(value.values())
+                            if isinstance(value, dict)
+                            else value
+                            if isinstance(value, tuple)
+                            else (value,)
+                        )
+                    ),
                 )
             ),
             *APPENDIX_A_TEXT.values(),
@@ -2732,6 +2972,67 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # -------------------------------------------------------------------
+        # Appendix D — employment history
+        # -------------------------------------------------------------------
+        #
+        # The person and job blocks a job belongs to were decided by
+        # planAppendixDRows before the plan reached here, so this only places
+        # the values it is given. A block whose keys are absent stays blank:
+        # that is how a household with one working adult leaves "Person 2"
+        # untouched instead of half-filling a second printed page.
+        for person_index, person in enumerate(self.APPENDIX_D_PERSONS):
+            person_prefix = f"appendices.employment.{person_index}"
+
+            if not any(
+                key.startswith(f"{person_prefix}.")
+                for key in canonical_values
+            ):
+                continue
+
+            set_field(
+                person["person_name"],
+                canonical_values.get(f"{person_prefix}.person_name"),
+            )
+
+            for job_index, job in enumerate(person["jobs"]):
+                prefix = f"{person_prefix}.job.{job_index}"
+
+                for suffix in (
+                    "tribe_name",
+                    "reason_for_leaving",
+                    "employer",
+                    "worked_from",
+                    "worked_to",
+                    "pay_amount",
+                ):
+                    set_field(
+                        job[suffix],
+                        canonical_values.get(f"{prefix}.{suffix}"),
+                    )
+
+                for suffix in (
+                    "native_american",
+                    "self_employed",
+                    "county_helped",
+                ):
+                    value = canonical_values.get(f"{prefix}.{suffix}")
+
+                    if not isinstance(value, bool):
+                        continue
+
+                    yes_field, no_field = job[suffix]
+                    set_field(yes_field if value else no_field, "/Yes")
+
+                # Frequencies are single-choice rows: an unrecognised value
+                # ticks nothing rather than guessing the nearest box.
+                for suffix in ("hours_frequency", "pay_frequency"):
+                    choice = canonical_values.get(f"{prefix}.{suffix}")
+                    destination = job[suffix].get(choice) if choice else None
+
+                    if destination:
+                        set_field(destination, "/Yes")
 
         # -------------------------------------------------------------------
         # Appendix B — American Indian / Alaska Native

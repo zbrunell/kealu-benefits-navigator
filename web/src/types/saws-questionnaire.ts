@@ -823,14 +823,67 @@ export function emptyOtherServicesAnswers(): OtherServicesAnswers {
 // Appendices
 // ---------------------------------------------------------------------------
 
+/** Appendix D: how often the printed "Number of hours worked" is counted. */
+export type HoursWorkedFrequency = 'daily' | 'weekly' | 'monthly';
+
+/**
+ * Appendix D: the printed pay-frequency row under "How much ... and when?".
+ *
+ * Distinct from the income sections' `PayFrequency`: Appendix D prints Hourly
+ * and Daily, which no income row offers, and omits "Twice a month" and
+ * "Irregular", which several income rows do offer. Merging the two would put an
+ * option on paper that the printed row does not have.
+ */
+export type AppendixDPayFrequency =
+  | 'hourly'
+  | 'daily'
+  | 'weekly'
+  | 'every_two_weeks'
+  | 'monthly';
+
+/**
+ * One job in the applicant's Appendix D employment history.
+ *
+ * The printed appendix gives each person a NAME line and three identical "Job n"
+ * blocks, so one entry is one printed job block. Every field below has a
+ * reviewed destination on the form except `hoursWorked`: the printed line reads
+ * "Number of hours worked:" followed only by Daily / Weekly / Monthly
+ * checkboxes, and the AcroForm has no widget for the count itself. The count is
+ * still collected — dropping it would lose an answer the applicant gave — and is
+ * reported as a manual write-in rather than silently discarded.
+ */
 export interface EmploymentHistoryEntry {
   id: string;
   memberId: string;
+  /** Printed "Name and Address of Employer" — the name half. */
   employerName: string;
+  /** Printed "Name and Address of Employer" — the address half. */
+  employerAddress: string;
+  /**
+   * Not printed anywhere in Appendix D. Retained because the questionnaire
+   * collects it and the report uses it; it has no PDF destination.
+   */
   jobTitle: string;
+  /** Printed "Dates you worked: From ___ To ___". */
   startDate: string;
   endDate: string;
   reasonForLeaving: string;
+  /** Printed "Number of hours worked:" — the count has no widget on the form. */
+  hoursWorked?: number;
+  hoursWorkedFrequency?: HoursWorkedFrequency;
+  /** Printed "Was this your own business (self-employed)?" */
+  selfEmployed?: TriState;
+  /** Printed "How much do you or did you get paid at this job and when? $___". */
+  payAmount?: number;
+  /**
+   * Named apart from the income sections' `payFrequency` because the record
+   * editor keys its choice lists by field name: sharing the name would offer
+   * "Twice a month" and "Irregular", which the printed Appendix D row has no
+   * box for and the adapter would therefore drop.
+   */
+  payRateFrequency?: AppendixDPayFrequency;
+  /** Printed "Did the County help you get this job?" */
+  countyHelpedGetJob?: TriState;
 }
 
 /** Appendix D is only requested for cash aid with two or more adults applying. */

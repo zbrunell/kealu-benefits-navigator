@@ -1552,14 +1552,26 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
   {
     id: 'appendices.employment_history',
     saws: 'Appendix D',
-    label: 'Employment history for CalWORKs',
+    label:
+      'Employment history for cash aid: employer name and address, dates ' +
+      'worked, hours frequency, self-employment, pay and how often, reason for ' +
+      'leaving, whether the County helped get the job, and the per-block ' +
+      'Native American question',
     section: 'appendices',
     tier: 3,
     kind: 'records',
     support: 'askable',
-    pdf: 'unreviewed',
+    pdf: 'mapped',
     path: 'appendices.employmentHistory.answer',
-    note: 'Appendix D destinations not yet reviewed.',
+    canonicalKey: 'appendices.employment.0.person_name',
+    note:
+      'Two printed pages, one person each, three job blocks per person; a ' +
+      'third person or a fourth job is overflow the printed page itself sends ' +
+      'to a separate sheet. The "Number of hours worked" count has no widget ' +
+      'on either page — only the Daily/Weekly/Monthly boxes — so the count is ' +
+      'collected and reported as a manual write-in. "Is this person Native ' +
+      'American?" is filled only where Q3 settles it: a No on Q3 answers it ' +
+      'for everyone, and a Yes answers it for people Appendix B enumerates.',
   },
 
   /*

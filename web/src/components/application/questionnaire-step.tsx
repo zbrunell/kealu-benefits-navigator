@@ -227,10 +227,17 @@ const RECORD_FACTORIES: Record<string, (id: string, memberId: string) => Record<
     id,
     memberId,
     employerName: "",
+    employerAddress: "",
     jobTitle: "",
     startDate: "",
     endDate: "",
     reasonForLeaving: "",
+    hoursWorked: undefined,
+    hoursWorkedFrequency: undefined,
+    payAmount: undefined,
+    payRateFrequency: undefined,
+    selfEmployed: undefined,
+    countyHelpedGetJob: undefined,
   }),
 };
 
@@ -276,6 +283,12 @@ const FIELD_LABELS: Record<string, string> = {
   estimatedValue: "Estimated value",
   jobTitle: "Job title",
   reasonForLeaving: "Reason for leaving",
+  hoursWorked: "Number of hours worked",
+  hoursWorkedFrequency: "Hours counted",
+  payAmount: "Pay at this job",
+  payRateFrequency: "How often that pay is earned",
+  selfEmployed: "This was your own business",
+  countyHelpedGetJob: "The County helped you get this job",
   schoolName: "School name",
   halfTimeOrMore: "Enrolled at least half time",
   relationshipToService: "Relationship to the service member",
@@ -313,6 +326,23 @@ const CHOICE_OPTIONS: Record<string, Array<{ value: string; label: string }>> = 
     { value: "weekly", label: "Weekly" },
     { value: "every_two_weeks", label: "Every two weeks" },
     { value: "twice_a_month", label: "Twice a month" },
+    { value: "monthly", label: "Monthly" },
+  ],
+  /*
+   * Appendix D's two printed choice rows. Both list exactly the boxes the
+   * printed page has, so the applicant can never pick an option the form has
+   * nowhere to record.
+   */
+  hoursWorkedFrequency: [
+    { value: "daily", label: "Daily" },
+    { value: "weekly", label: "Weekly" },
+    { value: "monthly", label: "Monthly" },
+  ],
+  payRateFrequency: [
+    { value: "hourly", label: "Hourly" },
+    { value: "daily", label: "Daily" },
+    { value: "weekly", label: "Weekly" },
+    { value: "every_two_weeks", label: "Every two weeks" },
     { value: "monthly", label: "Monthly" },
   ],
   expenseMethod: [
@@ -368,6 +398,8 @@ const NUMBER_KEYS = new Set([
   "estimatedValue",
   "lowestCostPremium",
   "monthlyPayment",
+  "hoursWorked",
+  "payAmount",
 ]);
 
 

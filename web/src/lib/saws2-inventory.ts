@@ -259,11 +259,16 @@ const PRINTED_QUESTIONS: readonly PrintedQuestion[] = [
     status: 'manual_signature',
     note: 'The appointment requires the representative’s signature.',
   },
-  { saws: 'Appendix D', label: 'Employment history for CalWORKs', page: 27 },
+  {
+    saws: 'Appendix D',
+    label: 'Employment history for CalWORKs',
+    // D-1 (Person1) is PDF page 27; D-2 (Person 2) is PDF page 28.
+    page: 27,
+  },
   {
     saws: 'Appendix E',
     label: 'Detailed vehicle information',
-    page: 28,
+    page: 29,
   },
 ] as const;
 

@@ -1741,10 +1741,21 @@ export function getRequiredApplicationQuestions(
     }
   }
 
+  /*
+   * Appendix D employment history.
+   *
+   * The printed page states its own scope: "your work history for the past 24
+   * months (two years)". A Yes on the gateway opens the per-job detail the
+   * appendix actually prints — everything asked below has a reviewed
+   * destination except the hours *count*, which the form has no widget for and
+   * which is therefore reported as a manual write-in rather than not asked.
+   */
   if (appendixDApplies(application)) {
+    const employment = questionnaire.appendices.employmentHistory;
+
     totalCount += 1;
 
-    if (unanswered(questionnaire.appendices.employmentHistory.answer)) {
+    if (unanswered(employment.answer)) {
       push({
         id: 'appendices.employment_history',
         section: 'appendices',
@@ -1755,6 +1766,47 @@ export function getRequiredApplicationQuestions(
       });
     } else {
       answeredCount += 1;
+
+      if (employment.answer === true) {
+        totalCount += 1;
+
+        if (safeEntries(employment.entries).length === 0) {
+          push({
+            id: 'appendices.employment_history.records',
+            section: 'appendices',
+            kind: 'records',
+            prompt: 'Tell us about each job from the last two years',
+            help: 'Appendix D asks for the employer, the dates worked, the pay, and why each job ended.',
+            path: 'appendices.employmentHistory.entries',
+            minimumRecords: 1,
+          });
+        } else {
+          answeredCount += 1;
+
+          safeEntries<Record<string, unknown>>(employment.entries).forEach(
+            (job, index) => {
+              for (const field of [
+                { key: 'selfEmployed', prompt: 'your own business (self-employed)' },
+                { key: 'countyHelpedGetJob', prompt: 'a job the County helped get' },
+              ]) {
+                totalCount += 1;
+
+                if (unanswered(job?.[field.key] as TriState)) {
+                  push({
+                    id: `appendices.employment_history.${index}.${field.key}`,
+                    section: 'appendices',
+                    kind: 'gateway',
+                    prompt: `Was job ${index + 1} ${field.prompt}?`,
+                    path: `appendices.employmentHistory.entries.${index}.${field.key}`,
+                  });
+                } else {
+                  answeredCount += 1;
+                }
+              }
+            },
+          );
+        }
+      }
     }
   }
 

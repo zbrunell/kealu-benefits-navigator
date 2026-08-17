@@ -1,8 +1,14 @@
+import { planAppendixDRows } from "@/lib/appendix-d-rows";
 import { householdSizeFromMembers } from "@/lib/household";
 import { planHouseholdRows } from "@/lib/household-rows";
 import { monthlyForBudget, printableAmount } from "@/lib/reported-amounts";
-import { activeEntries, memberOptions } from "@/lib/saws2-question-planner";
+import {
+  activeEntries,
+  appendixDApplies,
+  memberOptions,
+} from "@/lib/saws2-question-planner";
 import type { Saws2PlusApplicationData } from "@/types/application";
+import type { TribalMembershipEntry } from "@/types/saws-questionnaire";
 
 export type ApplicationFieldValue = string | boolean | number | null;
 
@@ -1383,6 +1389,98 @@ function mapQuestionnaire(
       }
     }
   }
+  /*
+   * Appendix D employment history.
+   *
+   * Rows come from planAppendixDRows, so the printed person/job block a job
+   * lands in is decided once, in one place, and cannot drift between the plan
+   * the completion guide reports and the plan the adapter writes.
+   *
+   * The two per-block questions the appendix repeats — "Is this person Native
+   * American?" and "Name of Tribe" — are person facts, not job facts, so they
+   * are derived once per person and written into each of that person's job
+   * blocks. Only two derivations are sound:
+   *
+   *   Q3 answered No  → nobody applying is American Indian or Alaska Native, so
+   *                     every Appendix D person is a No.
+   *   Q3 answered Yes → a person with an Appendix B record is one of the people
+   *                     that record set enumerates, so that person is a Yes.
+   *
+   * Q3 Yes with no Appendix B record for this person is left blank: absence
+   * from a list the applicant may not have finished is not a No.
+   */
+  if (appendixDApplies(application)) {
+    const tribalByMember = new Map(
+      activeEntries<TribalMembershipEntry>(
+        application.questionnaire.appendices?.tribalMembership,
+      ).map((person) => [person.memberId, person]),
+    );
+
+    const nativeAmericanFor = (
+      memberId: string,
+    ): { answer: boolean | undefined; tribeName: string } => {
+      if (health.americanIndianOrAlaskaNative === false) {
+        return { answer: false, tribeName: "" };
+      }
+
+      if (health.americanIndianOrAlaskaNative !== true) {
+        return { answer: undefined, tribeName: "" };
+      }
+
+      const tribal = tribalByMember.get(memberId);
+      if (!tribal) return { answer: undefined, tribeName: "" };
+
+      return {
+        answer: true,
+        // Printed only where item 2 of Appendix B said the tribe is recognized.
+        tribeName:
+          tribal.memberOfFederallyRecognizedTribe === true
+            ? tribal.tribeName ?? ""
+            : "",
+      };
+    };
+
+    for (const person of planAppendixDRows(application).persons) {
+      const block = `appendices.employment.${person.personBlock}`;
+      const native = nativeAmericanFor(person.memberId);
+
+      text(`${block}.person_name`, personName(person.memberId));
+
+      for (const job of person.jobs) {
+        const prefix = `${block}.job.${job.jobSlot}`;
+        const record = job.entry;
+
+        tri(`${prefix}.native_american`, native.answer);
+        if (native.answer === true) text(`${prefix}.tribe_name`, native.tribeName);
+
+        /*
+         * One printed line reads "Name and Address of Employer". Five of the six
+         * printed widgets are single-line, so the two halves join with a comma
+         * rather than a newline that only one block could render.
+         */
+        text(
+          `${prefix}.employer`,
+          [record.employerName, record.employerAddress]
+            .map((part) => (part ?? "").trim())
+            .filter(Boolean)
+            .join(", "),
+        );
+        text(`${prefix}.reason_for_leaving`, record.reasonForLeaving);
+        text(`${prefix}.worked_from`, record.startDate);
+        text(`${prefix}.worked_to`, record.endDate);
+        text(`${prefix}.hours_frequency`, record.hoursWorkedFrequency);
+        tri(`${prefix}.self_employed`, record.selfEmployed);
+        tri(`${prefix}.county_helped`, record.countyHelpedGetJob);
+
+        if (record.payAmount !== undefined) {
+          fields.push(entry(`${prefix}.pay_amount`, record.payAmount));
+        }
+
+        text(`${prefix}.pay_frequency`, record.payRateFrequency);
+      }
+    }
+  }
+
   tri("health.renewal_authorization", health.renewalAuthorization);
 
   if (health.taxFiler === true) {

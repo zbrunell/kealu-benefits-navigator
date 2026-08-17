@@ -1163,3 +1163,236 @@ def test_appendix_b_writes_nothing_without_a_person(available_fields):
         for value in column.values():
             for field in (value if isinstance(value, tuple) else (value,)):
                 assert field not in values, field
+
+
+# ---------------------------------------------------------------------------
+# Appendix D — employment history
+# ---------------------------------------------------------------------------
+#
+# Two printed pages of identical shape, one person each, three job blocks per
+# person. The widget names are the form's own and are shifted one letter behind
+# the printed appendix: D-1 reads "appx c", D-2 reads "appx d2".
+
+APX_D = Saws2PlusFieldAdapter.APPENDIX_D_PERSONS
+
+
+def _apx_d_job(person: int, job: int, **fields) -> dict:
+    return {
+        f"appendices.employment.{person}.job.{job}.{k}": v
+        for k, v in fields.items()
+    }
+
+
+def _apx_d_destinations(job: dict) -> list[str]:
+    """Every reviewed destination inside one printed job block."""
+    found: list[str] = []
+
+    for value in job.values():
+        if isinstance(value, dict):
+            found.extend(value.values())
+        elif isinstance(value, tuple):
+            found.extend(value)
+        else:
+            found.append(value)
+
+    return found
+
+
+def test_appendix_d_destinations_exist_and_are_unique(available_fields):
+    seen: set[str] = set()
+
+    for person in APX_D:
+        for field in [
+            person["person_name"],
+            *(f for job in person["jobs"] for f in _apx_d_destinations(job)),
+        ]:
+            assert field in available_fields, field
+            assert field not in seen, f"{field} used twice"
+            seen.add(field)
+
+
+def test_appendix_d_has_two_people_with_three_identical_job_blocks():
+    assert len(APX_D) == 2
+
+    for person in APX_D:
+        assert len(person["jobs"]) == 3
+
+        for job in person["jobs"]:
+            assert set(job) == set(APX_D[0]["jobs"][0])
+
+
+def test_appendix_d_field_names_preserve_the_forms_own_typography():
+    """Three source-form irregularities that a sequential guess would miss."""
+    # D-1's widgets say "appx c" even though the printed page says Appendix D.
+    assert APX_D[0]["person_name"] == "Text1 appx c"
+
+    # The pay-amount widget on D-1 Job 1 has a space inside "Text 10".
+    assert APX_D[0]["jobs"][0]["pay_amount"] == "Text 10 appx c"
+
+    # D-2 Job 2 capitalises "Appx D2" where its neighbours say "appx d2".
+    assert APX_D[1]["jobs"][1]["reason_for_leaving"] == "Text25 Appx D2"
+
+
+def test_appendix_d2_first_job_transposes_daily_and_weekly():
+    """The source form numbers D-2 Job 1's hours boxes out of printed order.
+
+    Printed left to right the row reads Daily, Weekly, Monthly, but the widgets
+    are Check Box8, Check Box7, Check Box9. Resolved by coordinate: Daily's
+    glyph sits at x=421.5 beside Check Box8 at x=419.7, and Weekly's at x=460.8
+    beside Check Box7 at x=459.5.
+    """
+    assert APX_D[1]["jobs"][0]["hours_frequency"] == {
+        "daily": "Check Box8 appx d2",
+        "weekly": "Check Box7 appx d2",
+        "monthly": "Check Box9 appx d2",
+    }
+
+
+def test_appendix_d_first_person_first_job(available_fields):
+    values = _map(
+        {
+            "appendices.employment.0.person_name": "Rosa Marin",
+            **_apx_d_job(
+                0,
+                0,
+                employer="Bright Star Cafe, 12 Oak St, Fresno CA",
+                reason_for_leaving="Hours were cut",
+                worked_from="03/2024",
+                worked_to="11/2025",
+                hours_frequency="weekly",
+                self_employed=False,
+                pay_amount="18.50",
+                pay_frequency="hourly",
+                county_helped=False,
+                native_american=True,
+                tribe_name="Yurok",
+            ),
+        },
+        available_fields,
+    )
+
+    assert values["Text1 appx c"] == "Rosa Marin"
+    assert values["Text4 appx c"] == "Bright Star Cafe, 12 Oak St, Fresno CA"
+    assert values["Text3 appx c"] == "Hours were cut"
+    assert values["Text9b appx c"] == "03/2024"
+    assert values["Text9c appx c"] == "11/2025"
+    assert values["Text 10 appx c"] == "18.50"
+    assert values["Text2 appx c"] == "Yurok"
+
+    assert values.get("Check Box6 appx c") == "/Yes"    # hours: Weekly
+    assert values.get("Check Box9 appx c") == "/Yes"    # self-employed: No
+    assert values.get("Check Box11 appx c") == "/Yes"   # pay: Hourly
+    assert values.get("Check Box17 appx c") == "/Yes"   # County helped: No
+    assert values.get("Check Box1b appx c") == "/Yes"   # Native American: Yes
+
+    # The Yes/No twins of each answer stay blank.
+    for blank in (
+        "Check Box5 appx c",   # hours: Daily
+        "Check Box7 appx c",   # hours: Monthly
+        "Check Box8 appx c",   # self-employed: Yes
+        "Check Box16 appx c",  # County helped: Yes
+        "Check Box1c appx c",  # Native American: No
+    ):
+        assert blank not in values, blank
+
+    # Job 2, Job 3 and the whole of Person 2 stay untouched.
+    for blank in (
+        "Text22 appx c",
+        "Text42 appx c",
+        "Text1 appx d2",
+        "Text6 appx d2",
+    ):
+        assert blank not in values, blank
+
+
+def test_appendix_d_second_person_uses_the_second_page(available_fields):
+    values = _map(
+        {
+            "appendices.employment.0.person_name": "Rosa Marin",
+            "appendices.employment.1.person_name": "Ana Ruiz",
+            **_apx_d_job(1, 0, employer="Delta Packing", hours_frequency="daily"),
+            **_apx_d_job(1, 2, employer="Rio Landscaping", pay_frequency="monthly"),
+        },
+        available_fields,
+    )
+
+    assert values["Text1 appx c"] == "Rosa Marin"
+    assert values["Text1 appx d2"] == "Ana Ruiz"
+    assert values["Text6 appx d2"] == "Delta Packing"
+    assert values["Text46 Appx D2"] == "Rio Landscaping"
+
+    assert values.get("Check Box8 appx d2") == "/Yes"   # Job 1 hours: Daily
+    assert values.get("Check Box59 appx d2") == "/Yes"  # Job 3 pay: Monthly
+
+    # Job 2 of person 2 was never filled and stays entirely blank.
+    for blank in ("Text26 Appx D2", "Text24 Appx D2", "Check Box27 appx d2"):
+        assert blank not in values, blank
+
+
+def test_appendix_d_unanswered_questions_leave_both_boxes_blank(available_fields):
+    values = _map(
+        _apx_d_job(0, 0, employer="Bright Star Cafe"),
+        available_fields,
+    )
+
+    assert values["Text4 appx c"] == "Bright Star Cafe"
+
+    for blank in (
+        "Check Box8 appx c",
+        "Check Box9 appx c",
+        "Check Box16 appx c",
+        "Check Box17 appx c",
+        "Check Box1b appx c",
+        "Check Box1c appx c",
+    ):
+        assert blank not in values, blank
+
+
+def test_appendix_d_unrecognised_frequency_ticks_nothing(available_fields):
+    """A value outside the printed row is never rounded to the nearest box."""
+    values = _map(
+        _apx_d_job(
+            0,
+            0,
+            employer="Bright Star Cafe",
+            hours_frequency="fortnightly",
+            pay_frequency="twice_a_month",
+        ),
+        available_fields,
+    )
+
+    for job in APX_D[0]["jobs"]:
+        for destination in job["hours_frequency"].values():
+            assert destination not in values, destination
+        for destination in job["pay_frequency"].values():
+            assert destination not in values, destination
+
+
+def test_appendix_d_writes_nothing_without_employment_history(available_fields):
+    values = _map({}, available_fields)
+
+    for person in APX_D:
+        for field in [
+            person["person_name"],
+            *(f for job in person["jobs"] for f in _apx_d_destinations(job)),
+        ]:
+            assert field not in values, field
+
+
+def test_appendix_d_never_writes_an_ssn_or_signature_destination():
+    from benefits_navigator.saws2_plus_inventory import (
+        SIGNATURE_FIELDS,
+        SSN_FIELDS,
+    )
+
+    destinations = {
+        field
+        for person in APX_D
+        for field in [
+            person["person_name"],
+            *(f for job in person["jobs"] for f in _apx_d_destinations(job)),
+        ]
+    }
+
+    assert not destinations & SSN_FIELDS
+    assert not destinations & SIGNATURE_FIELDS
