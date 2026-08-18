@@ -21,8 +21,11 @@
 import { test, expect } from '@playwright/test';
 import {
   CALIFORNIA_TIER_1_ANSWERS,
+  answerAllNo,
+  answerEveryQuestion,
   completeIntakeAndAwaitReport,
   completeSaws2Application,
+  fillRequiredIdentityFields,
 } from './support/app';
 
 /*
@@ -196,5 +199,65 @@ test.describe('SAWS 2 PLUS draft (production gate)', () => {
      */
     const text = pdf.toString('latin1');
     expect(text).not.toMatch(/\d{3}-\d{2}-\d{4}/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Interview progress
+// ---------------------------------------------------------------------------
+
+test.describe('questionnaire progress', () => {
+  test('reaches 100% and none left once every question is answered', async ({
+    browser,
+  }) => {
+    test.setTimeout(300_000);
+
+    const own = await browser.newPage();
+
+    try {
+      await own.goto('/');
+      await completeIntakeAndAwaitReport(own, CALIFORNIA_TIER_1_ANSWERS);
+
+      // Walk to the questionnaire step rather than past it.
+      await own.getByRole('button', { name: /Continue with|Review SAWS 2 PLUS/ }).click();
+      await own.getByRole('button', { name: 'Continue with selected programs' }).click();
+
+      for (const label of [
+        'Continue to eligibility questions',
+        'Continue to household members',
+      ]) {
+        await fillRequiredIdentityFields(own);
+        await answerAllNo(own);
+        await own.getByRole('button', { name: label }).click();
+      }
+
+      await fillRequiredIdentityFields(own);
+      await own.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      /*
+       * Guard against passing for the wrong reason: the questionnaire must
+       * actually have questions outstanding when we arrive, or "it reached
+       * 100%" says nothing.
+       */
+      const progress = own.getByTestId('questionnaire-progress-label');
+      await expect(progress).toContainText(/\d+ questions? left/);
+
+      await answerEveryQuestion(own);
+
+      /*
+       * 100% is a statement about the interview, not about the document. The
+       * draft it produces may still — correctly — list Social Security boxes,
+       * signatures and Q23f as work to do by hand.
+       */
+      await expect(progress).toHaveText('All questions answered');
+      await expect(own.getByRole('progressbar', { name: 'Application completion' }))
+        .toHaveAttribute('aria-valuenow', '100');
+
+      // And the applicant can go on to generate from here.
+      await own.getByRole('button', { name: /^(Finish and review|Continue to review)$/ }).click();
+      await expect(own.getByRole('button', { name: 'Generate application' })).toBeEnabled();
+    } finally {
+      await own.close();
+    }
   });
 });

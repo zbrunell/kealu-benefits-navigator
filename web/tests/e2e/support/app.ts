@@ -374,3 +374,57 @@ export async function completeSaws2Application(page: Page): Promise<void> {
 
   throw new Error('SAWS 2 PLUS flow did not reach the generate step');
 }
+
+/**
+ * Answer the questionnaire until the planner has nothing left to ask.
+ *
+ * Gateways get "No", which keeps conditional sections shut so the interview
+ * stays a manageable length, and free-text questions get a value. Skipping is
+ * deliberately not used: a skipped question is blank, not answered, so it would
+ * leave progress short of 100% — which is the very thing this drives to.
+ *
+ * Stops when the step reports every question answered.
+ */
+export async function answerEveryQuestion(page: Page): Promise<void> {
+  const progress = page.getByTestId('questionnaire-progress-label');
+
+  await progress.waitFor({ state: 'visible' });
+
+  for (let guard = 0; guard < 250; guard += 1) {
+    if ((await progress.textContent())?.includes('All questions answered')) {
+      return;
+    }
+
+    const no = page.getByRole('button', { name: 'No', exact: true }).first();
+
+    if (await no.isVisible().catch(() => false)) {
+      await no.click();
+      continue;
+    }
+
+    const input = page.getByTestId('question-input').first();
+
+    if (await input.isVisible().catch(() => false)) {
+      const type = await input.getAttribute('type');
+
+      await input.fill(type === 'date' ? '2024-01-01' : type === 'number' ? '100' : 'Answered');
+      await page.getByTestId('question-continue').click();
+      continue;
+    }
+
+    // A records question: the applicant added nothing, which is a complete
+    // answer once its gateway said No.
+    const next = page.getByRole('button', { name: 'Next question' });
+
+    if (await next.isVisible().catch(() => false)) {
+      await next.click();
+      continue;
+    }
+
+    throw new Error(
+      `The questionnaire offered no way to answer: ${await progress.textContent()}`,
+    );
+  }
+
+  throw new Error('The questionnaire did not reach "All questions answered"');
+}
