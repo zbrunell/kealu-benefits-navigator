@@ -333,6 +333,45 @@ describe('post-generation completion guide', () => {
     expect(guide).toContain('could not determine your county');
   });
 
+  it('offers the printable guide beside the draft', () => {
+    expect(guide).toContain('data-testid="completion-guide-download"');
+    expect(guide).toContain('Open printable guide');
+    expect(guide).toContain('Download guide');
+    expect(guide).toContain('Guide for someone helping you');
+  });
+
+  it('uses real links, so every action is keyboard reachable', () => {
+    /*
+     * Anchors rather than click handlers on a div: an <a href> is focusable,
+     * activates on Enter, and offers "open in new tab" — none of which a
+     * div-with-onClick gives someone navigating by keyboard.
+     */
+    for (const action of [
+      'Open printable guide',
+      'Download guide',
+      'Guide for someone helping you',
+    ]) {
+      const before = guide.slice(0, guide.indexOf(action));
+
+      expect(before.lastIndexOf('<a'), action).toBeGreaterThan(
+        before.lastIndexOf('<button'),
+      );
+    }
+  });
+
+  it('tells the user how to print the guide', () => {
+    expect(guide).toMatch(/Print command/i);
+    expect(guide).toMatch(/US Letter/i);
+  });
+
+  it('shows the reference that pairs a guide with its draft', () => {
+    expect(guide).toContain('{draftReference}');
+    // JSX wraps prose across lines, so match on collapsed whitespace.
+    expect(guide.replace(/\s+/g, ' ')).toMatch(
+      /which guide goes with which draft/i,
+    );
+  });
+
   it('is wired into the application view after generation', () => {
     const view = readFileSync(
       path.join(SRC, 'components/application-view.tsx'),
@@ -341,5 +380,7 @@ describe('post-generation completion guide', () => {
 
     expect(view).toContain('DraftCompletionGuide');
     expect(view).toContain('draftUrl={draftUrl}');
+    expect(view).toContain('guideUrl={guideUrl}');
+    expect(view).toContain('draftReference={draftReference}');
   });
 });

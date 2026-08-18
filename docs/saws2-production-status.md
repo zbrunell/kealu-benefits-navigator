@@ -51,6 +51,7 @@ A change is production-ready when all of the following hold.
 14. Submission guidance is grounded in authoritative form/product information.
 15. Unsupported content is represented explicitly, never guessed.
 16. Unit, integration, typecheck, lint, build and scenario suites are green.
+    **Not currently met** — see §10 for the one suite that is not, and why.
 17. SSN and signature invariants are regression-tested.
 18. Representative PDFs are inspected visually, not merely counted.
 19. The product can say exactly what remains between draft and submission.
@@ -252,7 +253,8 @@ states: filled, `ssn`, `signature`, `signature_date`, `write_in`, `overflow`,
 
 ## 9. Verification
 
-Run from the repository root unless noted.
+Run from the repository root unless noted. `npx playwright test` is deliberately
+absent from this list — see §10.
 
 ```sh
 # Python: adapter, inventory, coordinate regressions, scenario matrix
@@ -286,7 +288,7 @@ pdftoppm -png -r 130 -f 27 -l 27 <generated.pdf> out
 | Measure | Value |
 | --- | --- |
 | Python tests | 612 passed, 3 deselected |
-| Web tests | 1,186 passed / 55 files |
+| Web tests | 1,190 passed / 55 files |
 | Typecheck, lint, build | clean |
 | PDF fields total | 1,444 |
 | Reviewed and writable | 903 |
@@ -314,7 +316,45 @@ figure — every printed question is accounted for.
 
 ---
 
-## 10. Working notes
+## 10. Known-red: the Playwright browser suite
+
+`web/tests/e2e/*.spec.ts` (56 tests, `npx playwright test`) **does not pass**, and
+has not for some time. It is unrelated to the SAWS 2 PLUS pipeline — no spec in
+it references the draft, the guide, or any appendix — and it fails identically at
+commit `eebd72d`, before any of this work.
+
+The cause is UI drift, not a product bug. The specs address the app through 15
+`data-testid` values that no component carries any more:
+
+```
+chat-input · send-button · skip-button · run-analysis-button
+assistant-message · user-message · report-view · error-banner
+phase-tracker · retry-button · section-content
+section-eligibility-validation · section-benefits-research
+section-insurance-research · section-action-plan
+```
+
+`grep -rn 'data-testid' web/src/components/` returns a completely disjoint set.
+The app itself renders correctly — the intake greeting, the language switcher and
+the send button are all present on a plain `npm run dev` — so the specs are
+testing a DOM that no longer exists.
+
+Three `language-switcher.spec.ts` failures are a *separate* cause: switching to
+Spanish does not change the rendered catalog, though the `language-context` and
+`language-switcher` unit tests pass. That one may be a real defect and is worth a
+look on its own.
+
+**Reviving this suite is its own project** — deciding, per spec, whether to
+re-attach the test IDs or rewrite against the current DOM — and it is not
+SAWS 2 PLUS work. Until it is done, the definition of done in §2 is not fully
+met, however green everything else is.
+
+The **scenario matrix** (§9) is a different thing and is green: it drives real
+PDF generation from real application state across 17 structural boundaries.
+
+---
+
+## 11. Working notes
 
 - **Context runs out on this project.** Commit a tested checkpoint and update
   this file before continuing; do not spend remaining context on a retrospective.
