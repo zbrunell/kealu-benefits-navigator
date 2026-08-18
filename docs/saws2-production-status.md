@@ -7,6 +7,9 @@ can pick the work up from the repository rather than from conversation history.
 verified values; re-run the commands in [Verification](#verification) rather than
 trusting them.
 
+As of the last verification the repository satisfies the full production
+definition of done in §2, including the browser suite (§10).
+
 ---
 
 ## 1. Where things are
@@ -50,8 +53,8 @@ A change is production-ready when all of the following hold.
 13. The user guide is downloadable and printable.
 14. Submission guidance is grounded in authoritative form/product information.
 15. Unsupported content is represented explicitly, never guessed.
-16. Unit, integration, typecheck, lint, build and scenario suites are green.
-    **Not currently met** — see §10 for the one suite that is not, and why.
+16. Unit, integration, typecheck, lint, build, scenario and browser suites
+    are green.
 17. SSN and signature invariants are regression-tested.
 18. Representative PDFs are inspected visually, not merely counted.
 19. The product can say exactly what remains between draft and submission.
@@ -253,8 +256,7 @@ states: filled, `ssn`, `signature`, `signature_date`, `write_in`, `overflow`,
 
 ## 9. Verification
 
-Run from the repository root unless noted. `npx playwright test` is deliberately
-absent from this list — see §10.
+Run from the repository root unless noted.
 
 ```sh
 # Python: adapter, inventory, coordinate regressions, scenario matrix
@@ -267,6 +269,9 @@ cd web && npx vitest run
 cd web && ./node_modules/.bin/tsc --noEmit
 cd web && npm run lint
 cd web && npm run build
+
+# Browser suite: 61 tests across two projects (see §10)
+cd web && npx playwright test
 
 # Regenerate the cross-runtime scenario fixture after a mapper change,
 # then review the diff before committing it.
@@ -288,7 +293,8 @@ pdftoppm -png -r 130 -f 27 -l 27 <generated.pdf> out
 | Measure | Value |
 | --- | --- |
 | Python tests | 612 passed, 3 deselected |
-| Web tests | 1,190 passed / 55 files |
+| Web tests | 1,195 passed / 56 files |
+| Browser tests | 61 passed / 2 projects |
 | Typecheck, lint, build | clean |
 | PDF fields total | 1,444 |
 | Reviewed and writable | 903 |
@@ -307,7 +313,7 @@ pdftoppm -png -r 130 -f 27 -l 27 <generated.pdf> out
 | — verified unmappable | 1 (Q23f) |
 | — no writable widget | 1 (Q27) |
 | — **not modeled** | **0** |
-| E2E scenarios | 17 |
+| PDF scenario matrix | 17 |
 
 The 504 unreviewed PDF fields are not a gap in the *questions*: one printed
 question can own thirty widgets or none, and the remainder is mostly the unused
@@ -316,41 +322,102 @@ figure — every printed question is accounted for.
 
 ---
 
-## 10. Known-red: the Playwright browser suite
+## 10. The browser suite
 
-`web/tests/e2e/*.spec.ts` (56 tests, `npx playwright test`) **does not pass**, and
-has not for some time. It is unrelated to the SAWS 2 PLUS pipeline — no spec in
-it references the draft, the guide, or any appendix — and it fails identically at
-commit `eebd72d`, before any of this work.
+`npx playwright test` runs 61 tests in two projects and passes. It was red for a
+long time; the causes are recorded here because two of them were product
+defects, not stale tests, and both were invisible from the outside.
 
-The cause is UI drift, not a product bug. The specs address the app through 15
-`data-testid` values that no component carries any more:
+### The one that hid all the others
 
-```
-chat-input · send-button · skip-button · run-analysis-button
-assistant-message · user-message · report-view · error-banner
-phase-tracker · retry-button · section-content
-section-eligibility-validation · section-benefits-research
-section-insurance-research · section-action-plan
-```
+The Content-Security-Policy allowed `'unsafe-eval'` only when `NODE_ENV` was
+exactly `development`. Next.js's dev bundler compiles with `eval()`, and the
+harness sets `NODE_ENV=test` — so a dev bundle was served the production policy
+and **no client JavaScript ran at all**. The page still rendered, because the
+markup is server-rendered, so it looked correct and did nothing: no hydration,
+no handlers, no effects.
 
-`grep -rn 'data-testid' web/src/components/` returns a completely disjoint set.
-The app itself renders correctly — the intake greeting, the language switcher and
-the send button are all present on a plain `npm run dev` — so the specs are
-testing a DOM that no longer exists.
+That is why the language switcher appeared broken. Selecting Spanish changed the
+`<select>` — the browser's own behaviour, needing no script — while the cookie,
+the localStorage write and the re-render never happened. **The i18n code was
+never defective.** With a usable CSP, switching sets the catalogue, the cookie,
+`kbn-locale`, `<html lang>`, and survives a reload, with no console errors.
 
-Three `language-switcher.spec.ts` failures are a *separate* cause: switching to
-Spanish does not change the rendered catalog, though the `language-context` and
-`language-switcher` unit tests pass. That one may be a real defect and is worth a
-look on its own.
+The policy now keys on production. `tests/unit/security-headers.test.ts` pins
+it, including the `NODE_ENV=test` case.
 
-**Reviving this suite is its own project** — deciding, per spec, whether to
-re-attach the test IDs or rewrite against the current DOM — and it is not
-SAWS 2 PLUS work. Until it is done, the definition of done in §2 is not fully
-met, however green everything else is.
+### The harness never resolved its own fixture
 
-The **scenario matrix** (§9) is a different thing and is green: it drives real
-PDF generation from real application state across 17 structural boundaries.
+`playwright.config.ts` put `tests/e2e/fixtures` first on PATH to use the
+deterministic engine, but the app resolves the binary with `which kvr` and the
+fixture is named `mock-kvr`. The lookup fell through to whatever was installed,
+or to nothing — which rendered "Workflow engine offline" and made starting a run
+impossible. A `kvr` symlink beside it fixes that and makes runs hermetic.
+
+### Stale tests, and what they were stale about
+
+Two intentional product changes the specs had not caught up with:
+
+- **Intake is no longer free-form.** It asks one validated field at a time, so
+  the sentence every journey opened with was rejected at question one.
+- **The run is no longer started by hand.** When the last required answer lands,
+  `/api/intake` replies `ready` and ChatInterface starts the workflow itself.
+  "Run Analysis" exists only for re-running after an edit or a stop. Every
+  journey had been waiting for a control the product deliberately does not show.
+
+The rest were ordinary test bugs: selectors matching several elements under
+strict mode, links looked for in a collapsed section, and a wide-table test
+looking for a Tailwind class (`overflow-x-auto`) when the wrapper is
+`table-wrapper` styled from `globals.css` — it now asserts the computed
+`overflow-x`, so it tests behaviour rather than a class name.
+
+### Session cookie: a guarantee moved, not weakened
+
+The cookie is minted by `/api/intake` on the first interaction, not during the
+first render. A server component cannot set a cookie while rendering and this
+app has no middleware, so there is nowhere earlier for it to happen. Minting a
+session for every request — including crawlers and asset fetches — is a product
+decision, not a test fix. The tests assert at the point the cookie exists, and
+still check every security property: no account required, httpOnly,
+SameSite=Strict, UUID v4.
+
+### Selector strategy
+
+`tests/e2e/support/app.ts` is the single place the suite addresses the app.
+Controls are located by role and accessible name, which is also an implicit
+assertion that they are reachable by assistive technology. Test ids are used
+only where there is no role — a conversation turn, a phase tile, a report
+section — nine in place of the fifteen historical ones.
+
+Because accessible names come from the message catalogue, the browser locale is
+pinned to `en-US`; the language spec asserts translated names explicitly.
+
+### Two servers
+
+The `saws2` project runs against its own server on port 3101 with `E2E_MODE=1`.
+SAWS 2 PLUS is offered only to California households whose report carries a
+`CA_SAWS_2_PLUS` recommendation, and only the in-process E2E fixture emits one —
+`mock-kvr` produces the Texas household the report specs assert on.
+
+Two `next dev` processes cannot share a build directory: they overwrite each
+other's manifests and hang serving half-built routes, which is exactly why the
+suite passed alone and timed out when run together. `next.config.ts` reads
+`NEXT_DIST_DIR` so the second server keeps its own.
+
+### Flake resistance
+
+26 of the 32 arbitrary sleeps are gone, replaced by the signal each stood in
+for. The six that remain observe network side effects with no DOM counterpart
+(an EventSource reconnect backoff, a "no failed requests over an interval"
+check). Three consecutive full runs were clean.
+
+### Known follow-up, not blocking
+
+Selects are wrapped in their `<label>` without `htmlFor`/`id`, so the accessible
+name absorbs every option's text — "Relationship to applicantSelect
+relationshipSpouseChild…". A screen reader announces the whole option list as
+the field name. Worth fixing in the markup; the suite matches on a substring
+meanwhile.
 
 ---
 
@@ -364,3 +431,7 @@ PDF generation from real application state across 17 structural boundaries.
 - The ad-hoc form probe used while resolving coordinates is not committed. It
   dumps printed text and widget rectangles for a page, y-sorted, using
   `page.extract_text(visitor_text=…)` and each widget's `/Rect`.
+- Browser specs address the app only through `tests/e2e/support/app.ts`. Add
+  locators there rather than inline, so a UI change is a one-file fix.
+- `AGENTS.md` and `CLAUDE.md` at the repository root are written by `next dev`
+  itself, not by hand.
