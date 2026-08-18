@@ -5,3 +5,7 @@ out/
 .env.*.local
 *.tsbuildinfo
 .next-e2e
+
+# Playwright output.
+test-results/
+playwright-report/

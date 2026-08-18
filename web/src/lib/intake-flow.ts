@@ -70,7 +70,7 @@ export const TIER_1_FIELDS: IntakeField[] = [
       'I’ll ask a few short questions. Your answers stay private, and you do not need an account.\n\n' +
       'What is your ZIP code?',
     inputMode: 'numeric',
-    placeholder: '19020',
+    placeholder: '90210',
     tier: 1,
   },
   {
@@ -79,7 +79,7 @@ export const TIER_1_FIELDS: IntakeField[] = [
     rationale: 'We use this to estimate which programs, discounts, and tax credits your household may qualify for.',
     prompt: 'What is your household’s total yearly income before taxes?',
     inputMode: 'numeric',
-    placeholder: '42000',
+    // placeholder: '42000',
     tier: 1,
   },
   {
