@@ -96,7 +96,14 @@ export interface Saws2Field {
   kind: FieldKind;
   support: FieldSupport;
   pdf: PdfStatus;
-  /** Path into the questionnaire, when the answer is stored there. */
+  /**
+   * Where the answer is stored, as a dotted path.
+   *
+   * Rooted in the questionnaire for nearly everything, and in the application
+   * itself for the few that live there — the applicant's own name and date of
+   * birth, and the Q4 interview preferences. The planner's `store` on the
+   * matching question says which, and a test asserts the two agree.
+   */
   path?: string;
   /** Canonical key emitted into the field plan, when one exists. */
   canonicalKey?: string;
@@ -269,7 +276,7 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     kind: 'boolean',
     support: 'askable',
     pdf: 'mapped',
-    path: 'applicant.preferences.prefersInPersonInterview',
+    path: 'preferences.prefersInPersonInterview',
     canonicalKey: 'applicant.prefers_in_person_interview',
     note:
       'A standalone printed checkbox, not a Yes/No pair — the form offers no ' +
@@ -284,7 +291,7 @@ export const SAWS2_FIELDS: readonly Saws2Field[] = [
     kind: 'boolean',
     support: 'askable',
     pdf: 'mapped',
-    path: 'applicant.preferences.needsDisabilityInterviewArrangements',
+    path: 'preferences.needsDisabilityInterviewArrangements',
     canonicalKey: 'applicant.needs_disability_interview_arrangements',
     note: 'A standalone printed checkbox, like the in-person preference above.',
   },

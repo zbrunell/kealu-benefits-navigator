@@ -44,8 +44,11 @@ import type { Saws2PlusApplicationData } from '@/types/application';
 import { APPLICANT_MEMBER_ID } from '@/types/saws-questionnaire';
 
 /** Build a planned question for tests, defaulting its priority metadata. */
-function q(partial: Omit<PlannedQuestion, 'tier' | 'requirement'>): PlannedQuestion {
-  return { tier: 3, requirement: 'optional', ...partial };
+function q(
+  partial: Omit<PlannedQuestion, 'tier' | 'requirement' | 'store'> &
+    Partial<Pick<PlannedQuestion, 'store'>>,
+): PlannedQuestion {
+  return { tier: 3, requirement: 'optional', store: 'questionnaire', ...partial };
 }
 
 function set(

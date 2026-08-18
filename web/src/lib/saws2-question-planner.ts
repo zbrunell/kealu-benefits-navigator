@@ -125,6 +125,21 @@ export const REQUIREMENT_HINTS: Record<QuestionRequirement, string> = {
   optional: 'The form treats this as optional — it does not affect eligibility.',
 };
 
+/**
+ * Which object a question's `path` is rooted in.
+ *
+ * Almost every answer lives in the questionnaire, but a few are properties of
+ * the application itself — the applicant's own name and date of birth, and the
+ * Q4 interview preferences. A question that addresses one of those and does not
+ * say so is unanswerable: the write lands in the questionnaire, where nothing
+ * reads it, so the planner keeps reporting it as outstanding no matter how many
+ * times the applicant answers it.
+ *
+ * Declaring the store makes that impossible to get wrong silently, and
+ * `answerQuestion` is the one place that has to know the difference.
+ */
+export type AnswerStore = 'questionnaire' | 'application';
+
 export interface PlannedQuestion {
   /** Priority tier; lower is asked first. */
   tier: QuestionTier;
@@ -145,10 +160,14 @@ export interface PlannedQuestion {
   /** Optional clarifying sentence. */
   help?: string;
   /**
-   * Dotted path into the questionnaire, e.g. `income.earned.answer`. The UI uses
-   * it to read and write the answer without a per-question switch statement.
+   * Dotted path to the answer, e.g. `income.earned.answer`. The UI uses it to
+   * read and write the answer without a per-question switch statement.
+   *
+   * Rooted in `store` — the questionnaire unless stated otherwise.
    */
   path: string;
+  /** Which object `path` is rooted in. */
+  store: AnswerStore;
   /** For `records`: the minimum number of records required once Yes. */
   minimumRecords?: number;
   /** For `choice`: the allowed values. */
@@ -205,8 +224,8 @@ export function activeEntries<TEntry>(
 /** A planned question before priority metadata is stamped on. */
 export type UnstampedQuestion = Omit<
   PlannedQuestion,
-  'tier' | 'requirement' | 'sawsQuestion'
->;
+  'tier' | 'requirement' | 'sawsQuestion' | 'store'
+> & { store?: AnswerStore };
 
 /**
  * Priority and SAWS 2 PLUS question number for every question we ask.
@@ -260,6 +279,9 @@ function withPriority(question: UnstampedQuestion): PlannedQuestion {
   const tier = ownerId ? QUESTION_META[ownerId].tier : 3;
 
   return {
+    // The questionnaire is where nearly every answer lives; a question that
+    // addresses application state overrides this.
+    store: 'questionnaire',
     ...question,
     tier,
     requirement: requirementForTier(tier),
@@ -923,6 +945,83 @@ export function writePath(
   return assign(questionnaire, 0) as Saws2PlusQuestionnaire;
 }
 
+/**
+ * Write an answer where its question says it lives.
+ *
+ * The one place that has to know the difference between the two answer stores.
+ * Everything that commits an answer goes through here, so a question can never
+ * again be written somewhere the planner does not read — which is a silent
+ * failure: the value lands, the UI advances, and the question stays outstanding
+ * forever because nothing is looking where it went.
+ *
+ * Pure: returns new application data and mutates nothing.
+ */
+export function answerQuestion(
+  data: Saws2PlusApplicationData,
+  question: Pick<PlannedQuestion, 'path' | 'store'>,
+  value: unknown,
+): Saws2PlusApplicationData {
+  if (question.store === 'application') {
+    return writeApplicationPath(data, question.path, value);
+  }
+
+  return {
+    ...data,
+    questionnaire: writePath(data.questionnaire, question.path, value),
+  };
+}
+
+/**
+ * Immutably write a dotted path into the application itself.
+ *
+ * `applicant.name` is the one composite: the printed form asks for a single
+ * name and the model keeps first and last apart, so it is split here rather
+ * than leaving a path no writer understands.
+ */
+function writeApplicationPath(
+  data: Saws2PlusApplicationData,
+  path: string,
+  value: unknown,
+): Saws2PlusApplicationData {
+  if (path === 'applicant.name') {
+    const parts = String(value ?? '').trim().split(/\s+/).filter(Boolean);
+
+    if (parts.length === 0) return data;
+
+    return {
+      ...data,
+      applicant: {
+        ...data.applicant,
+        firstName: parts[0],
+        lastName: parts.slice(1).join(' ') || data.applicant.lastName,
+      },
+    };
+  }
+
+  const [root, ...rest] = path.split('.');
+
+  if (root !== 'applicant' && root !== 'preferences') return data;
+
+  const branch = data[root] as unknown;
+
+  return {
+    ...data,
+    [root]: writeInto(branch, rest, value),
+  } as Saws2PlusApplicationData;
+}
+
+/** Immutable dotted write into a plain object branch. */
+function writeInto(target: unknown, keys: string[], value: unknown): unknown {
+  if (keys.length === 0) return value;
+
+  const source = (target ?? {}) as Record<string, unknown>;
+
+  return {
+    ...source,
+    [keys[0]]: writeInto(source[keys[0]], keys.slice(1), value),
+  };
+}
+
 /** Record with an index signature, for required-field checks. */
 type UnknownRecord = Record<string, unknown>;
 
@@ -987,6 +1086,7 @@ export function getRequiredApplicationQuestions(
       kind: 'field',
       prompt: 'We need the applicant’s first and last name.',
       path: 'applicant.name',
+      store: 'application',
     });
   } else {
     answeredCount += 1;
@@ -1000,6 +1100,7 @@ export function getRequiredApplicationQuestions(
       kind: 'field',
       prompt: 'We need the applicant’s date of birth.',
       path: 'applicant.dateOfBirth',
+      store: 'application',
     });
   } else {
     answeredCount += 1;
@@ -1325,13 +1426,13 @@ export function getRequiredApplicationQuestions(
   for (const spec of [
     {
       id: 'preferences.in_person_interview',
-      path: 'applicant.preferences.prefersInPersonInterview',
+      path: 'preferences.prefersInPersonInterview',
       prompt: 'Would you prefer an in-person interview for CalFresh?',
       value: application.preferences?.prefersInPersonInterview,
     },
     {
       id: 'preferences.interview_disability_arrangements',
-      path: 'applicant.preferences.needsDisabilityInterviewArrangements',
+      path: 'preferences.needsDisabilityInterviewArrangements',
       prompt: 'Do you need other arrangements for the interview because of a disability?',
       value: application.preferences?.needsDisabilityInterviewArrangements,
     },
@@ -1345,6 +1446,7 @@ export function getRequiredApplicationQuestions(
         kind: 'gateway',
         prompt: spec.prompt,
         path: spec.path,
+        store: 'application',
       });
     } else {
       answeredCount += 1;

@@ -31,7 +31,7 @@ import {
   getRequiredApplicationQuestions,
   readPath,
   safeEntries,
-  writePath,
+  answerQuestion,
   type PlannedQuestion,
 } from '@/lib/saws2-question-planner';
 import type { Saws2PlusApplicationData } from '@/types/application';
@@ -343,8 +343,8 @@ export interface SubmitResult {
  * Commit the current draft and advance.
  *
  * On failure nothing is written and the question stays on screen with an error.
- * On success the value goes through `writePath` (which preserves arrays), the
- * planner is re-run, and the flow moves to the next question.
+ * On success the value goes through `answerQuestion`, which writes it to the
+ * store the question declares, the planner is re-run, and the flow moves on.
  */
 export function submitDraft(
   data: Saws2PlusApplicationData,
@@ -361,10 +361,9 @@ export function submitDraft(
     };
   }
 
-  const nextData: Saws2PlusApplicationData = {
-    ...data,
-    questionnaire: writePath(data.questionnaire, question.path, validated.value),
-  };
+  // answerQuestion honours the question's declared store; writing straight into
+  // the questionnaire loses any answer that belongs on the application.
+  const nextData = answerQuestion(data, question, validated.value);
 
   return { data: nextData, state: advance(nextData, state), committed: true };
 }
@@ -381,10 +380,16 @@ export function submitChoice(
   path: string,
   value: unknown,
 ): SubmitResult {
-  const nextData: Saws2PlusApplicationData = {
-    ...data,
-    questionnaire: writePath(data.questionnaire, path, value),
-  };
+  /*
+   * Take the store from the question on screen when the path is its own. A
+   * caller writing some other path — the member picker seeding a record, for
+   * instance — is always addressing the questionnaire.
+   */
+  const question = currentQuestion(state);
+  const store =
+    question && question.path === path ? question.store : 'questionnaire';
+
+  const nextData = answerQuestion(data, { path, store }, value);
 
   return { data: nextData, state: advance(nextData, state), committed: true };
 }
