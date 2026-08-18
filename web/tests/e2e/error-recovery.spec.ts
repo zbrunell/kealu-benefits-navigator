@@ -326,6 +326,13 @@ test.describe('Concurrent "Run Analysis" idempotency (edge case)', () => {
       }
     });
 
+    /*
+     * This one drives two full workflow runs — intake to a finished report, then
+     * a restart — where the rest of this file only walks intake. The default
+     * timeout is sized for the latter.
+     */
+    test.setTimeout(240_000);
+
     await page.goto('/');
 
     /*
