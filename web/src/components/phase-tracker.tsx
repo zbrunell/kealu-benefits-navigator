@@ -315,7 +315,10 @@ export default function PhaseTracker({ runId, onComplete, onRestart, onEdit }: P
   const sequentialPhases = PHASES.slice(2);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+    <div
+      data-testid="phase-tracker"
+      className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-slate-800">{t('phase_analyzing')}</h2>
@@ -375,6 +378,7 @@ export default function PhaseTracker({ runId, onComplete, onRestart, onEdit }: P
         {parallelPhases.map((phase) => (
           <PhaseTile
             key={phase.key}
+            phaseKey={phase.key}
             label={t(phase.labelKey)}
             status={phaseStatus[phase.key]}
           />
@@ -386,6 +390,7 @@ export default function PhaseTracker({ runId, onComplete, onRestart, onEdit }: P
         {sequentialPhases.map((phase) => (
           <PhaseTile
             key={phase.key}
+            phaseKey={phase.key}
             label={t(phase.labelKey)}
             status={phaseStatus[phase.key]}
             wide
@@ -413,10 +418,12 @@ export default function PhaseTracker({ runId, onComplete, onRestart, onEdit }: P
  * @param wide   - When true, the card spans its full container width (used for sequential phases).
  */
 function PhaseTile({
+  phaseKey,
   label,
   status,
   wide,
 }: {
+  phaseKey: PhaseKey;
   label: string;
   status: PhaseStatus;
   wide?: boolean;
@@ -427,6 +434,8 @@ function PhaseTile({
 
   return (
     <div
+      data-testid={`phase-tile-${phaseKey}`}
+      data-phase-status={status}
       className={`rounded-lg border px-4 py-3 transition-colors ${phaseColorClass(status)} ${wide ? 'w-full' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">

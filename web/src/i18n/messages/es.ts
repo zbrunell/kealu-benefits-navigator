@@ -38,6 +38,7 @@ const es: Messages = {
   chat_run_analysis: 'Ejecutar análisis',
   chat_placeholder: 'Escriba su respuesta… (Intro para enviar, Shift+Intro para nueva línea)',
   chat_input_aria: 'Su mensaje',
+  chat_log_aria: 'Conversación',
   chat_send: 'Enviar',
   chat_send_aria: 'Enviar mensaje',
 

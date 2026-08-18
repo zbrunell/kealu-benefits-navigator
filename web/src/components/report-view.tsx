@@ -183,10 +183,13 @@ export default function ReportView({
   }
 
   return (
-    <div className="space-y-4">
+    <div data-testid="report-view" className="space-y-4">
       {/* ── Bottom Line — pinned summary card ─────────────────────────────── */}
       {bottomLineHtml && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
+        <div
+          data-testid="bottom-line"
+          className="rounded-xl border border-blue-200 bg-blue-50 p-5"
+        >
           <p className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-2">
             {t("report_bottom_line")}
           </p>
@@ -201,6 +204,7 @@ export default function ReportView({
       {renderedSections.map((section) => (
         <details
           key={section.phaseName}
+          data-testid={`section-${section.phaseName}`}
           open={section.expanded}
           className="group rounded-xl border border-slate-200 bg-white shadow-sm"
         >
@@ -213,7 +217,10 @@ export default function ReportView({
               {t("report_collapse")}
             </span>
           </summary>
-          <div className="px-5 pb-5 pt-1 border-t border-slate-100">
+          <div
+            data-testid="section-content"
+            className="px-5 pb-5 pt-1 border-t border-slate-100"
+          >
             <div
               className="markdown-content"
               dangerouslySetInnerHTML={{ __html: section.html }}

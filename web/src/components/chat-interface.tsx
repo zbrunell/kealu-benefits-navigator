@@ -388,11 +388,26 @@ export default function ChatInterface({
         </div>
       )}
 
-      {/* Message list */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      {/*
+        Message list.
+
+        `data-testid` here is a deliberate testing contract, not decoration: a
+        conversation turn has no accessible role of its own, and end-to-end
+        tests need to count turns and read the latest one. The interactive
+        controls below carry accessible names instead and are addressed by role,
+        so this is the smallest set of ids that does the job.
+      */}
+      <div
+        data-testid="chat-messages"
+        role="log"
+        aria-live="polite"
+        aria-label={t('chat_log_aria')}
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
+      >
         {messages.map((msg) => (
           <div
             key={msg.id}
+            data-testid={msg.role === 'user' ? 'user-message' : 'assistant-message'}
             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div

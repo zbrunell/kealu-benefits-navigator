@@ -36,6 +36,7 @@ const en = {
   chat_run_analysis: 'Run Analysis',
   chat_placeholder: 'Type your answer… (Enter to send, Shift+Enter for newline)',
   chat_input_aria: 'Your message',
+  chat_log_aria: 'Conversation',
   chat_send: 'Send',
   chat_send_aria: 'Send message',
 

@@ -32,6 +32,7 @@ const zhCN: Messages = {
   chat_run_analysis: '运行分析',
   chat_placeholder: '输入您的回答…（Enter 发送，Shift+Enter 换行）',
   chat_input_aria: '您的消息',
+  chat_log_aria: '对话',
   chat_send: '发送',
   chat_send_aria: '发送消息',
 
