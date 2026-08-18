@@ -42,9 +42,13 @@ function parseAnnualIncome(value: string | undefined): number | undefined {
 
 export async function GET(
   req: Request,
-  { params }: { params: { runId: string } },
+  { params }: { params: Promise<{ runId: string }> },
 ): Promise<Response> {
-  const { runId } = params;
+  // Next.js 15 hands route params in as a Promise. This handler destructured
+  // it synchronously, which logs a "params should be awaited" error on every
+  // report fetch and is slated to stop working outright. Every sibling route
+  // already awaits it.
+  const { runId } = await params;
 
   // Dynamic imports: defers module resolution to handler invocation time.
   const { sessionStore } = await import("@/lib/session-store");
