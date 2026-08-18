@@ -38,6 +38,17 @@ const es: Messages = {
   chat_run_analysis: 'Ejecutar análisis',
   chat_placeholder: 'Escriba su respuesta… (Intro para enviar, Shift+Intro para nueva línea)',
   chat_input_aria: 'Su mensaje',
+  // Questionnaire answer validation.
+  answer_error_no_question: 'No hay ninguna pregunta que responder.',
+  answer_error_required: 'Ingrese una respuesta.',
+  answer_error_amount: 'Ingrese una cantidad usando solo números.',
+  answer_error_date: 'Ingrese una fecha válida.',
+  answer_error_required_to_file: 'Esta respuesta es necesaria para presentar la solicitud.',
+  // Date-of-birth validation.
+  dob_error_future: 'La fecha de nacimiento no puede ser en el futuro.',
+  dob_error_too_old: 'Revise esta fecha de nacimiento: es de hace más de 120 años.',
+  dob_error_malformed: 'Ingrese la fecha de nacimiento con año, mes y día.',
+  dob_error_too_young: 'Esta persona es demasiado joven para solicitar por su propia cuenta.',
   chat_log_aria: 'Conversación',
   chat_send: 'Enviar',
   chat_send_aria: 'Enviar mensaje',

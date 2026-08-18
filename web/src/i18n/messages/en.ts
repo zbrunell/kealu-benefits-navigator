@@ -36,6 +36,17 @@ const en = {
   chat_run_analysis: 'Run Analysis',
   chat_placeholder: 'Type your answer… (Enter to send, Shift+Enter for newline)',
   chat_input_aria: 'Your message',
+  // Questionnaire answer validation.
+  answer_error_no_question: 'There is no question to answer.',
+  answer_error_required: 'Please enter an answer.',
+  answer_error_amount: 'Enter an amount using numbers only.',
+  answer_error_date: 'Enter a valid date.',
+  answer_error_required_to_file: 'This answer is needed to file the application.',
+  // Date-of-birth validation.
+  dob_error_future: 'A date of birth cannot be in the future.',
+  dob_error_too_old: 'Please check this date of birth — it is more than 120 years ago.',
+  dob_error_malformed: 'Enter a date of birth as year, month and day.',
+  dob_error_too_young: 'This person is too young to apply on their own behalf.',
   chat_log_aria: 'Conversation',
   chat_send: 'Send',
   chat_send_aria: 'Send message',

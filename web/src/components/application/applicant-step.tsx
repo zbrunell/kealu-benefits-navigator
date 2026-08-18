@@ -5,6 +5,10 @@
 
 "use client";
 
+import { applicantDateOfBirthErrorKey } from "@/lib/applicant-eligibility";
+import { dateOfBirthBounds } from "@/lib/date-of-birth";
+import { useTranslation } from "@/hooks/use-translation";
+
 import type {
   AdultApplicationDetails,
   ApplicantInformation,
@@ -34,6 +38,8 @@ export default function ApplicantStep({
   onBack,
   onContinue,
 }: ApplicantStepProps) {
+  const { t } = useTranslation();
+
   /**
    * Update one field used by the applicant's Page 3 household row.
    *
@@ -61,7 +67,21 @@ export default function ApplicantStep({
    * Household-row details below may remain unanswered; unanswered values are
    * intentionally left blank in the generated PDF instead of being guessed.
    */
+  /*
+   * One call covers both the date and the jurisdiction's age rule, so the
+   * component cannot check one and forget the other. The state comes from the
+   * address the applicant entered, which is what decides the rule.
+   */
+  const dateOfBirthErrorMessage = applicantDateOfBirthErrorKey(
+    applicant.dateOfBirth,
+    applicant.homeAddress.state,
+  );
+  const dateOfBirthError = dateOfBirthErrorMessage
+    ? t(dateOfBirthErrorMessage)
+    : null;
+
   const isValid =
+    dateOfBirthError === null &&
     Boolean(applicant.firstName.trim()) &&
     Boolean(applicant.lastName.trim()) &&
     Boolean(applicant.dateOfBirth) &&
@@ -140,11 +160,32 @@ export default function ApplicantStep({
             <input
               type="date"
               value={applicant.dateOfBirth}
+              min={dateOfBirthBounds().min}
+              max={dateOfBirthBounds().max}
+              aria-invalid={dateOfBirthError !== null}
+              aria-describedby={
+                dateOfBirthError ? "applicant-dob-error" : undefined
+              }
               onChange={(event) =>
                 onChange("dateOfBirth", event.target.value)
               }
               className={INPUT_CLASS}
             />
+
+            {/*
+              The bounds above only make a bad entry harder; this is the check.
+              A paste, a browser that ignores min/max, or a restored session all
+              reach here.
+            */}
+            {dateOfBirthError && (
+              <p
+                id="applicant-dob-error"
+                role="alert"
+                className="mt-1 text-xs text-red-700"
+              >
+                {dateOfBirthError}
+              </p>
+            )}
           </label>
 
           <label className="block">

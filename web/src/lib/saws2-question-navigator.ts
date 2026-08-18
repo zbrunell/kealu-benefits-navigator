@@ -34,6 +34,7 @@ import {
   answerQuestion,
   type PlannedQuestion,
 } from '@/lib/saws2-question-planner';
+import { dateOfBirthErrorKey, parseIsoDate } from '@/lib/date-of-birth';
 import type { Saws2PlusApplicationData } from '@/types/application';
 
 export interface QuestionFlowState {
@@ -120,6 +121,10 @@ export interface ValidatedAnswer {
   ok: boolean;
   /** The value to commit — a trimmed string, or a number for amount fields. */
   value?: string | number;
+  /**
+   * Message key, not a sentence. The caller resolves it against the active
+   * locale, so the same rejection reads correctly in every language.
+   */
   error?: string;
 }
 
@@ -134,12 +139,12 @@ export function validateDraft(
   question: PlannedQuestion | null,
   draft: string,
 ): ValidatedAnswer {
-  if (!question) return { ok: false, error: 'There is no question to answer.' };
+  if (!question) return { ok: false, error: 'answer_error_no_question' };
 
   const trimmed = draft.trim();
 
   if (!trimmed) {
-    return { ok: false, error: 'Please enter an answer.' };
+    return { ok: false, error: 'answer_error_required' };
   }
 
   const kind = draftKind(question);
@@ -148,17 +153,29 @@ export function validateDraft(
     const amount = Number(trimmed);
 
     if (!Number.isFinite(amount) || amount < 0) {
-      return { ok: false, error: 'Enter an amount using numbers only.' };
+      return { ok: false, error: 'answer_error_amount' };
     }
 
     return { ok: true, value: amount };
   }
 
   if (kind === 'date') {
-    const parsed = new Date(trimmed);
+    /*
+     * A date of birth answered through the questionnaire gets the same bounds
+     * as one typed on the applicant or household step. `new Date(trimmed)`
+     * alone accepted a birth year of 2205 and rolled 2023-02-29 into March,
+     * which is a different date from the one the applicant typed.
+     */
+    if (leafKey(question.path) === 'dateOfBirth') {
+      const problem = dateOfBirthErrorKey(trimmed);
 
-    if (Number.isNaN(parsed.getTime())) {
-      return { ok: false, error: 'Enter a valid date.' };
+      if (problem) return { ok: false, error: problem };
+
+      return { ok: true, value: trimmed };
+    }
+
+    if (!parseIsoDate(trimmed)) {
+      return { ok: false, error: 'answer_error_date' };
     }
 
     return { ok: true, value: trimmed };
@@ -289,7 +306,7 @@ export function skipCurrent(
   const question = currentQuestion(state);
 
   if (!canSkip(question)) {
-    return { ...state, error: 'This answer is needed to file the application.' };
+    return { ...state, error: 'answer_error_required_to_file' };
   }
 
   return advance(data, {

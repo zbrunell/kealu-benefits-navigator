@@ -32,6 +32,17 @@ const zhCN: Messages = {
   chat_run_analysis: '运行分析',
   chat_placeholder: '输入您的回答…（Enter 发送，Shift+Enter 换行）',
   chat_input_aria: '您的消息',
+  // Questionnaire answer validation.
+  answer_error_no_question: '没有需要回答的问题。',
+  answer_error_required: '请填写答案。',
+  answer_error_amount: '请仅使用数字填写金额。',
+  answer_error_date: '请填写有效日期。',
+  answer_error_required_to_file: '提交申请需要此答案。',
+  // Date-of-birth validation.
+  dob_error_future: '出生日期不能是将来的日期。',
+  dob_error_too_old: '请核对该出生日期：距今已超过 120 年。',
+  dob_error_malformed: '请按年、月、日填写出生日期。',
+  dob_error_too_young: '此人年龄过小，无法本人提出申请。',
   chat_log_aria: '对话',
   chat_send: '发送',
   chat_send_aria: '发送消息',

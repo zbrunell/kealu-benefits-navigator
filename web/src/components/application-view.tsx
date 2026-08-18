@@ -15,6 +15,7 @@ import { evaluateApplicationReadiness } from "@/lib/saws2-readiness";
 
 import DraftCompletionGuide from "./application/draft-completion-guide";
 import EligibilityStep from "./application/eligibility-step";
+import { relationshipAfterAgeChange } from "@/lib/household-relationships";
 import HouseholdStep from "./application/household-step";
 import ProgramSelectionStep from "./application/program-selection-step";
 import QuestionnaireStep from "./application/questionnaire-step";
@@ -328,14 +329,26 @@ export default function ApplicationView({
   ) {
     setApplicationData((current) => ({
       ...current,
-      householdMembers: current.householdMembers.map((member) =>
-        member.id === memberId
-          ? {
-              ...member,
-              [field]: value,
-            }
-          : member,
-      ),
+      householdMembers: current.householdMembers.map((member) => {
+        if (member.id !== memberId) return member;
+
+        const updated = { ...member, [field]: value };
+
+        /*
+         * A date of birth can make a relationship impossible. Correcting a
+         * birth year to make someone nine must not leave "spouse" behind in
+         * state, unseen because the option is no longer rendered, and still
+         * printed on the form.
+         */
+        if (field === "dateOfBirth") {
+          updated.relationshipToApplicant = relationshipAfterAgeChange(
+            updated.relationshipToApplicant,
+            updated.dateOfBirth,
+          );
+        }
+
+        return updated;
+      }),
     }));
   }
 

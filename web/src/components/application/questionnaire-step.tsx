@@ -37,6 +37,7 @@ import {
   validateDraft,
   type QuestionFlowState,
 } from "@/lib/saws2-question-navigator";
+import { useTranslation } from "@/hooks/use-translation";
 import type { Saws2PlusApplicationData } from "@/types/application";
 
 const INPUT_CLASS =
@@ -620,6 +621,8 @@ export default function QuestionnaireStep({
    * trail, and only when the navigator reports `atStart` does Back leave the
    * step via `onBack()`.
    */
+  const { t } = useTranslation();
+
   const [flow, setFlow] = useState<QuestionFlowState>(() => startFlow(application));
 
   /** Entries path awaiting a household-member choice before a record is made. */
@@ -835,7 +838,7 @@ export default function QuestionnaireStep({
 
         {flow.error && (
           <p className="mt-2 text-sm text-red-700" role="alert">
-            {flow.error}
+            {t(flow.error)}
           </p>
         )}
 

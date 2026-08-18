@@ -5,6 +5,11 @@
 
 "use client";
 
+import {
+  allowedRelationshipsForDateOfBirth,
+  type HouseholdRelationship,
+} from "@/lib/household-relationships";
+import { ageOnDate, dateOfBirthBounds } from "@/lib/date-of-birth";
 import type { Saws2PlusProgram } from "@/lib/report-assembler";
 
 import type {
@@ -69,32 +74,8 @@ const PROGRAM_LABELS: Record<Saws2PlusProgram, string> = {
  * We use this only to decide whether to show the adult or child SAWS section.
  * It is not itself written into the PDF.
  */
-function ageFromDateOfBirth(dateOfBirth: string): number | null {
-  if (!dateOfBirth) return null;
-
-  const dob = new Date(`${dateOfBirth}T00:00:00`);
-
-  if (Number.isNaN(dob.getTime())) {
-    return null;
-  }
-
-  const today = new Date();
-
-  let age = today.getFullYear() - dob.getFullYear();
-
-  const birthdayHasNotOccurred =
-    today.getMonth() < dob.getMonth() ||
-    (
-      today.getMonth() === dob.getMonth()
-      && today.getDate() < dob.getDate()
-    );
-
-  if (birthdayHasNotOccurred) {
-    age -= 1;
-  }
-
-  return age;
-}
+const ageFromDateOfBirth = (dateOfBirth: string): number | null =>
+  ageOnDate(dateOfBirth);
 
 /**
  * Small reusable yes/no control.
@@ -202,6 +183,18 @@ function ProgramCheckboxes({
     </fieldset>
   );
 }
+
+/** How each relationship is written on screen. */
+const RELATIONSHIP_LABELS: Record<HouseholdRelationship, string> = {
+  spouse: "Spouse",
+  child: "Child",
+  parent: "Parent",
+  sibling: "Sibling",
+  grandparent: "Grandparent",
+  grandchild: "Grandchild",
+  unrelated: "Unrelated household member",
+  other: "Other",
+};
 
 export default function HouseholdStep({
   applicant,
@@ -374,6 +367,8 @@ export default function HouseholdStep({
                     <input
                       type="date"
                       value={member.dateOfBirth}
+                      min={dateOfBirthBounds().min}
+                      max={dateOfBirthBounds().max}
                       onChange={(event) =>
                         onUpdate(
                           member.id,
@@ -404,30 +399,20 @@ export default function HouseholdStep({
                       <option value="">
                         Select relationship
                       </option>
-                      <option value="spouse">
-                        Spouse
-                      </option>
-                      <option value="child">
-                        Child
-                      </option>
-                      <option value="parent">
-                        Parent
-                      </option>
-                      <option value="sibling">
-                        Sibling
-                      </option>
-                      <option value="grandparent">
-                        Grandparent
-                      </option>
-                      <option value="grandchild">
-                        Grandchild
-                      </option>
-                      <option value="unrelated">
-                        Unrelated household member
-                      </option>
-                      <option value="other">
-                        Other
-                      </option>
+
+                      {/*
+                        Offered options come from the domain rule, so a child
+                        is never shown "Spouse". Editing the date of birth
+                        re-runs it, and the stored value is cleared by
+                        updateMember if it has become impossible.
+                      */}
+                      {allowedRelationshipsForDateOfBirth(
+                        member.dateOfBirth,
+                      ).map((relationship) => (
+                        <option key={relationship} value={relationship}>
+                          {RELATIONSHIP_LABELS[relationship]}
+                        </option>
+                      ))}
                     </select>
                   </label>
                 </div>
