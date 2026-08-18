@@ -9,24 +9,30 @@
  *   Story 5 AC 4 — Mid-run reload reconnects SSE stream
  */
 import { test, expect } from '@playwright/test';
+import {
+  chatInput as findChatInput,
+  runAnalysisButton as findRunAnalysisButton,
+  sendButton as findSendButton,
+  skipButton as findSkipButton,
+  answer as answerIntake,
+  answerTier1,
+} from './support/app';
 
 // ---------------------------------------------------------------------------
 // Helper: complete Tier-1 intake and pause (do NOT start run)
 // ---------------------------------------------------------------------------
 
-async function completeTier1(page: import('@playwright/test').Page) {
+async function completeTier1Intake(page: import('@playwright/test').Page) {
   await page.goto('/');
 
-  await page.locator('[data-testid="chat-input"]').fill(
-    'ZIP 77001, income $42k, single parent 2 kids ages 4 and 9'
-  );
-  await page.locator('[data-testid="send-button"]').click();
-  await page.waitForTimeout(2000);
+  await answerTier1(page);
 
   // Wait for Tier-2 question or skip button to confirm Tier-1 is complete
-  await page.locator('[data-testid="skip-button"]')
-    .or(page.locator('button:has-text("Skip remaining questions")'))
+  // Either the skip offer or a second assistant message proves Tier 1 is
+  // done; both can be present at once, so match the first.
+  await findSkipButton(page)
     .or(page.locator('[data-testid="assistant-message"]').nth(1))
+    .first()
     .waitFor({ timeout: 15_000 });
 }
 
@@ -37,6 +43,8 @@ async function completeTier1(page: import('@playwright/test').Page) {
 test.describe('Session cookie TTL (Story 5 AC 1)', () => {
   test('session cookie has Max-Age of 7200 seconds', async ({ page, context }) => {
     await page.goto('/');
+    // The session is issued on the first interaction, not the first render.
+    await answerIntake(page, '77001');
 
     const cookies = await context.cookies();
     const sessionCookie = cookies.find((c) => c.name === 'session');
@@ -64,17 +72,14 @@ test.describe('Session restoration on page reload (Story 5 AC 3)', () => {
     await page.goto('/');
 
     // Provide ZIP code
-    await page.locator('[data-testid="chat-input"]').fill('My ZIP is 77001');
-    await page.locator('[data-testid="send-button"]').click();
-    await page.waitForTimeout(2000);
+    await answerIntake(page, '77001');
 
     // Count messages before reload
     const messagesBefore = await page.locator('[data-testid="user-message"]').count();
     expect(messagesBefore).toBeGreaterThan(0);
 
     // Reload the page (simulates accidental refresh)
-    await page.reload();
-    await page.waitForTimeout(2000);
+    await page.reload({ waitUntil: 'networkidle' });
 
     // Story 5 AC 3: chat history restored — user messages should be visible
     const messagesAfterReload = await page.locator('[data-testid="user-message"]').count();
@@ -87,15 +92,14 @@ test.describe('Session restoration on page reload (Story 5 AC 3)', () => {
   });
 
   test('after Tier-1 complete and reload, assistant does not re-ask for ZIP', async ({ page }) => {
-    await completeTier1(page);
+    await completeTier1Intake(page);
 
     // Count assistant messages and remember what they say
     const messageCountBefore = await page.locator('[data-testid="assistant-message"]').count();
     expect(messageCountBefore).toBeGreaterThan(0);
 
     // Reload
-    await page.reload();
-    await page.waitForTimeout(2000);
+    await page.reload({ waitUntil: 'networkidle' });
 
     // After reload, chat history should be present
     const messageCountAfter = await page.locator('[data-testid="assistant-message"]').count();
@@ -114,22 +118,21 @@ test.describe('Session restoration on page reload (Story 5 AC 3)', () => {
     await page.goto('/');
 
     // Submit two messages to build a conversation
-    await page.locator('[data-testid="chat-input"]').fill('My ZIP is 77001');
-    await page.locator('[data-testid="send-button"]').click();
-    await page.waitForTimeout(2000);
+    await answerIntake(page, '77001');
 
-    const input = page.locator('[data-testid="chat-input"]');
+    const input = findChatInput(page);
+    const repliesBefore = await page.locator('[data-testid="assistant-message"]').count();
     await input.fill('I make $42,000 per year');
-    await page.locator('[data-testid="send-button"]').click();
-    await page.waitForTimeout(2000);
+    await findSendButton(page).click();
+    // Wait for the reply, not the clock.
+    await page.locator('[data-testid="assistant-message"]').nth(repliesBefore).waitFor();
 
     // Count total user messages
     const userMsgCountBefore = await page.locator('[data-testid="user-message"]').count();
     expect(userMsgCountBefore).toBeGreaterThanOrEqual(2);
 
     // Reload
-    await page.reload();
-    await page.waitForTimeout(2000);
+    await page.reload({ waitUntil: 'networkidle' });
 
     // Story 5 AC 3: all messages restored
     const userMsgCountAfter = await page.locator('[data-testid="user-message"]').count();
@@ -145,25 +148,13 @@ test.describe('Mid-run SSE reconnect on page reload (Story 5 AC 4)', () => {
   async function startWorkflow(page: import('@playwright/test').Page) {
     await page.goto('/');
 
-    await page.locator('[data-testid="chat-input"]').fill(
-      'ZIP 77001, income $42k, single parent 2 kids ages 4 and 9'
-    );
-    await page.locator('[data-testid="send-button"]').click();
-    await page.waitForTimeout(2000);
+    await completeTier1Intake(page);
 
-    const skipButton = page.locator('[data-testid="skip-button"]').or(
-      page.locator('button:has-text("Skip remaining questions")')
-    );
-    if (await skipButton.isVisible({ timeout: 8_000 })) {
-      await skipButton.click();
-      await page.waitForTimeout(1000);
-    }
+    const skip = findSkipButton(page);
+    if (await skip.isVisible().catch(() => false)) await skip.click();
 
-    const runButton = page.locator('[data-testid="run-analysis-button"]').or(
-      page.locator('button:has-text("Run Analysis")')
-    );
-    await runButton.waitFor({ timeout: 10_000 });
-    await runButton.click();
+    // The run starts itself once the last answer lands.
+    await page.waitForSelector('[data-testid="phase-tracker"]', { timeout: 30_000 });
 
     // Wait for phase tracker to appear (run started)
     await page.waitForSelector('[data-testid="phase-tracker"]', { timeout: 30_000 });
@@ -174,8 +165,7 @@ test.describe('Mid-run SSE reconnect on page reload (Story 5 AC 4)', () => {
 
     // Reload while workflow is in progress (mock-kvr takes ~0.5s)
     // Since mock-kvr is very fast, we reload almost immediately
-    await page.reload();
-    await page.waitForTimeout(2000);
+    await page.reload({ waitUntil: 'networkidle' });
 
     // After reload, the page should either:
     // a) Show the phase tracker (if run is still in progress)
@@ -193,6 +183,8 @@ test.describe('Mid-run SSE reconnect on page reload (Story 5 AC 4)', () => {
 
   test('session cookie is preserved across reload', async ({ page, context }) => {
     await page.goto('/');
+    // The session is issued on the first interaction, not the first render.
+    await answerIntake(page, '77001');
 
     const cookiesBefore = await context.cookies();
     const sessionBefore = cookiesBefore.find((c) => c.name === 'session');

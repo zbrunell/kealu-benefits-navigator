@@ -75,10 +75,13 @@ test.describe('Language switcher (KEA-1 / KEA-7)', () => {
     const languageSelect = page.locator('header select');
     await languageSelect.selectOption('es');
 
-    // Wait for the client to finish writing the locale cookie.
-    // selectOption fires onChange synchronously; localStorage + cookie writes
-    // happen inside the handler, so a single React tick is sufficient.
-    await page.waitForTimeout(300);
+    /*
+     * Wait on the signal rather than on the clock. LanguageProvider writes the
+     * cookie inside setLocale and only then sets state, and the effect that
+     * mirrors the locale onto <html lang> runs after that state lands — so a
+     * settled lang attribute proves the cookie has been written.
+     */
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
 
     // Reload: the server component now reads the kbn-locale cookie and
     // renders page_title / page_subtitle / offline_banner in Spanish.
@@ -99,13 +102,13 @@ test.describe('Language switcher (KEA-1 / KEA-7)', () => {
 
     // Switch to Spanish and reload so the cookie is written.
     await languageSelect.selectOption('es');
-    await page.waitForTimeout(300);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
     await page.reload();
     await expect(page.locator('h1')).toContainText('Navegador de Beneficios');
 
     // Switch back to English.
     await page.locator('header select').selectOption('en');
-    await page.waitForTimeout(300);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await page.reload();
 
     // Server should now render the English page title again.

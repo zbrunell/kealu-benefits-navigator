@@ -10,6 +10,14 @@
  *   Edge case: 10-column table horizontally scrollable on 375px viewport
  */
 import { test, expect } from '@playwright/test';
+import {
+  chatInput as findChatInput,
+  runAnalysisButton as findRunAnalysisButton,
+  sendButton as findSendButton,
+  skipButton as findSkipButton,
+  answer as answerIntake,
+  answerTier1 as completeTier1,
+} from './support/app';
 
 // ---------------------------------------------------------------------------
 // Helper: perform complete intake + run + wait for report
@@ -18,25 +26,13 @@ import { test, expect } from '@playwright/test';
 async function getToReport(page: import('@playwright/test').Page) {
   await page.goto('/');
 
-  await page.locator('[data-testid="chat-input"]').fill(
-    'ZIP 77001, income $42,000/year, single parent, 2 kids ages 4 and 9'
-  );
-  await page.locator('[data-testid="send-button"]').click();
-  await page.waitForTimeout(2000);
+  await completeTier1(page);
 
-  const skipButton = page.locator('[data-testid="skip-button"]').or(
-    page.locator('button:has-text("Skip remaining questions")')
-  );
-  if (await skipButton.isVisible({ timeout: 8_000 })) {
-    await skipButton.click();
-    await page.waitForTimeout(1000);
-  }
+    const skip = findSkipButton(page);
+    if (await skip.isVisible().catch(() => false)) await skip.click();
 
-  const runButton = page.locator('[data-testid="run-analysis-button"]').or(
-    page.locator('button:has-text("Run Analysis")')
-  );
-  await runButton.waitFor({ timeout: 10_000 });
-  await runButton.click();
+    // The run starts itself once the last answer lands.
+    await page.waitForSelector('[data-testid="phase-tracker"]', { timeout: 30_000 });
 
   // Wait for the report to appear after mock-kvr completes
   await page.waitForSelector('[data-testid="report-view"]', { timeout: 60_000 });
@@ -53,10 +49,11 @@ test.describe('Markdown table rendering', () => {
     // Expand the eligibility-validation section
     const section = page.locator('[data-testid="section-eligibility-validation"]');
     await section.click();
-    await page.waitForTimeout(500);
+    // <details> is open — the state the sleep was waiting for.
+    await expect(section).toHaveAttribute('open', '');
 
     // Should contain a real HTML table element
-    const tableLocator = page.locator('[data-testid="section-eligibility-validation"] table');
+    const tableLocator = page.locator('[data-testid="section-eligibility-validation"] table').first();
     await expect(tableLocator).toBeVisible({ timeout: 5_000 });
 
     // The table should have thead and tbody
@@ -76,13 +73,21 @@ test.describe('Markdown table rendering', () => {
 
     // Expand benefits research
     await page.locator('[data-testid="section-benefits-research"]').click();
-    await page.waitForTimeout(500);
+    // <details> is open — the state the sleep was waiting for.
+    await expect(page.locator('[data-testid="section-benefits-research"]')).toHaveAttribute('open', '');
 
     // Should contain table cells with program names from mock-kvr fixture
-    await expect(page.locator('[data-testid="section-benefits-research"] table td')).toBeVisible({ timeout: 5_000 });
+    await expect(
+      page.locator('[data-testid="section-benefits-research"] table td').first(),
+    ).toBeVisible({ timeout: 5_000 });
 
-    // Check that CHIP appears in the rendered table (from fixture data)
-    const tableText = await page.locator('[data-testid="section-benefits-research"] table').textContent();
+    /*
+     * Check the fixture's program data reached the tables. The section renders
+     * several, so read them all rather than assuming there is one.
+     */
+    const tableText = (
+      await page.locator('[data-testid="section-benefits-research"] table').allTextContents()
+    ).join(' ');
     expect(tableText).toContain('CHIP');
   });
 });
@@ -108,7 +113,16 @@ test.describe('Government URL rendering', () => {
   test('yourtexasbenefits.com links are anchor elements with target=_blank', async ({ page }) => {
     await getToReport(page);
 
-    const texasLinks = page.locator('a[href*="yourtexasbenefits.com"]').first();
+    /*
+     * These links are in the benefits-research tables, and only action-plan is
+     * expanded by default — so the anchors exist but are inside a closed
+     * <details> until the section is opened.
+     */
+    const benefits = page.locator('[data-testid="section-benefits-research"]');
+    await benefits.click();
+    await expect(benefits).toHaveAttribute('open', '');
+
+    const texasLinks = benefits.locator('a[href*="yourtexasbenefits.com"]').first();
     await expect(texasLinks).toBeVisible({ timeout: 5_000 });
     await expect(texasLinks).toHaveAttribute('target', '_blank');
     await expect(texasLinks).toHaveAttribute('rel', 'noopener noreferrer');
@@ -162,35 +176,36 @@ test.describe('Wide table horizontal scrolling', () => {
     const page = await context.newPage();
 
     await page.goto('/');
-    await page.locator('[data-testid="chat-input"]').fill(
-      'ZIP 77001, income $42k, single parent 2 kids ages 4 and 9'
-    );
-    await page.locator('[data-testid="send-button"]').click();
-    await page.waitForTimeout(2000);
+    await completeTier1(page);
 
-    const skipButton = page.locator('[data-testid="skip-button"]').or(
-      page.locator('button:has-text("Skip remaining questions")')
-    );
-    if (await skipButton.isVisible({ timeout: 8_000 })) {
-      await skipButton.click();
-      await page.waitForTimeout(1000);
-    }
+    const skip = findSkipButton(page);
+    if (await skip.isVisible().catch(() => false)) await skip.click();
 
-    const runButton = page.locator('[data-testid="run-analysis-button"]').or(
-      page.locator('button:has-text("Run Analysis")')
-    );
-    await runButton.waitFor({ timeout: 10_000 });
-    await runButton.click();
+    // The run starts itself once the last answer lands.
+    await page.waitForSelector('[data-testid="phase-tracker"]', { timeout: 30_000 });
     await page.waitForSelector('[data-testid="report-view"]', { timeout: 60_000 });
 
     // Expand insurance-research section
     await page.locator('[data-testid="section-insurance-research"]').click();
-    await page.waitForTimeout(500);
+    // <details> is open — the state the sleep was waiting for.
+    await expect(page.locator('[data-testid="section-insurance-research"]')).toHaveAttribute('open', '');
 
-    // Tables should be wrapped in overflow-x-auto containers
-    const tableWrappers = page.locator('.overflow-x-auto');
-    const wrapperCount = await tableWrappers.count();
-    expect(wrapperCount).toBeGreaterThan(0);
+    /*
+     * Tables are wrapped for horizontal scrolling by renderMarkdown, which
+     * injects `class="table-wrapper"` — the scrolling comes from a rule in
+     * globals.css, not from a Tailwind utility called overflow-x-auto, which is
+     * what this test used to look for and never found.
+     *
+     * Asserting the computed style rather than the class name tests the
+     * behaviour: the wrapper actually scrolls.
+     */
+    const tableWrappers = page.locator('.markdown-content .table-wrapper');
+    expect(await tableWrappers.count()).toBeGreaterThan(0);
+
+    const overflowX = await tableWrappers
+      .first()
+      .evaluate((el) => getComputedStyle(el).overflowX);
+    expect(overflowX).toBe('auto');
 
     // The page body should not overflow horizontally
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);

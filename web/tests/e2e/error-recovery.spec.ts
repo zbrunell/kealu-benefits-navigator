@@ -11,33 +11,31 @@
  *   Edge case: concurrent "Run Analysis" calls return same runId
  */
 import { test, expect } from '@playwright/test';
+import {
+  chatInput as findChatInput,
+  errorBanner as findErrorBanner,
+  retryButton as findRetryButton,
+  sendButton as findSendButton,
+  skipButton as findSkipButton,
+  answer as answerIntake,
+  completeIntakeAndRun as startRunFromIntake,
+  completeIntakeAndAwaitReport as runToReport,
+} from './support/app';
 
 // ---------------------------------------------------------------------------
 // Helper: complete intake and start workflow
 // ---------------------------------------------------------------------------
 
-async function completeIntakeAndClickRun(page: import('@playwright/test').Page) {
+/**
+ * Complete intake and get a run started.
+ *
+ * The run auto-starts when the final answer lands — see completeIntakeAndRun.
+ * This used to return the "Run Analysis" button for the caller to click, which
+ * is a control the product does not show on this path.
+ */
+async function completeIntakeAndStartRun(page: import('@playwright/test').Page) {
   await page.goto('/');
-
-  await page.locator('[data-testid="chat-input"]').fill(
-    'ZIP 77001, income $42k, single parent 2 kids ages 4 and 9'
-  );
-  await page.locator('[data-testid="send-button"]').click();
-  await page.waitForTimeout(2000);
-
-  const skipButton = page.locator('[data-testid="skip-button"]').or(
-    page.locator('button:has-text("Skip remaining questions")')
-  );
-  if (await skipButton.isVisible({ timeout: 8_000 })) {
-    await skipButton.click();
-    await page.waitForTimeout(1000);
-  }
-
-  const runButton = page.locator('[data-testid="run-analysis-button"]').or(
-    page.locator('button:has-text("Run Analysis")')
-  );
-  await runButton.waitFor({ timeout: 10_000 });
-  return runButton;
+  await startRunFromIntake(page);
 }
 
 // ---------------------------------------------------------------------------
@@ -71,12 +69,11 @@ test.describe('KVR failure shows inline error banner (Story 6 AC 1)', () => {
       });
     });
 
-    const runButton = await completeIntakeAndClickRun(page);
-    await runButton.click();
+    await completeIntakeAndStartRun(page);
 
     // After the error event, an inline error banner should appear
     // Story 6 AC 1: UI renders inline error banner, not blank screen
-    await expect(page.locator('[data-testid="error-banner"]')).toBeVisible({ timeout: 15_000 });
+    await expect(findErrorBanner(page)).toBeVisible({ timeout: 15_000 });
 
     // The body should not be blank
     const bodyText = await page.locator('body').textContent();
@@ -105,14 +102,13 @@ test.describe('KVR failure shows inline error banner (Story 6 AC 1)', () => {
       });
     });
 
-    const runButton = await completeIntakeAndClickRun(page);
-    await runButton.click();
+    await completeIntakeAndStartRun(page);
 
     // The phase tracker should be visible (not replaced by full-page error)
     await page.waitForTimeout(2000);
 
     // Error banner should be visible within the page context
-    const errorBanner = page.locator('[data-testid="error-banner"]');
+    const errorBanner = findErrorBanner(page);
     await expect(errorBanner).toBeVisible({ timeout: 10_000 });
 
     // The banner should contain an error message
@@ -142,14 +138,13 @@ test.describe('KVR failure shows inline error banner (Story 6 AC 1)', () => {
 
     // Also mock the stream route to pass correlation ID from the X-Correlation-Id response header
     // The error banner should display the correlation ID from the stream response header
-    const runButton = await completeIntakeAndClickRun(page);
-    await runButton.click();
+    await completeIntakeAndStartRun(page);
 
-    await expect(page.locator('[data-testid="error-banner"]')).toBeVisible({ timeout: 10_000 });
+    await expect(findErrorBanner(page)).toBeVisible({ timeout: 10_000 });
 
     // Story 6 AC 6: correlation ID in error display
     // The banner should contain the correlation ID or error ID
-    const bannerHtml = await page.locator('[data-testid="error-banner"]').innerHTML();
+    const bannerHtml = await findErrorBanner(page).innerHTML();
     // Either the correlation ID itself or a reference to it should be present
     expect(bannerHtml.length).toBeGreaterThan(0);
   });
@@ -177,15 +172,12 @@ test.describe('"Try Again" reuses session vars without intake repeat (Story 6 AC
       });
     });
 
-    const runButton = await completeIntakeAndClickRun(page);
-    await runButton.click();
+    await completeIntakeAndStartRun(page);
 
-    await expect(page.locator('[data-testid="error-banner"]')).toBeVisible({ timeout: 10_000 });
+    await expect(findErrorBanner(page)).toBeVisible({ timeout: 10_000 });
 
     // Story 6 AC 4: "Try Again" button is visible
-    const tryAgainButton = page.locator('[data-testid="retry-button"]').or(
-      page.locator('button:has-text("Try Again")')
-    );
+    const tryAgainButton = findRetryButton(page);
     await expect(tryAgainButton).toBeVisible({ timeout: 5_000 });
   });
 
@@ -216,17 +208,14 @@ test.describe('"Try Again" reuses session vars without intake repeat (Story 6 AC
       });
     });
 
-    const runButton = await completeIntakeAndClickRun(page);
-    await runButton.click();
-    await expect(page.locator('[data-testid="error-banner"]')).toBeVisible({ timeout: 10_000 });
+    await completeIntakeAndStartRun(page);
+    await expect(findErrorBanner(page)).toBeVisible({ timeout: 10_000 });
 
     // Track initial start call count
     const startCallsBefore = startCalls.length;
 
     // Click Try Again
-    const tryAgainButton = page.locator('[data-testid="retry-button"]').or(
-      page.locator('button:has-text("Try Again")')
-    );
+    const tryAgainButton = findRetryButton(page);
     await tryAgainButton.click();
     await page.waitForTimeout(2000);
 
@@ -234,7 +223,7 @@ test.describe('"Try Again" reuses session vars without intake repeat (Story 6 AC
     expect(startCalls.length).toBeGreaterThan(startCallsBefore);
 
     // The intake conversation should NOT appear again (no ZIP/income question)
-    const chatInput = page.locator('[data-testid="chat-input"]');
+    const chatInput = findChatInput(page);
     const chatVisible = await chatInput.isVisible({ timeout: 2_000 }).catch(() => false);
     // After clicking Try Again, the user should go back to the phase tracker, not the intake form
     expect(chatVisible).toBe(false);
@@ -284,28 +273,10 @@ test.describe('EventSource reconnects on network drop (Story 6 AC 5)', () => {
     });
 
     await page.goto('/');
-    await page.locator('[data-testid="chat-input"]').fill(
-      'ZIP 77001, income $42k, single parent 2 kids ages 4 and 9'
-    );
-    await page.locator('[data-testid="send-button"]').click();
-    await page.waitForTimeout(2000);
 
-    const skipButton = page.locator('[data-testid="skip-button"]').or(
-      page.locator('button:has-text("Skip remaining questions")')
-    );
-    if (await skipButton.isVisible({ timeout: 8_000 })) {
-      await skipButton.click();
-      await page.waitForTimeout(1000);
-    }
-
-    const runButton = page.locator('[data-testid="run-analysis-button"]').or(
-      page.locator('button:has-text("Run Analysis")')
-    );
-    await runButton.waitFor({ timeout: 10_000 });
-    await runButton.click();
-
-    // Wait for SSE connection
-    await page.waitForSelector('[data-testid="phase-tracker"]', { timeout: 15_000 });
+    // The run auto-starts once intake completes; this resolves when the phase
+    // tracker is up, which means the SSE connection has been opened.
+    await startRunFromIntake(page);
     await page.waitForTimeout(2000);
 
     // Simulate network interruption by aborting the SSE route
@@ -356,23 +327,16 @@ test.describe('Concurrent "Run Analysis" idempotency (edge case)', () => {
     });
 
     await page.goto('/');
-    await page.locator('[data-testid="chat-input"]').fill(
-      'ZIP 77001, income $42k, single parent 2 kids ages 4 and 9'
-    );
-    await page.locator('[data-testid="send-button"]').click();
-    await page.waitForTimeout(2000);
 
-    const skipButton = page.locator('[data-testid="skip-button"]').or(
-      page.locator('button:has-text("Skip remaining questions")')
-    );
-    if (await skipButton.isVisible({ timeout: 8_000 })) {
-      await skipButton.click();
-      await page.waitForTimeout(1000);
-    }
+    /*
+     * Intake auto-starts exactly one run, so the double click is driven from
+     * the control that still starts a run by hand: "Run Again" on the finished
+     * report. It POSTs the same /api/workflow/start, which is where the
+     * idempotency guarantee lives.
+     */
+    await runToReport(page);
 
-    const runButton = page.locator('[data-testid="run-analysis-button"]').or(
-      page.locator('button:has-text("Run Analysis")')
-    );
+    const runButton = page.getByRole('button', { name: 'Run Again' });
     await runButton.waitFor({ timeout: 10_000 });
 
     // Rapid double-click (simulate user clicking twice quickly)
@@ -461,10 +425,8 @@ test.describe('Health endpoint and startup checks (Story 4)', () => {
     await page.goto('/');
 
     // Intake should still be functional
-    await expect(page.locator('[data-testid="chat-input"]')).toBeVisible();
-    await page.locator('[data-testid="chat-input"]').fill('My ZIP is 77001');
-    await page.locator('[data-testid="send-button"]').click();
-    await page.waitForTimeout(2000);
+    await expect(findChatInput(page)).toBeVisible();
+    await answerIntake(page, '77001');
 
     // App should continue processing (not crash)
     const msgCount = await page.locator('[data-testid="assistant-message"]').count();
