@@ -33,9 +33,10 @@
     ]
   },
   "include": [
+    ".next/types/**/*.ts",
     "src",
     "tests",
-    ".next/types/**/*.ts"
+    ".next-e2e/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

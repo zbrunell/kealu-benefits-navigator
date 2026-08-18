@@ -206,3 +206,171 @@ export async function completeIntakeAndAwaitReport(
   await completeIntakeAndRun(page, answers);
   await reportView(page).waitFor({ state: 'visible', timeout: 90_000 });
 }
+
+// ---------------------------------------------------------------------------
+// The SAWS 2 PLUS application flow
+// ---------------------------------------------------------------------------
+
+/**
+ * A California ZIP, because the SAWS 2 PLUS flow is California-only.
+ *
+ * The report route makes the application available only when the session's
+ * state resolves to CA *and* the report carries a CA_SAWS_2_PLUS
+ * recommendation. Only the E2E_MODE fixture emits that recommendation, which is
+ * why the SAWS 2 PLUS spec runs against its own server — see the `saws2`
+ * project in playwright.config.ts.
+ */
+export const CALIFORNIA_TIER_1_ANSWERS: readonly string[] = [
+  '90001',
+  '42000',
+  'Single parent with 2 kids ages 4 and 9',
+];
+
+/** Answer every unanswered Yes/No group on the current step with "No". */
+export async function answerAllNo(page: Page): Promise<void> {
+  const noButtons = page.getByRole('button', { name: 'No', exact: true });
+
+  for (let index = 0, count = await noButtons.count(); index < count; index += 1) {
+    const button = noButtons.nth(index);
+
+    // aria-pressed is how the tri-state control reports its own answer.
+    if ((await button.getAttribute('aria-pressed')) === 'true') continue;
+
+    await button.click().catch(() => undefined);
+  }
+}
+
+/** Fill any still-empty required field on the applicant or household step. */
+export async function fillRequiredIdentityFields(page: Page): Promise<void> {
+  const textFields: Array<[string, string]> = [
+    ['First name', 'Maria'],
+    ['Last name', 'Delgado'],
+    ['Date of birth', '1990-01-01'],
+    ['Street address', '12 Oak Street'],
+    ['City', 'Los Angeles'],
+    ['ZIP code', '90001'],
+  ];
+
+  for (const [label, value] of textFields) {
+    const fields = page.getByLabel(label, { exact: true });
+
+    for (let index = 0, count = await fields.count(); index < count; index += 1) {
+      const field = fields.nth(index);
+      const current = await field.inputValue().catch(() => 'skip');
+
+      if (current !== '') continue;
+
+      // Household members are people in their own right, not copies of the
+      // applicant, so give each one its own name and a child's date of birth.
+      const memberValue =
+        index === 0
+          ? value
+          : label === 'First name'
+            ? `Child${index}`
+            : label === 'Date of birth'
+              ? '2018-03-02'
+              : value;
+
+      await field.fill(memberValue).catch(() => undefined);
+    }
+  }
+
+  /*
+   * Not an exact match: the <select> sits inside its <label>, so its accessible
+   * name is the label text with every option's text run onto the end —
+   * "Relationship to applicantSelect relationshipSpouseChild…". Worth fixing in
+   * the markup one day, since a screen reader announces the whole option list
+   * as the field's name; a substring match is the honest way to address it
+   * meanwhile.
+   */
+  const relationships = page.getByLabel('Relationship to applicant');
+
+  for (let index = 0, count = await relationships.count(); index < count; index += 1) {
+    const select = relationships.nth(index);
+
+    if ((await select.inputValue().catch(() => 'skip')) !== '') continue;
+
+    await select.selectOption('child').catch(() => undefined);
+  }
+}
+
+/**
+ * Walk the SAWS 2 PLUS steps from the report to the generated draft.
+ *
+ * Each step is answered the same way — fill what is required, answer every
+ * gateway "No" — and then that step's own forward control is pressed.
+ * Answering No throughout keeps the draft to the base form, which is what makes
+ * the assertions about SSNs and signatures meaningful: no conditional section
+ * is in play to explain a blank away.
+ *
+ * The order the controls are tried in matters. The questionnaire step renders
+ * two "Continue"s: one that commits a single answer, and "Finish and review",
+ * which moves on with whatever is answered so far. Taking the first match in
+ * DOM order picks the per-question one and walks all seventy questions,
+ * stalling on the first that is not a Yes/No. Reviewing with questions
+ * outstanding is a supported path and the one this test wants, because it is
+ * also what exercises the draft's remaining-action reporting.
+ */
+export async function completeSaws2Application(page: Page): Promise<void> {
+  await page.getByRole('button', { name: /Continue with|Review SAWS 2 PLUS/ }).click();
+  await page.getByRole('button', { name: 'Continue with selected programs' }).click();
+
+  for (let guard = 0; guard < 20; guard += 1) {
+    await fillRequiredIdentityFields(page);
+    await answerAllNo(page);
+
+    /*
+     * isVisible() before isEnabled(), and the order is load-bearing:
+     * isEnabled() waits for the element to exist, so asking it about a control
+     * that is not on this step blocks for the full expect timeout. Twenty steps
+     * of that outruns any test timeout, which is exactly how this stalled on
+     * step one. isVisible() answers immediately.
+     */
+    const generate = page.getByRole('button', { name: 'Generate application' });
+
+    if (await generate.isVisible().catch(() => false)) {
+      await generate.click();
+      return;
+    }
+
+    /*
+     * Most specific first; see the note above. The bare "Continue" comes last
+     * and excludes the questionnaire's per-question button, which carries the
+     * same label — the household step's forward control is also just
+     * "Continue", so the label alone cannot tell them apart.
+     */
+    const candidates = [
+      page.getByRole('button', { name: /^(Finish and review|Continue to review)$/ }),
+      page.getByRole('button', { name: /^Continue to |^Continue with / }),
+      page
+        .getByRole('button', { name: 'Continue', exact: true })
+        .and(page.locator(':not([data-testid="question-continue"])')),
+    ];
+
+    let advanced = false;
+
+    for (const candidate of candidates) {
+      const control = candidate.first();
+
+      if (!(await control.isVisible().catch(() => false))) continue;
+      if (!(await control.isEnabled().catch(() => false))) continue;
+
+      await control.click();
+      advanced = true;
+      break;
+    }
+
+    if (!advanced) {
+      const labels = await page.getByRole('button').allTextContents();
+
+      throw new Error(
+        `SAWS 2 PLUS flow stalled on step ${guard}. Buttons: ${labels
+          .map((label) => label.trim())
+          .filter(Boolean)
+          .join(' | ')}`,
+      );
+    }
+  }
+
+  throw new Error('SAWS 2 PLUS flow did not reach the generate step');
+}

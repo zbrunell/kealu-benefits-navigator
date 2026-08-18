@@ -7,6 +7,13 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  /*
+   * Two `next dev` processes cannot share one build directory — they overwrite
+   * each other's compilation manifests and then hang serving half-built routes.
+   * The browser suite runs two servers (one per workflow fixture), so the
+   * second sets NEXT_DIST_DIR to keep its own.
+   */
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   async headers() {
     return [
       {
