@@ -42,13 +42,22 @@ import {
 import type { PlannedQuestion } from '@/lib/saws2-question-planner';
 import type { Saws2PlusApplicationData } from '@/types/application';
 import { APPLICANT_MEMBER_ID } from '@/types/saws-questionnaire';
+import { questionMessageKey } from '@/lib/saws2-question-planner';
 
 /** Build a planned question for tests, defaulting its priority metadata. */
 function q(
-  partial: Omit<PlannedQuestion, 'tier' | 'requirement' | 'store'> &
-    Partial<Pick<PlannedQuestion, 'store'>>,
+  partial: Omit<PlannedQuestion, 'tier' | 'requirement' | 'store' | 'promptKey'> &
+    Partial<Pick<PlannedQuestion, 'store' | 'promptKey'>>,
 ): PlannedQuestion {
-  return { tier: 3, requirement: 'optional', store: 'questionnaire', ...partial };
+  return {
+    tier: 3,
+    requirement: 'optional',
+    store: 'questionnaire',
+    // Stamped the same way the planner stamps it, so a test question behaves
+    // like a real one when the UI asks for its wording.
+    promptKey: questionMessageKey(partial.id, 'prompt'),
+    ...partial,
+  };
 }
 
 function set(

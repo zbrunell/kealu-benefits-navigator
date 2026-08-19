@@ -94,3 +94,30 @@ export function missingKeys(locale: Locale): {
 
   return { absent, untranslated };
 }
+
+/**
+ * Resolve a planned question's wording for `msgs`.
+ *
+ * Falls back to the English source text carried on the question itself rather
+ * than throwing, because a question with no answer on screen is worse than a
+ * question in the wrong language. That fallback is a floor, not a plan:
+ * `localization.test.ts` asserts every askable question has an entry in every
+ * catalog, so reaching it means a test is already failing.
+ */
+export function translateQuestion(
+  msgs: Messages,
+  question: { promptKey: string; prompt: string },
+): string {
+  return (msgs as Record<string, string>)[question.promptKey] ?? question.prompt;
+}
+
+/** As `translateQuestion`, for the optional clarifying sentence. */
+export function translateQuestionHelp(
+  msgs: Messages,
+  question: { helpKey?: string; help?: string },
+): string | undefined {
+  if (!question.helpKey) return question.help;
+
+  return (msgs as Record<string, string>)[question.helpKey] ?? question.help;
+}
+

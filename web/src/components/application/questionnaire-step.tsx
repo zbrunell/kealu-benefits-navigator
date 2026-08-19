@@ -625,7 +625,7 @@ export default function QuestionnaireStep({
    * trail, and only when the navigator reports `atStart` does Back leave the
    * step via `onBack()`.
    */
-  const { t } = useTranslation();
+  const { t, tq } = useTranslation();
 
   const [flow, setFlow] = useState<QuestionFlowState>(() => startFlow(application));
 
@@ -848,7 +848,7 @@ export default function QuestionnaireStep({
             commitDraft();
           }}
           autoFocus
-          aria-label={current.prompt}
+          aria-label={tq(current)}
           className={INPUT_CLASS}
           data-testid="question-input"
         />
@@ -876,11 +876,11 @@ export default function QuestionnaireStep({
     <div className="space-y-4">
       <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
-          {question ? SECTION_TITLES[question.section] : "SAWS 2 PLUS"}
+          {question ? t(`section_title_${question.section}`) : "SAWS 2 PLUS"}
         </p>
 
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-          {question ? question.prompt : "Everything we need is answered"}
+          {question ? tq(question) : t("questionnaire_all_answered")}
         </h1>
 
         {question && (

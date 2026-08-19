@@ -18,7 +18,11 @@
  */
 
 import { useLanguage } from '@/contexts/language-context';
-import { t as tFn } from '@/i18n';
+import {
+  t as tFn,
+  translateQuestion,
+  translateQuestionHelp,
+} from '@/i18n';
 import type { Messages } from '@/i18n';
 
 export function useTranslation() {
@@ -27,6 +31,12 @@ export function useTranslation() {
   return {
     /** Translate a message key to the current locale's string. */
     t: (key: keyof Messages | string): string => tFn(msgs, key),
+    /** Translate a planned question's wording. */
+    tq: (question: { promptKey: string; prompt: string }): string =>
+      translateQuestion(msgs, question),
+    /** Translate a planned question's clarifying sentence, if it has one. */
+    tqHelp: (question: { helpKey?: string; help?: string }): string | undefined =>
+      translateQuestionHelp(msgs, question),
     locale,
   };
 }

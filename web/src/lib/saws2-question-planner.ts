@@ -155,10 +155,20 @@ export interface PlannedQuestion {
   id: string;
   section: QuestionSection;
   kind: QuestionKind;
-  /** Question text shown to the applicant. */
+  /** Question text shown to the applicant, in English. Source text. */
   prompt: string;
-  /** Optional clarifying sentence. */
+  /**
+   * Message key resolving `prompt` in the applicant's language.
+   *
+   * Stamped from the question id by `questionMessageKey`. The UI reads this,
+   * never `prompt`, so a Spanish or Chinese applicant is never shown the
+   * source text.
+   */
+  promptKey: string;
+  /** Optional clarifying sentence, in English. Source text. */
   help?: string;
+  /** Message key resolving `help`, present whenever `help` is. */
+  helpKey?: string;
   /**
    * Dotted path to the answer, e.g. `income.earned.answer`. The UI uses it to
    * read and write the answer without a per-question switch statement.
@@ -224,7 +234,10 @@ export function activeEntries<TEntry>(
 /** A planned question before priority metadata is stamped on. */
 export type UnstampedQuestion = Omit<
   PlannedQuestion,
-  'tier' | 'requirement' | 'sawsQuestion' | 'store'
+  // Stamped by `withPriority`, so a definition never spells them out — and a
+  // message key can never be written by hand into something the id disagrees
+  // with.
+  'tier' | 'requirement' | 'sawsQuestion' | 'store' | 'promptKey' | 'helpKey'
 > & { store?: AnswerStore };
 
 /**
@@ -271,6 +284,26 @@ export function sawsQuestionFor(id: string): string | undefined {
  * `income.earned.records`) inherits the tier of its owning gateway, so a detail
  * never outranks the question that unlocked it.
  */
+/**
+ * The message key holding a question's wording in the applicant's language.
+ *
+ * Derived from the question's stable id rather than stored beside it, so a
+ * question cannot acquire a key that drifts from the id the rest of the system
+ * branches on. `income.earned` becomes `q_income_earned_prompt`.
+ *
+ * The English wording stays in this file: it is the source text, the way
+ * `en.ts` is the source for everything else, and duplicating it into a catalog
+ * would create two places to edit a question. `es.ts` and `zh-CN.ts` carry the
+ * translations, and `localization.test.ts` fails if a question is missing from
+ * either — so the English here is a source, never a silent fallback.
+ */
+export function questionMessageKey(
+  id: string,
+  part: 'prompt' | 'help',
+): string {
+  return `q_${id.replace(/[.-]/g, '_')}_${part}`;
+}
+
 function withPriority(question: UnstampedQuestion): PlannedQuestion {
   const ownerId = Object.keys(QUESTION_META)
     .filter((id) => question.id === id || question.id.startsWith(`${id}.`))
@@ -285,6 +318,10 @@ function withPriority(question: UnstampedQuestion): PlannedQuestion {
     ...question,
     tier,
     requirement: requirementForTier(tier),
+    promptKey: questionMessageKey(question.id, 'prompt'),
+    ...(question.help
+      ? { helpKey: questionMessageKey(question.id, 'help') }
+      : {}),
     ...(ownerId && QUESTION_META[ownerId].saws
       ? { sawsQuestion: QUESTION_META[ownerId].saws }
       : {}),

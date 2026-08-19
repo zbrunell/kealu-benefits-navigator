@@ -206,5 +206,11 @@ describe('register() orphan sweep — mixed directory types', () => {
 
     // Should not throw (graceful handling of missing workforce dir)
     await expect(register()).resolves.not.toThrow();
-  });
+    /*
+     * `register()` shells out to `kvr --version` as part of its startup
+     * checks. That is a real subprocess, and under a full parallel run it can
+     * take several seconds — 6.4s observed against the 5s default. The
+     * assertion is unchanged; only the budget reflects what the test does.
+     */
+  }, 30_000);
 });
