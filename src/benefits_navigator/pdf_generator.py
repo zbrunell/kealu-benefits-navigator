@@ -4555,8 +4555,19 @@ _HELVETICA_WIDTHS: tuple[int, ...] = (
 #: Points of horizontal inset an AcroForm text field keeps inside its border.
 _FIELD_PADDING = 2.0
 
-#: Never shrink below this; smaller would be a worse outcome than clipping.
-_MIN_FONT_SIZE = 5.0
+#: Points of vertical inset, top and bottom.
+_FIELD_PADDING_Y = 1.5
+
+#: Line spacing as a multiple of the font size, for wrapped multiline fields.
+_LINE_HEIGHT = 1.15
+
+#: The smallest size still legible in print, and the floor for shrinking.
+#:
+#: A county worker reads this on paper, often photocopied. Below about six
+#: points that stops being reliable, so the fitter refuses to go further and
+#: reports the value as not fitting instead of rendering something unreadable
+#: and calling it filled.
+_MIN_FONT_SIZE = 6.0
 
 
 def _helvetica_width(text: str, size: float) -> float:
@@ -4576,7 +4587,95 @@ def _helvetica_width(text: str, size: float) -> float:
     return total / 1000 * size
 
 
-def _shrink_overflowing_text(writer: Any, written: set[str]) -> None:
+def _wrap_to_width(text: str, size: float, usable: float) -> list[str]:
+    """Break `text` into lines that each fit `usable` points at `size`.
+
+    Wraps on spaces like a PDF viewer does, and falls back to breaking inside a
+    word only when a single word is itself wider than the box — a 40-character
+    street name in a narrow column has to break somewhere, and breaking it is
+    better than letting it run past the border.
+    """
+    lines: list[str] = []
+
+    for paragraph in text.split("\n"):
+        current = ""
+
+        for word in paragraph.split():
+            candidate = f"{current} {word}".strip()
+
+            if _helvetica_width(candidate, size) <= usable:
+                current = candidate
+                continue
+
+            if current:
+                lines.append(current)
+                current = ""
+
+            # A word too wide for the box on its own.
+            while _helvetica_width(word, size) > usable and len(word) > 1:
+                cut = len(word)
+
+                while cut > 1 and _helvetica_width(word[:cut], size) > usable:
+                    cut -= 1
+
+                lines.append(word[:cut])
+                word = word[cut:]
+
+            current = word
+
+        lines.append(current)
+
+    return lines
+
+
+def _fits(text: str, size: float, width: float, height: float, multiline: bool) -> bool:
+    """Whether `text` renders inside a box of this size at this font size."""
+    usable_width = width - _FIELD_PADDING * 2
+    usable_height = height - _FIELD_PADDING_Y * 2
+
+    if usable_width <= 0 or usable_height <= 0:
+        return False
+
+    if not multiline:
+        return (
+            _helvetica_width(text, size) <= usable_width
+            and size <= usable_height
+        )
+
+    lines = _wrap_to_width(text, size, usable_width)
+
+    return len(lines) * size * _LINE_HEIGHT <= usable_height
+
+
+def _largest_size_that_fits(
+    text: str,
+    declared: float,
+    width: float,
+    height: float,
+    multiline: bool,
+) -> float | None:
+    """The biggest size up to `declared` at which the whole value fits.
+
+    Returns None when even `_MIN_FONT_SIZE` overflows, which is the caller's
+    signal to report the value rather than render it illegibly. Searched in
+    hundredth-point steps downward from the declared size so the result is the
+    largest that fits rather than merely one that does.
+    """
+    if _fits(text, declared, width, height, multiline):
+        return declared
+
+    size = declared
+
+    while size > _MIN_FONT_SIZE:
+        size = max(_MIN_FONT_SIZE, math.floor((size - 0.05) * 100) / 100)
+
+        if _fits(text, size, width, height, multiline):
+            return size
+
+    return None
+
+
+def _shrink_overflowing_text(writer: Any, written: set[str]) -> list[str]:
     """Reduce the declared font size of any value too wide for its box.
 
     The form specifies an explicit point size per field, and some of its boxes
@@ -4593,6 +4692,8 @@ def _shrink_overflowing_text(writer: Any, written: set[str]) -> None:
     Multi-line fields are left alone: their text wraps rather than clipping.
     """
     from pypdf.generic import NameObject, TextStringObject
+
+    unfitted: list[str] = []
 
     for page in writer.pages:
         for annotation in page.get("/Annots") or []:
@@ -4621,9 +4722,9 @@ def _shrink_overflowing_text(writer: Any, written: set[str]) -> None:
                 or 0
             )
 
-            # Bit 13 is Multiline: those wrap instead of clipping.
-            if flags & 4096:
-                continue
+            # Bit 13 is Multiline: those wrap, so height is what constrains
+            # them rather than width alone.
+            multiline = bool(flags & 4096)
 
             appearance = field.get("/DA") or (
                 parent_object.get("/DA") if parent_object else None
@@ -4645,23 +4746,20 @@ def _shrink_overflowing_text(writer: Any, written: set[str]) -> None:
                 continue
 
             rectangle = [float(value) for value in field["/Rect"]]
-            usable = abs(rectangle[2] - rectangle[0]) - _FIELD_PADDING * 2
+            width = abs(rectangle[2] - rectangle[0])
+            height = abs(rectangle[3] - rectangle[1])
 
-            if usable <= 0:
-                continue
-
-            required = _helvetica_width(text, size)
-
-            if required <= usable:
-                continue
-
-            # Floor to the hundredth the /DA can express. Rounding to nearest
-            # can land a hundredth of a point above the exact fit, which is
-            # still a clipped character.
-            fitted = max(
-                _MIN_FONT_SIZE,
-                math.floor(size * usable / required * 100) / 100,
+            fitted = _largest_size_that_fits(
+                text, size, width, height, multiline
             )
+
+            if fitted is None:
+                # Legible rendering is impossible in this box. The value is
+                # left at its declared size and reported, so the applicant is
+                # told to attach it rather than being handed a form with
+                # something unreadable — or invisible — in the box.
+                unfitted.append(str(name))
+                continue
 
             if fitted >= size:
                 continue
@@ -4669,6 +4767,8 @@ def _shrink_overflowing_text(writer: Any, written: set[str]) -> None:
             parts[size_index] = f"{fitted:.2f}"
             target = parent_object if field.get("/DA") is None else field
             target[NameObject("/DA")] = TextStringObject(" ".join(parts))
+
+    return unfitted
 
 
 def generate_saws2_plus_pdf(
@@ -4810,7 +4910,9 @@ def generate_saws2_plus_pdf(
             auto_regenerate=True,
         )
 
-    _shrink_overflowing_text(writer, set(requested_fields))
+    unfitted_fields = _shrink_overflowing_text(
+        writer, set(requested_fields)
+    )
 
     with output_path.open(
         "wb"
@@ -4828,7 +4930,17 @@ def generate_saws2_plus_pdf(
         "Only reviewed SAWS 2 PLUS fields are eligible for automatic "
         "prefilling.\n"
         "Enter remaining required items directly into the PDF, then verify "
-        "every answer, sign, and date the application.\n",
+        "every answer, sign, and date the application.\n"
+        + (
+            # Nothing is silently dropped: an answer too long for its printed
+            # box is named here so it can be attached on a separate sheet.
+            "\nThese answers are too long for their printed boxes to hold "
+            "legibly. Write \"see attached\" in each and attach the full "
+            "answer:\n"
+            + "".join(f"  - {name}\n" for name in unfitted_fields)
+            if unfitted_fields
+            else ""
+        ),
         encoding="utf-8",
     )
 
