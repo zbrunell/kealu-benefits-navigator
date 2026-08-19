@@ -32,6 +32,13 @@ const zhCN: Messages = {
   chat_run_analysis: '运行分析',
   chat_placeholder: '输入您的回答…（Enter 发送，Shift+Enter 换行）',
   chat_input_aria: '您的消息',
+  // Contact and address validation.
+  field_error_email: '请输入电子邮件地址，例如 name@example.com。',
+  field_error_phone: '请输入 10 位电话号码，例如 (512) 555-1234。',
+  field_error_address_number: '请输入街道地址，并包含门牌号或楼号。',
+  field_error_address_street: '请同时填写街道名称，而不只是号码。',
+  field_error_zip: '请输入 5 位邮政编码，或 12345-6789 形式的 ZIP+4。',
+  field_error_city: '请输入城市名称。',
   // Questionnaire answer validation.
   answer_error_no_question: '没有需要回答的问题。',
   answer_error_required: '请填写答案。',

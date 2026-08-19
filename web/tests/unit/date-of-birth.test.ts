@@ -151,11 +151,12 @@ describe('error keys', () => {
 // ---------------------------------------------------------------------------
 
 describe('the applicant age rule', () => {
-  it('records California as imposing no minimum, with its authority', () => {
+  it('records California as requiring 18, with its source', () => {
     const rule = applicantAgeRule('CA');
 
-    expect(rule.kind).toBe('none');
-    expect(rule.kind === 'none' && rule.source).toContain('40-109.1');
+    expect(rule.kind).toBe('minimum');
+    expect(rule.kind === 'minimum' && rule.years).toBe(18);
+    expect(rule.kind === 'minimum' && rule.source).toBeTruthy();
   });
 
   it('reports an unsupported state as unknown rather than guessing one', () => {
@@ -164,33 +165,54 @@ describe('the applicant age rule', () => {
     expect(statesWithApplicantAgeRule()).toEqual(['CA']);
   });
 
-  it('never blocks an applicant where no minimum is established', () => {
-    // A sixteen-year-old in California, and the same person in a state the
-    // product has no rule for. Neither is refused: refusing would be the
-    // product inventing the rule it does not have.
-    for (const state of ['CA', 'TX', undefined]) {
+  it('never blocks an applicant in a state it has no rule for', () => {
+    // Refusing an application the product has no authority for would be the
+    // product inventing the rule it lacks.
+    for (const state of ['TX', undefined]) {
       expect(checkApplicantAge('2010-08-18', state, TODAY).ok, String(state)).toBe(
         true,
       );
     }
   });
 
-  it('applies a stated minimum at, below and above the threshold', () => {
+  it('accepts an applicant who turns 18 today', () => {
+    // Today is 18 August 2026, so this is the eighteenth birthday exactly.
+    expect(ageOnDate('2008-08-18', TODAY)).toBe(18);
+    expect(checkApplicantAge('2008-08-18', 'CA', TODAY).ok).toBe(true);
+  });
+
+  it('refuses an applicant who turns 18 tomorrow', () => {
     /*
-     * California sets none, so the threshold behaviour is exercised through the
-     * rule structure itself. This is what a state with a minimum would do, and
-     * it is why the structure exists rather than a bare boolean.
+     * The case a year-subtraction gets wrong: 2026 - 2008 is 18, but the
+     * birthday has not happened yet.
      */
-    const rule = { kind: 'minimum' as const, years: 18, source: 'test authority' };
-    const ageOf = (dob: string) => ageOnDate(dob, TODAY)!;
+    expect(ageOnDate('2008-08-19', TODAY)).toBe(17);
 
-    expect(ageOf('2008-08-19')).toBe(17); // one day short of 18
-    expect(ageOf('2008-08-18')).toBe(18); // exactly 18
-    expect(ageOf('2007-08-18')).toBe(19); // over 18
+    const check = checkApplicantAge('2008-08-19', 'CA', TODAY);
 
-    expect(ageOf('2008-08-19') >= rule.years).toBe(false);
-    expect(ageOf('2008-08-18') >= rule.years).toBe(true);
-    expect(ageOf('2007-08-18') >= rule.years).toBe(true);
+    expect(check.ok).toBe(false);
+    expect(check.minimumYears).toBe(18);
+  });
+
+  it('accepts an applicant comfortably over 18', () => {
+    expect(checkApplicantAge('1990-01-01', 'CA', TODAY).ok).toBe(true);
+  });
+
+  it('surfaces the too-young finding as a message key', () => {
+    expect(applicantDateOfBirthErrorKey('2008-08-19', 'CA', TODAY)).toBe(
+      'dob_error_too_young',
+    );
+    expect(applicantDateOfBirthErrorKey('2008-08-18', 'CA', TODAY)).toBeNull();
+  });
+
+  it('does not apply the minimum to household members', () => {
+    /*
+     * The rule is about the person applying for themselves. A minor entered as
+     * a household member is checked for a usable date of birth and nothing
+     * more — dateOfBirthErrorKey carries no age rule at all.
+     */
+    expect(dateOfBirthErrorKey('2015-06-01', TODAY)).toBeNull();
+    expect(dateOfBirthErrorKey('2026-08-17', TODAY)).toBeNull();
   });
 
   it('reports a bad date before it reports an age', () => {

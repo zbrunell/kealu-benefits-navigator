@@ -24,20 +24,67 @@ describe('messages catalog completeness', () => {
     expect(enKeys.length).toBeGreaterThanOrEqual(40);
   });
 
-  it('Spanish catalog has exactly the same keys as English', () => {
-    const esKeys = new Set(Object.keys(messages.es));
+  /*
+   * Every supported locale, not just Spanish. Simplified Chinese was not
+   * checked here at all, so a key added to English and Spanish could reach
+   * production missing from Chinese and fall back to showing the raw key.
+   */
+  const LOCALES = ['es', 'zh-CN'] as const;
+
+  it.each(LOCALES)('%s catalog has exactly the same keys as English', (locale) => {
+    const keys = new Set(Object.keys(messages[locale]));
+
     for (const key of enKeys) {
-      expect(esKeys.has(key), `Missing Spanish key: "${key}"`).toBe(true);
+      expect(keys.has(key), `Missing ${locale} key: "${key}"`).toBe(true);
     }
-    expect(Object.keys(messages.es)).toHaveLength(enKeys.length);
+
+    expect(Object.keys(messages[locale])).toHaveLength(enKeys.length);
   });
 
   it('no catalog value is empty string', () => {
-    for (const [key, val] of Object.entries(messages.en)) {
-      expect(val.length, `English key "${key}" is empty`).toBeGreaterThan(0);
+    for (const locale of ['en', ...LOCALES] as const) {
+      for (const [key, val] of Object.entries(messages[locale])) {
+        expect(val.length, `${locale} key "${key}" is empty`).toBeGreaterThan(0);
+      }
     }
-    for (const [key, val] of Object.entries(messages.es)) {
-      expect(val.length, `Spanish key "${key}" is empty`).toBeGreaterThan(0);
+  });
+
+  it('translates every validation message into every locale', () => {
+    /*
+     * Named explicitly rather than inferred: these are the strings a user sees
+     * at the moment they have made a mistake, which is the worst moment to be
+     * shown a raw key or somebody else's language.
+     */
+    const VALIDATION_KEYS = [
+      'dob_error_future',
+      'dob_error_too_old',
+      'dob_error_malformed',
+      'dob_error_too_young',
+      'field_error_email',
+      'field_error_phone',
+      'field_error_address_number',
+      'field_error_address_street',
+      'field_error_zip',
+      'field_error_city',
+      'answer_error_required',
+      'answer_error_amount',
+      'answer_error_date',
+      'answer_error_required_to_file',
+    ] as const;
+
+    for (const locale of ['en', ...LOCALES] as const) {
+      for (const key of VALIDATION_KEYS) {
+        const value = (messages[locale] as Record<string, string>)[key];
+
+        expect(value, `${locale} is missing ${key}`).toBeTruthy();
+        // A locale that merely copied the English is not a translation.
+        if (locale !== 'en') {
+          expect(
+            value,
+            `${locale} ${key} is identical to English`,
+          ).not.toBe((messages.en as Record<string, string>)[key]);
+        }
+      }
     }
   });
 });

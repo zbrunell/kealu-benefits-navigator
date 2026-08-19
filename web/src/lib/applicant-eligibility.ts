@@ -10,24 +10,24 @@
  * *primary applicant* — the person applying on their own behalf — must be
  * turned away? It says nothing about household members, who may be any age.
  *
- * For California the answer, on the only authority this repository carries, is
- * no:
+ * California requires the self-applying primary applicant to be 18. That is a
+ * product decision, recorded here as the rule it is, and it is worth writing
+ * down what it is *not*: it is not MPP § 40-109.1, which saws2-readiness.ts
+ * cites for the right to apply and which points the other way — "any person has
+ * the right to apply; an applicant who appears ineligible must still be allowed
+ * to apply". The printed form leans the same way, with Q6n asking about
+ * Cal-Learn, which exists for parenting teenagers.
  *
- *   MPP § 40-109.1 — any person has the right to apply; an applicant who
- *   appears ineligible must still be allowed to apply.
+ * So the rule below turns away some people the form has questions for:
+ * emancipated minors, minor parents, unaccompanied youth. Where that matters,
+ * they remain enterable as household members, and a household member of any age
+ * is unaffected by this rule. If the policy is revisited, this is the single
+ * place to revisit it.
  *
- * That rule is already cited in saws2-readiness.ts as the product's source for
- * the right to apply, and it points the opposite way from a minimum age. The
- * printed form agrees: Q6n asks about Cal-Learn, which exists for pregnant and
- * parenting teenagers, and Q6o asks whether anyone was ever in foster care.
- * A form with questions written for minors is not a form minors are barred
- * from filing.
- *
- * So no minimum is enforced for California, and none is invented for anywhere
- * else. `NO_MINIMUM_ESTABLISHED` is a distinct outcome from "the minimum is
- * zero": it records that the product has not been given an authority, which is
- * what an unsupported state gets. Adding a state means adding a rule with its
- * citation, not editing a number.
+ * `unknown` is a distinct outcome from "the minimum is zero": it records that
+ * the product has been given no authority for a state, which is what an
+ * unsupported state gets, and it never blocks anyone. Adding a state means
+ * adding a rule with its source, not editing a number.
  */
 
 import { ageOnDate, dateOfBirthErrorKey } from '@/lib/date-of-birth';
@@ -56,10 +56,11 @@ export type ApplicantAgeRule =
  */
 const RULES: Readonly<Record<string, ApplicantAgeRule>> = {
   CA: {
-    kind: 'none',
+    kind: 'minimum',
+    years: 18,
     source:
-      'MPP § 40-109.1 — any person has the right to apply; an applicant who ' +
-      'appears ineligible must still be allowed to apply',
+      'Kealu product rule: the self-applying primary applicant must be 18. ' +
+      'Household members of any age are unaffected.',
   },
 };
 

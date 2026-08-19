@@ -36,6 +36,13 @@ const en = {
   chat_run_analysis: 'Run Analysis',
   chat_placeholder: 'Type your answer… (Enter to send, Shift+Enter for newline)',
   chat_input_aria: 'Your message',
+  // Contact and address validation.
+  field_error_email: 'Enter an email address such as name@example.com.',
+  field_error_phone: 'Enter a 10-digit phone number, such as (512) 555-1234.',
+  field_error_address_number: 'Enter a street address including the house or building number.',
+  field_error_address_street: 'Enter the street name as well as the number.',
+  field_error_zip: 'Enter a 5-digit ZIP code, or ZIP+4 as 12345-6789.',
+  field_error_city: 'Enter a city name.',
   // Questionnaire answer validation.
   answer_error_no_question: 'There is no question to answer.',
   answer_error_required: 'Please enter an answer.',

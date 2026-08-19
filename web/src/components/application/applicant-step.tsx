@@ -5,7 +5,19 @@
 
 "use client";
 
+import { useState } from "react";
+
 import { applicantDateOfBirthErrorKey } from "@/lib/applicant-eligibility";
+import {
+  checkCity,
+  checkEmail,
+  checkStreetAddress,
+  checkUsPhone,
+  checkZipCode,
+  formatUsPhone,
+  normalizeWhitespace,
+  normalizeZipCode,
+} from "@/lib/field-validation";
 import { dateOfBirthBounds } from "@/lib/date-of-birth";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -30,6 +42,23 @@ interface ApplicantStepProps {
 
 const INPUT_CLASS =
   "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-200";
+
+/**
+ * The error line under a field.
+ *
+ * `role="alert"` announces it, the id links it to the input via
+ * aria-describedby, and the message carries the meaning — colour is not the
+ * only signal, so it still reads for anyone who cannot see red.
+ */
+function FieldError({ id, message }: { id: string; message: string | null }) {
+  if (!message) return null;
+
+  return (
+    <p id={id} role="alert" className="mt-1 text-xs text-red-700">
+      {message}
+    </p>
+  );
+}
 
 export default function ApplicantStep({
   applicant,
@@ -80,8 +109,32 @@ export default function ApplicantStep({
     ? t(dateOfBirthErrorMessage)
     : null;
 
+  /*
+   * Errors appear on blur, not on every keystroke: an email is invalid for
+   * almost the whole time it takes to type one, and shouting about it while the
+   * applicant is mid-word is noise. Once a field has been touched, its error
+   * clears as soon as the value becomes valid.
+   */
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const markTouched = (field: string) =>
+    setTouched((current) => ({ ...current, [field]: true }));
+
+  const problems: Record<string, string | null> = {
+    dateOfBirth: dateOfBirthErrorMessage,
+    email: checkEmail(applicant.email),
+    phone: checkUsPhone(applicant.phone),
+    alternatePhone: checkUsPhone(applicant.alternatePhone),
+    street: checkStreetAddress(applicant.homeAddress.street),
+    city: checkCity(applicant.homeAddress.city),
+    zipCode: checkZipCode(applicant.homeAddress.zipCode),
+  };
+
+  /** The message to show for a field: only once it has been left. */
+  const errorFor = (field: string): string | null =>
+    touched[field] && problems[field] ? t(problems[field]!) : null;
+
   const isValid =
-    dateOfBirthError === null &&
+    Object.values(problems).every((problem) => problem === null) &&
     Boolean(applicant.firstName.trim()) &&
     Boolean(applicant.lastName.trim()) &&
     Boolean(applicant.dateOfBirth) &&
@@ -162,6 +215,8 @@ export default function ApplicantStep({
               value={applicant.dateOfBirth}
               min={dateOfBirthBounds().min}
               max={dateOfBirthBounds().max}
+              autoComplete="bday"
+              onBlur={() => markTouched("dateOfBirth")}
               aria-invalid={dateOfBirthError !== null}
               aria-describedby={
                 dateOfBirthError ? "applicant-dob-error" : undefined
@@ -239,13 +294,22 @@ export default function ApplicantStep({
             </span>
             <input
               type="tel"
+              inputMode="tel"
               value={applicant.phone}
+              onBlur={(event) => {
+                markTouched("phone");
+                // Put the punctuation back once they have finished typing.
+                onChange("phone", formatUsPhone(event.target.value));
+              }}
+              aria-invalid={errorFor("phone") !== null}
+              aria-describedby={errorFor("phone") ? "applicant-phone-error" : undefined}
               onChange={(event) =>
                 onChange("phone", event.target.value)
               }
               autoComplete="tel"
               className={INPUT_CLASS}
             />
+            <FieldError id="applicant-phone-error" message={errorFor("phone")} />
           </label>
 
           <label className="block">
@@ -254,12 +318,22 @@ export default function ApplicantStep({
             </span>
             <input
               type="tel"
+              inputMode="tel"
               value={applicant.alternatePhone}
+              onBlur={(event) => {
+                markTouched("alternatePhone");
+                onChange("alternatePhone", formatUsPhone(event.target.value));
+              }}
+              aria-invalid={errorFor("alternatePhone") !== null}
+              aria-describedby={
+                errorFor("alternatePhone") ? "applicant-alt-phone-error" : undefined
+              }
               onChange={(event) =>
                 onChange("alternatePhone", event.target.value)
               }
               className={INPUT_CLASS}
             />
+            <FieldError id="applicant-alt-phone-error" message={errorFor("alternatePhone")} />
           </label>
 
           <label className="block">
@@ -269,12 +343,19 @@ export default function ApplicantStep({
             <input
               type="email"
               value={applicant.email}
+              onBlur={(event) => {
+                markTouched("email");
+                onChange("email", event.target.value.trim());
+              }}
+              aria-invalid={errorFor("email") !== null}
+              aria-describedby={errorFor("email") ? "applicant-email-error" : undefined}
               onChange={(event) =>
                 onChange("email", event.target.value)
               }
               autoComplete="email"
               className={INPUT_CLASS}
             />
+            <FieldError id="applicant-email-error" message={errorFor("email")} />
           </label>
         </div>
 
@@ -292,6 +373,12 @@ export default function ApplicantStep({
               <input
                 type="text"
                 value={applicant.homeAddress.street}
+                onBlur={(event) => {
+                  markTouched("street");
+                  onHomeAddressChange("street", normalizeWhitespace(event.target.value));
+                }}
+                aria-invalid={errorFor("street") !== null}
+                aria-describedby={errorFor("street") ? "applicant-street-error" : undefined}
                 onChange={(event) =>
                   onHomeAddressChange(
                     "street",
@@ -301,6 +388,7 @@ export default function ApplicantStep({
                 autoComplete="street-address"
                 className={INPUT_CLASS}
               />
+              <FieldError id="applicant-street-error" message={errorFor("street")} />
             </label>
 
             <label className="block">
@@ -329,6 +417,12 @@ export default function ApplicantStep({
               <input
                 type="text"
                 value={applicant.homeAddress.city}
+                onBlur={(event) => {
+                  markTouched("city");
+                  onHomeAddressChange("city", normalizeWhitespace(event.target.value));
+                }}
+                aria-invalid={errorFor("city") !== null}
+                aria-describedby={errorFor("city") ? "applicant-city-error" : undefined}
                 onChange={(event) =>
                   onHomeAddressChange(
                     "city",
@@ -338,6 +432,7 @@ export default function ApplicantStep({
                 autoComplete="address-level2"
                 className={INPUT_CLASS}
               />
+              <FieldError id="applicant-city-error" message={errorFor("city")} />
             </label>
 
             <label className="block">
@@ -360,6 +455,12 @@ export default function ApplicantStep({
                 type="text"
                 inputMode="numeric"
                 value={applicant.homeAddress.zipCode}
+                onBlur={(event) => {
+                  markTouched("zipCode");
+                  onHomeAddressChange("zipCode", normalizeZipCode(event.target.value));
+                }}
+                aria-invalid={errorFor("zipCode") !== null}
+                aria-describedby={errorFor("zipCode") ? "applicant-zip-error" : undefined}
                 onChange={(event) =>
                   onHomeAddressChange(
                     "zipCode",
@@ -370,6 +471,7 @@ export default function ApplicantStep({
                 maxLength={10}
                 className={INPUT_CLASS}
               />
+              <FieldError id="applicant-zip-error" message={errorFor("zipCode")} />
             </label>
           </div>
         </fieldset>

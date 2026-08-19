@@ -167,6 +167,24 @@ if (
   );
 }
 
+/*
+ * The authoritative check. The applicant step runs the same rules, but that is
+ * a courtesy to whoever is typing — this route is reachable with any JSON, and
+ * a malformed value that got past the UI must not reach the PDF.
+ */
+const { findApplicationFieldProblems } = await import('@/lib/field-validation');
+const fieldProblems = findApplicationFieldProblems(applicationData);
+
+if (fieldProblems.length > 0) {
+  return NextResponse.json(
+    {
+      error: 'The application contains values that cannot be written to the form.',
+      fieldProblems,
+    },
+    { status: 422, headers: { 'X-Correlation-Id': runId } },
+  );
+}
+
 if (!session.reportContent) {
   return NextResponse.json(
     {

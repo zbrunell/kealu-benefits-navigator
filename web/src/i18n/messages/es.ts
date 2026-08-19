@@ -38,6 +38,13 @@ const es: Messages = {
   chat_run_analysis: 'Ejecutar análisis',
   chat_placeholder: 'Escriba su respuesta… (Intro para enviar, Shift+Intro para nueva línea)',
   chat_input_aria: 'Su mensaje',
+  // Contact and address validation.
+  field_error_email: 'Ingrese un correo electrónico como nombre@ejemplo.com.',
+  field_error_phone: 'Ingrese un número de teléfono de 10 dígitos, por ejemplo (512) 555-1234.',
+  field_error_address_number: 'Ingrese la dirección incluyendo el número de la casa o del edificio.',
+  field_error_address_street: 'Ingrese también el nombre de la calle, no solo el número.',
+  field_error_zip: 'Ingrese un código postal de 5 dígitos, o ZIP+4 como 12345-6789.',
+  field_error_city: 'Ingrese el nombre de la ciudad.',
   // Questionnaire answer validation.
   answer_error_no_question: 'No hay ninguna pregunta que responder.',
   answer_error_required: 'Ingrese una respuesta.',
