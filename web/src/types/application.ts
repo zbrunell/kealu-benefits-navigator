@@ -148,6 +148,7 @@ export interface ApplicationPrefill {
   annualHouseholdIncome?: number;
   incomeType: string;
   existingBenefits: string;
+
 }
 
 export interface ExpeditedServiceInformation {
@@ -247,6 +248,20 @@ export interface Saws2PlusApplicationData {
   applicant: ApplicantInformation;
   householdMembers: HouseholdMember[];
 
+  /**
+   * Questions the applicant chose to answer later, by planner question id.
+   *
+   * Recorded rather than inferred. A blank answer is ambiguous — unasked, not
+   * applicable, unsupported, or consciously deferred all look identical in the
+   * data — and the completion guide has to tell the applicant which of those
+   * it is. Only a deliberate "Skip for now" lands here.
+   *
+   * It lives on the application rather than in the questionnaire flow because
+   * the flow is component state: it was lost the moment the applicant navigated
+   * away, so nothing downstream ever saw a skip.
+   */
+  deferredQuestionIds: string[];
+
   preferences: ApplicationPreferences;
   expeditedService: ExpeditedServiceInformation;
   pregnancy: PregnancyInformation;
@@ -275,6 +290,8 @@ export const EMPTY_ADDRESS: ApplicationAddress = {
 
 export const EMPTY_APPLICATION_DATA: Saws2PlusApplicationData = {
   selectedPrograms: [],
+
+  deferredQuestionIds: [],
 
   otherProgramRequested: undefined,
   otherProgramDescription: "",

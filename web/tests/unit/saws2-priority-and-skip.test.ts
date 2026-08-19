@@ -264,7 +264,7 @@ describe('skipping questions', () => {
       if (!question) break;
       if (question.requirement === requirement) return { data, flow };
 
-      flow = skipCurrent(data, flow);
+      flow = skipCurrent(data, flow).state;
     }
 
     return { data, flow };
@@ -276,7 +276,7 @@ describe('skipping questions', () => {
 
     expect(canSkip(question)).toBe(true);
 
-    const skipped = skipCurrent(data, flow);
+    const skipped = skipCurrent(data, flow).state;
     expect(currentQuestion(skipped)?.id).not.toBe(question?.id);
     expect(skipped.skipped).toContain(question!.id);
   });
@@ -288,7 +288,7 @@ describe('skipping questions', () => {
 
     expect(question?.requirement).toBe('important');
     expect(canSkip(question)).toBe(true);
-    expect(currentQuestion(skipCurrent(data, flow))?.id).not.toBe(question?.id);
+    expect(currentQuestion(skipCurrent(data, flow).state)?.id).not.toBe(question?.id);
   });
 
   it('writes nothing when a question is skipped', () => {
@@ -312,7 +312,7 @@ describe('skipping questions', () => {
     // Skip everything that can be skipped.
     for (let i = 0; i < 80 && currentQuestion(flow); i += 1) {
       if (!canSkip(currentQuestion(flow))) break;
-      flow = skipCurrent(data, flow);
+      flow = skipCurrent(data, flow).state;
     }
 
     const keys = buildApplicationFieldPlan(data).map((field) => field.key);
@@ -340,11 +340,11 @@ describe('skipping questions', () => {
     const { data, flow } = flowAt('optional');
     const question = currentQuestion(flow)!;
 
-    let next = skipCurrent(data, flow);
+    let next = skipCurrent(data, flow).state;
     for (let i = 0; i < 10 && currentQuestion(next); i += 1) {
       expect(currentQuestion(next)?.id).not.toBe(question.id);
       if (!canSkip(currentQuestion(next))) break;
-      next = skipCurrent(data, next);
+      next = skipCurrent(data, next).state;
     }
   });
 
@@ -354,17 +354,17 @@ describe('skipping questions', () => {
 
     for (let i = 0; i < 60 && currentQuestion(flow); i += 1) {
       if (currentQuestion(flow)?.id === 'income.earned') break;
-      flow = skipCurrent(data, flow);
+      flow = skipCurrent(data, flow).state;
     }
 
-    const skipped = skipCurrent(data, flow);
+    const skipped = skipCurrent(data, flow).state;
     const ids: string[] = [];
     let walk = skipped;
 
     for (let i = 0; i < 10 && currentQuestion(walk); i += 1) {
       ids.push(currentQuestion(walk)!.id);
       if (!canSkip(currentQuestion(walk))) break;
-      walk = skipCurrent(data, walk);
+      walk = skipCurrent(data, walk).state;
     }
 
     // The record question behind the gateway must never appear.
@@ -481,7 +481,7 @@ describe('navigation after answering and skipping', () => {
     expect(currentQuestion(answered.state)?.id).not.toBe(first.id);
 
     const second = currentQuestion(answered.state)!;
-    const skipped = skipCurrent(answered.data, answered.state);
+    const skipped = skipCurrent(answered.data, answered.state).state;
     expect(currentQuestion(skipped)?.id).not.toBe(second.id);
   });
 
@@ -491,7 +491,7 @@ describe('navigation after answering and skipping', () => {
 
     for (let i = 0; i < 80 && currentQuestion(flow); i += 1) {
       if (!canSkip(currentQuestion(flow))) break;
-      flow = skipCurrent(data, flow);
+      flow = skipCurrent(data, flow).state;
     }
 
     const remaining = currentQuestion(flow);
@@ -509,7 +509,7 @@ describe('navigation after answering and skipping', () => {
 
     const data = household();
     const flow = { ...startFlow(data), trail: [required], index: 0 };
-    const result = skipCurrent(data, flow);
+    const result = skipCurrent(data, flow).state;
 
     expect(currentQuestion(result)?.id).toBe(required.id);
     expect(result.error).toBeTruthy();

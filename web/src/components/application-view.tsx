@@ -5,7 +5,9 @@
 
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+
+import { useTranslation } from "@/hooks/use-translation";
 
 import { buildInitialApplicationData } from "@/lib/application-data";
 import { householdSizeFromMembers } from "@/lib/household";
@@ -66,9 +68,13 @@ export default function ApplicationView({
   prefill,
   onBack,
 }: ApplicationViewProps) {
+  const { t } = useTranslation();
+
   const [step, setStep] = useState<ApplicationStep>("programs");
 
   const [isGenerating, setIsGenerating] = useState(false);
+  /** Guards against a second click landing before the button disables. */
+  const generationInFlight = useRef(false);
   const [draftUrl, setDraftUrl] = useState<string | null>(null);
   const [guideUrl, setGuideUrl] = useState<string>("");
   const [draftReference, setDraftReference] = useState<string>("");
@@ -480,6 +486,16 @@ export default function ApplicationView({
    * workflow draft endpoint.
    */
   async function handleGenerateApplication() {
+    /*
+     * A ref, not the isGenerating state. The button is disabled while a draft
+     * is being generated, but `setIsGenerating(true)` does not take effect
+     * until React re-renders — two clicks in the same tick both get through and
+     * generate two drafts, leaving the applicant with two references for one
+     * application. The ref is set synchronously.
+     */
+    if (generationInFlight.current) return;
+
+    generationInFlight.current = true;
     setIsGenerating(true);
     setGenerationError(null);
     setDraftUrl(null);
@@ -500,9 +516,22 @@ export default function ApplicationView({
         guideUrl?: string;
         draftReference?: string;
         error?: string;
+        fieldProblems?: Array<{ field: string; messageKey: string }>;
       };
 
       if (!response.ok || !result.draftUrl) {
+        /*
+         * The server rejects values the form cannot carry. Say which ones —
+         * "Failed to generate" sends the applicant back to a long form with no
+         * idea what to look at.
+         */
+        if (result.fieldProblems?.length) {
+          throw new Error(
+            `${result.error ?? "Some answers need correcting."} ` +
+              result.fieldProblems.map((problem) => t(problem.messageKey)).join(" "),
+          );
+        }
+
         throw new Error(
           result.error ?? "Failed to generate application draft.",
         );
@@ -518,6 +547,7 @@ export default function ApplicationView({
           : "Failed to generate application draft.",
       );
     } finally {
+      generationInFlight.current = false;
       setIsGenerating(false);
     }
   }

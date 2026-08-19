@@ -302,18 +302,50 @@ export function canSkip(question: PlannedQuestion | null): boolean {
 export function skipCurrent(
   data: Saws2PlusApplicationData,
   state: QuestionFlowState,
-): QuestionFlowState {
+): SkipResult {
   const question = currentQuestion(state);
 
   if (!canSkip(question)) {
-    return { ...state, error: 'answer_error_required_to_file' };
+    return { data, state: { ...state, error: 'answer_error_required_to_file' } };
   }
 
-  return advance(data, {
-    ...state,
-    skipped: [...state.skipped, question!.id],
-    error: null,
-  });
+  /*
+   * The deferral is recorded on the application, not only in the flow.
+   *
+   * `state.skipped` is component state and stops the question being re-asked
+   * while walking forward — useful, and gone the moment the applicant
+   * navigates away. The completion guide is built from application data, so a
+   * skip that lived only in the flow was invisible to it: the applicant was
+   * told nothing about the answer they had consciously postponed.
+   */
+  const already = data.deferredQuestionIds ?? [];
+  const nextData: Saws2PlusApplicationData = already.includes(question!.id)
+    ? data
+    : { ...data, deferredQuestionIds: [...already, question!.id] };
+
+  return {
+    data: nextData,
+    state: advance(nextData, {
+      ...state,
+      skipped: [...state.skipped, question!.id],
+      error: null,
+    }),
+  };
+}
+
+/** An answer that is no longer deferred, because it has now been given. */
+function clearDeferral(
+  data: Saws2PlusApplicationData,
+  questionId: string,
+): Saws2PlusApplicationData {
+  const deferred = data.deferredQuestionIds ?? [];
+
+  if (!deferred.includes(questionId)) return data;
+
+  return {
+    ...data,
+    deferredQuestionIds: deferred.filter((id) => id !== questionId),
+  };
 }
 
 /** Start (or restart) the flow at the first outstanding question. */
@@ -348,6 +380,12 @@ export function setDraft(
   return { ...state, draft, error: null };
 }
 
+/** What a skip produced: the recorded deferral, and the advanced flow. */
+export interface SkipResult {
+  data: Saws2PlusApplicationData;
+  state: QuestionFlowState;
+}
+
 export interface SubmitResult {
   /** Application data after the answer was written, or unchanged on failure. */
   data: Saws2PlusApplicationData;
@@ -380,7 +418,10 @@ export function submitDraft(
 
   // answerQuestion honours the question's declared store; writing straight into
   // the questionnaire loses any answer that belongs on the application.
-  const nextData = answerQuestion(data, question, validated.value);
+  const nextData = clearDeferral(
+    answerQuestion(data, question, validated.value),
+    question.id,
+  );
 
   return { data: nextData, state: advance(nextData, state), committed: true };
 }
@@ -406,7 +447,9 @@ export function submitChoice(
   const store =
     question && question.path === path ? question.store : 'questionnaire';
 
-  const nextData = answerQuestion(data, { path, store }, value);
+  const nextData = question
+    ? clearDeferral(answerQuestion(data, { path, store }, value), question.id)
+    : answerQuestion(data, { path, store }, value);
 
   return { data: nextData, state: advance(nextData, state), committed: true };
 }

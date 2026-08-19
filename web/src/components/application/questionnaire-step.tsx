@@ -662,9 +662,17 @@ export default function QuestionnaireStep({
     setFlow(result.state);
   }
 
-  /** Skip a non-required question: writes nothing, leaves the PDF field blank. */
+  /**
+   * Skip a non-required question.
+   *
+   * Writes no answer, and records the deferral on the application so the
+   * completion guide can tell the applicant what they postponed and where it
+   * belongs on the paper form.
+   */
   function skipQuestion() {
-    setFlow(skipCurrent(application, flow));
+    const result = skipCurrent(application, flow);
+
+    applyData(result.data, result.state);
   }
 
   /** Question-level Back; leaves the step only at the very beginning. */

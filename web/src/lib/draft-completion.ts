@@ -47,6 +47,8 @@ import {
   findHouseholdOverflow,
   findPrintedOverflow,
 } from '@/lib/printed-capacity';
+import { buildInventory } from '@/lib/saws2-inventory';
+import { SAWS2_FIELDS } from '@/lib/saws2-schema';
 import {
   appendixDApplies,
   getActiveAppendices,
@@ -62,7 +64,8 @@ export type ManualReason =
   | 'write_in'
   | 'overflow'
   | 'unsupported'
-  | 'missing_answer';
+  | 'missing_answer'
+  | 'deferred';
 
 /**
  * Reasons that leave a draft short of "review and sign only".
@@ -82,6 +85,7 @@ const BLOCKS_REVIEW_AND_SIGN: readonly ManualReason[] = [
   'overflow',
   'unsupported',
   'missing_answer',
+  'deferred',
 ];
 
 /**
@@ -605,11 +609,75 @@ function unsupportedItems(
 // Questions the application has not answered yet
 // ---------------------------------------------------------------------------
 
+/**
+ * Questions the applicant chose to answer later.
+ *
+ * Distinct from `missing_answer`, and the distinction is the point: an
+ * unanswered question is one Kealu can still ask, so the instruction is "answer
+ * it here and regenerate". A deferred one was consciously postponed, so the
+ * instruction is where to write it on the paper — the applicant already decided
+ * not to give it to us.
+ *
+ * The printed location comes from the schema entry that shares the question's
+ * id, and the page from the inventory entry for that printed question. Where
+ * the product has no printed location — a question the form asks somewhere the
+ * mapping has not resolved — the item still appears, without a page, rather
+ * than being dropped for want of a page number.
+ */
+function deferredItems(application: Saws2PlusApplicationData): ManualItem[] {
+  const deferred = application.deferredQuestionIds ?? [];
+
+  if (deferred.length === 0) return [];
+
+  const plan = getRequiredApplicationQuestions(application);
+  const stillOutstanding = new Set(plan.outstanding.map((q) => q.id));
+  const promptById = new Map(plan.outstanding.map((q) => [q.id, q.prompt]));
+
+  const schemaById = new Map(SAWS2_FIELDS.map((field) => [field.id, field]));
+  const inventoryBySaws = new Map(
+    buildInventory().map((entry) => [entry.saws, entry]),
+  );
+
+  return deferred
+    // A question answered after being skipped is no longer deferred.
+    .filter((id) => stillOutstanding.has(id))
+    .map((id) => {
+      const field = schemaById.get(id);
+      const printed = field ? inventoryBySaws.get(field.saws) : undefined;
+      const page = printed?.page ?? 0;
+
+      return {
+        id: `deferred.${id}`,
+        reason: 'deferred' as const,
+        page,
+        printedPage: page ? printedPageLabel(page) : '',
+        saws: field?.saws ?? id,
+        printedSection: printed?.label ?? field?.label ?? 'Questionnaire',
+        printedLabel: field?.label ?? promptById.get(id) ?? id,
+        valueType: 'An answer you chose to give later',
+        instruction: page
+          ? 'You chose to answer this later. Write it on the printed form at ' +
+            `${field?.saws ?? id}, or answer it in Kealu and generate a new draft.`
+          : 'You chose to answer this later. Answer it in Kealu and generate a ' +
+            'new draft, or complete it on the printed form before submitting.',
+      };
+    });
+}
+
 function missingAnswerItems(
   application: Saws2PlusApplicationData,
 ): ManualItem[] {
-  return getRequiredApplicationQuestions(application).outstanding.map(
-    (question) => ({
+  /*
+   * A deferred question is still outstanding, so it appears here too unless it
+   * is excluded — and the guide would then list it twice, once as "still
+   * missing" and once as "you chose to give later". The second is the truer
+   * description, so it wins.
+   */
+  const deferred = new Set(application.deferredQuestionIds ?? []);
+
+  return getRequiredApplicationQuestions(application)
+    .outstanding.filter((question) => !deferred.has(question.id))
+    .map((question) => ({
       id: `missing.${question.id}`,
       reason: 'missing_answer' as const,
       // The questionnaire is answered in Kealu, not on the page, so these have
@@ -724,6 +792,7 @@ export function assessDraftCompletion(
     ),
     ...appendixDOverflowItems(application),
     ...unsupportedItems(application),
+    ...deferredItems(application),
     ...missingAnswerItems(application),
   ]);
 
@@ -735,6 +804,7 @@ export function assessDraftCompletion(
     overflow: [],
     unsupported: [],
     missing_answer: [],
+    deferred: [],
   } as Record<ManualReason, ManualItem[]>;
 
   for (const item of manualItems) byReason[item.reason].push(item);

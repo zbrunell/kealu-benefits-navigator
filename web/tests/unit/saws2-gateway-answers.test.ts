@@ -155,7 +155,7 @@ describe.each(GATEWAYS)('gateway $id', (gateway) => {
   it('is still outstanding after being skipped', () => {
     // Skipping writes nothing, so the question remains genuinely unanswered.
     const data = seed();
-    const flow = skipCurrent(data, flowShowing(data, gateway.id));
+    const flow = skipCurrent(data, flowShowing(data, gateway.id)).state;
 
     expect(readPath(data.questionnaire, gateway.path)).toBeUndefined();
     expect(outstandingIds(data).has(gateway.id)).toBe(true);
@@ -284,7 +284,7 @@ describe('skip versus No', () => {
     const skippedFlow = skipCurrent(
       data,
       flowShowing(data, 'health.current_coverage'),
-    );
+    ).state;
 
     expect(skippedFlow.skipped).toContain('health.current_coverage');
     expect(outstandingIds(data).has('health.current_coverage')).toBe(true);
@@ -300,7 +300,7 @@ describe('skip versus No', () => {
 
   it('never converts a skip into a No', () => {
     const data = seed();
-    const flow = skipCurrent(data, flowShowing(data, 'resources.vehicles'));
+    const flow = skipCurrent(data, flowShowing(data, 'resources.vehicles')).state;
 
     expect(flow.skipped).toContain('resources.vehicles');
     expect(

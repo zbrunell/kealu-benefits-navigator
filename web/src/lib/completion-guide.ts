@@ -363,6 +363,13 @@ const SECTION_TITLES: Record<
       'The printed form asks these, but they cannot be filled automatically ' +
       'for the reason given. Each one is answered by hand.',
   },
+  deferred: {
+    title: 'Answers you chose to give later',
+    intro:
+      'You skipped these for now, which is allowed — they are not lost. Each ' +
+      'can still be answered in Kealu and the draft regenerated, or written ' +
+      'straight onto the printed form at the place named below.',
+  },
   missing_answer: {
     title: 'Still missing from the application',
     intro:
@@ -375,6 +382,7 @@ const SECTION_TITLES: Record<
 /** Reason sections in the order a reader works through the document. */
 const SECTION_ORDER: readonly ManualReason[] = [
   'missing_answer',
+  'deferred',
   'ssn',
   'write_in',
   'unsupported',
