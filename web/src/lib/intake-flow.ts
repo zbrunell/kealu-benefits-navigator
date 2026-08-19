@@ -38,23 +38,38 @@ export type IntakeFieldKey =
 /** Result returned when parsing the answer to a specific intake question. */
 export interface IntakeParseResult {
   value?: string;
-  error?: string;
+  /**
+   * Message key naming why the answer was rejected.
+   *
+   * A key, not a sentence: the parser runs on the server, where there is no
+   * React context to ask what language the applicant reads.
+   */
+  errorKey?: string;
 }
 
-/** Definition of a single guided intake question. */
+/**
+ * Definition of a single guided intake question.
+ *
+ * One definition per question, in every language. The field carries message
+ * keys rather than sentences, so the logic below — which question is next,
+ * whether it parses, which tier it belongs to — is written once and the
+ * wording is resolved wherever it is displayed. Three copies of this array
+ * would be three chances for the Spanish flow to drift out of step with the
+ * English one.
+ */
 export interface IntakeField {
   /** Key into RawVars / HouseholdVars; used to check whether the field is already answered. */
   key: IntakeFieldKey;
-  /** Short human-readable label for this field. */
-  label: string;
-  /** One-sentence explanation of why this information is needed. Shown below the prompt. */
-  rationale: string;
-  /** Full text of the question to display to the user. */
-  prompt: string;
+  /** Message key for the short label naming this field. */
+  labelKey: string;
+  /** Message key for the one sentence on why this is asked. Shown below the prompt. */
+  rationaleKey: string;
+  /** Message key for the question itself. */
+  promptKey: string;
   /** Preferred keyboard/input mode for the answer field. */
   inputMode?: 'text' | 'numeric';
-  /** Optional example shown inside the answer input. */
-  placeholder?: string;
+  /** Message key for an example shown inside the answer input. */
+  placeholderKey?: string;
   /** Intake tier this field belongs to (1 = required, 2 = optional). */
   tier: 1 | 2;
 }
@@ -63,33 +78,26 @@ export interface IntakeField {
 export const TIER_1_FIELDS: IntakeField[] = [
   {
     key: 'zip_code',
-    label: 'ZIP Code',
-    rationale: 'We use your ZIP code to find plans and benefit programs available where you live.',
-    prompt:
-      'Hi! I can help you find health insurance and benefit programs for your household.\n\n' +
-      'I’ll ask a few short questions. Your answers stay private, and you do not need an account.\n\n' +
-      'What is your ZIP code?',
+    labelKey: 'intake_zip_code_label',
+    rationaleKey: 'intake_zip_code_rationale',
+    promptKey: 'intake_zip_code_prompt',
     inputMode: 'numeric',
-    placeholder: '90210',
+    placeholderKey: 'intake_zip_code_placeholder',
     tier: 1,
   },
   {
     key: 'annual_income',
-    label: 'Annual Household Income',
-    rationale: 'We use this to estimate which programs, discounts, and tax credits your household may qualify for.',
-    prompt: 'What is your household’s total yearly income before taxes?',
+    labelKey: 'intake_annual_income_label',
+    rationaleKey: 'intake_annual_income_rationale',
+    promptKey: 'intake_annual_income_prompt',
     inputMode: 'numeric',
-    // placeholder: '42000',
     tier: 1,
   },
   {
     key: 'household_profile',
-    label: 'Household Members',
-    rationale: 'Household size and ages affect eligibility and benefit amounts.',
-    prompt:
-      'Who should be included in your benefits household?\n\n' +
-      'Include yourself, your spouse, and anyone you claim as a tax dependent. Add each person’s age and mention pregnancy, disability, or veteran status.\n\n' +
-      'Example: Two adults, ages 32 and 30, and two children, ages 4 and 8.',
+    labelKey: 'intake_household_profile_label',
+    rationaleKey: 'intake_household_profile_rationale',
+    promptKey: 'intake_household_profile_prompt',
     tier: 1,
   },
 ];
@@ -98,47 +106,37 @@ export const TIER_1_FIELDS: IntakeField[] = [
 export const TIER_2_FIELDS: IntakeField[] = [
   {
     key: 'current_coverage',
-    label: 'Current Health Insurance',
-    rationale: 'This helps us understand whether you need new coverage or help with your current plan.',
-    prompt:
-      'Do you currently have health insurance?\n\n' +
-      'Tell us where it comes from, such as an employer, Medicaid, Medicare, or COBRA. You can also answer “No.”',
+    labelKey: 'intake_current_coverage_label',
+    rationaleKey: 'intake_current_coverage_rationale',
+    promptKey: 'intake_current_coverage_prompt',
     tier: 2,
   },
   {
     key: 'medications',
-    label: 'Prescription Medications',
-    rationale: 'This helps us look for plans that cover the medicines your household uses.',
-    prompt:
-      'Does anyone in your household take prescription medication regularly?\n\n' +
-      'List the medication names, or answer “None.”',
+    labelKey: 'intake_medications_label',
+    rationaleKey: 'intake_medications_rationale',
+    promptKey: 'intake_medications_prompt',
     tier: 2,
   },
   {
     key: 'providers',
-    label: 'Doctors and Specialists',
-    rationale: 'This helps us look for plans that include the doctors and clinics you want to keep.',
-    prompt:
-      'Are there any doctors, specialists, clinics, or hospitals you want to keep using?\n\n' +
-      'List their names, or answer “None.”',
+    labelKey: 'intake_providers_label',
+    rationaleKey: 'intake_providers_rationale',
+    promptKey: 'intake_providers_prompt',
     tier: 2,
   },
   {
     key: 'premium_budget',
-    label: 'Monthly Budget',
-    rationale: 'This helps us focus on plans your household can realistically afford.',
-    prompt:
-      'What is the most your household can afford to pay each month for health insurance?\n\n' +
-      'Enter an amount, or answer “As low as possible.”',
+    labelKey: 'intake_premium_budget_label',
+    rationaleKey: 'intake_premium_budget_rationale',
+    promptKey: 'intake_premium_budget_prompt',
     tier: 2,
   },
   {
     key: 'health_needs',
-    label: 'Health Care Needs',
-    rationale: 'This helps us match your household with coverage that fits the care you expect to need.',
-    prompt:
-      'Does anyone in your household have ongoing health needs or care planned soon?\n\n' +
-      'For example: chronic conditions, therapy, pregnancy care, surgery, or frequent doctor visits. You can also answer “No.”',
+    labelKey: 'intake_health_needs_label',
+    rationaleKey: 'intake_health_needs_rationale',
+    promptKey: 'intake_health_needs_prompt',
     tier: 2,
   },
 ];
@@ -173,7 +171,8 @@ export function getFieldStep(key: IntakeFieldKey | string): number | null {
 /** A single answered intake field, safe to show back to the owning session for review/edit. */
 export interface IntakeAnswer {
   key: IntakeFieldKey;
-  label: string;
+  /** Message key for the field's label; resolved where it is displayed. */
+  labelKey: string;
   value: string;
   tier: 1 | 2;
 }
@@ -190,7 +189,7 @@ export function buildAnswers(vars: RawVars): IntakeAnswer[] {
   for (const f of ALL_FIELDS) {
     const value = (vars as Record<string, string | undefined>)[f.key];
     if (value && value.trim().length > 0) {
-      out.push({ key: f.key as IntakeFieldKey, label: f.label, value, tier: f.tier });
+      out.push({ key: f.key as IntakeFieldKey, labelKey: f.labelKey, value, tier: f.tier });
     }
   }
   return out;
@@ -209,7 +208,7 @@ export function parseIntakeAnswer(
     default: {
       const value = message.trim();
       if (!value) {
-        return { error: 'Please enter an answer.' };
+        return { errorKey: 'intake_error_required' };
       }
       return { value };
     }
@@ -221,7 +220,7 @@ function parseZipCode(message: string): IntakeParseResult {
   const match = value.match(/^(\d{5})(?:-\d{4})?$/);
 
   if (!match) {
-    return { error: 'Enter a valid 5-digit ZIP code. For example: 19020.' };
+    return { errorKey: 'intake_error_zip' };
   }
 
   return { value: match[1] };
@@ -236,7 +235,7 @@ function parseAnnualIncome(message: string): IntakeParseResult {
   const match = compact.match(/^(\d+(?:\.\d+)?)k?$/);
   if (!match) {
     return {
-      error: 'Enter your yearly household income using numbers only. For example: 42000.',
+      errorKey: 'intake_error_income_not_a_number',
     };
   }
 
@@ -244,7 +243,7 @@ function parseAnnualIncome(message: string): IntakeParseResult {
   const amount = Math.round(Number(match[1]) * multiplier);
 
   if (!Number.isFinite(amount) || amount < 0) {
-    return { error: 'Enter a valid yearly household income.' };
+    return { errorKey: 'intake_error_income_invalid' };
   }
 
   return { value: String(amount) };

@@ -456,13 +456,22 @@ describe('Skip signal parsing', () => {
     expect(keys).toContain('medications');
   });
 
-  it('Each IntakeField has key, label, rationale, prompt, and tier (1 or 2)', () => {
+  it('Each IntakeField has key, label/rationale/prompt keys, and tier (1 or 2)', () => {
     for (const field of [...TIER_1_FIELDS, ...TIER_2_FIELDS]) {
       expect(field.key).toBeTruthy();
-      expect(field.label).toBeTruthy();
-      expect(field.rationale).toBeTruthy();
-      expect(field.prompt).toBeTruthy();
+      expect(field.labelKey).toBeTruthy();
+      expect(field.rationaleKey).toBeTruthy();
+      expect(field.promptKey).toBeTruthy();
       expect([1, 2]).toContain(field.tier);
+    }
+  });
+
+  it('carries message keys rather than sentences, so one definition serves every language', () => {
+    for (const field of [...TIER_1_FIELDS, ...TIER_2_FIELDS]) {
+      for (const key of [field.labelKey, field.rationaleKey, field.promptKey]) {
+        // A key looks like `intake_zip_code_prompt`; a sentence has spaces.
+        expect(key).toMatch(/^[a-z0-9_]+$/);
+      }
     }
   });
 });

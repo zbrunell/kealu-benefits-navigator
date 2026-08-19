@@ -125,7 +125,8 @@ describe('POST /api/intake', () => {
     expect(response.status).toBe(422);
     expect(body.type).toBe('question');
     expect(body.field.key).toBe('zip_code');
-    expect(body.error).toContain('ZIP code');
+    // A key, not a sentence: the route has no locale, so the client translates.
+    expect(body.errorKey).toBe('intake_error_zip');
     expect(
       setCookieCalls.some((cookie) => cookie.name === 'session'),
     ).toBe(true);
@@ -215,8 +216,8 @@ describe('POST /api/intake', () => {
     expect(body.type).toBe('question');
     expect(body.field).toBeDefined();
     expect(typeof body.field.key).toBe('string');
-    expect(typeof body.field.prompt).toBe('string');
-    expect(typeof body.error).toBe('string');
+    expect(typeof body.field.promptKey).toBe('string');
+    expect(typeof body.errorKey).toBe('string');
   });
 });
 
@@ -285,7 +286,7 @@ describe('intake progress, answers, edit, and resume', () => {
       ),
     ).toMatchObject({
       key: 'zip_code',
-      label: 'ZIP Code',
+      labelKey: 'intake_zip_code_label',
       value: '77001',
       tier: 1,
     });
@@ -351,7 +352,7 @@ describe('intake progress, answers, edit, and resume', () => {
     const body = await response.json();
 
     expect(response.status).toBe(422);
-    expect(body.error).toContain('yearly household income');
+    expect(body.errorKey).toBe('intake_error_income_not_a_number');
   });
 
   it('stores a Tier 2 edit verbatim', async () => {

@@ -30,12 +30,67 @@ export const messages: Record<Locale, Messages> = { en, es, 'zh-CN': zhCN };
 /**
  * Look up a translation by key in the given catalog.
  *
- * Falls back to the key string itself when the key is absent, so the UI
- * always renders something meaningful and never throws.
+ * Fallback policy, deliberately staged rather than uniform:
+ *
+ *   development — throw. A missing key is a bug, and the loudest place to
+ *                 learn about it is the first render, not a bug report from
+ *                 someone reading half a sentence in Spanish.
+ *   test        — throw, for the same reason; `missing-translations.test.ts`
+ *                 additionally sweeps every key in every locale up front.
+ *   production  — fall back to the English string, and only then to the key.
+ *                 English is wrong for a Spanish reader, but it is a real
+ *                 sentence; `intake_zip_code_prompt` is not, and a raw key on
+ *                 screen tells an applicant nothing about their benefits.
+ *
+ * The English fallback is what stops a single missing key from turning the
+ * page into a mixture of a language and a symbol table. It is a floor, not a
+ * licence: `missingKeys()` exists so that floor is never quietly relied on.
  *
  * @param msgs  The catalog for the current locale (pass `messages[locale]`).
  * @param key   A key from Messages, or any arbitrary string.
  */
 export function t(msgs: Messages, key: keyof Messages | string): string {
-  return (msgs as Record<string, string>)[key] ?? key;
+  const found = (msgs as Record<string, string>)[key];
+
+  if (found !== undefined) return found;
+
+  if (process.env.NODE_ENV !== 'production') {
+    throw new Error(
+      `Missing translation for "${String(key)}". Add it to every catalog in `
+      + 'src/i18n/messages/ — en.ts, es.ts, and zh-CN.ts.',
+    );
+  }
+
+  return (en as Record<string, string>)[key] ?? String(key);
+}
+
+/**
+ * Keys present in English but absent — or left as the English string — in
+ * `locale`.
+ *
+ * Used by the localization tests. Identical-to-English is reported because
+ * that is what an untranslated placeholder looks like once someone has copied
+ * en.ts over es.ts to make the compiler stop complaining.
+ */
+export function missingKeys(locale: Locale): {
+  absent: string[];
+  untranslated: string[];
+} {
+  const catalog = messages[locale] as Record<string, string>;
+  const source = en as Record<string, string>;
+
+  const absent: string[] = [];
+  const untranslated: string[] = [];
+
+  for (const key of Object.keys(source)) {
+    const value = catalog[key];
+
+    if (value === undefined || value === '') {
+      absent.push(key);
+    } else if (locale !== 'en' && value === source[key]) {
+      untranslated.push(key);
+    }
+  }
+
+  return { absent, untranslated };
 }

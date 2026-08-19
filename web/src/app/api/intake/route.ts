@@ -89,7 +89,12 @@ async function resolveCookieValue(req: Request): Promise<string | undefined> {
  * the answers snapshot is delivered only via GET and the explicit edit action,
  * which return the user's own data back to their own session.
  */
-function serialize(session: Session, includeAnswers: boolean, error?: string): object {
+function serialize(
+  session: Session,
+  includeAnswers: boolean,
+  /** Message key, not a sentence — the client resolves it in its own locale. */
+  errorKey?: string,
+): object {
   const nextField = getNextQuestion(session.vars, session.currentTier, session.skipIntake);
   // Persist which field we're now waiting on (drives raw-answer storage for Tier 2).
   sessionStore.update(session.sessionId, { pendingField: nextField?.key });
@@ -101,17 +106,17 @@ function serialize(session: Session, includeAnswers: boolean, error?: string): o
           type: 'question' as const,
           field: {
             key: nextField.key,
-            label: nextField.label,
-            rationale: nextField.rationale,
-            prompt: nextField.prompt,
+            labelKey: nextField.labelKey,
+            rationaleKey: nextField.rationaleKey,
+            promptKey: nextField.promptKey,
             tier: nextField.tier,
             inputMode: nextField.inputMode,
-            placeholder: nextField.placeholder,
+            placeholderKey: nextField.placeholderKey,
           },
           step: { current: getFieldStep(nextField.key), total: TOTAL_STEPS },
         };
 
-  const response = error ? { ...base, error } : base;
+  const response = errorKey ? { ...base, errorKey } : base;
   return includeAnswers ? { ...response, answers: buildAnswers(session.vars) } : response;
 }
 
@@ -143,12 +148,12 @@ export async function GET(req: Request): Promise<Response> {
     next: nextField
       ? {
           key: nextField.key,
-          label: nextField.label,
-          rationale: nextField.rationale,
-          prompt: nextField.prompt,
+          labelKey: nextField.labelKey,
+          rationaleKey: nextField.rationaleKey,
+          promptKey: nextField.promptKey,
           tier: nextField.tier,
           inputMode: nextField.inputMode,
-          placeholder: nextField.placeholder,
+          placeholderKey: nextField.placeholderKey,
         }
       : null,
     step: nextField ? { current: getFieldStep(nextField.key), total: TOTAL_STEPS } : null,
@@ -228,11 +233,11 @@ if (!session.pendingField) {
       delete newVars[key];
     } else {
       const parsed = parseIntakeAnswer(key, value);
-      if (parsed.error || parsed.value === undefined) {
+      if (parsed.errorKey || parsed.value === undefined) {
         return withCookie(
           NextResponse.json(
             {
-              ...serialize(session, true, parsed.error ?? 'Please enter a valid answer.'),
+              ...serialize(session, true, parsed.errorKey ?? 'intake_error_required'),
               editedField: key,
             },
             { status: 422 },
@@ -299,10 +304,10 @@ if (!session.pendingField) {
       }
 
       const parsed = parseIntakeAnswer(pending, message);
-      if (parsed.error || parsed.value === undefined) {
+      if (parsed.errorKey || parsed.value === undefined) {
         return withCookie(
           NextResponse.json(
-            serialize(session, false, parsed.error ?? 'Please enter a valid answer.'),
+            serialize(session, false, parsed.errorKey ?? 'intake_error_required'),
             { status: 422 },
           ),
           newSessionId,

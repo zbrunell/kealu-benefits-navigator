@@ -11,7 +11,7 @@
  * the same logical surface.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { t, messages } from '@/i18n';
 import type { Messages } from '@/i18n';
 
@@ -147,26 +147,55 @@ describe('t() with Spanish catalog', () => {
 
 // ── t() — fallback and robustness ─────────────────────────────────────────────
 
-describe('t() fallback behaviour', () => {
-  it('returns the key string itself when key is missing from catalog', () => {
-    expect(t(messages.en, 'totally_nonexistent_key')).toBe('totally_nonexistent_key');
+describe('t() fallback policy', () => {
+  /*
+   * The policy changed deliberately. Echoing the key back was safe but silent:
+   * an applicant saw `intake_zip_code_prompt` where a question belonged, and
+   * nothing anywhere said so. Now a missing key is loud where it can be fixed
+   * and survivable where it cannot.
+   */
+
+  it('throws outside production, so a missing key cannot ship unnoticed', () => {
+    expect(() => t(messages.en, 'totally_nonexistent_key')).toThrow(
+      /Missing translation/,
+    );
   });
 
-  it('returns the key for a Spanish missing-key as well', () => {
-    expect(t(messages.es, 'missing_in_both')).toBe('missing_in_both');
+  it('names the catalogs to fix, in the message', () => {
+    expect(() => t(messages.es, 'missing_in_both')).toThrow(/zh-CN\.ts/);
   });
 
-  it('never throws for any key/catalog combination', () => {
-    const edgeCases = ['', ' ', 'undefined', 'null', '0'];
-    for (const key of edgeCases) {
-      expect(() => t(messages.en, key)).not.toThrow();
-      expect(() => t(messages.es, key)).not.toThrow();
+  it('falls back to English rather than a raw key in production', () => {
+    try {
+      // A real sentence in the wrong language beats a symbol in no language.
+      vi.stubEnv('NODE_ENV', 'production');
+
+      const sparse = { ...messages.es } as Record<string, string>;
+      delete sparse.chat_send;
+
+      expect(t(sparse as typeof messages.es, 'chat_send')).toBe(
+        messages.en.chat_send,
+      );
+    } finally {
+      vi.unstubAllEnvs();
     }
   });
 
-  it('returns a string (never undefined or null) for any input', () => {
+  it('falls back to the key only when English lacks it too', () => {
+    try {
+      vi.stubEnv('NODE_ENV', 'production');
+
+      expect(t(messages.en, '__missing_everywhere__')).toBe(
+        '__missing_everywhere__',
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('returns a string for every key that exists', () => {
     expect(typeof t(messages.en, 'chat_send')).toBe('string');
-    expect(typeof t(messages.en, '__missing__')).toBe('string');
+    expect(typeof t(messages['zh-CN'], 'chat_send')).toBe('string');
   });
 });
 

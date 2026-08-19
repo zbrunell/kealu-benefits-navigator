@@ -101,6 +101,81 @@ const en = {
   lang_select_aria: 'Select language',
   lang_en: 'English',
   lang_es: 'Español',
+  // ── intake-flow.ts — guided intake questions ─────────────────────────────
+  intake_zip_code_label: 'ZIP Code',
+  intake_zip_code_rationale:
+    'We use your ZIP code to find plans and benefit programs available where you live.',
+  intake_zip_code_prompt:
+    'Hi! I can help you find health insurance and benefit programs for your household.\n\n'
+    + 'I’ll ask a few short questions. Your answers stay private, and you do not need an account.\n\n'
+    + 'What is your ZIP code?',
+  intake_zip_code_placeholder: '90210',
+
+  intake_annual_income_label: 'Annual Household Income',
+  intake_annual_income_rationale:
+    'We use this to estimate which programs, discounts, and tax credits your household may qualify for.',
+  intake_annual_income_prompt:
+    'What is your household’s total yearly income before taxes?',
+
+  intake_household_profile_label: 'Household Members',
+  intake_household_profile_rationale:
+    'Household size and ages affect eligibility and benefit amounts.',
+  intake_household_profile_prompt:
+    'Who should be included in your benefits household?\n\n'
+    + 'Include yourself, your spouse, and anyone you claim as a tax dependent. '
+    + 'Add each person’s age and mention pregnancy, disability, or veteran status.\n\n'
+    + 'Example: Two adults, ages 32 and 30, and two children, ages 4 and 8.',
+
+  intake_current_coverage_label: 'Current Health Insurance',
+  intake_current_coverage_rationale:
+    'This helps us understand whether you need new coverage or help with your current plan.',
+  intake_current_coverage_prompt:
+    'Do you currently have health insurance?\n\n'
+    + 'Tell us where it comes from, such as an employer, Medicaid, Medicare, or COBRA. '
+    + 'You can also answer “No.”',
+
+  intake_medications_label: 'Prescription Medications',
+  intake_medications_rationale:
+    'This helps us look for plans that cover the medicines your household uses.',
+  intake_medications_prompt:
+    'Does anyone in your household take prescription medication regularly?\n\n'
+    + 'List the medication names, or answer “None.”',
+
+  intake_providers_label: 'Doctors and Specialists',
+  intake_providers_rationale:
+    'This helps us look for plans that include the doctors and clinics you want to keep.',
+  intake_providers_prompt:
+    'Are there any doctors, specialists, clinics, or hospitals you want to keep using?\n\n'
+    + 'List their names, or answer “None.”',
+
+  intake_premium_budget_label: 'Monthly Budget',
+  intake_premium_budget_rationale:
+    'This helps us focus on plans your household can realistically afford.',
+  intake_premium_budget_prompt:
+    'What is the most your household can afford to pay each month for health insurance?\n\n'
+    + 'Enter an amount, or answer “As low as possible.”',
+
+  intake_health_needs_label: 'Health Care Needs',
+  intake_health_needs_rationale:
+    'This helps us match your household with coverage that fits the care you expect to need.',
+  intake_health_needs_prompt:
+    'Does anyone in your household have ongoing health needs or care planned soon?\n\n'
+    + 'For example: chronic conditions, therapy, pregnancy care, surgery, or frequent doctor visits. '
+    + 'You can also answer “No.”',
+
+  intake_error_required: 'Please enter an answer.',
+  intake_error_zip: 'Enter a valid 5-digit ZIP code. For example: 19020.',
+  intake_error_income_not_a_number:
+    'Enter your yearly household income using numbers only. For example: 42000.',
+  intake_error_income_invalid: 'Enter a valid yearly household income.',
+
+  // ── Official form availability ───────────────────────────────────────────
+  form_limitation_zh_hant_not_fillable:
+    'California publishes this application in Chinese, but only in Traditional Chinese, '
+    + 'and that edition cannot be filled in electronically. Your draft is therefore the '
+    + 'official English form, completed with your answers. The official Chinese copy is '
+    + 'included alongside it so you can read what you are signing.',
+
   lang_zh_CN: '简体中文',
 } as const;
 

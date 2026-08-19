@@ -23,7 +23,8 @@ interface IntakeResponse {
   next?: IntakeField | null;
   answers?: IntakeAnswer[];
   step?: { current: number | null; total: number } | null;
-  error?: string;
+  /** Message key for a rejected answer; resolved with `t()` before display. */
+  errorKey?: string;
   editedField?: string;
 }
 
@@ -92,9 +93,9 @@ export default function ChatInterface({
     }
 
     if (initialNextQuestion && initialMessages.length > 0) {
-      const text = initialNextQuestion.rationale
-        ? `${initialNextQuestion.prompt}\n\n${initialNextQuestion.rationale}`
-        : initialNextQuestion.prompt;
+      const text = initialNextQuestion.rationaleKey
+        ? `${t(initialNextQuestion.promptKey)}\n\n${t(initialNextQuestion.rationaleKey)}`
+        : t(initialNextQuestion.promptKey);
       init.push({ id: uid(), role: 'assistant', content: text });
       if (initialNextQuestion.tier >= 2) setShowSkip(true);
     } else if (initialMessages.length > 0) {
@@ -155,7 +156,7 @@ export default function ChatInterface({
         if (data.field) setCurrentField(data.field);
         setMessages((prev) => [
           ...prev,
-          { id: uid(), role: 'assistant', content: data.error ?? t('chat_error_generic') },
+          { id: uid(), role: 'assistant', content: data.errorKey ? t(data.errorKey) : t('chat_error_generic') },
         ]);
         return;
       }
@@ -171,9 +172,9 @@ export default function ChatInterface({
         if (await startAnalysis()) return;
       } else if (data.type === 'question' && data.field) {
         setCurrentField(data.field);
-        const text = data.field.rationale
-          ? `${data.field.prompt}\n\n${data.field.rationale}`
-          : data.field.prompt;
+        const text = data.field.rationaleKey
+          ? `${t(data.field.promptKey)}\n\n${t(data.field.rationaleKey)}`
+          : t(data.field.promptKey);
         setMessages((prev) => [...prev, { id: uid(), role: 'assistant', content: text }]);
         if (data.field.tier >= 2) setShowSkip(true);
         // Refresh the progress bar + answers panel (PII comes only from this GET).
@@ -264,7 +265,7 @@ export default function ChatInterface({
       });
       const data = (await res.json()) as IntakeResponse;
       if (!res.ok) {
-        setEditError(data.error ?? t('chat_error_generic'));
+        setEditError(data.errorKey ? t(data.errorKey) : t('chat_error_generic'));
         if (data.answers) setAnswers(data.answers);
         return;
       }
@@ -293,7 +294,7 @@ export default function ChatInterface({
               {currentField && step ? (
                 <>
                   Step {step} of {TOTAL_STEPS}
-                  <span className="text-slate-500"> · {currentField.label}</span>
+                  <span className="text-slate-500"> · {t(currentField.labelKey)}</span>
                 </>
               ) : (
                 t('chat_all_set')
@@ -323,7 +324,7 @@ export default function ChatInterface({
             <div className="mt-3 space-y-1.5">
               {answers.map((a) => (
                 <div key={a.key} className="flex items-start gap-2 text-xs">
-                  <span className="w-28 shrink-0 pt-1 text-slate-400">{a.label}</span>
+                  <span className="w-28 shrink-0 pt-1 text-slate-400">{t(a.labelKey)}</span>
                   {editingKey === a.key ? (
                     <div className="flex-1">
                       <div className="flex items-center gap-1.5">
@@ -339,9 +340,15 @@ export default function ChatInterface({
                           }}
                           autoFocus
                           className="flex-1 rounded border border-slate-600 bg-slate-800 text-slate-100 px-2 py-1 focus:border-blue-400 focus:outline-none"
-                          aria-label={`Edit ${a.label}`}
+                          aria-label={`${t('chat_edit_answers')}: ${t(a.labelKey)}`}
                           inputMode={ALL_FIELDS.find((field) => field.key === a.key)?.inputMode}
-                          placeholder={ALL_FIELDS.find((field) => field.key === a.key)?.placeholder}
+                          placeholder={(() => {
+                            const key = ALL_FIELDS.find(
+                              (field) => field.key === a.key,
+                            )?.placeholderKey;
+
+                            return key ? t(key) : undefined;
+                          })()}
                         />
                         <button
                           type="button"
@@ -479,7 +486,11 @@ export default function ChatInterface({
           disabled={isPending}
           rows={2}
           inputMode={currentField?.inputMode ?? 'text'}
-          placeholder={currentField?.placeholder ?? t('chat_placeholder')}
+          placeholder={
+            currentField?.placeholderKey
+              ? t(currentField.placeholderKey)
+              : t('chat_placeholder')
+          }
           className="flex-1 resize-none rounded-lg border border-slate-700 bg-slate-800 text-slate-100 placeholder-slate-500 px-3 py-2 text-sm leading-snug focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label={t('chat_input_aria')}
         />

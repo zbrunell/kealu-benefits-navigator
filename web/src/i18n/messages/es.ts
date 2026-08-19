@@ -105,6 +105,81 @@ const es: Messages = {
   // Language names are always shown in the language itself
   lang_en: 'English',
   lang_es: 'Español',
+  // ── intake-flow.ts — preguntas guiadas de admisión ───────────────────────
+  intake_zip_code_label: 'Código postal',
+  intake_zip_code_rationale:
+    'Usamos su código postal para encontrar planes y programas de beneficios disponibles donde usted vive.',
+  intake_zip_code_prompt:
+    '¡Hola! Puedo ayudarle a encontrar seguro médico y programas de beneficios para su hogar.\n\n'
+    + 'Le haré unas preguntas breves. Sus respuestas son privadas y no necesita crear una cuenta.\n\n'
+    + '¿Cuál es su código postal?',
+  intake_zip_code_placeholder: '90210',
+
+  intake_annual_income_label: 'Ingreso anual del hogar',
+  intake_annual_income_rationale:
+    'Usamos esto para calcular a qué programas, descuentos y créditos tributarios podría calificar su hogar.',
+  intake_annual_income_prompt:
+    '¿Cuál es el ingreso total anual de su hogar antes de impuestos?',
+
+  intake_household_profile_label: 'Miembros del hogar',
+  intake_household_profile_rationale:
+    'El tamaño del hogar y las edades afectan la elegibilidad y el monto de los beneficios.',
+  intake_household_profile_prompt:
+    '¿Quiénes deben incluirse en su hogar para efectos de beneficios?\n\n'
+    + 'Inclúyase usted, su cónyuge y toda persona que declare como dependiente para los impuestos. '
+    + 'Indique la edad de cada persona y mencione si hay embarazo, discapacidad o condición de veterano.\n\n'
+    + 'Ejemplo: Dos adultos, de 32 y 30 años, y dos niños, de 4 y 8 años.',
+
+  intake_current_coverage_label: 'Seguro médico actual',
+  intake_current_coverage_rationale:
+    'Esto nos ayuda a saber si necesita cobertura nueva o ayuda con su plan actual.',
+  intake_current_coverage_prompt:
+    '¿Tiene seguro médico actualmente?\n\n'
+    + 'Díganos de dónde proviene, por ejemplo de un empleador, Medicaid, Medicare o COBRA. '
+    + 'También puede responder “No”.',
+
+  intake_medications_label: 'Medicamentos recetados',
+  intake_medications_rationale:
+    'Esto nos ayuda a buscar planes que cubran los medicamentos que usa su hogar.',
+  intake_medications_prompt:
+    '¿Alguien en su hogar toma medicamentos recetados con regularidad?\n\n'
+    + 'Escriba los nombres de los medicamentos o responda “Ninguno”.',
+
+  intake_providers_label: 'Médicos y especialistas',
+  intake_providers_rationale:
+    'Esto nos ayuda a buscar planes que incluyan a los médicos y las clínicas que usted quiere conservar.',
+  intake_providers_prompt:
+    '¿Hay médicos, especialistas, clínicas u hospitales que quiera seguir usando?\n\n'
+    + 'Escriba sus nombres o responda “Ninguno”.',
+
+  intake_premium_budget_label: 'Presupuesto mensual',
+  intake_premium_budget_rationale:
+    'Esto nos ayuda a concentrarnos en planes que su hogar realmente pueda pagar.',
+  intake_premium_budget_prompt:
+    '¿Cuánto es lo máximo que su hogar puede pagar al mes por el seguro médico?\n\n'
+    + 'Escriba una cantidad o responda “Lo menos posible”.',
+
+  intake_health_needs_label: 'Necesidades de atención médica',
+  intake_health_needs_rationale:
+    'Esto nos ayuda a encontrar cobertura que se ajuste a la atención que su hogar espera necesitar.',
+  intake_health_needs_prompt:
+    '¿Alguien en su hogar tiene necesidades de salud continuas o atención programada próximamente?\n\n'
+    + 'Por ejemplo: enfermedades crónicas, terapia, atención del embarazo, cirugía o consultas médicas frecuentes. '
+    + 'También puede responder “No”.',
+
+  intake_error_required: 'Por favor escriba una respuesta.',
+  intake_error_zip: 'Escriba un código postal válido de 5 dígitos. Por ejemplo: 19020.',
+  intake_error_income_not_a_number:
+    'Escriba el ingreso anual de su hogar usando solo números. Por ejemplo: 42000.',
+  intake_error_income_invalid: 'Escriba un ingreso anual del hogar válido.',
+
+  // ── Disponibilidad del formulario oficial ────────────────────────────────
+  form_limitation_zh_hant_not_fillable:
+    'California publica esta solicitud en chino, pero solo en chino tradicional, '
+    + 'y esa edición no se puede llenar electrónicamente. Por eso su borrador es el '
+    + 'formulario oficial en inglés, completado con sus respuestas. La copia oficial en '
+    + 'chino se incluye junto con él para que pueda leer lo que va a firmar.',
+
   lang_zh_CN: '简体中文',
 } as const;
 
