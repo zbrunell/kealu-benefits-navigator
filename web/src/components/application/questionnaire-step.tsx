@@ -37,8 +37,12 @@ import {
   validateDraft,
   type QuestionFlowState,
 } from "@/lib/saws2-question-navigator";
+import { dateOfBirthBounds } from "@/lib/date-of-birth";
 import { useTranslation } from "@/hooks/use-translation";
 import type { Saws2PlusApplicationData } from "@/types/application";
+
+/** Last segment of a dotted path, e.g. `dateOfBirth`. */
+const leafOf = (path: string): string => path.split(".").pop() ?? "";
 
 const INPUT_CLASS =
   "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 " +
@@ -826,7 +830,12 @@ export default function QuestionnaireStep({
         <input
           key={current.id}
           type={kind === "date" ? "date" : kind === "number" ? "number" : "text"}
-          {...(kind === "number" ? { min: 0, step: "0.01" } : {})}
+          {...(kind === "number"
+            ? { min: 0, step: "0.01", inputMode: "decimal" as const }
+            : {})}
+          {...(kind === "date" && leafOf(current.path) === "dateOfBirth"
+            ? dateOfBirthBounds()
+            : {})}
           value={flow.draft}
           onChange={(event) => setFlow(setNavigatorDraft(flow, event.target.value))}
           onKeyDown={(event) => {
