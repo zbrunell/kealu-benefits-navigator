@@ -13,6 +13,7 @@
  */
 
 import { spawn } from 'child_process';
+import { DEFAULT_LOCALE, type Locale } from '@/lib/locale';
 import { existsSync } from 'fs';
 import path from 'path';
 
@@ -121,6 +122,8 @@ export function resolvePythonExec(): string | null {
  * @param workflowOutput Concatenated workflow output.
  * @param applicationData Structured application state.
  * @param draftsBase Base directory for generated drafts.
+ * @param locale The language the applicant chose. Decides which official
+ *   CDSS form edition is filled — see `form_templates.py`.
  */
 export async function generateDraft(
   runId: string,
@@ -128,6 +131,7 @@ export async function generateDraft(
   workflowOutput: string,
   applicationData: Saws2PlusApplicationData,
   draftsBase: string,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<DraftResult | null> {
   const pythonExec = resolvePythonExec();
 
@@ -155,6 +159,9 @@ export async function generateDraft(
       ...vars,
       application_data: applicationData,
       application_field_plan: applicationFieldPlan,
+      // Spread last so a stray `locale` in vars can never outrank the
+      // applicant's actual selection.
+      locale,
     },
     workflow_output: workflowOutput,
     output_dir: outputDir,

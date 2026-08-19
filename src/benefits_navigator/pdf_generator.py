@@ -17,6 +17,8 @@ _FORMS_DIR = Path(__file__).parent / "forms"
 
 _SAWS2_PLUS_TEMPLATE = _FORMS_DIR / "CA-SAWS-2-PLUS.pdf"
 
+from .form_templates import FormTemplate, normalize_locale, template_for
+
 _SAWS2_PLUS_URL = (
     "https://www.cdss.ca.gov/cdssweb/entres/forms/English/SAWS2_PLUS.pdf"
 )
@@ -274,16 +276,35 @@ def _extract_values(args: dict[str, Any]) -> dict[str, str]:
     return {
         "state": str(merged_args.get("state") or "CA").strip().upper(),
         "zip_code": zip_code,
+        # The locale the applicant chose, not one inferred at generation time.
+        "locale": normalize_locale(merged_args.get("locale")),
     }
 
 
-def _download_template(destination: Path) -> None:
-    """Ensure the official CDSS SAWS 2 PLUS template exists at destination."""
+def _download_template(
+    destination: Path,
+    template: FormTemplate | None = None,
+) -> None:
+    """Ensure the official CDSS SAWS 2 PLUS template exists at destination.
+
+    `template` names the language edition to place. The network fallback only
+    ever fetches the English form, so a locale whose asset is missing raises
+    rather than silently handing over English under a localized name.
+    """
     destination.parent.mkdir(parents=True, exist_ok=True)
 
-    if _SAWS2_PLUS_TEMPLATE.exists():
-        destination.write_bytes(_SAWS2_PLUS_TEMPLATE.read_bytes())
+    source = template.path if template is not None else _SAWS2_PLUS_TEMPLATE
+
+    if source.exists():
+        destination.write_bytes(source.read_bytes())
         return
+
+    if template is not None and template.document_language != "en":
+        raise RuntimeError(
+            f"The official {template.document_language} SAWS 2 PLUS asset is "
+            f"missing at {source}. Refusing to substitute the English form "
+            "for a form presented as translated."
+        )
 
     request = urllib.request.Request(
         _SAWS2_PLUS_URL,
@@ -4828,27 +4849,53 @@ def generate_saws2_plus_pdf(
         or "unknown"
     )
 
+    template = template_for(
+        values["locale"]
+    )
+
+    # The filename states the language of the paper, not the language of the
+    # interface, so a downloaded file is never mistaken for a translation it
+    # is not.
+    suffix = (
+        ""
+        if template.document_language == "en"
+        else f"-{template.document_language}"
+    )
+
     template_path = (
         output_dir
-        / "official-ca-saws-2-plus-template.pdf"
+        / f"official-ca-saws-2-plus{suffix}-template.pdf"
     )
 
     output_path = (
         output_dir
         / (
-            "official-ca-saws-2-plus-"
+            f"official-ca-saws-2-plus{suffix}-"
             f"{zip_code}-{timestamp}.pdf"
         )
     )
 
     inventory_path = (
         output_dir
-        / "official-ca-saws-2-plus-field-inventory.json"
+        / f"official-ca-saws-2-plus{suffix}-field-inventory.json"
     )
 
     _download_template(
-        template_path
+        template_path,
+        template,
     )
+
+    # An official form in the applicant's language that cannot be filled is
+    # still worth having: it lets them read what they are signing. Place it
+    # beside the fillable one rather than discarding it.
+    if template.reference_path is not None and template.reference_path.exists():
+        (
+            output_dir
+            / (
+                "official-ca-saws-2-plus-"
+                f"{template.reference_language}-reference.pdf"
+            )
+        ).write_bytes(template.reference_path.read_bytes())
 
     field_inventory = (
         inspect_pdf_form(

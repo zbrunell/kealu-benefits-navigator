@@ -213,12 +213,24 @@ if (state !== 'CA') {
   );
 }
 
+/*
+ * The applicant's own choice, in priority order: what the session already
+ * recorded, then the cookie their language picker wrote. `Accept-Language` is
+ * never consulted — it describes the browser, not the person.
+ */
+const { localeFromCookieHeader, normalizeLocale } = await import('@/lib/locale');
+
+const locale = session.locale
+  ? normalizeLocale(session.locale)
+  : localeFromCookieHeader(rawCookie);
+
 const result = await generateDraft(
   runId,
   session.vars,
   JSON.stringify(session.reportContent),
   applicationData,
   getDraftsBase(),
+  locale,
 );
 
 if (!result) {
@@ -248,6 +260,9 @@ sessionStore.update(
     draftFormType: result.formType,
     draftApplicationData: applicationData,
     draftGeneratedAt: new Date().toISOString(),
+    // Pin it, so the guide is written in the language the PDF was filled in
+    // even if the applicant switches afterwards.
+    locale,
   },
 );
 

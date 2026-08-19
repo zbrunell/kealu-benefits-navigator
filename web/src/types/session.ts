@@ -79,6 +79,8 @@ export interface ExtraRuntimeVars {
  * Household variables as stored on a session: the YAML variables (all optional
  * while intake is in progress) plus the extra runtime vars.
  */
+import type { Locale } from '@/lib/locale';
+
 export type SessionVars = Partial<HouseholdVars> & ExtraRuntimeVars;
 
 /**
@@ -166,6 +168,16 @@ export interface Session {
    * runtime keys (see SessionVars).
    */
   vars: SessionVars;
+  /**
+   * The language the applicant chose, carried for the life of the session.
+   *
+   * This is the source of truth for the questionnaire, the generated PDF, the
+   * completion guide, and the submission instructions. It is set from the
+   * applicant's own selection — never re-derived from `Accept-Language` when a
+   * draft is generated, which would hand a Spanish speaker an English form
+   * because of the laptop they borrowed.
+   */
+  locale?: Locale;
   /** Ordered chat history for the intake conversation. */
   messages: ChatMessage[];
   /** UUID v4 of the most recently started KVR workflow run, if any. */
