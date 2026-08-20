@@ -19,7 +19,9 @@
 
 import { useLanguage } from '@/contexts/language-context';
 import {
+  interpolate,
   t as tFn,
+  tPlural,
   translateQuestion,
   translateQuestionHelp,
 } from '@/i18n';
@@ -31,6 +33,17 @@ export function useTranslation() {
   return {
     /** Translate a message key to the current locale's string. */
     t: (key: keyof Messages | string): string => tFn(msgs, key),
+    /** Translate a key and substitute `{name}` placeholders. */
+    tv: (
+      key: keyof Messages | string,
+      vars: Record<string, string | number>,
+    ): string => interpolate(tFn(msgs, key), vars),
+    /** Translate a count-dependent sentence, choosing the plural form. */
+    tn: (
+      baseKey: string,
+      count: number,
+      vars?: Record<string, string | number>,
+    ): string => tPlural(msgs, locale, baseKey, count, vars),
     /** Translate a planned question's wording. */
     tq: (question: { promptKey: string; prompt: string }): string =>
       translateQuestion(msgs, question),

@@ -311,6 +311,24 @@ const en = {
   questionnaire_all_answered: 'Everything we need is answered',
 
   lang_zh_CN: '简体中文',
+  // ── questionnaire-step.tsx (localization pass) ────────────────────────────
+  qstep_not_answered_yet: 'Not answered yet',
+  qstep_not_answered_option: 'Not answered',
+  qstep_who_is_this_for: 'Who is this for?',
+  qstep_everyone_has_entry: 'Everyone in your household already has an entry here.',
+  qstep_add_entry: 'Add entry',
+  qstep_extra_pages: 'Extra pages your answers added',
+  qstep_next_question: 'Next question',
+  qstep_skip_for_now: 'Skip for now',
+  qstep_skip_explanation: 'Skip for now. This will stay blank in your draft — it is not answered “No” — and may need to be completed before submission.',
+  qstep_skip_tooltip: 'This field stays blank in your draft. You may need to complete it later.',
+  qstep_progress_aria: 'Application completion',
+
+  // ── questionnaire-step.tsx: counted and numbered strings ──────────────────
+  qstep_questions_left_one: '{count} question left',
+  qstep_questions_left_other: '{count} questions left',
+  qstep_entry_number: 'Entry {number}',
+
 } as const;
 
 export default en;

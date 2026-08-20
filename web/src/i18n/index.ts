@@ -65,6 +65,56 @@ export function t(msgs: Messages, key: keyof Messages | string): string {
 }
 
 /**
+ * Substitute `{name}` placeholders in a translated string.
+ *
+ * Kept separate from `t()` so a catalog entry is always a whole sentence. The
+ * alternative — assembling sentences from fragments in the component — cannot
+ * be translated: Spanish and Chinese put the number, the noun and the verb in
+ * different places, and a fragment gives the translator nowhere to move them.
+ */
+export function interpolate(
+  template: string,
+  vars: Record<string, string | number>,
+): string {
+  return template.replace(/\{(\w+)\}/g, (whole, name: string) =>
+    name in vars ? String(vars[name]) : whole,
+  );
+}
+
+/**
+ * Plural category for `count` in `locale`.
+ *
+ * Deliberately small: English and Spanish distinguish one from everything else,
+ * and Chinese does not inflect for number at all, so its two forms are the same
+ * sentence. This is not a general CLDR implementation and does not pretend to
+ * be — languages with dual/paucal forms would need a real one, and the test
+ * suite asserts every plural key exists in every catalog so adding such a
+ * language cannot silently produce a wrong sentence.
+ */
+export function pluralCategory(locale: Locale, count: number): 'one' | 'other' {
+  if (locale === 'zh-CN') return 'other';
+
+  return count === 1 ? 'one' : 'other';
+}
+
+/**
+ * Translate a count-dependent sentence.
+ *
+ * Looks up `<baseKey>_one` / `<baseKey>_other` and interpolates `{count}`.
+ */
+export function tPlural(
+  msgs: Messages,
+  locale: Locale,
+  baseKey: string,
+  count: number,
+  vars: Record<string, string | number> = {},
+): string {
+  const key = `${baseKey}_${pluralCategory(locale, count)}`;
+
+  return interpolate(t(msgs, key), { count, ...vars });
+}
+
+/**
  * Keys present in English but absent — or left as the English string — in
  * `locale`.
  *

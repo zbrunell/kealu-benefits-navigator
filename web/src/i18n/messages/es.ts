@@ -315,6 +315,24 @@ const es: Messages = {
   questionnaire_all_answered: 'Ya está contestado todo lo que necesitamos',
 
   lang_zh_CN: '简体中文',
+  // ── questionnaire-step.tsx (localization pass) ────────────────────────────
+  qstep_not_answered_yet: 'Sin responder',
+  qstep_not_answered_option: 'Sin responder',
+  qstep_who_is_this_for: '¿Para quién es esto?',
+  qstep_everyone_has_entry: 'Todas las personas de su hogar ya tienen una entrada aquí.',
+  qstep_add_entry: 'Agregar entrada',
+  qstep_extra_pages: 'Páginas adicionales que agregaron sus respuestas',
+  qstep_next_question: 'Siguiente pregunta',
+  qstep_skip_for_now: 'Omitir por ahora',
+  qstep_skip_explanation: 'Omitir por ahora. Esto quedará en blanco en su borrador — no se responde “No” — y puede que deba completarse antes de enviar la solicitud.',
+  qstep_skip_tooltip: 'Este campo quedará en blanco en su borrador. Puede que deba completarlo más adelante.',
+  qstep_progress_aria: 'Progreso de la solicitud',
+
+  // ── questionnaire-step.tsx: counted and numbered strings ──────────────────
+  qstep_questions_left_one: 'Queda {count} pregunta',
+  qstep_questions_left_other: 'Quedan {count} preguntas',
+  qstep_entry_number: 'Entrada {number}',
+
 } as const;
 
 export default es;

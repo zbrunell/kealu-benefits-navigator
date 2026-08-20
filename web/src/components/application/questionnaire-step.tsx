@@ -423,6 +423,8 @@ function TriStateControl({
   value: boolean | undefined;
   onAnswer: (answer: boolean) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="mt-3 flex items-center gap-2">
       {[
@@ -445,7 +447,7 @@ function TriStateControl({
       ))}
 
       {value === undefined && (
-        <span className="text-xs text-slate-500">Not answered yet</span>
+        <span className="text-xs text-slate-500">{t("qstep_not_answered_yet")}</span>
       )}
     </div>
   );
@@ -470,11 +472,13 @@ function RecordEditor({
   onRemove: () => void;
   index: number;
 }) {
+  const { t, tv } = useTranslation();
+
   return (
     <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-slate-800">
-          {memberName ? memberName : `Entry ${index + 1}`}
+          {memberName ? memberName : tv("qstep_entry_number", { number: index + 1 })}
         </p>
         <button
           type="button"
@@ -505,7 +509,7 @@ function RecordEditor({
                     }
                     className={INPUT_CLASS}
                   >
-                    <option value="">Not answered</option>
+                    <option value="">{t("qstep_not_answered_option")}</option>
                     {options.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
@@ -625,7 +629,7 @@ export default function QuestionnaireStep({
    * trail, and only when the navigator reports `atStart` does Back leave the
    * step via `onBack()`.
    */
-  const { t, tq } = useTranslation();
+  const { t, tq, tn } = useTranslation();
 
   const [flow, setFlow] = useState<QuestionFlowState>(() => startFlow(application));
 
@@ -777,11 +781,11 @@ export default function QuestionnaireStep({
             className="mt-3 rounded-lg border border-green-300 bg-green-50 p-4"
             data-testid="member-picker"
           >
-            <p className="text-sm font-medium text-green-900">Who is this for?</p>
+            <p className="text-sm font-medium text-green-900">{t("qstep_who_is_this_for")}</p>
 
             {choices.length === 0 ? (
               <p className="mt-2 text-sm text-green-800">
-                Everyone in your household already has an entry here.
+                {t("qstep_everyone_has_entry")}
               </p>
             ) : (
               <div className="mt-2 flex flex-wrap gap-2">
@@ -813,7 +817,7 @@ export default function QuestionnaireStep({
             disabled={isPersonScoped(current.path) && choices.length === 0}
             className="mt-3 rounded-lg border border-green-700 px-3 py-1.5 text-sm font-medium text-green-800 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Add entry
+            {t("qstep_add_entry")}
           </button>
         )}
       </div>
@@ -919,10 +923,8 @@ export default function QuestionnaireStep({
           <div className="flex items-center justify-between text-xs font-medium text-slate-500">
             <span data-testid="questionnaire-progress-label">
               {plan.outstanding.length === 0
-                ? "All questions answered"
-                : `${plan.outstanding.length} question${
-                    plan.outstanding.length === 1 ? "" : "s"
-                  } left`}
+                ? t("questionnaire_all_answered")
+                : tn("qstep_questions_left", plan.outstanding.length)}
             </span>
             <span className="tabular-nums">{percent}%</span>
           </div>
@@ -934,7 +936,7 @@ export default function QuestionnaireStep({
               aria-valuenow={percent}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Application completion"
+              aria-label={t("qstep_progress_aria")}
             />
           </div>
         </div>
@@ -958,7 +960,7 @@ export default function QuestionnaireStep({
             data-testid="active-appendices"
           >
             <p className="text-sm font-semibold text-blue-900">
-              Extra pages your answers added
+              {t("qstep_extra_pages")}
             </p>
             <ul className="mt-2 space-y-1 text-sm text-blue-900">
               {appendices.map((appendix) => (
@@ -987,7 +989,7 @@ export default function QuestionnaireStep({
               onClick={() => setFlow(resync(application, { ...flow, index: flow.index + 1 }))}
               className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
             >
-              Next question
+              {t("qstep_next_question")}
             </button>
           )}
 
@@ -995,11 +997,11 @@ export default function QuestionnaireStep({
             <button
               type="button"
               onClick={skipQuestion}
-              title="This field stays blank in your draft. You may need to complete it later."
+              title={t("qstep_skip_tooltip")}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
               data-testid="question-skip"
             >
-              Skip for now
+              {t("qstep_skip_for_now")}
             </button>
           )}
 
@@ -1016,8 +1018,7 @@ export default function QuestionnaireStep({
               className="w-full text-xs text-slate-500"
               data-testid="skip-explanation"
             >
-              Skip for now. This will stay blank in your draft — it is not
-              answered “No” — and may need to be completed before submission.
+              {t("qstep_skip_explanation")}
             </p>
           )}
         </div>

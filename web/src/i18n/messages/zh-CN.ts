@@ -295,6 +295,24 @@ const zhCN: Messages = {
   questionnaire_all_answered: '我们需要的所有问题都已回答',
 
   lang_zh_CN: '简体中文',
+  // ── questionnaire-step.tsx (localization pass) ────────────────────────────
+  qstep_not_answered_yet: '尚未回答',
+  qstep_not_answered_option: '未回答',
+  qstep_who_is_this_for: '这是为谁填写的？',
+  qstep_everyone_has_entry: '您家庭中的每个人在此处都已有一条记录。',
+  qstep_add_entry: '添加条目',
+  qstep_extra_pages: '您的回答新增的附加页',
+  qstep_next_question: '下一个问题',
+  qstep_skip_for_now: '暂时跳过',
+  qstep_skip_explanation: '暂时跳过。此项在您的草稿中将保持空白——它并不等于回答“否”——并且可能需要在提交前填写完成。',
+  qstep_skip_tooltip: '此栏位在您的草稿中将保持空白。您可能需要稍后填写。',
+  qstep_progress_aria: '申请填写进度',
+
+  // ── questionnaire-step.tsx: counted and numbered strings ──────────────────
+  qstep_questions_left_one: '还剩 {count} 个问题',
+  qstep_questions_left_other: '还剩 {count} 个问题',
+  qstep_entry_number: '第 {number} 条',
+
 } as const;
 
 export default zhCN;
