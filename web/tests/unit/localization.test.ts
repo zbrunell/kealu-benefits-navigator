@@ -63,6 +63,15 @@ const IDENTICAL_BY_DESIGN = new Set([
    * does not own.
    */
   'instr_overflow_passthrough',
+  /*
+   * Spanish spells these the same as English. "No" is the Spanish word for no;
+   * "Irregular" and "Gas" are Spanish words too. Inventing a different word to
+   * satisfy this test would make the Spanish worse, which is the opposite of
+   * what the test is for.
+   */
+  'ui_no',
+  'qopt_irregular',
+  'qopt_gas',
 ]);
 
 // ── Catalog completeness ─────────────────────────────────────────────────────

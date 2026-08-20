@@ -578,7 +578,7 @@ export default function ApplicantStep({
                       : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   }
                 >
-                  Yes
+                  {t("ui_yes")}
                 </button>
 
                 <button
@@ -596,7 +596,7 @@ export default function ApplicantStep({
                       : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   }
                 >
-                  No
+                  {t("ui_no")}
                 </button>
               </div>
             </fieldset>
@@ -622,7 +622,7 @@ export default function ApplicantStep({
                       : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   }
                 >
-                  Yes
+                  {t("ui_yes")}
                 </button>
 
                 <button
@@ -640,7 +640,7 @@ export default function ApplicantStep({
                       : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   }
                 >
-                  No
+                  {t("ui_no")}
                 </button>
               </div>
             </fieldset>
@@ -665,7 +665,7 @@ export default function ApplicantStep({
                       : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   }
                 >
-                  Yes
+                  {t("ui_yes")}
                 </button>
 
                 <button
@@ -682,7 +682,7 @@ export default function ApplicantStep({
                       : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   }
                 >
-                  No
+                  {t("ui_no")}
                 </button>
               </div>
             </fieldset>

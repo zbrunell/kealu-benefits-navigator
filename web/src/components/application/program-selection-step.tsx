@@ -17,11 +17,15 @@ const PROGRAM_LABELS: Record<Saws2PlusProgram, string> = {
   calworks: "CalWORKs",
 };
 
-const STATUS_LABELS = {
-  likely_eligible: "Likely eligible",
-  possibly_eligible: "Possibly eligible",
-  unlikely_eligible: "Unlikely eligible",
-  insufficient_information: "More information needed",
+/**
+ * Catalog keys for the screening outcome. report-view resolves the same keys —
+ * one meaning, one place, rather than a copy of this map in each component.
+ */
+const STATUS_LABEL_KEYS = {
+  likely_eligible: "status_likely_eligible",
+  possibly_eligible: "status_possibly_eligible",
+  unlikely_eligible: "status_unlikely_eligible",
+  insufficient_information: "status_insufficient_information",
 } as const;
 
 interface ProgramSelectionStepProps {
@@ -48,7 +52,7 @@ export default function ProgramSelectionStep({
   onBack,
   onContinue,
 }: ProgramSelectionStepProps) {
-  const { t } = useTranslation();
+  const { t, tn } = useTranslation();
 
   const selectedCount =
     Object.values(selectedPrograms).filter(Boolean).length +
@@ -95,13 +99,13 @@ export default function ProgramSelectionStep({
 
                         {program.recommendedToApply && (
                           <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                            Recommended
+                            {t("ui_recommended")}
                           </span>
                         )}
                       </div>
 
                       <span className="text-xs font-medium text-slate-500">
-                        {STATUS_LABELS[program.status]}
+                        {t(STATUS_LABEL_KEYS[program.status])}
                       </span>
                     </div>
 
@@ -134,10 +138,8 @@ export default function ProgramSelectionStep({
         <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
           <p className="text-sm text-slate-700">
             {selectedCount === 0
-              ? "No programs selected."
-              : `${selectedCount} ${
-                  selectedCount === 1 ? "program" : "programs"
-                } selected.`}
+              ? t("prog_none_selected")
+              : tn("prog_selected", selectedCount)}
           </p>
         </div>
 

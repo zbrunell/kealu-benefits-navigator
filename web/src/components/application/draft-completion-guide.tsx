@@ -78,7 +78,7 @@ export default function DraftCompletionGuide({
   includesHealthCoverage,
   questionsToCompleteByHand,
 }: DraftCompletionGuideProps) {
-  const { t } = useTranslation();
+  const { t, tv } = useTranslation();
 
   const countyLabel = county.trim();
 
@@ -115,11 +115,13 @@ export default function DraftCompletionGuide({
           </a>
         </div>
 
+        {/*
+          One sentence with the reference interpolated, rather than prose
+          wrapped around a <span>: a translator needs to move the reference to
+          wherever their language puts it.
+        */}
         <p className="mt-3 text-xs text-green-800">
-          Draft reference{" "}
-          <span className="font-mono font-semibold">{draftReference}</span>. The
-          same reference is printed on the guide below, so you can tell which
-          guide goes with which draft if you generate more than one.
+          {tv("dcg_draft_reference", { reference: draftReference })}
         </p>
       </div>
 
@@ -165,8 +167,7 @@ export default function DraftCompletionGuide({
         </div>
 
         <p className="mt-3 text-xs text-slate-600">
-          Open the guide and use your browser&rsquo;s Print command to print it
-          or save it as a PDF. It is laid out for US Letter paper.
+          {t("dcg_print_note")}
         </p>
       </div>
 
@@ -206,7 +207,9 @@ export default function DraftCompletionGuide({
             data-testid="questions-to-complete-by-hand"
           >
             <p className="text-sm font-medium text-amber-900">
-              Printed questions left blank ({questionsToCompleteByHand.length})
+              {tv("dcg_questions_blank", {
+                count: questionsToCompleteByHand.length,
+              })}
             </p>
 
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-800">
@@ -229,15 +232,19 @@ export default function DraftCompletionGuide({
 
         <p className="mt-2 text-sm text-blue-900">
           {countyLabel
-            ? `Your ZIP code is in ${countyLabel} County, so ${countyLabel} County processes your application.`
-            : "We could not determine your county from your ZIP code, so check which county serves your address before you submit."}
+            ? tv("dcg_county_known", { county: countyLabel })
+            : t("dcg_county_unknown")}
         </p>
 
         <ul className="mt-3 space-y-2 text-sm text-blue-900">
+          {/*
+            The sentence and the link are separate: splitting prose around an
+            anchor forces a translator to keep English word order, so the link
+            follows the finished sentence instead of sitting inside it.
+          */}
           <li>
-            <span className="font-medium">Online (fastest): </span>
-            submit through BenefitsCal, California&rsquo;s statewide portal for
-            CalFresh, CalWORKs, and Medi-Cal —{" "}
+            <span className="font-medium">{t("dcg_online_label")} </span>
+            {t("dcg_online_body")}{" "}
             <a
               href={BENEFITSCAL_URL}
               target="_blank"
@@ -246,22 +253,19 @@ export default function DraftCompletionGuide({
             >
               benefitscal.com
             </a>
-            . You can upload your signed pages and documents there.
           </li>
 
           <li>
-            <span className="font-medium">
-              In person, by mail, or by fax:{" "}
-            </span>
+            <span className="font-medium">{t("dcg_inperson_label")} </span>
             {countyLabel
-              ? `send or take the signed application to a ${countyLabel} County social services office. Find that office's current address, mailing address, and fax number on BenefitsCal or on the county's official website — we do not guess contact details, because sending an application to the wrong address delays it.`
-              : "send or take the signed application to your county's social services office. Look up the correct office through BenefitsCal after entering your address."}
+              ? tv("dcg_inperson_known", { county: countyLabel })
+              : t("dcg_inperson_unknown")}
           </li>
 
           {includesHealthCoverage && (
             <li>
-              <span className="font-medium">Health coverage only: </span>
-              Medi-Cal and other health coverage can also be applied for through{" "}
+              <span className="font-medium">{t("dcg_health_label")} </span>
+              {t("dcg_health_body")}{" "}
               <a
                 href={COVERED_CA_URL}
                 target="_blank"
@@ -270,14 +274,12 @@ export default function DraftCompletionGuide({
               >
                 coveredca.com
               </a>
-              .
             </li>
           )}
         </ul>
 
         <p className="mt-3 text-xs text-blue-800">
-          {t("dcg_submit_asap")} For CalFresh, your benefits start from the date the county
-          receives your application, even if some documents arrive later.
+          {t("dcg_submit_asap")} {t("dcg_calfresh_note")}
         </p>
       </div>
     </div>

@@ -115,3 +115,92 @@ test.describe('Language switcher (KEA-1 / KEA-7)', () => {
     await expect(page.locator('h1')).toContainText('Benefits Navigator');
   });
 });
+
+/**
+ * Switching language *after* answers exist.
+ *
+ * The unit suite proves the pure separation — locale changes wording, never
+ * canonical state. This proves it in a real browser, where the failure would
+ * actually be visible: a switch that re-mounts the tree and loses what someone
+ * has already typed.
+ */
+test.describe('language switch mid-flow keeps answers', () => {
+  test('an answered intake question survives switching to Spanish', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    const input = page.locator('[data-testid="chat-input"]');
+    await expect(input).toBeVisible();
+
+    // Answer the first intake question.
+    await input.fill('90001');
+    await page.locator('[data-testid="chat-send"]').click();
+
+    // The answer is now part of the conversation.
+    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
+      '90001',
+    );
+
+    const englishPrompt = await page
+      .locator('[data-testid="chat-messages"]')
+      .innerText();
+
+    // Switch language with an answer already given.
+    await page.locator('header select').selectOption('es');
+
+    // The answer is still there — not reset, not re-asked from scratch.
+    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
+      '90001',
+    );
+
+    // And the interface really did change language.
+    const spanishPrompt = await page
+      .locator('[data-testid="chat-messages"]')
+      .innerText();
+
+    expect(spanishPrompt).not.toBe(englishPrompt);
+  });
+
+  test('switching to Simplified Chinese keeps the answer and changes the UI', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    const input = page.locator('[data-testid="chat-input"]');
+    await input.fill('90001');
+    await page.locator('[data-testid="chat-send"]').click();
+    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
+      '90001',
+    );
+
+    await page.locator('header select').selectOption('zh-CN');
+
+    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
+      '90001',
+    );
+
+    // Simplified Chinese characters are on screen somewhere in the shell.
+    await expect(page.locator('body')).toContainText(/[一-鿿]/);
+  });
+
+  test('the locale survives a reload with the answer intact', async ({ page }) => {
+    await page.goto('/');
+
+    const input = page.locator('[data-testid="chat-input"]');
+    await input.fill('90001');
+    await page.locator('[data-testid="chat-send"]').click();
+    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
+      '90001',
+    );
+
+    await page.locator('header select').selectOption('es');
+    await page.reload();
+
+    // Both the choice and the session answer come back.
+    await expect(page.locator('header select')).toHaveValue('es');
+    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
+      '90001',
+    );
+  });
+});

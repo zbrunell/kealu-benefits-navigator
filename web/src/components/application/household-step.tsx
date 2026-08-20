@@ -93,6 +93,8 @@ function YesNoQuestion({
   value: boolean | undefined;
   onChange: (value: boolean) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <fieldset className="rounded-lg border border-slate-200 bg-white p-3">
       <legend className="px-1 text-sm font-medium text-slate-800">
@@ -109,7 +111,7 @@ function YesNoQuestion({
               : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           }
         >
-          Yes
+          {t("ui_yes")}
         </button>
 
         <button
@@ -121,7 +123,7 @@ function YesNoQuestion({
               : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           }
         >
-          No
+          {t("ui_no")}
         </button>
       </div>
     </fieldset>
@@ -188,15 +190,19 @@ function ProgramCheckboxes({
 }
 
 /** How each relationship is written on screen. */
-const RELATIONSHIP_LABELS: Record<HouseholdRelationship, string> = {
-  spouse: "Spouse",
-  child: "Child",
-  parent: "Parent",
-  sibling: "Sibling",
-  grandparent: "Grandparent",
-  grandchild: "Grandchild",
-  unrelated: "Unrelated household member",
-  other: "Other",
+/**
+ * Catalog keys, not prose: this map is rendered into a <select> the applicant
+ * reads, so the words have to come from their language's catalog.
+ */
+const RELATIONSHIP_LABEL_KEYS: Record<HouseholdRelationship, string> = {
+  spouse: "rel_spouse",
+  child: "rel_child",
+  parent: "rel_parent",
+  sibling: "rel_sibling",
+  grandparent: "rel_grandparent",
+  grandchild: "rel_grandchild",
+  unrelated: "rel_unrelated",
+  other: "rel_other",
 };
 
 export default function HouseholdStep({
@@ -296,7 +302,7 @@ export default function HouseholdStep({
                     onClick={() => onRemove(member.id)}
                     className="text-sm font-medium text-red-700 hover:text-red-900"
                   >
-                    Remove
+                    {t("ui_remove")}
                   </button>
                 </div>
 
@@ -412,7 +418,7 @@ export default function HouseholdStep({
                         member.dateOfBirth,
                       ).map((relationship) => (
                         <option key={relationship} value={relationship}>
-                          {RELATIONSHIP_LABELS[relationship]}
+                          {t(RELATIONSHIP_LABEL_KEYS[relationship])}
                         </option>
                       ))}
                     </select>
@@ -539,7 +545,7 @@ export default function HouseholdStep({
                       />
 
                       <YesNoQuestion
-                        label="Full-time student?"
+                        label={t("hh_q_full_time_student")}
                         value={adultDetails.fullTimeStudent}
                         onChange={(value) =>
                           onAdultDetailsChange(
@@ -551,7 +557,7 @@ export default function HouseholdStep({
                       />
 
                       <YesNoQuestion
-                        label="Disabled?"
+                        label={t("hh_q_disabled")}
                         value={adultDetails.disabled}
                         onChange={(value) =>
                           onAdultDetailsChange(
@@ -651,7 +657,7 @@ export default function HouseholdStep({
                       />
 
                       <YesNoQuestion
-                        label="Full-time student?"
+                        label={t("hh_q_full_time_student")}
                         value={childDetails.fullTimeStudent}
                         onChange={(value) =>
                           onChildDetailsChange(
@@ -663,7 +669,7 @@ export default function HouseholdStep({
                       />
 
                       <YesNoQuestion
-                        label="Disabled?"
+                        label={t("hh_q_disabled")}
                         value={childDetails.disabled}
                         onChange={(value) =>
                           onChildDetailsChange(
@@ -675,7 +681,7 @@ export default function HouseholdStep({
                       />
 
                       <YesNoQuestion
-                        label="Shots/immunizations up to date?"
+                        label={t("hh_q_immunizations")}
                         value={childDetails.immunizationsUpToDate}
                         onChange={(value) =>
                           onChildDetailsChange(
@@ -784,7 +790,7 @@ export default function HouseholdStep({
             disabled={!membersValid}
             className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Continue
+            {t("ui_continue")}
           </button>
         </div>
       </div>

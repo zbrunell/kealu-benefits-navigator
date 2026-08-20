@@ -18,14 +18,26 @@ interface MarketplacePlansProps {
 type MarketplaceState =
   | { status: 'loading' }
   | { status: 'success'; result: MarketplaceSearchResult }
-  | { status: 'error'; message: string };
+  /**
+   * `detail` is the API's own diagnostic when it sent one, which is not
+   * translated because it does not come from our catalog. The applicant-facing
+   * line is resolved at render instead, so it follows a language switch made
+   * after the error.
+   */
+  | { status: 'error'; detail: string | null };
 
-function formatCurrency(value: number | null): string {
+function formatCurrency(
+  value: number | null,
+  notProvided: string,
+  locale: string,
+): string {
   if (value === null) {
-    return 'Not provided';
+    return notProvided;
   }
 
-  return new Intl.NumberFormat('en-US', {
+  // The amount is a US dollar premium either way; only the grouping and the
+  // symbol's position follow the reader's locale.
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 2,
@@ -33,7 +45,9 @@ function formatCurrency(value: number | null): string {
 }
 
 function PlanCard({ plan }: { plan: MarketplacePlanSummary }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+
+  const notProvided = t("mkt_not_provided");
 
   const displayedPremium =
     plan.premiumAfterCredit ?? plan.premiumBeforeCredit;
@@ -62,14 +76,14 @@ function PlanCard({ plan }: { plan: MarketplacePlanSummary }) {
             {t("mkt_premium")}
           </dt>
           <dd className="font-medium">
-            {formatCurrency(displayedPremium)}
+            {formatCurrency(displayedPremium, notProvided, locale)}
           </dd>
         </div>
 
         <div>
           <dt className="text-sm text-gray-600">{t("mkt_deductible")}</dt>
           <dd className="font-medium">
-            {formatCurrency(plan.deductible)}
+            {formatCurrency(plan.deductible, notProvided, locale)}
           </dd>
         </div>
 
@@ -78,7 +92,7 @@ function PlanCard({ plan }: { plan: MarketplacePlanSummary }) {
             {t("mkt_max_oop")}
           </dt>
           <dd className="font-medium">
-            {formatCurrency(plan.maximumOutOfPocket)}
+            {formatCurrency(plan.maximumOutOfPocket, notProvided, locale)}
           </dd>
         </div>
       </dl>
@@ -113,7 +127,7 @@ function PlanCard({ plan }: { plan: MarketplacePlanSummary }) {
 }
 
 export default function MarketplacePlans({ runId }: MarketplacePlansProps) {
-  const { t } = useTranslation();
+  const { t, tv } = useTranslation();
 
   const [marketplace, setMarketplace] =
     useState<MarketplaceState>({ status: 'loading' });
@@ -143,11 +157,7 @@ export default function MarketplacePlans({ runId }: MarketplacePlansProps) {
           | { error?: string };
 
         if (!response.ok) {
-          throw new Error(
-            'error' in body && body.error
-              ? body.error
-              : 'Marketplace plans could not be loaded.',
-          );
+          throw new Error('error' in body && body.error ? body.error : '');
         }
 
         setMarketplace({
@@ -161,10 +171,8 @@ export default function MarketplacePlans({ runId }: MarketplacePlansProps) {
 
         setMarketplace({
           status: 'error',
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Marketplace plans could not be loaded.',
+          detail:
+            error instanceof Error && error.message ? error.message : null,
         });
       }
     }
@@ -201,17 +209,21 @@ export default function MarketplacePlans({ runId }: MarketplacePlansProps) {
           <p className="font-medium">
             {t("mkt_unavailable")}
           </p>
-          <p className="mt-1 text-sm">{marketplace.message}</p>
+          <p className="mt-1 text-sm">
+            {marketplace.detail ?? t("mkt_load_failed")}
+          </p>
         </div>
       )}
 
       {marketplace.status === 'success' && (
         <>
           <p className="mt-4 text-sm">
-            Showing {marketplace.result.plans.length} of{' '}
-            {marketplace.result.total} plans for{' '}
-            {marketplace.result.county.name},{' '}
-            {marketplace.result.county.state}.
+            {tv("mkt_showing", {
+              shown: marketplace.result.plans.length,
+              total: marketplace.result.total,
+              county: marketplace.result.county.name,
+              state: marketplace.result.county.state,
+            })}
           </p>
 
           {marketplace.result.plans.length === 0 ? (

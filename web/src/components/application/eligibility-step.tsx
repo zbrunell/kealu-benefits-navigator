@@ -52,6 +52,8 @@ function YesNoQuestion({
   value: boolean | undefined;
   onChange: (value: boolean) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <fieldset className="rounded-lg border border-slate-200 bg-slate-50 p-4">
       <legend className="px-1 text-sm font-medium text-slate-900">
@@ -68,7 +70,7 @@ function YesNoQuestion({
               : "rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
           }
         >
-          Yes
+          {t("ui_yes")}
         </button>
 
         <button
@@ -80,7 +82,7 @@ function YesNoQuestion({
               : "rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
           }
         >
-          No
+          {t("ui_no")}
         </button>
       </div>
     </fieldset>
@@ -142,7 +144,7 @@ export default function EligibilityStep({
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <YesNoQuestion
-              label="Do you have a disability and need help applying?"
+              label={t("elig_q_disability_help")}
               value={preferences.needsDisabilityApplicationHelp}
               onChange={(value) =>
                 onPreferenceChange("needsDisabilityApplicationHelp", value)
@@ -150,13 +152,13 @@ export default function EligibilityStep({
             />
 
             <YesNoQuestion
-              label="Are you currently homeless?"
+              label={t("elig_q_homeless")}
               value={preferences.homeless}
               onChange={(value) => onPreferenceChange("homeless", value)}
             />
 
             <YesNoQuestion
-              label="Do you want information about this application by email?"
+              label={t("elig_q_email_app_info")}
               value={preferences.emailApplicationInformation}
               onChange={(value) =>
                 onPreferenceChange("emailApplicationInformation", value)
@@ -164,7 +166,7 @@ export default function EligibilityStep({
             />
 
             <YesNoQuestion
-              label="Do you want messages about your case by email?"
+              label={t("elig_q_email_case_messages")}
               value={preferences.emailCaseMessages}
               onChange={(value) =>
                 onPreferenceChange("emailCaseMessages", value)
@@ -172,7 +174,7 @@ export default function EligibilityStep({
             />
 
             <YesNoQuestion
-              label="Are you deaf or hard of hearing?"
+              label={t("elig_q_deaf")}
               value={preferences.deafOrHardOfHearing}
               onChange={(value) =>
                 onPreferenceChange("deafOrHardOfHearing", value)
@@ -192,7 +194,7 @@ export default function EligibilityStep({
 
           <div className="mt-3 space-y-3">
             <YesNoQuestion
-              label="Is your household's gross income under $150 and cash/checking/savings $100 or less?"
+              label={t("elig_q_gross_under_150")}
               value={
                 expeditedService.grossIncomeUnder150AndResourcesUnder100
               }
@@ -205,7 +207,7 @@ export default function EligibilityStep({
             />
 
             <YesNoQuestion
-              label="Are your household's combined income and liquid resources less than rent/mortgage and utilities?"
+              label={t("elig_q_income_under_housing")}
               value={
                 expeditedService.incomeAndResourcesLessThanHousingCosts
               }
@@ -218,7 +220,7 @@ export default function EligibilityStep({
             />
 
             <YesNoQuestion
-              label="Is your household a migrant or seasonal farm worker household with $100 or less in liquid resources?"
+              label={t("elig_q_migrant_farm_worker")}
               value={expeditedService.migrantOrSeasonalFarmWorker}
               onChange={(value) =>
                 onExpeditedChange("migrantOrSeasonalFarmWorker", value)
@@ -226,7 +228,7 @@ export default function EligibilityStep({
             />
 
             <YesNoQuestion
-              label="Do you have an eviction notice or notice to pay rent or leave?"
+              label={t("elig_q_eviction_notice")}
               value={expeditedService.evictionNotice}
               onChange={(value) =>
                 onExpeditedChange("evictionNotice", value)
@@ -234,7 +236,7 @@ export default function EligibilityStep({
             />
 
             <YesNoQuestion
-              label="Have your utilities been shut off, or do you have a shut-off notice?"
+              label={t("elig_q_utilities_shutoff")}
               value={expeditedService.utilitiesShutOffOrNotice}
               onChange={(value) =>
                 onExpeditedChange("utilitiesShutOffOrNotice", value)
@@ -242,7 +244,7 @@ export default function EligibilityStep({
             />
 
             <YesNoQuestion
-              label="Will your food run out within three days?"
+              label={t("elig_q_food_three_days")}
               value={expeditedService.foodRunsOutWithinThreeDays}
               onChange={(value) =>
                 onExpeditedChange("foodRunsOutWithinThreeDays", value)
@@ -250,7 +252,7 @@ export default function EligibilityStep({
             />
 
             <YesNoQuestion
-              label="Do you need essential clothing, such as diapers or cold-weather clothing?"
+              label={t("elig_q_essential_clothing")}
               value={expeditedService.needsEssentialClothing}
               onChange={(value) =>
                 onExpeditedChange("needsEssentialClothing", value)
@@ -258,7 +260,7 @@ export default function EligibilityStep({
             />
 
             <YesNoQuestion
-              label="Do you need transportation to get food, clothing, medical care, or another emergency item?"
+              label={t("elig_q_transportation")}
               value={
                 expeditedService.needsTransportationForEmergencyNeeds
               }
@@ -279,7 +281,7 @@ export default function EligibilityStep({
 
           <div className="mt-3 space-y-3">
             <YesNoQuestion
-              label="Is anyone in the household pregnant?"
+              label={t("elig_q_pregnant")}
               value={pregnancy.anyonePregnant}
               onChange={(value) =>
                 onPregnancyChange("anyonePregnant", value)
@@ -288,7 +290,7 @@ export default function EligibilityStep({
 
             {pregnancy.anyonePregnant === true && (
               <YesNoQuestion
-                label="Did the pregnant person receive a Presumptive Eligibility card?"
+                label={t("elig_q_pe_card")}
                 value={pregnancy.presumptiveEligibilityCard}
                 onChange={(value) =>
                   onPregnancyChange("presumptiveEligibilityCard", value)
@@ -297,7 +299,7 @@ export default function EligibilityStep({
             )}
 
             <YesNoQuestion
-              label="Does anyone in your household have a personal emergency?"
+              label={t("elig_q_personal_emergency")}
               value={personalEmergency.hasEmergency}
               onChange={(value) =>
                 onEmergencyChange("hasEmergency", value)
@@ -313,14 +315,14 @@ export default function EligibilityStep({
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   {(
                     [
-                      ["pregnancy", "Pregnancy"],
-                      ["immediateMedicalNeed", "Immediate medical need"],
-                      ["childAbuse", "Child abuse"],
-                      ["domesticAbuse", "Domestic abuse"],
-                      ["elderAbuse", "Elder abuse"],
-                      ["otherEmergency", "Other health or safety emergency"],
+                      ["pregnancy", "elig_emg_pregnancy"],
+                      ["immediateMedicalNeed", "elig_emg_medical"],
+                      ["childAbuse", "elig_emg_child_abuse"],
+                      ["domesticAbuse", "elig_emg_domestic_abuse"],
+                      ["elderAbuse", "elig_emg_elder_abuse"],
+                      ["otherEmergency", "elig_emg_other"],
                     ] as const
-                  ).map(([field, label]) => (
+                  ).map(([field, labelKey]) => (
                     <label key={field} className="flex items-start gap-3">
                       <input
                         type="checkbox"
@@ -331,7 +333,9 @@ export default function EligibilityStep({
                         className="mt-1 h-4 w-4 rounded border-slate-300 text-green-700 focus:ring-green-600"
                       />
 
-                      <span className="text-sm text-slate-800">{label}</span>
+                      <span className="text-sm text-slate-800">
+                        {t(labelKey)}
+                      </span>
                     </label>
                   ))}
                 </div>

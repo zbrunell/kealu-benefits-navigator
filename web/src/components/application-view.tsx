@@ -527,13 +527,13 @@ export default function ApplicationView({
          */
         if (result.fieldProblems?.length) {
           throw new Error(
-            `${result.error ?? "Some answers need correcting."} ` +
+            `${result.error ?? t("av_answers_need_correcting")} ` +
               result.fieldProblems.map((problem) => t(problem.messageKey)).join(" "),
           );
         }
 
         throw new Error(
-          result.error ?? "Failed to generate application draft.",
+          result.error ?? t("av_draft_failed"),
         );
       }
 
@@ -544,7 +544,7 @@ export default function ApplicationView({
       setGenerationError(
         error instanceof Error
           ? error.message
-          : "Failed to generate application draft.",
+          : t("av_draft_failed"),
       );
     } finally {
       generationInFlight.current = false;
@@ -658,7 +658,7 @@ export default function ApplicationView({
                 disabled={isGenerating}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isGenerating ? "Generating…" : "Generate application"}
+                {isGenerating ? "Generating…" : t("av_generate_application")}
               </button>
             </div>
 

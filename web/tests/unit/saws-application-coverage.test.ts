@@ -349,7 +349,16 @@ describe('post-generation completion guide', () => {
   });
 
   it('explains how to find the county office when the county is unknown', () => {
-    expect(guide).toContain('could not determine your county');
+    // Guessing an address is worse than saying we do not know one, so the
+    // unresolved-county branch has to exist and has to say so.
+    expect(guide).toContain('dcg_county_unknown');
+    expect(messages.en.dcg_county_unknown).toMatch(
+      /could not determine your county/i,
+    );
+
+    // And the resolved branch names the county rather than concatenating it.
+    expect(guide).toContain('dcg_county_known');
+    expect(messages.en.dcg_county_known).toMatch(/\{county\}/);
   });
 
   it('offers the printable guide beside the draft', () => {
@@ -383,14 +392,21 @@ describe('post-generation completion guide', () => {
   });
 
   it('tells the user how to print the guide', () => {
-    expect(guide).toMatch(/Print command/i);
-    expect(guide).toMatch(/US Letter/i);
+    // The component names the string; the catalog holds the words. Asserting
+    // both keeps the behaviour covered without pinning the English into the
+    // component, where it could no longer be translated.
+    expect(guide).toContain('dcg_print_note');
+    expect(messages.en.dcg_print_note).toMatch(/Print command/i);
+    expect(messages.en.dcg_print_note).toMatch(/US Letter/i);
   });
 
   it('shows the reference that pairs a guide with its draft', () => {
-    expect(guide).toContain('{draftReference}');
-    // JSX wraps prose across lines, so match on collapsed whitespace.
-    expect(guide.replace(/\s+/g, ' ')).toMatch(
+    // The reference is interpolated into one sentence rather than wrapped in
+    // prose, so a translator can put it where their language needs it.
+    expect(guide).toContain('dcg_draft_reference');
+    expect(guide).toContain('reference: draftReference');
+    expect(messages.en.dcg_draft_reference).toMatch(/\{reference\}/);
+    expect(messages.en.dcg_draft_reference).toMatch(
       /which guide goes with which draft/i,
     );
   });

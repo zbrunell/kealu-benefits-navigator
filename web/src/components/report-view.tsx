@@ -96,11 +96,15 @@ const PROGRAM_LABELS = {
   calworks: "CalWORKs",
 } as const;
 
-const STATUS_LABELS = {
-  likely_eligible: "Likely eligible",
-  possibly_eligible: "Possibly eligible",
-  unlikely_eligible: "Unlikely eligible",
-  insufficient_information: "More information needed",
+/**
+ * Catalog keys for the screening outcome — the same keys
+ * program-selection-step resolves, so the two views cannot drift apart.
+ */
+const STATUS_LABEL_KEYS = {
+  likely_eligible: "status_likely_eligible",
+  possibly_eligible: "status_possibly_eligible",
+  unlikely_eligible: "status_unlikely_eligible",
+  insufficient_information: "status_insufficient_information",
 } as const;
 
 const STATUS_CLASSES = {
@@ -132,7 +136,7 @@ export default function ReportView({
   onRetry,
   onStartApplication,
 }: ReportViewProps) {
-  const { t, tOr } = useTranslation();
+  const { t, tv, tn, tOr } = useTranslation();
   const [retryError, setRetryError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
 
@@ -174,9 +178,9 @@ export default function ReportView({
         onRetry(data.runId);
         return;
       }
-      setRetryError(data.error ?? "Unable to start a new run.");
+      setRetryError(data.error ?? t("report_start_failed"));
     } catch {
-      setRetryError("Unable to start a new run. Please refresh the page.");
+      setRetryError(t("report_refresh_failed"));
     } finally {
       setIsRetrying(false);
     }
@@ -253,14 +257,12 @@ export default function ReportView({
 
               <p className="mt-2 max-w-2xl text-sm text-green-900">
                 {t("report_action_plan_intro")}
-                recommendations using the completed eligibility and
-                evidence-verification phases.
               </p>
             </div>
 
             {sawsRecommendation.recommended && (
               <span className="w-fit rounded-full border border-green-300 bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
-                Recommended
+                {t("ui_recommended")}
               </span>
             )}
           </div>
@@ -279,7 +281,7 @@ export default function ReportView({
 
                     {program.recommendedToApply && (
                       <span className="rounded-full bg-green-700 px-2 py-0.5 text-xs font-medium text-white">
-                        Apply
+                        {t("ui_apply")}
                       </span>
                     )}
                   </div>
@@ -289,13 +291,13 @@ export default function ReportView({
                       STATUS_CLASSES[program.status]
                     }`}
                   >
-                    {STATUS_LABELS[program.status]}
+                    {t(STATUS_LABEL_KEYS[program.status])}
                   </span>
                 </div>
 
                 <div className="mt-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Why
+                    {t("ui_why")}
                   </p>
 
                   <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
@@ -320,7 +322,9 @@ export default function ReportView({
                 )}
 
                 <p className="mt-3 text-xs text-slate-500">
-                  Screening confidence: {Math.round(program.confidence * 100)}%
+                  {tv("report_screening_confidence", {
+                    percent: Math.round(program.confidence * 100),
+                  })}
                 </p>
               </article>
             ))}
@@ -337,10 +341,8 @@ export default function ReportView({
               className="mt-4 rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
             >
               {recommendedProgramCount > 0
-                ? `Continue with ${recommendedProgramCount} recommended ${
-                    recommendedProgramCount === 1 ? "program" : "programs"
-                  }`
-                : "Review SAWS 2 PLUS application"}
+                ? tn("report_continue_programs", recommendedProgramCount)
+                : t("report_review_saws")}
             </button>
           </div>
         </section>
@@ -349,7 +351,7 @@ export default function ReportView({
       {/* ── Footer actions ────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between pt-2">
         <p className="text-xs text-slate-400 font-mono truncate max-w-[50%]">
-          Run: {runId}
+          {tv("report_run_label", { runId })}
         </p>
         <button
           type="button"

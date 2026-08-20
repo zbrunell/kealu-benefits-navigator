@@ -245,92 +245,101 @@ const RECORD_FACTORIES: Record<string, (id: string, memberId: string) => Record<
   }),
 };
 
-/** Human labels for record fields; falls back to a de-camel-cased key. */
-const FIELD_LABELS: Record<string, string> = {
-  memberId: "Who is this for",
-  employerName: "Employer name",
-  startDate: "Start date",
-  endDate: "End date",
-  changeDate: "Date of change",
-  payFrequency: "How often paid",
-  employerAddress: "Employer address",
-  hourlyRate: "Hourly rate",
-  grossPerPeriod: "Gross pay per paycheck",
-  grossReceivedThisMonth: "Total gross received this month",
-  expectedToContinue: "Do you expect this income to continue",
-  expenseAmount: "Expense amount",
-  hoursPerWeek: "Hours per week",
-  businessName: "Business name",
-  businessType: "Type of business",
-  grossMonthly: "Gross monthly income",
-  netMonthly: "Net monthly income",
-  expenseMethod: "How you claim expenses",
-  amountMonthly: "Monthly amount",
-  reportedAmount: "Amount received",
-  reportedFrequency: "How often it is received",
-  estimatedMonthlyValue: "Estimated monthly value",
-  providedBy: "Provided by",
-  providerName: "Provider name",
-  forDependentAdult: "This care is for a dependent adult",
-  paidTo: "Paid to",
-  courtOrdered: "Court ordered",
-  planName: "Plan name",
-  policyHolderName: "Policy holder",
-  employerPhone: "Employer phone",
-  offersCoverage: "Employer offers coverage",
-  eligibleNowOrSoon: "Eligible now or within three months",
-  lowestCostPremium: "Lowest-cost employee premium",
-  institution: "Bank or institution",
-  balance: "Current balance",
-  usedFor: "Used for",
-  amountOwed: "Amount still owed",
-  estimatedValue: "Estimated value",
-  jobTitle: "Job title",
-  reasonForLeaving: "Reason for leaving",
-  hoursWorked: "Number of hours worked",
-  hoursWorkedFrequency: "Hours counted",
-  payAmount: "Pay at this job",
-  payRateFrequency: "How often that pay is earned",
-  selfEmployed: "This was your own business",
-  countyHelpedGetJob: "The County helped you get this job",
-  schoolName: "School name",
-  halfTimeOrMore: "Enrolled at least half time",
-  relationshipToService: "Relationship to the service member",
-  branch: "Branch of service",
-  parentName: "Parent's name",
-  lastKnownLocation: "Last known city and state",
-  agencyName: "Agency name",
-  monthlyPayment: "Monthly payment",
-  organization: "Organization",
-  forCalFresh: "May act for CalFresh",
-  forHealthCoverage: "May act for health coverage",
+/**
+ * Catalog keys for record-field labels.
+ *
+ * The record keys themselves stay English identifiers — they are part of the
+ * stored shape — while the words the applicant reads come from the catalog.
+ */
+const FIELD_LABEL_KEYS: Record<string, string> = {
+  memberId: "qfield_memberId",
+  employerName: "qfield_employerName",
+  startDate: "qfield_startDate",
+  endDate: "qfield_endDate",
+  changeDate: "qfield_changeDate",
+  payFrequency: "qfield_payFrequency",
+  employerAddress: "qfield_employerAddress",
+  hourlyRate: "qfield_hourlyRate",
+  grossPerPeriod: "qfield_grossPerPeriod",
+  grossReceivedThisMonth: "qfield_grossReceivedThisMonth",
+  expectedToContinue: "qfield_expectedToContinue",
+  expenseAmount: "qfield_expenseAmount",
+  hoursPerWeek: "qfield_hoursPerWeek",
+  businessName: "qfield_businessName",
+  businessType: "qfield_businessType",
+  grossMonthly: "qfield_grossMonthly",
+  netMonthly: "qfield_netMonthly",
+  expenseMethod: "qfield_expenseMethod",
+  amountMonthly: "qfield_amountMonthly",
+  reportedAmount: "qfield_reportedAmount",
+  reportedFrequency: "qfield_reportedFrequency",
+  estimatedMonthlyValue: "qfield_estimatedMonthlyValue",
+  providedBy: "qfield_providedBy",
+  providerName: "qfield_providerName",
+  forDependentAdult: "qfield_forDependentAdult",
+  paidTo: "qfield_paidTo",
+  courtOrdered: "qfield_courtOrdered",
+  planName: "qfield_planName",
+  policyHolderName: "qfield_policyHolderName",
+  employerPhone: "qfield_employerPhone",
+  offersCoverage: "qfield_offersCoverage",
+  eligibleNowOrSoon: "qfield_eligibleNowOrSoon",
+  lowestCostPremium: "qfield_lowestCostPremium",
+  institution: "qfield_institution",
+  balance: "qfield_balance",
+  usedFor: "qfield_usedFor",
+  amountOwed: "qfield_amountOwed",
+  estimatedValue: "qfield_estimatedValue",
+  jobTitle: "qfield_jobTitle",
+  reasonForLeaving: "qfield_reasonForLeaving",
+  hoursWorked: "qfield_hoursWorked",
+  hoursWorkedFrequency: "qfield_hoursWorkedFrequency",
+  payAmount: "qfield_payAmount",
+  payRateFrequency: "qfield_payRateFrequency",
+  selfEmployed: "qfield_selfEmployed",
+  countyHelpedGetJob: "qfield_countyHelpedGetJob",
+  schoolName: "qfield_schoolName",
+  halfTimeOrMore: "qfield_halfTimeOrMore",
+  relationshipToService: "qfield_relationshipToService",
+  branch: "qfield_branch",
+  parentName: "qfield_parentName",
+  lastKnownLocation: "qfield_lastKnownLocation",
+  agencyName: "qfield_agencyName",
+  monthlyPayment: "qfield_monthlyPayment",
+  organization: "qfield_organization",
+  forCalFresh: "qfield_forCalFresh",
+  forHealthCoverage: "qfield_forHealthCoverage",
 };
 
-const CHOICE_OPTIONS: Record<string, Array<{ value: string; label: string }>> = {
+const CHOICE_OPTIONS: Record<
+  string,
+  Array<{ value: string; labelKey: string }>
+> = {
   /*
-   * Labels here match FREQUENCY_LABELS in reported-amounts.ts, which is what
-   * gets printed in the form's "How often?" columns — so the applicant picks
-   * the words that end up on the page.
+   * These values match FREQUENCY_LABELS in reported-amounts.ts, which is what
+   * gets printed in the form's "How often?" columns. The stored value is what
+   * drives printing, so the applicant can pick "Cada dos semanas" and the page
+   * still records every_two_weeks.
    */
   reportedFrequency: [
-    { value: "weekly", label: "Weekly" },
-    { value: "every_two_weeks", label: "Every two weeks" },
-    { value: "twice_a_month", label: "Twice a month" },
-    { value: "monthly", label: "Monthly" },
-    { value: "irregular", label: "Irregular" },
+    { value: "weekly", labelKey: "qopt_weekly" },
+    { value: "every_two_weeks", labelKey: "qopt_every_two_weeks" },
+    { value: "twice_a_month", labelKey: "qopt_twice_a_month" },
+    { value: "monthly", labelKey: "qopt_monthly" },
+    { value: "irregular", labelKey: "qopt_irregular" },
   ],
   payFrequency: [
-    { value: "weekly", label: "Weekly" },
-    { value: "every_two_weeks", label: "Every two weeks" },
-    { value: "twice_a_month", label: "Twice a month" },
-    { value: "monthly", label: "Monthly" },
-    { value: "irregular", label: "Irregular" },
+    { value: "weekly", labelKey: "qopt_weekly" },
+    { value: "every_two_weeks", labelKey: "qopt_every_two_weeks" },
+    { value: "twice_a_month", labelKey: "qopt_twice_a_month" },
+    { value: "monthly", labelKey: "qopt_monthly" },
+    { value: "irregular", labelKey: "qopt_irregular" },
   ],
   premiumFrequency: [
-    { value: "weekly", label: "Weekly" },
-    { value: "every_two_weeks", label: "Every two weeks" },
-    { value: "twice_a_month", label: "Twice a month" },
-    { value: "monthly", label: "Monthly" },
+    { value: "weekly", labelKey: "qopt_weekly" },
+    { value: "every_two_weeks", labelKey: "qopt_every_two_weeks" },
+    { value: "twice_a_month", labelKey: "qopt_twice_a_month" },
+    { value: "monthly", labelKey: "qopt_monthly" },
   ],
   /*
    * Appendix D's two printed choice rows. Both list exactly the boxes the
@@ -338,52 +347,64 @@ const CHOICE_OPTIONS: Record<string, Array<{ value: string; label: string }>> = 
    * nowhere to record.
    */
   hoursWorkedFrequency: [
-    { value: "daily", label: "Daily" },
-    { value: "weekly", label: "Weekly" },
-    { value: "monthly", label: "Monthly" },
+    { value: "daily", labelKey: "qopt_daily" },
+    { value: "weekly", labelKey: "qopt_weekly" },
+    { value: "monthly", labelKey: "qopt_monthly" },
   ],
   payRateFrequency: [
-    { value: "hourly", label: "Hourly" },
-    { value: "daily", label: "Daily" },
-    { value: "weekly", label: "Weekly" },
-    { value: "every_two_weeks", label: "Every two weeks" },
-    { value: "monthly", label: "Monthly" },
+    { value: "hourly", labelKey: "qopt_hourly" },
+    { value: "daily", labelKey: "qopt_daily" },
+    { value: "weekly", labelKey: "qopt_weekly" },
+    { value: "every_two_weeks", labelKey: "qopt_every_two_weeks" },
+    { value: "monthly", labelKey: "qopt_monthly" },
   ],
   expenseMethod: [
-    { value: "standard_40_percent", label: "40% flat rate (CalFresh/cash aid)" },
-    { value: "actual_expenses", label: "Actual expenses" },
-    { value: "monthly_average", label: "Monthly average" },
+    { value: "standard_40_percent", labelKey: "qopt_standard_40_percent" },
+    { value: "actual_expenses", labelKey: "qopt_actual_expenses" },
+    { value: "monthly_average", labelKey: "qopt_monthly_average" },
   ],
   kind: [
-    { value: "rent_or_mortgage", label: "Rent or mortgage" },
-    { value: "property_tax", label: "Property tax" },
-    { value: "home_insurance", label: "Home insurance" },
-    { value: "electricity", label: "Electricity" },
-    { value: "gas", label: "Gas" },
-    { value: "water", label: "Water" },
-    { value: "trash", label: "Trash" },
-    { value: "telephone", label: "Telephone" },
-    { value: "checking", label: "Checking account" },
-    { value: "savings", label: "Savings account" },
-    { value: "cash_on_hand", label: "Cash on hand" },
-    { value: "stocks_or_bonds", label: "Stocks or bonds" },
-    { value: "trust", label: "Trust" },
-    { value: "home", label: "Home" },
-    { value: "land", label: "Land" },
-    { value: "rental", label: "Rental property" },
-    { value: "housing", label: "Housing" },
-    { value: "utilities", label: "Utilities" },
-    { value: "food", label: "Food" },
-    { value: "clothing", label: "Clothing" },
-    { value: "other", label: "Other" },
+    { value: "rent_or_mortgage", labelKey: "qopt_rent_or_mortgage" },
+    { value: "property_tax", labelKey: "qopt_property_tax" },
+    { value: "home_insurance", labelKey: "qopt_home_insurance" },
+    { value: "electricity", labelKey: "qopt_electricity" },
+    { value: "gas", labelKey: "qopt_gas" },
+    { value: "water", labelKey: "qopt_water" },
+    { value: "trash", labelKey: "qopt_trash" },
+    { value: "telephone", labelKey: "qopt_telephone" },
+    { value: "checking", labelKey: "qopt_checking" },
+    { value: "savings", labelKey: "qopt_savings" },
+    { value: "cash_on_hand", labelKey: "qopt_cash_on_hand" },
+    { value: "stocks_or_bonds", labelKey: "qopt_stocks_or_bonds" },
+    { value: "trust", labelKey: "qopt_trust" },
+    { value: "home", labelKey: "qopt_home" },
+    { value: "land", labelKey: "qopt_land" },
+    { value: "rental", labelKey: "qopt_rental" },
+    { value: "housing", labelKey: "qopt_housing" },
+    { value: "utilities", labelKey: "qopt_utilities" },
+    { value: "food", labelKey: "qopt_food" },
+    { value: "clothing", labelKey: "qopt_clothing" },
+    { value: "other", labelKey: "qopt_other" },
   ],
 };
 
-function labelFor(key: string): string {
-  return (
-    FIELD_LABELS[key] ??
-    key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())
-  );
+/**
+ * The applicant-facing name of a record field.
+ *
+ * `tOr` rather than `t` because the fallback is a real case: a record key with
+ * no catalog entry still has to render something, and de-camel-casing the key
+ * beats throwing in the middle of a form.
+ */
+function labelFor(
+  key: string,
+  tOr: (key: string, fallback: string) => string,
+): string {
+  const keyed = FIELD_LABEL_KEYS[key];
+  const deCamelCased = key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (c) => c.toUpperCase());
+
+  return keyed ? tOr(keyed, deCamelCased) : deCamelCased;
 }
 
 const DATE_KEYS = new Set(["startDate", "endDate", "changeDate"]);
@@ -427,11 +448,11 @@ function TriStateControl({
   return (
     <div className="mt-3 flex items-center gap-2">
       {[
-        { label: "Yes", answer: true },
-        { label: "No", answer: false },
+        { labelKey: "ui_yes", answer: true },
+        { labelKey: "ui_no", answer: false },
       ].map((option) => (
         <button
-          key={option.label}
+          key={option.labelKey}
           type="button"
           onClick={() => onAnswer(option.answer)}
           aria-pressed={value === option.answer}
@@ -441,7 +462,7 @@ function TriStateControl({
               : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
           }`}
         >
-          {option.label}
+          {t(option.labelKey)}
         </button>
       ))}
 
@@ -471,7 +492,7 @@ function RecordEditor({
   onRemove: () => void;
   index: number;
 }) {
-  const { t, tv } = useTranslation();
+  const { t, tv, tOr } = useTranslation();
 
   return (
     <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4">
@@ -484,7 +505,7 @@ function RecordEditor({
           onClick={onRemove}
           className="text-xs font-medium text-red-700 underline hover:text-red-900"
         >
-          Remove
+          {t("ui_remove")}
         </button>
       </div>
 
@@ -499,7 +520,7 @@ function RecordEditor({
               return (
                 <label key={key} className="block">
                   <span className="text-sm font-medium text-slate-700">
-                    {labelFor(key)}
+                    {labelFor(key, tOr)}
                   </span>
                   <select
                     value={String(value ?? "")}
@@ -511,7 +532,7 @@ function RecordEditor({
                     <option value="">{t("qstep_not_answered_option")}</option>
                     {options.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label}
+                        {t(option.labelKey)}
                       </option>
                     ))}
                   </select>
@@ -523,7 +544,7 @@ function RecordEditor({
               return (
                 <label key={key} className="block">
                   <span className="text-sm font-medium text-slate-700">
-                    {labelFor(key)}
+                    {labelFor(key, tOr)}
                   </span>
                   <input
                     type="number"
@@ -548,15 +569,15 @@ function RecordEditor({
               return (
                 <div key={key}>
                   <span className="text-sm font-medium text-slate-700">
-                    {labelFor(key)}
+                    {labelFor(key, tOr)}
                   </span>
                   <div className="mt-1 flex gap-2">
                     {[
-                      { label: "Yes", answer: true },
-                      { label: "No", answer: false },
+                      { labelKey: "ui_yes", answer: true },
+                      { labelKey: "ui_no", answer: false },
                     ].map((option) => (
                       <button
-                        key={option.label}
+                        key={option.labelKey}
                         type="button"
                         onClick={() => onFieldChange(key, option.answer)}
                         aria-pressed={value === option.answer}
@@ -566,7 +587,7 @@ function RecordEditor({
                             : "border-slate-300 bg-white text-slate-700"
                         }`}
                       >
-                        {option.label}
+                        {t(option.labelKey)}
                       </button>
                     ))}
                   </div>
@@ -577,7 +598,7 @@ function RecordEditor({
             return (
               <label key={key} className="block">
                 <span className="text-sm font-medium text-slate-700">
-                  {labelFor(key)}
+                  {labelFor(key, tOr)}
                 </span>
                 <input
                   type={DATE_KEYS.has(key) ? "date" : "text"}
@@ -806,7 +827,7 @@ export default function QuestionnaireStep({
               onClick={() => setPendingPersonPick(null)}
               className="mt-3 text-xs text-slate-600 underline hover:text-slate-800"
             >
-              Cancel
+              {t("ui_cancel")}
             </button>
           </div>
         ) : (
@@ -869,7 +890,7 @@ export default function QuestionnaireStep({
           className="mt-3 rounded-lg bg-green-700 px-5 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
           data-testid="question-continue"
         >
-          Continue
+          {t("ui_continue")}
         </button>
       </div>
     );
@@ -979,7 +1000,7 @@ export default function QuestionnaireStep({
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             data-testid="question-back"
           >
-            Back
+            {t("ui_back")}
           </button>
 
           {question?.kind === "records" && (
@@ -1009,7 +1030,7 @@ export default function QuestionnaireStep({
             onClick={onContinue}
             className="ml-auto rounded-lg px-3 py-2 text-sm font-medium text-slate-600 underline hover:text-slate-800"
           >
-            {question ? "Finish and review" : "Continue to review"}
+            {question ? t("qstep_finish_review") : t("qstep_continue_review")}
           </button>
 
           {canSkip(question) && (
