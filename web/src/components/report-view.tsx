@@ -132,7 +132,7 @@ export default function ReportView({
   onRetry,
   onStartApplication,
 }: ReportViewProps) {
-  const { t } = useTranslation();
+  const { t, tOr } = useTranslation();
   const [retryError, setRetryError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
 
@@ -209,7 +209,16 @@ export default function ReportView({
           className="group rounded-xl border border-slate-200 bg-white shadow-sm"
         >
           <summary className="flex cursor-pointer select-none items-center justify-between px-5 py-4 font-medium text-slate-800 hover:bg-slate-50 rounded-xl list-none">
-            <span>{section.displayName}</span>
+            {/*
+              The catalog already names every phase; PHASE_DISPLAY_NAMES is the
+              English fallback for a phase id it does not know.
+            */}
+            <span>
+              {tOr(
+                `phase_${section.phaseName.replace(/-/g, '_')}`,
+                section.displayName,
+              )}
+            </span>
             <span className="text-xs text-slate-400 font-normal group-open:hidden">
               {t("report_expand")}
             </span>

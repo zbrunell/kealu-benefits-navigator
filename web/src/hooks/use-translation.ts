@@ -33,6 +33,16 @@ export function useTranslation() {
   return {
     /** Translate a message key to the current locale's string. */
     t: (key: keyof Messages | string): string => tFn(msgs, key),
+    /**
+     * Translate a key that comes from data, with an explicit fallback.
+     *
+     * `t` throws on an unknown key, which is right for keys written in the
+     * source: a typo should fail loudly. It is wrong for a key derived from
+     * workflow output, where an unrecognised phase id is a data condition
+     * rather than a bug — and where throwing would blank the report.
+     */
+    tOr: (key: string, fallback: string): string =>
+      (msgs as unknown as Record<string, string>)[key] ?? fallback,
     /** Translate a key and substitute `{name}` placeholders. */
     tv: (
       key: keyof Messages | string,
