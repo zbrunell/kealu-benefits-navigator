@@ -55,6 +55,14 @@ const IDENTICAL_BY_DESIGN = new Set([
   // to satisfy this test would make the Spanish worse, not better.
   'phase_status_error',
   'phase_error_aria',
+  /*
+   * A pure passthrough: the sentence for an overflow row is composed in
+   * printed-capacity.ts, per printed block, and this entry is only the
+   * placeholder that carries it. There are no words here to translate — and
+   * putting some in would mean writing a second copy of wording this module
+   * does not own.
+   */
+  'instr_overflow_passthrough',
 ]);
 
 // ── Catalog completeness ─────────────────────────────────────────────────────

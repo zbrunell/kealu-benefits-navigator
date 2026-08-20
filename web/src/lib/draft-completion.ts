@@ -57,6 +57,50 @@ import {
 import type { Saws2PlusApplicationData } from '@/types/application';
 
 /** Why an item is still outstanding on this particular draft. */
+/**
+ * Every value type a blank can take, as a catalog key.
+ *
+ * A union rather than a bare string so adding a blank without translating it
+ * fails to compile instead of shipping English into a Spanish guide.
+ */
+export type ValueTypeKey =
+  | 'vt_ssn'
+  | 'vt_ssn_three_boxes'
+  | 'vt_signature'
+  | 'vt_date'
+  | 'vt_hours'
+  | 'vt_one_more'
+  | 'vt_one_more_job'
+  | 'vt_immigration'
+  | 'vt_checkbox_years'
+  | 'vt_checkbox_property'
+  | 'vt_assister'
+  | 'vt_deferred'
+  | 'vt_missing';
+
+/** Every instruction sentence, as a catalog key. Same reason as above. */
+export type InstructionKey =
+  | 'instr_ssn_applicant_page1'
+  | 'instr_ssn_household_row'
+  | 'instr_ssn_appendix_a'
+  | 'instr_signature_applicant'
+  | 'instr_signature_date_applicant'
+  | 'instr_signature_other_adult'
+  | 'instr_signature_date_other_adult'
+  | 'instr_signature_representative'
+  | 'instr_signature_date_representative'
+  | 'instr_write_in_hours'
+  | 'instr_overflow_passthrough'
+  | 'instr_overflow_appendix_d_person'
+  | 'instr_overflow_appendix_d_jobs'
+  | 'instr_unsupported_immigration'
+  | 'instr_unsupported_renewal_consent'
+  | 'instr_unsupported_real_property'
+  | 'instr_unsupported_assister'
+  | 'instr_deferred_with_page'
+  | 'instr_deferred_no_page'
+  | 'instr_missing_answer';
+
 export type ManualReason =
   | 'ssn'
   | 'signature'
@@ -123,6 +167,27 @@ export interface ManualItem {
   valueType: string;
   /** One instruction, specific enough to act on without hunting. */
   instruction: string;
+  /**
+   * Catalog keys for the two strings above, plus their substitutions.
+   *
+   * This module decides *what* a blank needs; it does not decide the words. The
+   * English `valueType` and `instruction` remain so existing readers keep
+   * working and so a key can be checked against its own English, but the guide
+   * renders from these keys and therefore renders in the applicant's language.
+   */
+  valueTypeKey: ValueTypeKey;
+  instructionKey: InstructionKey;
+  /** Substitutions for `{name}` placeholders in the instruction. */
+  instructionVars?: Readonly<Record<string, string | number>>;
+  /** Substitutions for the value type, used only by the overflow rows. */
+  valueTypeVars?: Readonly<Record<string, string | number>>;
+  /**
+   * The unanswered question's own catalog key, when this item is one.
+   *
+   * Lets the guide name the question in the applicant's language instead of
+   * quoting the English source prompt back at them.
+   */
+  questionPromptKey?: string;
 }
 
 export interface SkippedSection {
@@ -237,9 +302,11 @@ function ssnItems(application: Saws2PlusApplicationData): ManualItem[] {
       'SOCIAL SECURITY NUMBER (IF YOU HAVE ONE AND ARE APPLYING FOR BENEFITS)',
     person: nameFor(rows.all[0]),
     valueType: 'Social Security Number',
+    valueTypeKey: 'vt_ssn',
     instruction:
       'Third box on the applicant’s name row, at the top right of the page. ' +
       'Left blank on purpose: Kealu never writes a Social Security Number.',
+    instructionKey: 'instr_ssn_applicant_page1',
   });
 
   for (const [table, assignments, saws, page, section] of [
@@ -260,9 +327,12 @@ function ssnItems(application: Saws2PlusApplicationData): ManualItem[] {
         printedLabel: 'SOCIAL SECURITY NUMBER',
         person: nameFor(assignment),
         valueType: 'Social Security Number',
+        valueTypeKey: 'vt_ssn',
         instruction:
           `Row ${row + 1} of the ${table} table, in the Social Security ` +
           'Number column at the far right. Left blank on purpose.',
+        instructionKey: 'instr_ssn_household_row',
+        instructionVars: { row: row + 1, table },
       });
     });
   }
@@ -278,8 +348,10 @@ function ssnItems(application: Saws2PlusApplicationData): ManualItem[] {
       printedLabel: 'EMPLOYEE SOCIAL SECURITY NUMBER',
       person: nameFor(rows.all[0]),
       valueType: 'Social Security Number, in three boxes',
+      valueTypeKey: 'vt_ssn_three_boxes',
       instruction:
         'Three small boxes beside the employee’s name. Left blank on purpose.',
+      instructionKey: 'instr_ssn_appendix_a',
     });
   }
 
@@ -318,9 +390,11 @@ function signatureItems(application: Saws2PlusApplicationData): ManualItem[] {
         `${application.applicant.firstName} ${application.applicant.lastName}`.trim() ||
         'the applicant',
       valueType: 'Handwritten signature',
+      valueTypeKey: 'vt_signature',
       instruction:
         'Sign the long ruled line at the very bottom left of page 1. This is ' +
         'signed under penalty of perjury, so read the page first.',
+      instructionKey: 'instr_signature_applicant',
     },
     {
       id: 'signature.applicant_date',
@@ -334,10 +408,12 @@ function signatureItems(application: Saws2PlusApplicationData): ManualItem[] {
         `${application.applicant.firstName} ${application.applicant.lastName}`.trim() ||
         'the applicant',
       valueType: 'Date',
+      valueTypeKey: 'vt_date',
       instruction:
         'The DATE box at the right-hand end of the applicant’s signature ' +
         'line. Write the date you actually sign; it is left blank because ' +
         'only the signer knows that.',
+      instructionKey: 'instr_signature_date_applicant',
     },
   ];
 
@@ -356,9 +432,11 @@ function signatureItems(application: Saws2PlusApplicationData): ManualItem[] {
           'SIGNATURE OF SPOUSE, OTHER PARENT, OTHER AIDED ADULT, OR ' +
           'REGISTERED DOMESTIC PARTNER',
         valueType: 'Handwritten signature',
+        valueTypeKey: 'vt_signature',
         instruction:
           'The second ruled line, directly below the applicant’s. Required ' +
           'because another adult in this household is applying.',
+        instructionKey: 'instr_signature_other_adult',
       },
       {
         id: 'signature.second_adult_date',
@@ -369,8 +447,10 @@ function signatureItems(application: Saws2PlusApplicationData): ManualItem[] {
         printedSection: 'Signature block at the foot of page 1',
         printedLabel: 'DATE (beside the second signature line)',
         valueType: 'Date',
+        valueTypeKey: 'vt_date',
         instruction:
           'The DATE box at the right-hand end of the second signature line.',
+        instructionKey: 'instr_signature_date_other_adult',
       },
     );
   }
@@ -390,9 +470,11 @@ function signatureItems(application: Saws2PlusApplicationData): ManualItem[] {
           `${application.applicant.firstName} ${application.applicant.lastName}`.trim() ||
           'the applicant',
         valueType: 'Handwritten signature',
+        valueTypeKey: 'vt_signature',
         instruction:
           'Sign to allow the named representative to act for you on the ' +
           'health-insurance part of this application.',
+        instructionKey: 'instr_signature_representative',
       },
       {
         id: 'signature.appendix_c_date',
@@ -404,7 +486,9 @@ function signatureItems(application: Saws2PlusApplicationData): ManualItem[] {
           'Appendix C — assistance with completing this application',
         printedLabel: '11. Date',
         valueType: 'Date',
+        valueTypeKey: 'vt_date',
         instruction: 'The date box to the right of item 10’s signature line.',
+        instructionKey: 'instr_signature_date_representative',
       },
     );
   }
@@ -451,10 +535,13 @@ function writeInItems(application: Saws2PlusApplicationData): ManualItem[] {
         printedLabel: 'Number of hours worked:',
         person: person.personName || undefined,
         valueType: 'Number of hours',
+        valueTypeKey: 'vt_hours',
         instruction:
           `Write "${job.entry.hoursWorked}" in the blank space just above ` +
           'the Daily / Weekly / Monthly boxes. The correct box is already ' +
           'ticked; the form provides no fillable box for the number itself.',
+        instructionKey: 'instr_write_in_hours',
+        instructionVars: { hours: String(job.entry.hoursWorked ?? '') },
       });
     }
   }
@@ -476,7 +563,17 @@ function overflowItem(dropped: DroppedRecord): ManualItem {
     printedSection: dropped.printedName,
     printedLabel: dropped.printedName,
     valueType: `One more ${dropped.rowNoun}`,
+    valueTypeKey: 'vt_one_more',
+    valueTypeVars: { noun: dropped.rowNoun },
     instruction: dropped.explanation,
+    /*
+     * The sentence itself is composed in printed-capacity.ts, per printed
+     * block. It is passed through rather than re-keyed here: this module does
+     * not own that wording, and inventing a second copy of it would let the two
+     * drift. printed-capacity.ts is the remaining English source for these.
+     */
+    instructionKey: 'instr_overflow_passthrough',
+    instructionVars: { explanation: dropped.explanation },
   };
 }
 
@@ -496,6 +593,7 @@ function appendixDOverflowItems(
     printedLabel: 'Appendix D — EMPLOYMENT HISTORY',
     person: dropped.personName || undefined,
     valueType: 'One more job',
+    valueTypeKey: 'vt_one_more_job',
     instruction:
       dropped.reason === 'person_blocks_exhausted'
         ? 'Appendix D prints two people and this household has more. The ' +
@@ -504,6 +602,11 @@ function appendixDOverflowItems(
         : 'Appendix D prints three jobs per person and this person has more. ' +
           'Copy the page or use a separate sheet for the extra job, as the ' +
           'printed instructions say.',
+    instructionKey:
+      dropped.reason === 'person_blocks_exhausted'
+        ? 'instr_overflow_appendix_d_person'
+        : 'instr_overflow_appendix_d_jobs',
+    instructionVars: { person: dropped.personName || '' },
   }));
 }
 
@@ -542,10 +645,12 @@ function unsupportedItems(
       printedSection: 'Noncitizen and sponsored-noncitizen information',
       printedLabel: 'Q6e. Noncitizen information',
       valueType: 'Immigration document details',
+      valueTypeKey: 'vt_immigration',
       instruction:
         'Fill this section in by hand. Kealu treats immigration document ' +
         'numbers like Social Security Numbers — never collected, never ' +
         'stored, never prefilled — so the whole block is left for you.',
+      instructionKey: 'instr_unsupported_immigration',
     });
   }
 
@@ -561,10 +666,12 @@ function unsupportedItems(
         'Yes, renew my eligibility automatically for the next … / No, don’t ' +
         'use information from tax returns to renew my coverage.',
       valueType: 'One checkbox, and a number of years if Yes',
+      valueTypeKey: 'vt_checkbox_years',
       instruction:
         'Tick the box yourself. The form prints two opposite choices but ' +
         'contains only one checkbox between them, so ticking it could tell ' +
         'the county either one. Also circle how many years if you answer Yes.',
+      instructionKey: 'instr_unsupported_renewal_consent',
     });
   }
 
@@ -578,9 +685,11 @@ function unsupportedItems(
       printedSection: 'Home, land or other property',
       printedLabel: 'Does anyone own a home, land, or other property?',
       valueType: 'One checkbox and the property details',
+      valueTypeKey: 'vt_checkbox_property',
       instruction:
         'Answer this by hand. The printed question has no Yes/No checkbox in ' +
         'the form’s fillable fields at all, so there is nothing to fill.',
+      instructionKey: 'instr_unsupported_real_property',
     });
   }
 
@@ -595,10 +704,12 @@ function unsupportedItems(
         'For Certified Application Counselors, Navigators, Agents and Brokers Only',
       printedLabel: '1. Application start date (mm/dd/yyyy)',
       valueType: 'Start date, name, organization and I.D. number',
+      valueTypeKey: 'vt_assister',
       instruction:
         'Only for a certified counsellor, navigator, agent or broker who ' +
         'filled this application out for someone else. If that is you, ' +
         'complete the four items yourself; otherwise leave the block blank.',
+      instructionKey: 'instr_unsupported_assister',
     });
   }
 
@@ -655,11 +766,16 @@ function deferredItems(application: Saws2PlusApplicationData): ManualItem[] {
         printedSection: printed?.label ?? field?.label ?? 'Questionnaire',
         printedLabel: field?.label ?? promptById.get(id) ?? id,
         valueType: 'An answer you chose to give later',
+        valueTypeKey: 'vt_deferred',
         instruction: page
           ? 'You chose to answer this later. Write it on the printed form at ' +
             `${field?.saws ?? id}, or answer it in Kealu and generate a new draft.`
           : 'You chose to answer this later. Answer it in Kealu and generate a ' +
             'new draft, or complete it on the printed form before submitting.',
+        instructionKey: page
+          ? 'instr_deferred_with_page'
+          : 'instr_deferred_no_page',
+        instructionVars: { saws: field?.saws ?? id },
       };
     });
 }
@@ -688,9 +804,18 @@ function missingAnswerItems(
       printedSection: question.section,
       printedLabel: question.prompt,
       valueType: 'An answer in Kealu',
+      valueTypeKey: 'vt_missing',
       instruction:
         `Still unanswered: ${question.prompt} Answer it in Kealu and ` +
         'regenerate the draft — it will then be filled in for you.',
+      instructionKey: 'instr_missing_answer',
+      /*
+       * The question's own promptKey travels with it, so the guide can name the
+       * unanswered question in the applicant's language rather than quoting the
+       * English source text back at them.
+       */
+      instructionVars: { question: question.prompt },
+      questionPromptKey: question.promptKey,
     }),
   );
 }

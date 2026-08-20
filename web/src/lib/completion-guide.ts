@@ -164,15 +164,61 @@ function itemsFor(
   audience: GuideAudience,
   locale: Locale,
 ): GuideItem[] {
-  return completion.byReason[reason].map((item) => ({
-    title: audience === 'associate' ? item.printedLabel : item.valueType,
-    detail:
-      audience === 'associate'
-        ? `${item.printedSection} — ${item.instruction}`
-        : item.instruction,
-    location: locationOf(item, locale),
-    person: item.person,
-  }));
+  const msgs = messages[locale];
+
+  return completion.byReason[reason].map((item) => {
+    /*
+     * The assessor decides *what* a blank needs and names the sentence; the
+     * words are chosen here, at the presentation boundary. That is why nothing
+     * downstream ever parses `item.instruction`.
+     */
+    const valueType = interpolate(
+      t(msgs, item.valueTypeKey),
+      item.valueTypeVars ?? {},
+    );
+
+    /*
+     * A missing answer names the question it is missing. The question's own
+     * catalog key travels on the item, so the applicant is told which question
+     * in their language rather than being handed the English source prompt.
+     */
+    const vars = { ...(item.instructionVars ?? {}) };
+
+    if (item.questionPromptKey) {
+      /*
+       * A non-throwing lookup, matching translateQuestion's policy: a question
+       * named in the wrong language is better than a guide that fails to
+       * render at all.
+       *
+       * It matters here because a question inside a repeatable record carries
+       * its index in its id — `...vehicle_details.0.isGiftDonationOrTransfer` —
+       * so its key is per-record and cannot have a catalog entry. Those fall
+       * back to the English prompt the assessor already recorded. The gateway
+       * questions an applicant actually meets are index-free and translated;
+       * localization.test.ts is what holds that line.
+       */
+      const translated = (msgs as Record<string, string>)[item.questionPromptKey];
+
+      if (translated !== undefined) vars.question = translated;
+    }
+
+    const instruction = interpolate(t(msgs, item.instructionKey), vars);
+
+    return {
+      /*
+       * The associate guide leads with the label printed on the paper, so it
+       * follows the *document* language, not the interface. The applicant guide
+       * leads with what kind of value goes in the box, which is our own prose.
+       */
+      title: audience === 'associate' ? item.printedLabel : valueType,
+      detail:
+        audience === 'associate'
+          ? `${item.printedSection} — ${instruction}`
+          : instruction,
+      location: locationOf(item, locale),
+      person: item.person,
+    };
+  });
 }
 
 function reviewSection(
