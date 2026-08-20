@@ -37,7 +37,7 @@ import {
 } from '@/lib/draft-completion';
 import type { ApplicationFieldPlanEntry } from '@/lib/application-mapper';
 import { documentLanguageFor, DEFAULT_LOCALE, type Locale } from '@/lib/locale';
-import { messages, t } from '@/i18n';
+import { interpolate, messages, t } from '@/i18n';
 import type { Saws2PlusApplicationData } from '@/types/application';
 
 /** Statewide California portal for CalFresh / CalWORKs / Medi-Cal. */
@@ -178,48 +178,47 @@ function itemsFor(
 function reviewSection(
   completion: DraftCompletion,
   audience: GuideAudience,
+  tr: (key: string) => string,
 ): GuideSection {
   const items: GuideItem[] = [
     {
-      title: 'Check every prefilled answer',
-      detail:
-        `Kealu filled ${completion.filledFieldCount} answers into this form ` +
-        'from what was entered. Read each page and correct anything wrong or ' +
-        'out of date before signing — the form is signed under penalty of ' +
-        'perjury.',
+      title: tr('guide_review_check_title'),
+      detail: interpolate(tr('guide_review_check_detail'), {
+        count: completion.filledFieldCount,
+      }),
     },
     {
-      title: 'Read the rights, responsibilities and program rules',
-      detail:
-        'Page 1 confirms that those pages have been read. They are the first ' +
-        'six pages of the PDF, before the questions begin.',
+      title: tr('guide_review_rules_title'),
+      detail: tr('guide_review_rules_detail'),
     },
   ];
 
   if (completion.skippedSections.length > 0) {
     items.push({
-      title: 'Appendices this household does not need',
+      title: tr('guide_review_appendices_title'),
       detail:
-        'Left blank on purpose, not by omission: ' +
-        completion.skippedSections
-          .map((section) => `${section.saws} (${section.reason})`)
-          .join(' ') +
-        (audience === 'associate'
-          ? ' Confirm each still does not apply before submitting.'
+        interpolate(tr('guide_review_appendices_detail'), {
+          list: completion.skippedSections
+            .map((section) => `${section.saws} (${section.reason})`)
+            .join(' '),
+        })
+        + (audience === 'associate'
+          ? tr('guide_review_appendices_confirm')
           : ''),
     });
   }
 
   return {
     id: 'review',
-    title: 'Review',
-    intro: 'Start here, before filling anything in by hand.',
+    title: tr('guide_review_title'),
+    intro: tr('guide_review_intro'),
     items,
   };
 }
 
 function attachmentsSection(
   application: Saws2PlusApplicationData,
+  tr: (key: string) => string,
 ): GuideSection {
   /*
    * Grounded in what this household is applying for and what it told us, not
@@ -231,62 +230,50 @@ function attachmentsSection(
   const questionnaire = application.questionnaire;
   const items: GuideItem[] = [
     {
-      title: 'Proof of identity',
-      detail:
-        'For the person signing. A driver’s licence, state ID, or other photo ' +
-        'identification.',
+      title: tr('guide_attach_identity_title'),
+      detail: tr('guide_attach_identity_detail'),
     },
   ];
 
   if (questionnaire.income.earned?.answer === true) {
     items.push({
-      title: 'Proof of earned income',
-      detail:
-        'Recent pay stubs, or a letter from the employer, for everyone in the ' +
-        'household who works.',
+      title: tr('guide_attach_earned_title'),
+      detail: tr('guide_attach_earned_detail'),
     });
   }
 
   if (questionnaire.income.unearned?.answer === true) {
     items.push({
-      title: 'Proof of unearned income',
-      detail:
-        'Award letters or statements for the benefits, support or other ' +
-        'unearned income reported in Q7.',
+      title: tr('guide_attach_unearned_title'),
+      detail: tr('guide_attach_unearned_detail'),
     });
   }
 
   if (programs.includes('calfresh')) {
     items.push({
-      title: 'Housing and utility costs',
-      detail:
-        'Rent or mortgage, and utility bills. CalFresh uses these to work out ' +
-        'the benefit amount, so leaving them out can lower it.',
+      title: tr('guide_attach_housing_title'),
+      detail: tr('guide_attach_housing_detail'),
     });
   }
 
   if (questionnaire.expenses.medical?.answer === true) {
     items.push({
-      title: 'Medical expense receipts',
-      detail:
-        'For a household member who is 60 or older or has a disability, ' +
-        'out-of-pocket medical costs can raise CalFresh benefits.',
+      title: tr('guide_attach_medical_title'),
+      detail: tr('guide_attach_medical_detail'),
     });
   }
 
   if (questionnaire.resources.vehicles?.answer === true) {
     items.push({
-      title: 'Vehicle registration',
-      detail: 'For each vehicle listed on Q26 and in Appendix E.',
+      title: tr('guide_attach_vehicle_title'),
+      detail: tr('guide_attach_vehicle_detail'),
     });
   }
 
   return {
     id: 'attachments',
-    title: 'Documents to attach',
-    intro:
-      'The county can start on the application without these, but it cannot ' +
-      'finish without them.',
+    title: tr('guide_attach_title'),
+    intro: tr('guide_attach_intro'),
     items,
   };
 }
@@ -294,53 +281,46 @@ function attachmentsSection(
 function submissionSection(
   application: Saws2PlusApplicationData,
   county: string,
+  tr: (key: string) => string,
 ): GuideSection {
   const countyLabel = county.trim();
   const items: GuideItem[] = [
     {
-      title: 'Online, through BenefitsCal',
-      detail:
-        `California’s statewide portal for CalFresh, CalWORKs and Medi-Cal is ` +
-        `${BENEFITSCAL_URL}. Signed pages and documents can be uploaded there. ` +
-        'This is normally the fastest route.',
+      title: tr('guide_submit_online_title'),
+      detail: interpolate(tr('guide_submit_online_detail'), {
+        url: BENEFITSCAL_URL,
+      }),
     },
     {
-      title: 'In person, by mail, or by fax',
+      title: tr('guide_submit_inperson_title'),
       detail: countyLabel
-        ? `Send or take the signed application to a ${countyLabel} County ` +
-          'social services office. Look up that office’s current address and ' +
-          'fax number on BenefitsCal or the county’s own website — an ' +
-          'application sent to the wrong address is delayed, so this guide ' +
-          'does not guess one.'
-        : 'Send or take the signed application to the county social services ' +
-          'office that serves this address. Enter the address on BenefitsCal ' +
-          'to find the right office; this guide does not guess one.',
+        ? interpolate(tr('guide_submit_inperson_county'), {
+            county: countyLabel,
+          })
+        : tr('guide_submit_inperson_unknown'),
     },
   ];
 
   if (application.selectedPrograms.includes('medi_cal')) {
     items.push({
-      title: 'Health coverage can also go through Covered California',
-      detail: `Medi-Cal and other health coverage: ${COVERED_CA_URL}.`,
+      title: tr('guide_submit_coveredca_title'),
+      detail: interpolate(tr('guide_submit_coveredca_detail'), {
+        url: COVERED_CA_URL,
+      }),
     });
   }
 
   items.push({
-    title: 'Send it as soon as it is signed',
-    detail:
-      'For CalFresh, benefits run from the date the county receives the ' +
-      'application, even if some documents arrive later. Missing documents ' +
-      'are a reason to follow up, not a reason to wait.',
+    title: tr('guide_submit_asap_title'),
+    detail: tr('guide_submit_asap_detail'),
   });
 
   return {
     id: 'submission',
-    title: 'Where to submit',
+    title: tr('guide_submit_title'),
     intro: countyLabel
-      ? `This ZIP code is in ${countyLabel} County, so ${countyLabel} County ` +
-        'processes the application.'
-      : 'The county could not be resolved from the ZIP code, so confirm which ' +
-        'county serves this address before submitting.',
+      ? interpolate(tr('guide_submit_intro_county'), { county: countyLabel })
+      : tr('guide_submit_intro_unknown'),
     items,
   };
 }
@@ -349,62 +329,22 @@ function submissionSection(
 // Assembly
 // ---------------------------------------------------------------------------
 
-const SECTION_TITLES: Record<
-  Exclude<ManualReason, never>,
-  { title: string; intro: string }
-> = {
-  ssn: {
-    title: 'Social Security Numbers',
-    intro:
-      'Every box below was left blank on purpose. Kealu never asks for, ' +
-      'stores, or writes a Social Security Number, so each one is filled in ' +
-      'by hand. This guide names whose number goes where and nothing more.',
-  },
-  signature: {
-    title: 'Signatures',
-    intro:
-      'These lines are signed by hand. The form is signed under penalty of ' +
-      'perjury, so read the pages above before signing.',
-  },
-  signature_date: {
-    title: 'Dates to write in',
-    intro:
-      'Left blank because only the signer knows when they signed. Prefilling ' +
-      'a signature date would assert something on their behalf.',
-  },
-  write_in: {
-    title: 'Answers to write in by hand',
-    intro:
-      'These answers are known, but the printed form provides no fillable box ' +
-      'for them. The value to write is given for each one.',
-  },
-  overflow: {
-    title: 'Information that did not fit',
-    intro:
-      'The printed form ran out of rows. Nothing here was discarded — each ' +
-      'item needs a separate sheet attached to the application.',
-  },
-  unsupported: {
-    title: 'Questions to answer by hand',
-    intro:
-      'The printed form asks these, but they cannot be filled automatically ' +
-      'for the reason given. Each one is answered by hand.',
-  },
-  deferred: {
-    title: 'Answers you chose to give later',
-    intro:
-      'You skipped these for now, which is allowed — they are not lost. Each ' +
-      'can still be answered in Kealu and the draft regenerated, or written ' +
-      'straight onto the printed form at the place named below.',
-  },
-  missing_answer: {
-    title: 'Still missing from the application',
-    intro:
-      'These are not blanks on the form — they are questions Kealu has not ' +
-      'been given an answer to. Answering them and regenerating the draft ' +
-      'fills them in automatically.',
-  },
-};
+/**
+ * Heading and lead sentence for each reason, resolved from the catalog.
+ *
+ * A function rather than a constant map: the wording depends on the reader's
+ * language, and a module-level constant would freeze whichever locale happened
+ * to load first.
+ */
+function sectionHeading(
+  reason: ManualReason,
+  tr: (key: string) => string,
+): { title: string; intro: string } {
+  return {
+    title: tr(`guide_section_${reason}_title`),
+    intro: tr(`guide_section_${reason}_intro`),
+  };
+}
 
 /** Reason sections in the order a reader works through the document. */
 const SECTION_ORDER: readonly ManualReason[] = [
@@ -439,7 +379,11 @@ export function buildCompletionGuide(
   const completion =
     input.completion ?? assessDraftCompletion(application, input.plan);
 
-  const sections: GuideSection[] = [reviewSection(completion, audience)];
+  const tr = (key: string) => t(msgs, key);
+
+  const sections: GuideSection[] = [
+    reviewSection(completion, audience, tr),
+  ];
 
   for (const reason of SECTION_ORDER) {
     const items = itemsFor(completion, reason, audience, locale);
@@ -448,13 +392,16 @@ export function buildCompletionGuide(
 
     sections.push({
       id: reason,
-      title: SECTION_TITLES[reason].title,
-      intro: SECTION_TITLES[reason].intro,
+      title: sectionHeading(reason, tr).title,
+      intro: sectionHeading(reason, tr).intro,
       items,
     });
   }
 
-  sections.push(attachmentsSection(application), submissionSection(application, county));
+  sections.push(
+    attachmentsSection(application, tr),
+    submissionSection(application, county, tr),
+  );
 
   const applicantName =
     `${application.applicant.firstName} ${application.applicant.lastName}`.trim();
