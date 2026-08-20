@@ -10,7 +10,6 @@ import { useMemo, useState } from "react";
 import {
   REQUIREMENT_HINTS,
   REQUIREMENT_LABELS,
-  SECTION_TITLES,
   getActiveAppendices,
   getRequiredApplicationQuestions,
   isPersonScoped,
