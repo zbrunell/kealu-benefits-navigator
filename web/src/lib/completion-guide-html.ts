@@ -21,6 +21,8 @@
  * repeating table header so a long list of blanks stays readable on page two.
  */
 
+import { messages, t } from '@/i18n';
+import type { Locale } from '@/lib/locale';
 import type { CompletionGuide, GuideItem, GuideSection } from '@/lib/completion-guide';
 
 /** Escape for HTML text and attribute contexts. */
@@ -193,12 +195,31 @@ function renderSection(section: GuideSection): string {
 }
 
 /** A readable date for a document someone may be holding weeks later. */
-function formatGeneratedAt(iso: string): string {
+/**
+ * The generation timestamp, written the way the reader's language writes dates.
+ *
+ * Fixed to UTC rather than the server's zone so two people opening the same
+ * guide never see two different times, and so the value is deterministic in
+ * tests. The locale governs the *order and script* of the parts — 19/08/2026
+ * in Spanish, 2026/8/19 in Chinese — which is the part a reader actually needs
+ * to parse correctly.
+ */
+function formatGeneratedAt(iso: string, locale: Locale): string {
   const when = new Date(iso);
 
   if (Number.isNaN(when.getTime())) return iso;
 
-  return when.toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'UTC',
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any).format(when) + ' UTC';
+  } catch {
+    // A runtime without full ICU still has to produce a readable stamp.
+    return when.toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+  }
 }
 
 /**
@@ -208,32 +229,49 @@ function formatGeneratedAt(iso: string): string {
  * browser's print dialog unchanged.
  */
 export function renderCompletionGuideHtml(guide: CompletionGuide): string {
-  const audienceNote =
+  const msgs = messages[guide.locale];
+  const tr = (key: string) => t(msgs, key);
+
+  const audienceNote = tr(
     guide.audience === 'associate'
-      ? 'For the person helping with this application. Every blank below gives ' +
-        'its PDF page, the label printed at the foot of that page, and the ' +
-        'printed question, so nothing has to be hunted for.'
-      : 'Your SAWS 2 PLUS draft has been filled in with your answers. This ' +
-        'guide lists everything still to do before you send it in.';
+      ? 'guide_note_associate'
+      : 'guide_note_applicant',
+  );
+
+  /*
+   * Said once, at the top, when the guide and the paper are not in the same
+   * language. Everything below quotes the English form's own printed labels,
+   * and a reader deserves to be told that before they start looking for them.
+   */
+  const formLanguageNotice =
+    guide.documentLanguage === guide.locale
+      ? ''
+      : `<p class="lede">${escapeHtml(tr('guide_form_language_notice_en_form'))}</p>`;
+
+  const row = (label: string, value: string) =>
+    `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`;
 
   const identity = [
     guide.applicantName
-      ? `<dt>Applicant</dt><dd>${escapeHtml(guide.applicantName)}</dd>`
+      ? row(tr('guide_label_applicant'), guide.applicantName)
       : '',
-    guide.county ? `<dt>County</dt><dd>${escapeHtml(guide.county)}</dd>` : '',
-    `<dt>Draft reference</dt><dd>${escapeHtml(guide.draft.reference)}</dd>`,
-    `<dt>Generated</dt><dd>${escapeHtml(formatGeneratedAt(guide.draft.generatedAt))}</dd>`,
+    guide.county ? row(tr('guide_label_county'), guide.county) : '',
+    row(tr('guide_label_draft_reference'), guide.draft.reference),
+    row(
+      tr('guide_label_generated'),
+      formatGeneratedAt(guide.draft.generatedAt, guide.locale),
+    ),
     guide.draft.pdfFilename
-      ? `<dt>Goes with</dt><dd>${escapeHtml(guide.draft.pdfFilename)}</dd>`
+      ? row(tr('guide_label_goes_with'), guide.draft.pdfFilename)
       : '',
-    `<dt>Answers filled</dt><dd>${guide.filledFieldCount}</dd>`,
+    row(tr('guide_label_answers_filled'), String(guide.filledFieldCount)),
   ]
     .filter(Boolean)
     .join('');
 
   return [
     '<!doctype html>',
-    '<html lang="en"><head>',
+    `<html lang="${guide.locale}"><head>`,
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     `<title>${escapeHtml(guide.title)} — ${escapeHtml(guide.draft.reference)}</title>`,
@@ -241,15 +279,11 @@ export function renderCompletionGuideHtml(guide: CompletionGuide): string {
     '</head><body><main>',
     `<h1>${escapeHtml(guide.title)}</h1>`,
     `<p class="lede">${escapeHtml(audienceNote)}</p>`,
+    formLanguageNotice,
     `<div class="identity"><dl>${identity}</dl></div>`,
     guide.sections.map(renderSection).join(''),
     '<footer>',
-    escapeHtml(
-      'This guide describes one generated draft. If you change your answers ' +
-        'and generate a new draft, print the new guide too — the draft ' +
-        'reference at the top is how you tell them apart. Kealu never writes ' +
-        'a Social Security Number or a signature onto a form.',
-    ),
+    escapeHtml(tr('guide_footer')),
     '</footer>',
     '</main></body></html>',
   ].join('');

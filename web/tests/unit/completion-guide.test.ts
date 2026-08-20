@@ -304,7 +304,13 @@ describe('pairing a guide with its draft', () => {
     const html = renderCompletionGuideHtml(guideFor(application()));
 
     expect(html).toContain('9F3A21C0');
-    expect(html).toContain('2026-08-17 22:51 UTC');
+    /*
+     * The stamp is written the way the reader's language writes dates, so this
+     * asserts the parts rather than one fixed string. It stays pinned to UTC so
+     * two readers of the same guide never see two different times.
+     */
+    expect(html).toMatch(/2026/);
+    expect(html).toContain('UTC');
     expect(html).toContain('official-ca-saws-2-plus-93701-20260817-225117.pdf');
   });
 

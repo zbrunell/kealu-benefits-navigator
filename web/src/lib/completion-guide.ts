@@ -36,6 +36,8 @@ import {
   type ManualReason,
 } from '@/lib/draft-completion';
 import type { ApplicationFieldPlanEntry } from '@/lib/application-mapper';
+import { documentLanguageFor, DEFAULT_LOCALE, type Locale } from '@/lib/locale';
+import { messages, t } from '@/i18n';
 import type { Saws2PlusApplicationData } from '@/types/application';
 
 /** Statewide California portal for CalFresh / CalWORKs / Medi-Cal. */
@@ -87,6 +89,18 @@ export interface DraftReference {
 
 export interface CompletionGuide {
   audience: GuideAudience;
+  /** The language this guide is written in — the applicant's choice. */
+  locale: Locale;
+  /**
+   * The language of the paper form this guide accompanies.
+   *
+   * Deliberately separate from `locale`. A Simplified Chinese applicant reads a
+   * Chinese guide while holding the English form, because CDSS publishes no
+   * fillable Simplified Chinese SAWS 2 PLUS. Every printed label quoted below
+   * is therefore in *this* language, not in `locale`, so that what the guide
+   * says to look for is what the page actually says.
+   */
+  documentLanguage: Locale;
   title: string;
   /** Applicant name, for identifying the document. Never more than that. */
   applicantName: string;
@@ -107,13 +121,25 @@ export interface CompletionGuideInput {
   plan?: readonly ApplicationFieldPlanEntry[];
   /** Reused when the caller already assessed the draft. */
   completion?: DraftCompletion;
+  /** The applicant's chosen language. Defaults to English. */
+  locale?: Locale;
 }
 
-/** "PDF page 7 · PAGE 1 OF 17 · Q1" — everything needed to find the blank. */
-function locationOf(item: ManualItem): string | undefined {
+/**
+ * "PDF page 7 · PAGE 1 OF 17 · Q1" — everything needed to find the blank.
+ *
+ * Only the words are translated. `printedPage` and `saws` are quotations of
+ * what the page itself prints, so they stay exactly as the paper reads.
+ */
+function locationOf(item: ManualItem, locale: Locale): string | undefined {
   if (!item.page) return undefined;
 
-  return `PDF page ${item.page} · ${item.printedPage} · ${item.saws}`;
+  const page = t(messages[locale], 'guide_location_pdf_page').replace(
+    '{page}',
+    String(item.page),
+  );
+
+  return `${page} · ${item.printedPage} · ${item.saws}`;
 }
 
 /** A short reference derived from the run id: enough to pair, not to identify. */
@@ -136,6 +162,7 @@ function itemsFor(
   completion: DraftCompletion,
   reason: ManualReason,
   audience: GuideAudience,
+  locale: Locale,
 ): GuideItem[] {
   return completion.byReason[reason].map((item) => ({
     title: audience === 'associate' ? item.printedLabel : item.valueType,
@@ -143,7 +170,7 @@ function itemsFor(
       audience === 'associate'
         ? `${item.printedSection} — ${item.instruction}`
         : item.instruction,
-    location: locationOf(item),
+    location: locationOf(item, locale),
     person: item.person,
   }));
 }
@@ -401,14 +428,21 @@ const SECTION_ORDER: readonly ManualReason[] = [
 export function buildCompletionGuide(
   input: CompletionGuideInput,
 ): CompletionGuide {
-  const { application, audience, draft, county = '' } = input;
+  const {
+    application,
+    audience,
+    draft,
+    county = '',
+    locale = DEFAULT_LOCALE,
+  } = input;
+  const msgs = messages[locale];
   const completion =
     input.completion ?? assessDraftCompletion(application, input.plan);
 
   const sections: GuideSection[] = [reviewSection(completion, audience)];
 
   for (const reason of SECTION_ORDER) {
-    const items = itemsFor(completion, reason, audience);
+    const items = itemsFor(completion, reason, audience, locale);
 
     if (items.length === 0) continue;
 
@@ -427,10 +461,14 @@ export function buildCompletionGuide(
 
   return {
     audience,
-    title:
+    locale,
+    documentLanguage: documentLanguageFor(locale),
+    title: t(
+      msgs,
       audience === 'associate'
-        ? 'SAWS 2 PLUS — what this draft still needs'
-        : 'Finishing and submitting your SAWS 2 PLUS application',
+        ? 'guide_title_associate'
+        : 'guide_title_applicant',
+    ),
     applicantName,
     county,
     draft,

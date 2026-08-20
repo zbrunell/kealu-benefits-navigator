@@ -329,6 +329,21 @@ const en = {
   qstep_questions_left_other: '{count} questions left',
   qstep_entry_number: 'Entry {number}',
 
+  // ── completion guide ──────────────────────────────────────────────────────
+  guide_title_applicant: 'Finishing and submitting your SAWS 2 PLUS application',
+  guide_title_associate: 'SAWS 2 PLUS — what this draft still needs',
+  guide_note_applicant: 'Your SAWS 2 PLUS draft has been filled in with your answers. This guide lists everything still to do before you send it in.',
+  guide_note_associate: 'For the person helping with this application. Every blank below gives its PDF page, the label printed at the foot of that page, and the printed question, so nothing has to be hunted for.',
+  guide_label_applicant: 'Applicant',
+  guide_label_county: 'County',
+  guide_label_draft_reference: 'Draft reference',
+  guide_label_generated: 'Generated',
+  guide_label_goes_with: 'Goes with',
+  guide_label_answers_filled: 'Answers filled',
+  guide_footer: 'This guide describes one generated draft. If you change your answers and generate a new draft, print the new guide too — the draft reference at the top is how you tell them apart. Kealu never writes a Social Security Number or a signature onto a form.',
+  guide_location_pdf_page: 'PDF page {page}',
+  guide_form_language_notice_en_form: 'The form itself is printed in English. This guide is in your language, and every reference below points at the English form you are holding.',
+
 } as const;
 
 export default en;

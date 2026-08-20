@@ -333,6 +333,21 @@ const es: Messages = {
   qstep_questions_left_other: 'Quedan {count} preguntas',
   qstep_entry_number: 'Entrada {number}',
 
+  // ── completion guide ──────────────────────────────────────────────────────
+  guide_title_applicant: 'Cómo terminar y enviar su solicitud SAWS 2 PLUS',
+  guide_title_associate: 'SAWS 2 PLUS — lo que aún necesita este borrador',
+  guide_note_applicant: 'Su borrador SAWS 2 PLUS se completó con sus respuestas. Esta guía indica todo lo que falta hacer antes de enviarlo.',
+  guide_note_associate: 'Para la persona que ayuda con esta solicitud. Cada espacio en blanco indica su página del PDF, la etiqueta impresa al pie de esa página y la pregunta impresa, para que no haya que buscar nada.',
+  guide_label_applicant: 'Solicitante',
+  guide_label_county: 'Condado',
+  guide_label_draft_reference: 'Referencia del borrador',
+  guide_label_generated: 'Generado',
+  guide_label_goes_with: 'Corresponde a',
+  guide_label_answers_filled: 'Respuestas completadas',
+  guide_footer: 'Esta guía describe un borrador generado. Si cambia sus respuestas y genera un borrador nuevo, imprima también la guía nueva — la referencia del borrador que aparece arriba es cómo se distinguen. Kealu nunca escribe un número de Seguro Social ni una firma en un formulario.',
+  guide_location_pdf_page: 'Página {page} del PDF',
+  guide_form_language_notice_en_form: 'El formulario en sí está impreso en inglés. Esta guía está en su idioma y todas las referencias a continuación remiten al formulario en inglés que usted tiene.',
+
 } as const;
 
 export default es;

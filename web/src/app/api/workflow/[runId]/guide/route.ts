@@ -39,6 +39,7 @@ export async function GET(
     url.searchParams.get('audience') === 'associate' ? 'associate' : 'applicant';
 
   const { sessionStore } = await import('@/lib/session-store');
+  const { localeFromCookieHeader } = await import('@/lib/locale');
   const { buildCompletionGuide, draftReferenceFrom } = await import(
     '@/lib/completion-guide'
   );
@@ -65,9 +66,17 @@ export async function GET(
     );
   }
 
+  /*
+   * The applicant's own choice, carried on the cookie the language switcher
+   * writes — never Accept-Language. Someone who switched to Spanish on a
+   * borrowed English laptop gets a Spanish guide.
+   */
+  const locale = localeFromCookieHeader(req.headers.get('cookie'));
+
   const guide = buildCompletionGuide({
     application,
     audience,
+    locale,
     county: session.vars.county ?? '',
     draft: {
       reference: draftReferenceFrom(runId),

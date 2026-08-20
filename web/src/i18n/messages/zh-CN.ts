@@ -313,6 +313,21 @@ const zhCN: Messages = {
   qstep_questions_left_other: '还剩 {count} 个问题',
   qstep_entry_number: '第 {number} 条',
 
+  // ── completion guide ──────────────────────────────────────────────────────
+  guide_title_applicant: '完成并提交您的 SAWS 2 PLUS 申请',
+  guide_title_associate: 'SAWS 2 PLUS — 此草稿仍需完成的事项',
+  guide_note_applicant: '您的 SAWS 2 PLUS 草稿已根据您的回答填写完成。本指南列出了提交之前仍需完成的所有事项。',
+  guide_note_associate: '供协助填写本申请的人员使用。下列每个空白栏位都标明其 PDF 页码、该页页脚印刷的标签以及印刷的问题编号，无需另行查找。',
+  guide_label_applicant: '申请人',
+  guide_label_county: '县',
+  guide_label_draft_reference: '草稿编号',
+  guide_label_generated: '生成时间',
+  guide_label_goes_with: '对应文件',
+  guide_label_answers_filled: '已填写的答案',
+  guide_footer: '本指南对应一份已生成的草稿。如果您修改答案并生成新的草稿，请同时打印新的指南——顶部的草稿编号是区分两者的依据。Kealu 绝不会将社会安全号码或签名填写到表格上。',
+  guide_location_pdf_page: 'PDF 第 {page} 页',
+  guide_form_language_notice_en_form: '表格本身以英文印刷。本指南使用您选择的语言，下列所有位置说明均指向您手中的英文表格。',
+
 } as const;
 
 export default zhCN;

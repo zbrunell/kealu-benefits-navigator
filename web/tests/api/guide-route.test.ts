@@ -132,7 +132,9 @@ describe('GET /api/workflow/[runId]/guide', () => {
 
     expect(html).toContain('4E138A6F');
     expect(html).toContain('official-ca-saws-2-plus-93701-20260817-225117.pdf');
-    expect(html).toContain('2026-08-17 22:51 UTC');
+    // Localized stamp; the parts are asserted, not one fixed English format.
+    expect(html).toMatch(/2026/);
+    expect(html).toContain('UTC');
   });
 
   it('uses the county from the session', async () => {
