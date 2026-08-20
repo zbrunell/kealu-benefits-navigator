@@ -18,6 +18,7 @@ import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync } from 'fs';
 import path from 'path';
 
+import { messages } from '@/i18n';
 import { buildApplicationFieldPlan } from '@/lib/application-mapper';
 import { assembleReport } from '@/lib/report-assembler';
 import { buildFixturePhaseDocuments } from '@/lib/e2e-fixture';
@@ -310,15 +311,31 @@ describe('post-generation completion guide', () => {
 
   it('offers the PDF download', () => {
     expect(guide).toContain('data-testid="draft-download"');
-    expect(guide).toContain('Download draft');
+    /*
+     * The label lives in the catalog now, so this asserts the component asks
+     * for it and that English still reads the same. Grepping the component for
+     * "Download draft" would fail the moment the string was translated, which
+     * is the opposite of what this test is protecting.
+     */
+    expect(guide).toContain('dcg_download_draft');
+    expect(messages.en.dcg_download_draft).toBe('Download draft');
     expect(guide).toContain('?download=1');
   });
 
   it('shows manual-completion instructions for SSNs and signatures', () => {
     expect(guide).toContain('data-testid="manual-completion-guide"');
-    expect(guide).toMatch(/Social Security Number/);
-    expect(guide).toMatch(/Sign and date/);
-    expect(guide).toMatch(/[Rr]eview every prefilled answer/);
+    /*
+     * The steps are catalog keys now, so the component is checked for the keys
+     * and the English catalog for the wording. Grepping the component for the
+     * English sentence would fail as soon as it was translated — the opposite
+     * of what this test protects.
+     */
+    expect(guide).toContain('dcg_step_ssn_title');
+    expect(guide).toContain('dcg_step_sign_title');
+    expect(guide).toContain('dcg_step_review_title');
+    expect(messages.en.dcg_step_ssn_detail).toMatch(/Social Security Number/);
+    expect(messages.en.dcg_step_sign_title).toMatch(/Sign and date/);
+    expect(messages.en.dcg_step_review_title).toMatch(/[Rr]eview every prefilled answer/);
   });
 
   it('shows submission instructions without inventing a destination', () => {
@@ -337,9 +354,12 @@ describe('post-generation completion guide', () => {
 
   it('offers the printable guide beside the draft', () => {
     expect(guide).toContain('data-testid="completion-guide-download"');
-    expect(guide).toContain('Open printable guide');
-    expect(guide).toContain('Download guide');
-    expect(guide).toContain('Guide for someone helping you');
+    expect(guide).toContain('dcg_open_guide');
+    expect(messages.en.dcg_open_guide).toBe('Open printable guide');
+    expect(guide).toContain('dcg_download_guide');
+    expect(messages.en.dcg_download_guide).toBe('Download guide');
+    expect(guide).toContain('dcg_helper_guide');
+    expect(messages.en.dcg_helper_guide).toBe('Guide for someone helping you');
   });
 
   it('uses real links, so every action is keyboard reachable', () => {
@@ -348,10 +368,11 @@ describe('post-generation completion guide', () => {
      * activates on Enter, and offers "open in new tab" — none of which a
      * div-with-onClick gives someone navigating by keyboard.
      */
+    // Located by catalog key, since the visible label is translated.
     for (const action of [
-      'Open printable guide',
-      'Download guide',
-      'Guide for someone helping you',
+      'dcg_open_guide',
+      'dcg_download_guide',
+      'dcg_helper_guide',
     ]) {
       const before = guide.slice(0, guide.indexOf(action));
 

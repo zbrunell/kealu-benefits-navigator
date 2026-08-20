@@ -9,6 +9,7 @@ import type {
   ApplicationRecommendation,
   Saws2PlusProgram,
 } from "@/lib/report-assembler";
+import { useTranslation } from "@/hooks/use-translation";
 
 const PROGRAM_LABELS: Record<Saws2PlusProgram, string> = {
   medi_cal: "Medi-Cal",
@@ -47,6 +48,8 @@ export default function ProgramSelectionStep({
   onBack,
   onContinue,
 }: ProgramSelectionStepProps) {
+  const { t } = useTranslation();
+
   const selectedCount =
     Object.values(selectedPrograms).filter(Boolean).length +
     (otherRequested ? 1 : 0);
@@ -59,12 +62,11 @@ export default function ProgramSelectionStep({
         </p>
 
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-          Choose the programs to include
+          {t("programs_heading")}
         </h1>
 
         <p className="mt-2 text-sm text-slate-600">
-          We preselected programs based on the completed eligibility analysis.
-          You can change these selections before continuing.
+          {t("programs_intro")}
         </p>
 
         <div className="mt-6 space-y-3">
@@ -112,7 +114,7 @@ export default function ProgramSelectionStep({
                     {program.missingInformation.length > 0 && (
                       <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
                         <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                          Information still needed
+                          {t("programs_info_needed")}
                         </p>
 
                         <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-amber-900">
@@ -150,7 +152,7 @@ export default function ProgramSelectionStep({
             />
             <span>
               <span className="font-medium text-slate-900">
-                Another program not listed above
+                {t("programs_other")}
               </span>
               <span className="mt-0.5 block text-xs text-slate-600">
                 The application has an &ldquo;Other&rdquo; box on page 1. Tell us
@@ -164,8 +166,8 @@ export default function ProgramSelectionStep({
               type="text"
               value={otherDescription}
               onChange={(event) => onOtherDescriptionChange(event.target.value)}
-              placeholder="Which program?"
-              aria-label="Which other program are you applying for?"
+              placeholder={t("programs_other_placeholder")}
+              aria-label={t("programs_other_aria")}
               className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
             />
           )}
@@ -177,7 +179,7 @@ export default function ProgramSelectionStep({
             onClick={onBack}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Back to report
+            {t("programs_back")}
           </button>
 
           <button
@@ -186,7 +188,7 @@ export default function ProgramSelectionStep({
             disabled={selectedCount === 0}
             className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Continue with selected programs
+            {t("programs_continue")}
           </button>
         </div>
       </div>

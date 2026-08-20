@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslation } from '@/hooks/use-translation';
+
 import { useEffect, useState } from 'react';
 
 import type {
@@ -31,6 +33,8 @@ function formatCurrency(value: number | null): string {
 }
 
 function PlanCard({ plan }: { plan: MarketplacePlanSummary }) {
+  const { t } = useTranslation();
+
   const displayedPremium =
     plan.premiumAfterCredit ?? plan.premiumBeforeCredit;
 
@@ -55,7 +59,7 @@ function PlanCard({ plan }: { plan: MarketplacePlanSummary }) {
       <dl className="mt-4 grid gap-3 sm:grid-cols-3">
         <div>
           <dt className="text-sm text-gray-600">
-            Estimated monthly premium
+            {t("mkt_premium")}
           </dt>
           <dd className="font-medium">
             {formatCurrency(displayedPremium)}
@@ -63,7 +67,7 @@ function PlanCard({ plan }: { plan: MarketplacePlanSummary }) {
         </div>
 
         <div>
-          <dt className="text-sm text-gray-600">Deductible</dt>
+          <dt className="text-sm text-gray-600">{t("mkt_deductible")}</dt>
           <dd className="font-medium">
             {formatCurrency(plan.deductible)}
           </dd>
@@ -71,7 +75,7 @@ function PlanCard({ plan }: { plan: MarketplacePlanSummary }) {
 
         <div>
           <dt className="text-sm text-gray-600">
-            Maximum out of pocket
+            {t("mkt_max_oop")}
           </dt>
           <dd className="font-medium">
             {formatCurrency(plan.maximumOutOfPocket)}
@@ -88,7 +92,7 @@ function PlanCard({ plan }: { plan: MarketplacePlanSummary }) {
               rel="noreferrer"
               className="underline"
             >
-              View benefits
+              {t("mkt_view_benefits")}
             </a>
           )}
 
@@ -99,7 +103,7 @@ function PlanCard({ plan }: { plan: MarketplacePlanSummary }) {
               rel="noreferrer"
               className="underline"
             >
-              View plan brochure
+              {t("mkt_view_brochure")}
             </a>
           )}
         </div>
@@ -109,6 +113,8 @@ function PlanCard({ plan }: { plan: MarketplacePlanSummary }) {
 }
 
 export default function MarketplacePlans({ runId }: MarketplacePlansProps) {
+  const { t } = useTranslation();
+
   const [marketplace, setMarketplace] =
     useState<MarketplaceState>({ status: 'loading' });
 
@@ -177,24 +183,23 @@ export default function MarketplacePlans({ runId }: MarketplacePlansProps) {
         id="marketplace-plans-heading"
         className="text-xl font-semibold"
       >
-        Marketplace health plans
+        {t("mkt_heading")}
       </h2>
 
       <p className="mt-2 text-sm text-gray-600">
-        Estimated ACA Marketplace options based on the household
-        information provided.
+        {t("mkt_intro")}
       </p>
 
       {marketplace.status === 'loading' && (
         <p className="mt-6" role="status">
-          Loading Marketplace plans…
+          {t("mkt_loading")}
         </p>
       )}
 
       {marketplace.status === 'error' && (
         <div className="mt-6 rounded-lg border p-4" role="alert">
           <p className="font-medium">
-            Marketplace plan data is temporarily unavailable.
+            {t("mkt_unavailable")}
           </p>
           <p className="mt-1 text-sm">{marketplace.message}</p>
         </div>
@@ -211,7 +216,7 @@ export default function MarketplacePlans({ runId }: MarketplacePlansProps) {
 
           {marketplace.result.plans.length === 0 ? (
             <p className="mt-6">
-              No Marketplace plans were returned for this household.
+              {t("mkt_none")}
             </p>
           ) : (
             <div className="mt-6 grid gap-4">

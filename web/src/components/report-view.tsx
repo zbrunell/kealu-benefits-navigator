@@ -235,15 +235,15 @@ export default function ReportView({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
-                California benefits application
+                {t("report_ca_application")}
               </p>
 
               <h2 className="mt-2 text-lg font-semibold text-green-950">
-                SAWS 2 PLUS application
+                {t("report_saws_application")}
               </h2>
 
               <p className="mt-2 max-w-2xl text-sm text-green-900">
-                Your action plan identified the following application
+                {t("report_action_plan_intro")}
                 recommendations using the completed eligibility and
                 evidence-verification phases.
               </p>
@@ -299,7 +299,7 @@ export default function ReportView({
                 {program.missingInformation.length > 0 && (
                   <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
                     <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                      Information still needed
+                      {t("programs_info_needed")}
                     </p>
 
                     <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-amber-900">
@@ -319,9 +319,7 @@ export default function ReportView({
 
           <div className="mt-5 border-t border-green-200 pt-4">
             <p className="text-xs text-green-800">
-              These are screening recommendations, not official eligibility
-              determinations. You will review all prefilled information before
-              the application is generated.
+              {t("report_screening_note")}
             </p>
 
             <button

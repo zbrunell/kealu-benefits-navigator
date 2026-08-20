@@ -13,6 +13,7 @@ import ApplicationView from "./application-view";
 import type { ChatMessage } from "@/types/session";
 import type { IntakeField } from "@/lib/intake-flow";
 import type { ReportPayload } from "@/lib/report-assembler";
+import { useTranslation } from "@/hooks/use-translation";
 
 type View = "intake" | "progress" | "report" | "application";
 
@@ -37,6 +38,8 @@ export default function AppShell({
   initialRunId,
   initialReport,
 }: AppShellProps) {
+  const { t } = useTranslation();
+
   const [view, setView] = useState<View>(initialView);
   const [runId, setRunId] = useState<string | undefined>(initialRunId);
   const [report, setReport] = useState<ReportPayload | undefined>(initialReport);
@@ -136,11 +139,11 @@ export default function AppShell({
       {view === "application" && !sawsRecommendation && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-5">
           <h1 className="font-semibold text-red-900">
-            Application recommendation unavailable
+            {t("shell_rec_unavailable")}
           </h1>
 
           <p className="mt-2 text-sm text-red-800">
-            The structured SAWS 2 PLUS recommendation could not be found.
+            {t("shell_rec_missing")}
           </p>
 
           <button
@@ -148,7 +151,7 @@ export default function AppShell({
             onClick={handleReturnToReport}
             className="mt-4 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-100"
           >
-            Back to report
+            {t("shell_back_to_report")}
           </button>
         </div>
       )}

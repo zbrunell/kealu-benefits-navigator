@@ -616,7 +616,7 @@ export default function ApplicationView({
             </p>
 
             <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-              Household information saved
+              {t("appview_household_saved")}
             </h1>
 
             <p className="mt-2 text-sm text-slate-600">
@@ -649,7 +649,7 @@ export default function ApplicationView({
                 onClick={() => setStep("questionnaire")}
                 className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
-                Back to questions
+                {t("appview_back_to_questions")}
               </button>
 
               <button

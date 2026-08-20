@@ -11,6 +11,7 @@ import type {
   PersonalEmergencyInformation,
   PregnancyInformation,
 } from "@/types/application";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface EligibilityStepProps {
   preferences: ApplicationPreferences;
@@ -98,6 +99,8 @@ export default function EligibilityStep({
   onBack,
   onContinue,
 }: EligibilityStepProps) {
+  const { t } = useTranslation();
+
   const requiredAnswers = [
     preferences.needsDisabilityApplicationHelp,
     preferences.homeless,
@@ -125,17 +128,16 @@ export default function EligibilityStep({
         </p>
 
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-          Eligibility & urgent needs
+          {t("elig_heading")}
         </h1>
 
         <p className="mt-2 text-sm text-slate-600">
-          These questions help California determine whether your household may
-          qualify for faster assistance or needs additional help applying.
+          {t("elig_intro")}
         </p>
 
         <section className="mt-6">
           <h2 className="text-base font-semibold text-slate-900">
-            Application preferences
+            {t("elig_preferences")}
           </h2>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -181,11 +183,11 @@ export default function EligibilityStep({
 
         <section className="mt-8">
           <h2 className="text-base font-semibold text-slate-900">
-            Faster assistance
+            {t("elig_faster")}
           </h2>
 
           <p className="mt-1 text-sm text-slate-600">
-            Answer these based on your household’s current situation.
+            {t("elig_faster_intro")}
           </p>
 
           <div className="mt-3 space-y-3">
@@ -272,7 +274,7 @@ export default function EligibilityStep({
 
         <section className="mt-8">
           <h2 className="text-base font-semibold text-slate-900">
-            Pregnancy & emergencies
+            {t("elig_pregnancy")}
           </h2>
 
           <div className="mt-3 space-y-3">
@@ -305,7 +307,7 @@ export default function EligibilityStep({
             {personalEmergency.hasEmergency === true && (
               <fieldset className="rounded-lg border border-amber-200 bg-amber-50 p-4">
                 <legend className="px-1 text-sm font-medium text-amber-950">
-                  Select any emergency types that apply
+                  {t("elig_emergency_types")}
                 </legend>
 
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -344,7 +346,7 @@ export default function EligibilityStep({
             onClick={onBack}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Back to applicant information
+            {t("elig_back")}
           </button>
 
           <button
@@ -353,7 +355,7 @@ export default function EligibilityStep({
             disabled={!isComplete}
             className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Continue to household members
+            {t("elig_continue")}
           </button>
         </div>
       </div>
