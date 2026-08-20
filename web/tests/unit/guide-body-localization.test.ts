@@ -21,7 +21,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildCompletionGuide, draftReferenceFrom } from '@/lib/completion-guide';
 import { messages } from '@/i18n';
-import { SUPPORTED_LOCALES, type Locale } from '@/lib/locale';
+import { documentLanguageFor, SUPPORTED_LOCALES, type Locale } from '@/lib/locale';
 import { writePath } from '@/lib/saws2-question-planner';
 import { EMPTY_APPLICATION_DATA, type Saws2PlusApplicationData } from '@/types/application';
 
@@ -172,5 +172,73 @@ describe('no English structure leaks into a translated body', () => {
     for (const tell of TELLS) {
       expect(structural, `${locale} leaked "${tell}"`).not.toContain(tell);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Quotations of the page follow the document, not the interface
+// ---------------------------------------------------------------------------
+
+/**
+ * The rule: our prose is in the reader's language, the form's own words are in
+ * the form's language. Getting either backwards sends someone hunting for text
+ * that is not on their page.
+ */
+describe('printed quotations follow the document language', () => {
+  const guideFor = (locale: Locale) =>
+    buildCompletionGuide({
+      application: application(),
+      audience: 'associate',
+      locale,
+      county: 'Los Angeles',
+      draft: {
+        reference: draftReferenceFrom('9f3a21c0-0000-0000-0000-000000000000'),
+        generatedAt: '2026-08-19T10:00:00.000Z',
+      },
+    });
+
+  const ssnTitles = (locale: Locale) =>
+    guideFor(locale)
+      .sections.filter((s) => s.id === 'ssn')
+      .flatMap((s) => s.items.map((i) => i.title))
+      .join(' | ');
+
+  it('quotes the Spanish form for a Spanish reader', () => {
+    // Verified against CA-SAWS-2-PLUS-ES.pdf by the Python label test.
+    expect(ssnTitles('es')).toContain('NÚMERO DE SEGURO SOCIAL');
+    expect(ssnTitles('es')).not.toContain('SOCIAL SECURITY NUMBER');
+  });
+
+  it('quotes the English form for a Simplified Chinese reader', () => {
+    /*
+     * The document really is English — CDSS publishes no fillable Simplified
+     * Chinese form — so the English label is the correct thing to quote.
+     */
+    expect(documentLanguageFor('zh-CN')).toBe('en');
+    expect(ssnTitles('zh-CN')).toContain('SOCIAL SECURITY NUMBER');
+  });
+
+  it('quotes English for an English reader', () => {
+    expect(ssnTitles('en')).toContain('SOCIAL SECURITY NUMBER');
+  });
+
+  it('keeps the instruction prose in the interface language either way', () => {
+    const es = guideFor('es')
+      .sections.filter((s) => s.id === 'ssn')
+      .flatMap((s) => s.items.map((i) => i.detail))
+      .join(' ');
+
+    // Spanish sentence, even though the quoted label may be Spanish too.
+    expect(es).toContain('a propósito');
+    expect(es).not.toContain('Left blank on purpose');
+
+    const zh = guideFor('zh-CN')
+      .sections.filter((s) => s.id === 'ssn')
+      .flatMap((s) => s.items.map((i) => i.detail))
+      .join(' ');
+
+    // Chinese sentence wrapped around an English quotation.
+    expect(zh).toMatch(/[一-鿿]/);
+    expect(zh).not.toContain('Left blank on purpose');
   });
 });

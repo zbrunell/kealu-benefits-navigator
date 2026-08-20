@@ -182,6 +182,15 @@ export interface ManualItem {
   /** Substitutions for the value type, used only by the overflow rows. */
   valueTypeVars?: Readonly<Record<string, string | number>>;
   /**
+   * Ids into PRINTED_SECTIONS / PRINTED_LABELS, when a verified quotation of
+   * the page exists for this blank.
+   *
+   * Absent means the guide quotes the English strings above. Present means it
+   * quotes the page in the document's own language.
+   */
+  printedSectionKey?: string;
+  printedLabelKey?: string;
+  /**
    * The unanswered question's own catalog key, when this item is one.
    *
    * Lets the guide name the question in the applicant's language instead of
@@ -298,8 +307,10 @@ function ssnItems(application: Saws2PlusApplicationData): ManualItem[] {
     printedPage: printedPageLabel(7),
     saws: 'Q1',
     printedSection: 'Applicant’s information',
+    printedSectionKey: 'applicant_information',
     printedLabel:
       'SOCIAL SECURITY NUMBER (IF YOU HAVE ONE AND ARE APPLYING FOR BENEFITS)',
+    printedLabelKey: 'ssn_page_1',
     person: nameFor(rows.all[0]),
     valueType: 'Social Security Number',
     valueTypeKey: 'vt_ssn',
@@ -325,6 +336,7 @@ function ssnItems(application: Saws2PlusApplicationData): ManualItem[] {
         saws,
         printedSection: section,
         printedLabel: 'SOCIAL SECURITY NUMBER',
+        printedLabelKey: 'ssn_household_column',
         person: nameFor(assignment),
         valueType: 'Social Security Number',
         valueTypeKey: 'vt_ssn',
@@ -383,6 +395,8 @@ function signatureItems(application: Saws2PlusApplicationData): ManualItem[] {
       printedPage: printedPageLabel(7),
       saws: 'Q1 (signature block)',
       printedSection: 'Signature block at the foot of page 1',
+      printedSectionKey: 'signature_block_page_1',
+      printedLabelKey: 'signature_applicant',
       printedLabel:
         'SIGNATURE OF APPLICANT, CARETAKER RELATIVE (OR ADULT HOUSEHOLD ' +
         'MEMBER/AUTHORIZED REPRESENTATIVE/GUARDIAN)',

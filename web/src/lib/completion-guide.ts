@@ -38,6 +38,11 @@ import {
 import type { ApplicationFieldPlanEntry } from '@/lib/application-mapper';
 import { documentLanguageFor, DEFAULT_LOCALE, type Locale } from '@/lib/locale';
 import { interpolate, messages, t } from '@/i18n';
+import {
+  PRINTED_LABELS,
+  PRINTED_SECTIONS,
+  printedTextFor,
+} from '@/lib/printed-labels';
 import type { Saws2PlusApplicationData } from '@/types/application';
 
 /** Statewide California portal for CalFresh / CalWORKs / Medi-Cal. */
@@ -163,8 +168,23 @@ function itemsFor(
   reason: ManualReason,
   audience: GuideAudience,
   locale: Locale,
+  documentLanguage: Locale,
 ): GuideItem[] {
   const msgs = messages[locale];
+
+  /*
+   * Quotations of the page follow the *document* language, never the interface.
+   * A Spanish reader holding the Spanish form must be told to look for the
+   * Spanish heading; a Simplified Chinese reader holding the English form must
+   * be told the English one. Either mistake sends someone hunting for text that
+   * is not on their page.
+   */
+  const quote = (
+    table: typeof PRINTED_SECTIONS,
+    key: string | undefined,
+    fallback: string,
+  ): string =>
+    (key && printedTextFor(table, key, documentLanguage)) || fallback;
 
   return completion.byReason[reason].map((item) => {
     /*
@@ -210,10 +230,17 @@ function itemsFor(
        * follows the *document* language, not the interface. The applicant guide
        * leads with what kind of value goes in the box, which is our own prose.
        */
-      title: audience === 'associate' ? item.printedLabel : valueType,
+      title:
+        audience === 'associate'
+          ? quote(PRINTED_LABELS, item.printedLabelKey, item.printedLabel)
+          : valueType,
       detail:
         audience === 'associate'
-          ? `${item.printedSection} — ${instruction}`
+          ? `${quote(
+              PRINTED_SECTIONS,
+              item.printedSectionKey,
+              item.printedSection,
+            )} — ${instruction}`
           : instruction,
       location: locationOf(item, locale),
       person: item.person,
@@ -432,7 +459,13 @@ export function buildCompletionGuide(
   ];
 
   for (const reason of SECTION_ORDER) {
-    const items = itemsFor(completion, reason, audience, locale);
+    const items = itemsFor(
+      completion,
+      reason,
+      audience,
+      locale,
+      documentLanguageFor(locale),
+    );
 
     if (items.length === 0) continue;
 

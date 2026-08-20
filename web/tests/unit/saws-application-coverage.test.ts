@@ -151,6 +151,8 @@ describe('privacy boundary', () => {
         'declares Q6c SSN as manual-only with no path, no canonical key and no PDF destination — the declaration is what forbids collection',
       'types/saws-questionnaire.ts':
         'documents that Appendix A item 2 (the employee SSN) has deliberately no field in the model, which is what makes it unstorable',
+      'lib/printed-labels.ts':
+        'quotes the form’s own printed SSN column headings, in English and in verified Spanish, so the guide can tell a reader what to look for; it holds no SSN value',
       'lib/saws2-inventory.ts':
         'classifies printed question Q6c as manual_ssn so readiness can report it as the applicant’s own step; it holds no SSN value',
       'lib/draft-completion.ts':
