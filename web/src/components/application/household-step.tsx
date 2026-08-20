@@ -10,6 +10,7 @@ import {
   type HouseholdRelationship,
 } from "@/lib/household-relationships";
 import { ageOnDate, dateOfBirthBounds } from "@/lib/date-of-birth";
+import { useTranslation } from "@/hooks/use-translation";
 import type { Saws2PlusProgram } from "@/lib/report-assembler";
 
 import type {
@@ -143,6 +144,8 @@ function ProgramCheckboxes({
   applyingFor: Saws2PlusProgram[];
   onChange: (programs: Saws2PlusProgram[]) => void;
 }) {
+  const { t } = useTranslation();
+
   function toggle(program: Saws2PlusProgram) {
     onChange(
       applyingFor.includes(program)
@@ -154,7 +157,7 @@ function ProgramCheckboxes({
   return (
     <fieldset className="rounded-lg border border-slate-200 bg-white p-3">
       <legend className="px-1 text-sm font-medium text-slate-800">
-        Which benefits is this person applying for?
+        {t("household_which_benefits")}
       </legend>
 
       <div className="mt-2 flex flex-wrap gap-4">
@@ -176,7 +179,7 @@ function ProgramCheckboxes({
 
         {selectedPrograms.length === 0 && (
           <p className="text-sm text-slate-500">
-            No application programs selected.
+            {t("household_no_programs")}
           </p>
         )}
       </div>
@@ -209,6 +212,8 @@ export default function HouseholdStep({
   onBack,
   onContinue,
 }: HouseholdStepProps) {
+  const { t } = useTranslation();
+
   /**
    * Base identity information is required before continuing.
    *
@@ -232,18 +237,16 @@ export default function HouseholdStep({
         </p>
 
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-          Household members
+          {t("household_heading")}
         </h1>
 
         <p className="mt-2 text-sm text-slate-600">
-          Add everyone who lives in the household besides the primary applicant.
-          These answers populate the adult and child household tables on the
-          SAWS 2 PLUS application.
+          {t("household_intro_1")} {t("household_intro_2")}
         </p>
 
         <div className="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4">
           <p className="text-sm font-medium text-blue-900">
-            Primary applicant
+            {t("household_primary_applicant")}
           </p>
 
           <p className="mt-1 text-sm text-blue-800">
@@ -251,8 +254,7 @@ export default function HouseholdStep({
           </p>
 
           <p className="mt-2 text-xs text-blue-700">
-            The primary applicant is handled separately and is also included in
-            the generated household table.
+            {t("household_primary_note")}
           </p>
         </div>
 
@@ -302,7 +304,7 @@ export default function HouseholdStep({
                 <div className="mt-4 grid gap-4 sm:grid-cols-3">
                   <label className="block">
                     <span className="text-sm font-medium text-slate-700">
-                      First name
+                      {t("field_first_name")}
                     </span>
 
                     <input
@@ -321,7 +323,7 @@ export default function HouseholdStep({
 
                   <label className="block">
                     <span className="text-sm font-medium text-slate-700">
-                      Middle name
+                      {t("field_middle_name")}
                     </span>
 
                     <input
@@ -340,7 +342,7 @@ export default function HouseholdStep({
 
                   <label className="block">
                     <span className="text-sm font-medium text-slate-700">
-                      Last name
+                      {t("field_last_name")}
                     </span>
 
                     <input
@@ -361,7 +363,7 @@ export default function HouseholdStep({
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <label className="block">
                     <span className="text-sm font-medium text-slate-700">
-                      Date of birth
+                      {t("field_date_of_birth")}
                     </span>
 
                     <input
@@ -382,7 +384,7 @@ export default function HouseholdStep({
 
                   <label className="block">
                     <span className="text-sm font-medium text-slate-700">
-                      Relationship to applicant
+                      {t("field_relationship_to_applicant")}
                     </span>
 
                     <select
@@ -397,7 +399,7 @@ export default function HouseholdStep({
                       className={INPUT_CLASS}
                     >
                       <option value="">
-                        Select relationship
+                        {t("opt_select_relationship")}
                       </option>
 
                       {/*
@@ -427,8 +429,7 @@ export default function HouseholdStep({
 
                 {calculatedAge === null && (
                   <p className="mt-3 text-xs text-amber-700">
-                    Enter a date of birth to show the remaining adult or child
-                    application questions.
+                    {t("household_dob_hint")}
                   </p>
                 )}
 
@@ -436,7 +437,7 @@ export default function HouseholdStep({
                 {calculatedAge !== null && !isChild && (
                   <div className="mt-6 space-y-4 border-t border-slate-200 pt-5">
                     <h2 className="text-sm font-semibold text-slate-900">
-                      Adult application details
+                      {t("household_adult_details")}
                     </h2>
 
                     <ProgramCheckboxes
@@ -485,7 +486,7 @@ export default function HouseholdStep({
 
                       <label className="block">
                         <span className="text-sm font-medium text-slate-700">
-                          Marital status
+                          {t("field_marital_status")}
                         </span>
 
                         <select
@@ -568,7 +569,7 @@ export default function HouseholdStep({
                 {calculatedAge !== null && isChild && (
                   <div className="mt-6 space-y-4 border-t border-slate-200 pt-5">
                     <h2 className="text-sm font-semibold text-slate-900">
-                      Child application details
+                      {t("household_child_details")}
                     </h2>
 
                     <ProgramCheckboxes
@@ -617,7 +618,7 @@ export default function HouseholdStep({
 
                       <label className="block">
                         <span className="text-sm font-medium text-slate-700">
-                          Place of birth
+                          {t("field_place_of_birth")}
                         </span>
 
                         <input
@@ -630,7 +631,7 @@ export default function HouseholdStep({
                               event.target.value,
                             )
                           }
-                          placeholder="City, state, or country"
+                          placeholder={t("household_place_of_birth_placeholder")}
                           className={INPUT_CLASS}
                         />
                       </label>
@@ -688,7 +689,7 @@ export default function HouseholdStep({
 
                     <fieldset className="rounded-lg border border-slate-200 bg-white p-3">
                       <legend className="px-1 text-sm font-medium text-slate-800">
-                        Does any of the following apply to one or both parents?
+                        {t("household_parent_question")}
                       </legend>
 
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -696,26 +697,26 @@ export default function HouseholdStep({
                           [
                             [
                               "notInHome",
-                              "Parent not in home",
+                              "household_parent_not_in_home",
                             ],
                             [
                               "unemployed",
-                              "Parent unemployed",
+                              "household_parent_unemployed",
                             ],
                             [
                               "disabled",
-                              "Parent disabled",
+                              "household_parent_disabled",
                             ],
                             [
                               "deceased",
-                              "Parent deceased",
+                              "household_parent_deceased",
                             ],
                             [
                               "none",
-                              "None of these",
+                              "household_parent_none",
                             ],
                           ] as const
-                        ).map(([field, label]) => (
+                        ).map(([field, labelKey]) => (
                           <label
                             key={field}
                             className="flex items-center gap-2 text-sm text-slate-700"
@@ -736,14 +737,14 @@ export default function HouseholdStep({
                               className="h-4 w-4 rounded border-slate-300 text-green-700 focus:ring-green-600"
                             />
 
-                            {label}
+                            {t(labelKey)}
                           </label>
                         ))}
                       </div>
                     </fieldset>
 
                     <p className="text-xs text-slate-500">
-                      Social Security numbers are intentionally not collected
+                      {t("household_privacy_note")}
                       or prefilled here. They must be entered manually in the
                       official form if required.
                     </p>
@@ -759,12 +760,12 @@ export default function HouseholdStep({
           onClick={onAdd}
           className="mt-5 rounded-lg border border-green-300 bg-green-50 px-4 py-2 text-sm font-medium text-green-800 hover:bg-green-100"
         >
-          Add household member
+          {t("household_add_member")}
         </button>
 
         {members.length === 0 && (
           <p className="mt-3 text-sm text-slate-500">
-            No additional household members added.
+            {t("household_none_added")}
           </p>
         )}
 
@@ -774,7 +775,7 @@ export default function HouseholdStep({
             onClick={onBack}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Back to eligibility questions
+            {t("household_back")}
           </button>
 
           <button

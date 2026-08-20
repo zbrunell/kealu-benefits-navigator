@@ -150,18 +150,18 @@ export default function ApplicantStep({
         </p>
 
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-          Applicant information
+          {t("applicant_heading")}
         </h1>
 
         <p className="mt-2 text-sm text-slate-600">
-          Enter the information for the primary person applying for benefits.
+          {t("applicant_intro")}
         </p>
 
         {/* Basic applicant identity. */}
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              First name
+              {t("field_first_name")}
             </span>
             <input
               type="text"
@@ -176,7 +176,7 @@ export default function ApplicantStep({
 
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              Middle name
+              {t("field_middle_name")}
             </span>
             <input
               type="text"
@@ -191,7 +191,7 @@ export default function ApplicantStep({
 
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              Last name
+              {t("field_last_name")}
             </span>
             <input
               type="text"
@@ -208,7 +208,7 @@ export default function ApplicantStep({
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              Date of birth
+              {t("field_date_of_birth")}
             </span>
             <input
               type="date"
@@ -245,7 +245,7 @@ export default function ApplicantStep({
 
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              Preferred language
+              {t("field_preferred_language")}
             </span>
             <select
               value={applicant.preferredLanguage}
@@ -257,10 +257,10 @@ export default function ApplicantStep({
               }
               className={INPUT_CLASS}
             >
-              <option value="English">English</option>
-              <option value="Spanish">Spanish</option>
-              <option value="Chinese">Chinese</option>
-              <option value="Other">Other</option>
+              <option value="English">{t("opt_lang_english")}</option>
+              <option value="Spanish">{t("opt_lang_spanish")}</option>
+              <option value="Chinese">{t("opt_lang_chinese")}</option>
+              <option value="Other">{t("opt_lang_other")}</option>
             </select>
           </label>
         </div>
@@ -269,11 +269,10 @@ export default function ApplicantStep({
         <div className="mt-4">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              Other names you have used
+              {t("field_other_names")}
             </span>
             <span className="mt-0.5 block text-xs text-slate-500">
-              Maiden name, nicknames, or any other name on your records. Leave
-              blank if none.
+              {t("applicant_other_names_help")}
             </span>
             <input
               type="text"
@@ -290,7 +289,7 @@ export default function ApplicantStep({
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              Phone number
+              {t("field_phone_number")}
             </span>
             <input
               type="tel"
@@ -314,7 +313,7 @@ export default function ApplicantStep({
 
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              Work, alternate, or message phone
+              {t("field_alternate_phone")}
             </span>
             <input
               type="tel"
@@ -338,7 +337,7 @@ export default function ApplicantStep({
 
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              Email address
+              {t("field_email")}
             </span>
             <input
               type="email"
@@ -362,13 +361,13 @@ export default function ApplicantStep({
         {/* Home-address fields used on Page 1. */}
         <fieldset className="mt-6">
           <legend className="text-base font-semibold text-slate-900">
-            Home address
+            {t("applicant_home_address")}
           </legend>
 
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <label className="block sm:col-span-2">
               <span className="text-sm font-medium text-slate-700">
-                Street address
+                {t("field_street_address")}
               </span>
               <input
                 type="text"
@@ -393,7 +392,7 @@ export default function ApplicantStep({
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700">
-                Apartment or unit
+                {t("field_apartment")}
               </span>
               <input
                 type="text"
@@ -449,7 +448,7 @@ export default function ApplicantStep({
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700">
-                ZIP code
+                {t("field_zip_code")}
               </span>
               <input
                 type="text"
@@ -489,19 +488,18 @@ export default function ApplicantStep({
             className="mt-1 h-4 w-4 rounded border-slate-300 text-green-700 focus:ring-green-600"
           />
           <span className="text-sm text-slate-700">
-            Mailing address is the same as the home address
+            {t("applicant_mailing_same")}
           </span>
         </label>
 
         {/* Applicant row details used on SAWS Page 3. */}
         <section className="mt-8 border-t border-slate-200 pt-6">
           <h2 className="text-base font-semibold text-slate-900">
-            Applicant household details
+            {t("applicant_household_details")}
           </h2>
 
           <p className="mt-1 text-sm text-slate-600">
-            These answers help complete your row in the SAWS 2 PLUS adult
-            household section.
+            {t("applicant_household_details_help")}
           </p>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -522,15 +520,15 @@ export default function ApplicantStep({
                 }
                 className={INPUT_CLASS}
               >
-                <option value="">Select</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
+                <option value="">{t("opt_select")}</option>
+                <option value="male">{t("opt_male")}</option>
+                <option value="female">{t("opt_female")}</option>
               </select>
             </label>
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700">
-                Marital status
+                {t("field_marital_status")}
               </span>
 
               <select
@@ -548,12 +546,12 @@ export default function ApplicantStep({
                 }
                 className={INPUT_CLASS}
               >
-                <option value="">Select</option>
-                <option value="single">Single</option>
-                <option value="married">Married</option>
-                <option value="separated">Separated</option>
-                <option value="divorced">Divorced</option>
-                <option value="widowed">Widowed</option>
+                <option value="">{t("opt_select")}</option>
+                <option value="single">{t("opt_single")}</option>
+                <option value="married">{t("opt_married")}</option>
+                <option value="separated">{t("opt_separated")}</option>
+                <option value="divorced">{t("opt_divorced")}</option>
+                <option value="widowed">{t("opt_widowed")}</option>
               </select>
             </label>
           </div>
@@ -561,7 +559,7 @@ export default function ApplicantStep({
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <fieldset className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <legend className="px-1 text-sm font-medium text-slate-800">
-                U.S. citizen or national?
+                {t("applicant_citizen_question")}
               </legend>
 
               <div className="mt-2 flex gap-2">
@@ -605,7 +603,7 @@ export default function ApplicantStep({
 
             <fieldset className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <legend className="px-1 text-sm font-medium text-slate-800">
-                Full-time student?
+                {t("applicant_student_question")}
               </legend>
 
               <div className="mt-2 flex gap-2">
@@ -691,8 +689,7 @@ export default function ApplicantStep({
           </div>
 
           <p className="mt-3 text-xs text-slate-500">
-            Social Security numbers and signature fields are intentionally not
-            collected or automatically prefilled.
+            {t("applicant_privacy_note")}
           </p>
         </section>
 
@@ -702,7 +699,7 @@ export default function ApplicantStep({
             onClick={onBack}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Back to program selection
+            {t("applicant_back")}
           </button>
 
           <button
@@ -711,7 +708,7 @@ export default function ApplicantStep({
             disabled={!isValid}
             className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Continue to eligibility questions
+            {t("applicant_continue")}
           </button>
         </div>
       </div>
