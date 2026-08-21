@@ -82,6 +82,10 @@ export default function DraftCompletionGuide({
 
   const countyLabel = county.trim();
 
+  const [beforeReference, afterReference] = t("dcg_draft_reference").split(
+    "{reference}",
+  );
+
   return (
     <div className="mt-4 space-y-4">
       {/* ── Download ─────────────────────────────────────────────────────── */}
@@ -116,12 +120,16 @@ export default function DraftCompletionGuide({
         </div>
 
         {/*
-          One sentence with the reference interpolated, rather than prose
-          wrapped around a <span>: a translator needs to move the reference to
-          wherever their language puts it.
+          The catalog holds one whole sentence with a {reference} placeholder,
+          and the split happens on the *translated* string. That keeps each
+          language's own word order — unlike wrapping prose around a <span>,
+          which forces the reference to sit wherever English puts it — while
+          still letting an eight-character hex code render in monospace.
         */}
         <p className="mt-3 text-xs text-green-800">
-          {tv("dcg_draft_reference", { reference: draftReference })}
+          {beforeReference}
+          <span className="font-mono font-semibold">{draftReference}</span>
+          {afterReference}
         </p>
       </div>
 

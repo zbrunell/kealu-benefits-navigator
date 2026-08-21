@@ -404,7 +404,10 @@ describe('post-generation completion guide', () => {
     // The reference is interpolated into one sentence rather than wrapped in
     // prose, so a translator can put it where their language needs it.
     expect(guide).toContain('dcg_draft_reference');
-    expect(guide).toContain('reference: draftReference');
+    // Split on the translated string, so the reference keeps its monospace
+    // styling without pinning English word order into the component.
+    expect(guide.replace(/\s+/g, ' ')).toContain('split( "{reference}", )');
+    expect(guide).toContain('{draftReference}');
     expect(messages.en.dcg_draft_reference).toMatch(/\{reference\}/);
     expect(messages.en.dcg_draft_reference).toMatch(
       /which guide goes with which draft/i,

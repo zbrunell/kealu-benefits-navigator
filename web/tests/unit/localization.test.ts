@@ -76,6 +76,45 @@ const IDENTICAL_BY_DESIGN = new Set([
 
 // ── Catalog completeness ─────────────────────────────────────────────────────
 
+describe('interpolation placeholders survive translation', () => {
+  /*
+   * A few strings are split on their placeholder at render so the value can be
+   * styled. A translation that dropped the placeholder would silently lose the
+   * value — the sentence would still read correctly, so nothing else would
+   * catch it.
+   */
+  const REQUIRED_PLACEHOLDERS: Array<[string, string[]]> = [
+    ['dcg_draft_reference', ['{reference}']],
+    ['dcg_county_known', ['{county}']],
+    ['dcg_inperson_known', ['{county}']],
+    ['dcg_questions_blank', ['{count}']],
+    ['mkt_showing', ['{shown}', '{total}', '{county}', '{state}']],
+    ['report_screening_confidence', ['{percent}']],
+    ['report_run_label', ['{runId}']],
+    ['prog_selected_one', ['{count}']],
+    ['prog_selected_other', ['{count}']],
+    ['report_continue_programs_one', ['{count}']],
+    ['report_continue_programs_other', ['{count}']],
+  ];
+
+  for (const locale of SUPPORTED_LOCALES) {
+    it.each(REQUIRED_PLACEHOLDERS)(
+      `${locale} keeps every placeholder in %s`,
+      (key, placeholders) => {
+        const value = (messages[locale] as Record<string, string>)[key];
+
+        expect(value, `${locale}.${key} is missing`).toBeDefined();
+
+        for (const placeholder of placeholders) {
+          expect(value, `${locale}.${key} lost ${placeholder}`).toContain(
+            placeholder,
+          );
+        }
+      },
+    );
+  }
+});
+
 describe('catalog completeness', () => {
   it.each(TRANSLATED)('%s defines every English key', (locale) => {
     expect(missingKeys(locale).absent).toEqual([]);
