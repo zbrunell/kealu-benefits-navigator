@@ -148,7 +148,19 @@ export function leaksIn(source: string): Leak[] {
   const blanked = source.replace(/\/\*[\s\S]*?\*\//g, (m) =>
     m.replace(/[^\n]/g, ' '),
   );
-  const lines = blanked.split('\n').map((l) => l.replace(/\/\/.*$/, ''));
+  const lines = blanked
+    .split('\n')
+    .map((l) => l.replace(/\/\/.*$/, ''))
+    /*
+     * Entities become a letter before any pattern runs.
+     *
+     * `&ldquo;` contains a semicolon, and the bare-prose pattern excludes
+     * semicolons to skip statements — so `an &ldquo;Other&rdquo; box on page 1.
+     * Tell us` never even reached the prose check. That is exactly how it
+     * reached production. Decoding here rather than inside looksLikeProse
+     * matters: by then the line has already been rejected.
+     */
+    .map((l) => l.replace(/&[a-z]+;/g, 'x'));
   const found: Leak[] = [];
 
   const push = (
@@ -252,6 +264,10 @@ describe('the detector actually detects', () => {
     ['a template sentence', '  `Your ZIP code is in ${county} County, so it applies.`'],
     ['jsx text', '  <span>Health coverage only:</span>'],
     ['a lone capitalised label', '              City'],
+    [
+      'prose containing an HTML entity',
+      '                The application has an &ldquo;Other&rdquo; box on page 1.',
+    ],
   ];
 
   for (const [what, sample] of REAL_LEAKS) {

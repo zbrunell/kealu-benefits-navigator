@@ -838,6 +838,36 @@ const es: Messages = {
   qfield_zipCode: 'Código postal',
   qfield_phone: 'Número de teléfono',
 
+  elig_medi_cal_income_below_magi: 'Los ingresos del hogar de {income} equivalen al {fplPercent} del Nivel Federal de Pobreza de {fplYear}, es decir, igual o por debajo del límite MAGI de Medi-Cal del {limitPercent}, que es de {limitAmount} para un hogar de {householdSize}.',
+  elig_ca_medicaid_expansion: 'California amplió Medicaid, por lo que los adultos sin hijos dependientes pueden calificar únicamente según sus ingresos.',
+  elig_medi_cal_children_within_266: 'Los ingresos del hogar equivalen al {fplPercent} del NFP: por encima del límite del 138% para adultos, pero dentro del límite del 266% del NFP para menores en California.',
+  elig_medi_cal_children_may_qualify_one: 'El menor del hogar podría calificar para Medi-Cal aunque los adultos no califiquen.',
+  elig_medi_cal_children_may_qualify_other: 'Los {children} menores del hogar podrían calificar para Medi-Cal aunque los adultos no califiquen.',
+  elig_medi_cal_pregnancy_within_213: 'Los ingresos del hogar equivalen al {fplPercent} del NFP, dentro del límite del 213% del NFP para Medi-Cal por embarazo.',
+  elig_medi_cal_income_above_magi: 'Los ingresos del hogar de {income} equivalen al {fplPercent} del NFP, por encima del límite MAGI de Medi-Cal del 138%, que es de {limitAmount}.',
+  elig_covered_ca_more_likely: 'Con este nivel de ingresos, los créditos fiscales para primas de Covered California son la vía más probable para obtener cobertura asequible.',
+  elig_calfresh_gross_below_130: 'El ingreso bruto del hogar equivale al {fplPercent} del NFP, por debajo del filtro federal de ingreso bruto del 130% para un hogar de {householdSize}.',
+  elig_calfresh_no_asset_test: 'California no aplica una prueba de bienes de CalFresh a la mayoría de los hogares.',
+  elig_calfresh_within_mce_200: 'El ingreso bruto del hogar equivale al {fplPercent} del NFP, dentro del límite del 200% de Elegibilidad Categórica Modificada de California, que es de {grossLimit}.',
+  elig_calfresh_net_income_depends: 'El beneficio final depende del ingreso neto después de las deducciones por vivienda y servicios públicos.',
+  elig_calfresh_gross_above_200: 'El ingreso bruto del hogar equivale al {fplPercent} del NFP, por encima del límite de ingreso bruto de CalFresh del 200% en California, que es de {grossLimit}.',
+  elig_calworks_no_child_or_pregnancy: 'No se identificó ningún hijo dependiente ni embarazo en el hogar. CalWORKs exige un menor necesitado en el hogar o un embarazo.',
+  elig_calworks_pregnancy_within_mbsac: 'El hogar incluye un embarazo y los ingresos equivalen al {fplPercent} del NFP, dentro del rango en el que suele cumplirse la prueba MBSAC de CalWORKs.',
+  elig_calworks_children_within_mbsac_one: 'El hogar incluye un hijo dependiente y los ingresos equivalen al {fplPercent} del NFP, dentro del rango en el que suele cumplirse la prueba MBSAC de CalWORKs.',
+  elig_calworks_children_within_mbsac_other: 'El hogar incluye {children} hijos dependientes y los ingresos equivalen al {fplPercent} del NFP, dentro del rango en el que suele cumplirse la prueba MBSAC de CalWORKs.',
+  elig_calworks_near_mbsac: 'Los ingresos equivalen al {fplPercent} del NFP, cerca de la Norma Básica Mínima de Cuidado Adecuado (MBSAC) de CalWORKs para un hogar de {householdSize}. La determinación depende del ingreso contable después de las exclusiones.',
+  elig_calworks_above_mbsac: 'Un ingreso del {fplPercent} del NFP está por encima de la Norma Básica Mínima de Cuidado Adecuado (MBSAC) de CalWORKs para un hogar de {householdSize}.',
+  missing_monthly_rent_or_mortgage: 'Alquiler o pago mensual de la hipoteca',
+  missing_monthly_utilities: 'Costos mensuales de servicios públicos',
+  missing_monthly_housing_costs: 'Costos mensuales de vivienda',
+  missing_countable_property_and_vehicles: 'Bienes y vehículos contables',
+  missing_child_citizenship_status: 'Estado de ciudadanía o de inmigración de cada menor',
+  missing_expected_due_date: 'Fecha probable de parto',
+  prog_other_explanation: 'La solicitud tiene una casilla de “Otro” en la página 1. Indíquenos cuál es el programa para que podamos anotarlo en el formulario.',
+
+  api_error_field_problems: 'Algunas respuestas no se pueden escribir en el formulario. Revíselas e inténtelo de nuevo.',
+  api_error_workflow_unavailable: 'El servicio de análisis no está disponible en este momento. Inténtelo de nuevo en unos minutos.',
+
 } as const;
 
 export default es;

@@ -68,7 +68,7 @@ export default function ApplicationView({
   prefill,
   onBack,
 }: ApplicationViewProps) {
-  const { t } = useTranslation();
+  const { t, tOr } = useTranslation();
 
   const [step, setStep] = useState<ApplicationStep>("programs");
 
@@ -516,6 +516,7 @@ export default function ApplicationView({
         guideUrl?: string;
         draftReference?: string;
         error?: string;
+        errorKey?: string;
         fieldProblems?: Array<{ field: string; messageKey: string }>;
       };
 
@@ -527,13 +528,13 @@ export default function ApplicationView({
          */
         if (result.fieldProblems?.length) {
           throw new Error(
-            `${result.error ?? t("av_answers_need_correcting")} ` +
+            `${tOr(result.errorKey ?? "", result.error ?? t("av_answers_need_correcting"))} ` +
               result.fieldProblems.map((problem) => t(problem.messageKey)).join(" "),
           );
         }
 
         throw new Error(
-          result.error ?? t("av_draft_failed"),
+          tOr(result.errorKey ?? "", result.error ?? t("av_draft_failed")),
         );
       }
 

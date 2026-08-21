@@ -818,6 +818,36 @@ const zhCN: Messages = {
   qfield_zipCode: '邮政编码',
   qfield_phone: '电话号码',
 
+  elig_medi_cal_income_below_magi: '家庭收入 {income} 相当于 {fplYear} 年联邦贫困线的 {fplPercent}，等于或低于 Medi-Cal 的 MAGI 上限 {limitPercent}，即 {householdSize} 人家庭的 {limitAmount}。',
+  elig_ca_medicaid_expansion: '加州扩大了 Medicaid，因此没有受抚养子女的成年人仅凭收入即可符合资格。',
+  elig_medi_cal_children_within_266: '家庭收入相当于联邦贫困线的 {fplPercent}：高于成年人 138% 的上限，但在加州儿童 266% 的上限之内。',
+  elig_medi_cal_children_may_qualify_one: '即使成年人不符合资格，家中的这名儿童仍可能符合 Medi-Cal 的资格。',
+  elig_medi_cal_children_may_qualify_other: '即使成年人不符合资格，家中的 {children} 名儿童仍可能符合 Medi-Cal 的资格。',
+  elig_medi_cal_pregnancy_within_213: '家庭收入相当于联邦贫困线的 {fplPercent}，在与怀孕相关的 Medi-Cal 的 213% 上限之内。',
+  elig_medi_cal_income_above_magi: '家庭收入 {income} 相当于联邦贫困线的 {fplPercent}，高于 Medi-Cal 的 MAGI 上限 138%，即 {limitAmount}。',
+  elig_covered_ca_more_likely: '在此收入水平下，通过 Covered California 的保费税收抵免更有可能获得可负担的保险。',
+  elig_calfresh_gross_below_130: '家庭税前总收入相当于联邦贫困线的 {fplPercent}，低于 {householdSize} 人家庭 130% 的联邦税前收入门槛。',
+  elig_calfresh_no_asset_test: '加州对大多数家庭不进行 CalFresh 资产审查。',
+  elig_calfresh_within_mce_200: '家庭税前总收入相当于联邦贫困线的 {fplPercent}，在加州 200% 的修正类别资格上限 {grossLimit} 之内。',
+  elig_calfresh_net_income_depends: '最终福利金额取决于扣除住房与水电费后的净收入。',
+  elig_calfresh_gross_above_200: '家庭税前总收入相当于联邦贫困线的 {fplPercent}，高于加州 CalFresh 200% 的税前收入上限 {grossLimit}。',
+  elig_calworks_no_child_or_pregnancy: '家中未发现受抚养子女，也未发现怀孕情况。CalWORKs 要求家中有需要救助的儿童或有怀孕情况。',
+  elig_calworks_pregnancy_within_mbsac: '家中有怀孕情况，且收入相当于联邦贫困线的 {fplPercent}，处于通常可以通过 CalWORKs MBSAC 审查的范围内。',
+  elig_calworks_children_within_mbsac_one: '家中有 1 名受抚养子女，且收入相当于联邦贫困线的 {fplPercent}，处于通常可以通过 CalWORKs MBSAC 审查的范围内。',
+  elig_calworks_children_within_mbsac_other: '家中有 {children} 名受抚养子女，且收入相当于联邦贫困线的 {fplPercent}，处于通常可以通过 CalWORKs MBSAC 审查的范围内。',
+  elig_calworks_near_mbsac: '收入相当于联邦贫困线的 {fplPercent}，接近 {householdSize} 人家庭的 CalWORKs 最低基本适当照护标准（MBSAC）。最终认定取决于扣除豁免额后的可计收入。',
+  elig_calworks_above_mbsac: '收入为联邦贫困线的 {fplPercent}，高于 {householdSize} 人家庭的 CalWORKs 最低基本适当照护标准（MBSAC）。',
+  missing_monthly_rent_or_mortgage: '每月房租或房贷金额',
+  missing_monthly_utilities: '每月水电等公共服务费用',
+  missing_monthly_housing_costs: '每月住房支出',
+  missing_countable_property_and_vehicles: '可计入的财产与车辆资源',
+  missing_child_citizenship_status: '每名儿童的公民身份或移民身份',
+  missing_expected_due_date: '预产期',
+  prog_other_explanation: '申请表第 1 页有一个「其他」栏位。请告知我们是哪个项目，以便我们填写在表格上。',
+
+  api_error_field_problems: '部分回答无法写入表格。请检查后重试。',
+  api_error_workflow_unavailable: '分析服务暂时不可用。请稍后重试。',
+
 } as const;
 
 export default zhCN;

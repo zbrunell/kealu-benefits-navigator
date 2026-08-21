@@ -6,6 +6,7 @@
 import { readFile, stat, rm } from "fs/promises";
 import path from "path";
 import type { ApplicationPrefill } from '@/types/application';
+import type { EligibilityReason } from '@/lib/eligibility-reasons';
 
 /** Canonical phase execution order. */
 export const PHASE_ORDER: string[] = [
@@ -60,8 +61,14 @@ export interface ProgramRecommendation {
   program: Saws2PlusProgram;
   status: ProgramRecommendationStatus;
   recommendedToApply: boolean;
-  reasons: string[];
-  missingInformation: string[];
+  /*
+   * Explanations as data, so the UI can render them in the applicant's
+   * language. Either a catalog key with its numbers, from our own screening, or
+   * a sentence the external workflow already wrote — see eligibility-reasons.ts
+   * for why both shapes exist.
+   */
+  reasons: EligibilityReason[];
+  missingInformation: EligibilityReason[];
   confidence: number;
 }
 
@@ -158,10 +165,70 @@ function isRecommendationStatus(
   );
 }
 
-function isStringArray(value: unknown): value is string[] {
-  return (
-    Array.isArray(value) && value.every((item) => typeof item === "string")
-  );
+
+/**
+ * A reason list, from either producer.
+ *
+ * A plain string is a sentence the external workflow wrote; an object is our
+ * own screening naming a catalog key. Accepting both is what lets the
+ * deterministic path be fully localized without breaking a workflow whose
+ * output we do not control — and rejecting anything else keeps malformed
+ * output from reaching a component that would render `[object Object]`.
+ *
+ * Returns null when the value is not a list, or an item is neither shape, so
+ * the caller can drop the whole recommendation rather than a silent partial.
+ */
+function parseReasonList(value: unknown): EligibilityReason[] | null {
+  if (!Array.isArray(value)) return null;
+
+  const parsed: EligibilityReason[] = [];
+
+  for (const item of value) {
+    if (typeof item === "string") {
+      parsed.push({ kind: "text", text: item });
+      continue;
+    }
+
+    if (item === null || typeof item !== "object") return null;
+
+    const candidate = item as Record<string, unknown>;
+
+    if (typeof candidate.key !== "string" || candidate.key.length === 0) {
+      return null;
+    }
+
+    const reason: EligibilityReason = { kind: "keyed", key: candidate.key };
+
+    if (candidate.params !== undefined) {
+      if (candidate.params === null || typeof candidate.params !== "object") {
+        return null;
+      }
+
+      const params: Record<string, number | string> = {};
+
+      for (const [name, raw] of Object.entries(
+        candidate.params as Record<string, unknown>,
+      )) {
+        // Only numbers and strings: anything else has no rendering, and a
+        // nested object here would mean the producer is sending prose.
+        if (typeof raw !== "number" && typeof raw !== "string") return null;
+
+        params[name] = raw;
+      }
+
+      reason.params = params;
+    }
+
+    if (candidate.count !== undefined) {
+      if (typeof candidate.count !== "number") return null;
+
+      reason.count = candidate.count;
+    }
+
+    parsed.push(reason);
+  }
+
+  return parsed;
 }
 
 function parseProgramRecommendation(
@@ -185,11 +252,14 @@ function parseProgramRecommendation(
     return null;
   }
 
-  if (!isStringArray(candidate.reasons) || candidate.reasons.length === 0) {
+  const reasons = parseReasonList(candidate.reasons);
+  const missingInformation = parseReasonList(candidate.missingInformation);
+
+  if (reasons === null || reasons.length === 0) {
     return null;
   }
 
-  if (!isStringArray(candidate.missingInformation)) {
+  if (missingInformation === null) {
     return null;
   }
 
@@ -217,8 +287,8 @@ function parseProgramRecommendation(
     program: candidate.program,
     status: candidate.status,
     recommendedToApply: candidate.recommendedToApply,
-    reasons: candidate.reasons,
-    missingInformation: candidate.missingInformation,
+    reasons,
+    missingInformation,
     confidence: candidate.confidence,
   };
 }

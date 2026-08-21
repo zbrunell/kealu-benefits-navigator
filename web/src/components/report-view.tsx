@@ -136,7 +136,7 @@ export default function ReportView({
   onRetry,
   onStartApplication,
 }: ReportViewProps) {
-  const { t, tv, tn, tOr } = useTranslation();
+  const { t, tv, tn, tOr, tReasons } = useTranslation();
   const [retryError, setRetryError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
 
@@ -172,13 +172,19 @@ export default function ReportView({
         credentials: "include",
         body: JSON.stringify({}),
       });
-      const data = (await res.json()) as { runId?: string; error?: string };
+      const data = (await res.json()) as {
+        runId?: string;
+        error?: string;
+        errorKey?: string;
+      };
 
       if (data.runId) {
         onRetry(data.runId);
         return;
       }
-      setRetryError(data.error ?? t("report_start_failed"));
+      setRetryError(
+        tOr(data.errorKey ?? "", data.error ?? t("report_start_failed")),
+      );
     } catch {
       setRetryError(t("report_refresh_failed"));
     } finally {
@@ -244,7 +250,10 @@ export default function ReportView({
 
       {/* ── SAWS 2 PLUS application recommendations ──────────────────────── */}
       {payload.application.available && sawsRecommendation && (
-        <section className="rounded-xl border border-green-200 bg-green-50 p-5">
+        <section
+          data-testid="saws-recommendation"
+          className="rounded-xl border border-green-200 bg-green-50 p-5"
+        >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
@@ -301,8 +310,8 @@ export default function ReportView({
                   </p>
 
                   <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                    {program.reasons.map((reason) => (
-                      <li key={reason}>{reason}</li>
+                    {tReasons(program.reasons).map((sentence) => (
+                      <li key={sentence}>{sentence}</li>
                     ))}
                   </ul>
                 </div>
@@ -314,8 +323,8 @@ export default function ReportView({
                     </p>
 
                     <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-amber-900">
-                      {program.missingInformation.map((item) => (
-                        <li key={item}>{item}</li>
+                      {tReasons(program.missingInformation).map((sentence) => (
+                        <li key={sentence}>{sentence}</li>
                       ))}
                     </ul>
                   </div>

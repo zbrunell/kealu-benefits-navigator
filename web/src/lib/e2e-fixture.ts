@@ -28,6 +28,13 @@
  * directory (exactly as the real workflow does) and never logged.
  */
 
+import { messages } from '@/i18n';
+import {
+  reason,
+  reasonWith,
+  resolveReason,
+  type EligibilityReason,
+} from '@/lib/eligibility-reasons';
 import { parseHouseholdComposition, type HouseholdComposition } from '@/lib/household';
 import { resolveZipLocationOffline } from '@/lib/location';
 import { PHASE_ORDER } from '@/lib/report-assembler';
@@ -42,6 +49,15 @@ type RawVars = SessionVars;
 
 /** 2025 HHS Federal Poverty Guidelines, 48 contiguous states + DC. */
 export const FPL_BASE_2025 = 15_650;
+
+/**
+ * The guideline year, as a value rather than a literal inside a sentence.
+ *
+ * It travels to the reader as a parameter, so "2025" appears in the Spanish and
+ * Chinese sentences without either catalog having to be edited when the
+ * guidelines are updated.
+ */
+export const FPL_YEAR = 2025;
 export const FPL_INCREMENT_2025 = 5_500;
 
 /** Annual 100% FPL threshold for a household of `size`. */
@@ -73,8 +89,12 @@ interface FixtureProgramScreening {
   program: FixtureProgram;
   status: FixtureStatus;
   recommendedToApply: boolean;
-  reasons: string[];
-  missingInformation: string[];
+  /*
+   * Named sentences, not sentences. The screening decides what is true about
+   * the household; the words are chosen where the reader's language is known.
+   */
+  reasons: EligibilityReason[];
+  missingInformation: EligibilityReason[];
   confidence: number;
 }
 
@@ -101,14 +121,14 @@ export interface FixtureContext {
   healthNeeds: string;
 }
 
-const CALFRESH_MISSING = [
-  'Monthly rent or mortgage amount',
-  'Monthly utility costs',
+const CALFRESH_MISSING: EligibilityReason[] = [
+  reason('missing_monthly_rent_or_mortgage'),
+  reason('missing_monthly_utilities'),
 ];
 
-const CALWORKS_MISSING = [
-  'Monthly housing costs',
-  'Countable property and vehicle resources',
+const CALWORKS_MISSING: EligibilityReason[] = [
+  reason('missing_monthly_housing_costs'),
+  reason('missing_countable_property_and_vehicles'),
 ];
 
 function screenMediCal(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>): FixtureProgramScreening {
@@ -121,8 +141,15 @@ function screenMediCal(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>):
       status: 'likely_eligible',
       recommendedToApply: true,
       reasons: [
-        `Household income of $${ctx.income.toLocaleString('en-US')} is ${fplPercent}% of the 2025 Federal Poverty Level, at or below the 138% MAGI Medi-Cal limit of $${limit.toLocaleString('en-US')} for a household of ${household.size}.`,
-        'California expanded Medicaid, so adults without dependent children qualify on income alone.',
+        reasonWith('elig_medi_cal_income_below_magi', {
+          income: ctx.income,
+          fplPercent,
+          limitPercent: 138,
+          limitAmount: limit,
+          householdSize: household.size,
+          fplYear: FPL_YEAR,
+        }),
+        reason('elig_ca_medicaid_expansion'),
       ],
       missingInformation: [],
       confidence: 0.93,
@@ -135,10 +162,14 @@ function screenMediCal(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>):
       status: 'possibly_eligible',
       recommendedToApply: true,
       reasons: [
-        `Household income is ${fplPercent}% of FPL — above the 138% adult limit but within the 266% FPL limit for children in California.`,
-        `${household.children === 1 ? 'The child' : `All ${household.children} children`} in the household may qualify for Medi-Cal even though the adults may not.`,
+        reasonWith('elig_medi_cal_children_within_266', { fplPercent }),
+        reasonWith(
+          'elig_medi_cal_children_may_qualify',
+          { children: household.children },
+          household.children,
+        ),
       ],
-      missingInformation: ['Each child’s citizenship or immigration status'],
+      missingInformation: [reason('missing_child_citizenship_status')],
       confidence: 0.76,
     };
   }
@@ -149,9 +180,9 @@ function screenMediCal(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>):
       status: 'possibly_eligible',
       recommendedToApply: true,
       reasons: [
-        `Household income is ${fplPercent}% of FPL, within the 213% FPL limit for pregnancy-related Medi-Cal.`,
+        reasonWith('elig_medi_cal_pregnancy_within_213', { fplPercent }),
       ],
-      missingInformation: ['Expected due date'],
+      missingInformation: [reason('missing_expected_due_date')],
       confidence: 0.74,
     };
   }
@@ -161,8 +192,12 @@ function screenMediCal(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>):
     status: 'unlikely_eligible',
     recommendedToApply: false,
     reasons: [
-      `Household income of $${ctx.income.toLocaleString('en-US')} is ${fplPercent}% of FPL, above the 138% MAGI Medi-Cal limit of $${limit.toLocaleString('en-US')}.`,
-      'Covered California premium tax credits are the more likely path to affordable coverage at this income.',
+      reasonWith('elig_medi_cal_income_above_magi', {
+        income: ctx.income,
+        fplPercent,
+        limitAmount: limit,
+      }),
+      reason('elig_covered_ca_more_likely'),
     ],
     missingInformation: [],
     confidence: 0.88,
@@ -179,8 +214,11 @@ function screenCalFresh(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>)
       status: 'likely_eligible',
       recommendedToApply: true,
       reasons: [
-        `Gross household income is ${fplPercent}% of FPL, below the 130% federal gross-income screen for a household of ${ctx.household.size}.`,
-        'California has no CalFresh asset test for most households.',
+        reasonWith('elig_calfresh_gross_below_130', {
+          fplPercent,
+          householdSize: ctx.household.size,
+        }),
+        reason('elig_calfresh_no_asset_test'),
       ],
       missingInformation: CALFRESH_MISSING,
       confidence: 0.87,
@@ -193,8 +231,11 @@ function screenCalFresh(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>)
       status: 'possibly_eligible',
       recommendedToApply: true,
       reasons: [
-        `Gross household income is ${fplPercent}% of FPL, within California’s 200% Modified Categorical Eligibility limit of $${grossLimit.toLocaleString('en-US')}.`,
-        'The final benefit depends on net income after the housing and utility deductions.',
+        reasonWith('elig_calfresh_within_mce_200', {
+          fplPercent,
+          grossLimit,
+        }),
+        reason('elig_calfresh_net_income_depends'),
       ],
       missingInformation: CALFRESH_MISSING,
       confidence: 0.71,
@@ -206,7 +247,7 @@ function screenCalFresh(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>)
     status: 'unlikely_eligible',
     recommendedToApply: false,
     reasons: [
-      `Gross household income is ${fplPercent}% of FPL, above California’s 200% CalFresh gross-income limit of $${grossLimit.toLocaleString('en-US')}.`,
+      reasonWith('elig_calfresh_gross_above_200', { fplPercent, grossLimit }),
     ],
     missingInformation: [],
     confidence: 0.9,
@@ -221,9 +262,7 @@ function screenCalWorks(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>)
       program: 'calworks',
       status: 'unlikely_eligible',
       recommendedToApply: false,
-      reasons: [
-        'No dependent child and no pregnancy was identified in the household. CalWORKs requires a needy child in the home or a pregnancy.',
-      ],
+      reasons: [reason('elig_calworks_no_child_or_pregnancy')],
       missingInformation: [],
       confidence: 0.95,
     };
@@ -234,8 +273,21 @@ function screenCalWorks(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>)
       program: 'calworks',
       status: 'possibly_eligible',
       recommendedToApply: true,
+      /*
+       * Two sentences rather than one with a swappable middle. The English
+       * original spliced either "a pregnancy" or "N dependent children" into
+       * the same sentence, which only reads correctly because English puts
+       * them in the same place; Spanish agreement and Chinese measure words do
+       * not survive that kind of substitution.
+       */
       reasons: [
-        `The household includes ${household.pregnant && household.children === 0 ? 'a pregnancy' : `${household.children} dependent ${household.children === 1 ? 'child' : 'children'}`} and income is ${fplPercent}% of FPL, within the range where the CalWORKs MBSAC test is commonly met.`,
+        household.pregnant && household.children === 0
+          ? reasonWith('elig_calworks_pregnancy_within_mbsac', { fplPercent })
+          : reasonWith(
+              'elig_calworks_children_within_mbsac',
+              { children: household.children, fplPercent },
+              household.children,
+            ),
       ],
       missingInformation: CALWORKS_MISSING,
       confidence: 0.66,
@@ -248,7 +300,10 @@ function screenCalWorks(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>)
       status: 'insufficient_information',
       recommendedToApply: false,
       reasons: [
-        `Income is ${fplPercent}% of FPL, near the CalWORKs Minimum Basic Standard of Adequate Care for a household of ${household.size}. The determination depends on countable income after disregards.`,
+        reasonWith('elig_calworks_near_mbsac', {
+          fplPercent,
+          householdSize: household.size,
+        }),
       ],
       missingInformation: CALWORKS_MISSING,
       confidence: 0.55,
@@ -260,7 +315,10 @@ function screenCalWorks(ctx: Omit<FixtureContext, 'screenings' | 'recommended'>)
     status: 'unlikely_eligible',
     recommendedToApply: false,
     reasons: [
-      `Income of ${fplPercent}% of FPL is above the CalWORKs Minimum Basic Standard of Adequate Care for a household of ${household.size}.`,
+      reasonWith('elig_calworks_above_mbsac', {
+        fplPercent,
+        householdSize: household.size,
+      }),
     ],
     missingInformation: [],
     confidence: 0.86,
@@ -339,6 +397,19 @@ const PROGRAM_LABELS: Readonly<Record<FixtureProgram, string>> = {
   calfresh: 'CalFresh',
   calworks: 'CalWORKs',
 };
+
+/**
+ * A reason as English prose, for the fixture's markdown body.
+ *
+ * The body simulates what the external workflow writes, and that is prose in
+ * the applicant's language — which for this fixture is English. The structured
+ * reasons in the JSON block are what the UI actually localizes; this only keeps
+ * the surrounding narrative readable, and it reads the same catalog so the two
+ * cannot describe the household differently.
+ */
+function reasonInEnglish(item: EligibilityReason): string {
+  return resolveReason(item, messages.en, 'en');
+}
 
 function money(amount: number): string {
   return `$${Math.round(amount).toLocaleString('en-US')}`;
@@ -519,12 +590,14 @@ No critical errors found. Phases 1 and 2 were not re-executed.
 function eligibilityValidationDoc(ctx: FixtureContext): string {
   const rows = ctx.screenings.map(
     (screening) =>
-      `| ${PROGRAM_LABELS[screening.program]} | ${STATUS_LABELS[screening.status]} | ${Math.round(screening.confidence * 100)}% | ${screening.missingInformation.length > 0 ? screening.missingInformation.join('; ') : 'None'} |`,
+      `| ${PROGRAM_LABELS[screening.program]} | ${STATUS_LABELS[screening.status]} | ${Math.round(screening.confidence * 100)}% | ${screening.missingInformation.length > 0 ? screening.missingInformation.map(reasonInEnglish).join('; ') : 'None'} |`,
   );
 
   const details = ctx.screenings
     .map((screening) => {
-      const reasons = screening.reasons.map((reason) => `- ${reason}`).join('\n');
+      const reasons = screening.reasons
+        .map((item) => `- ${reasonInEnglish(item)}`)
+        .join('\n');
       return `### ${PROGRAM_LABELS[screening.program]} — ${STATUS_LABELS[screening.status]}\n${reasons}`;
     })
     .join('\n\n');
@@ -568,7 +641,7 @@ function actionPlanDoc(ctx: FixtureContext): string {
                 applyList
                   .flatMap((s) => s.missingInformation)
                   .slice(0, 2)
-                  .map((item) => item.toLowerCase()),
+                  .map((item) => reasonInEnglish(item).toLowerCase()),
               )}.`
             : 'no additional information is needed to submit.'
         }`
@@ -580,7 +653,9 @@ function actionPlanDoc(ctx: FixtureContext): string {
         ctx.county ? `${ctx.county} County` : 'your county'
       } social services. ${
         screening.missingInformation.length > 0
-          ? `Have ready: ${screening.missingInformation.join(', ')}.`
+          ? `Have ready: ${screening.missingInformation
+              .map(reasonInEnglish)
+              .join(', ')}.`
           : 'No additional documentation is required to start.'
       }`,
   );

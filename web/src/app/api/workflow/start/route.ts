@@ -96,7 +96,10 @@ export async function POST(req: Request): Promise<Response> {
   // Verify kvr availability — only the real runner depends on the binary.
   if (launcher.requiresKvr && !resolveKvr()) {
     return NextResponse.json(
-      { error: "Workflow engine unavailable. Please ensure kvr is installed." },
+      {
+        errorKey: "api_error_workflow_unavailable",
+        error: "Workflow engine unavailable. Please ensure kvr is installed.",
+      },
       { status: 503 },
     );
   }

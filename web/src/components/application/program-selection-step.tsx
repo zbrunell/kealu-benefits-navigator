@@ -52,14 +52,17 @@ export default function ProgramSelectionStep({
   onBack,
   onContinue,
 }: ProgramSelectionStepProps) {
-  const { t, tn } = useTranslation();
+  const { t, tn, tReasons } = useTranslation();
 
   const selectedCount =
     Object.values(selectedPrograms).filter(Boolean).length +
     (otherRequested ? 1 : 0);
 
   return (
-    <div className="space-y-4">
+    <div
+      data-testid="program-selection-step"
+      className="space-y-4"
+    >
       <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
           SAWS 2 PLUS
@@ -110,8 +113,8 @@ export default function ProgramSelectionStep({
                     </div>
 
                     <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
-                      {program.reasons.map((reason) => (
-                        <li key={reason}>{reason}</li>
+                      {tReasons(program.reasons).map((sentence) => (
+                        <li key={sentence}>{sentence}</li>
                       ))}
                     </ul>
 
@@ -122,8 +125,8 @@ export default function ProgramSelectionStep({
                         </p>
 
                         <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-amber-900">
-                          {program.missingInformation.map((item) => (
-                            <li key={item}>{item}</li>
+                          {tReasons(program.missingInformation).map((sentence) => (
+                            <li key={sentence}>{sentence}</li>
                           ))}
                         </ul>
                       </div>
@@ -157,8 +160,7 @@ export default function ProgramSelectionStep({
                 {t("programs_other")}
               </span>
               <span className="mt-0.5 block text-xs text-slate-600">
-                The application has an &ldquo;Other&rdquo; box on page 1. Tell us
-                which program so we can write it on the form.
+                {t("prog_other_explanation")}
               </span>
             </span>
           </label>

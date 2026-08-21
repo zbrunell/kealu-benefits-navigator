@@ -843,6 +843,36 @@ const en = {
   qfield_zipCode: 'ZIP code',
   qfield_phone: 'Phone number',
 
+  elig_medi_cal_income_below_magi: 'Household income of {income} is {fplPercent} of the {fplYear} Federal Poverty Level, at or below the {limitPercent} MAGI Medi-Cal limit of {limitAmount} for a household of {householdSize}.',
+  elig_ca_medicaid_expansion: 'California expanded Medicaid, so adults without dependent children qualify on income alone.',
+  elig_medi_cal_children_within_266: 'Household income is {fplPercent} of FPL — above the 138% adult limit but within the 266% FPL limit for children in California.',
+  elig_medi_cal_children_may_qualify_one: 'The child in the household may qualify for Medi-Cal even though the adults may not.',
+  elig_medi_cal_children_may_qualify_other: 'All {children} children in the household may qualify for Medi-Cal even though the adults may not.',
+  elig_medi_cal_pregnancy_within_213: 'Household income is {fplPercent} of FPL, within the 213% FPL limit for pregnancy-related Medi-Cal.',
+  elig_medi_cal_income_above_magi: 'Household income of {income} is {fplPercent} of FPL, above the 138% MAGI Medi-Cal limit of {limitAmount}.',
+  elig_covered_ca_more_likely: 'Covered California premium tax credits are the more likely path to affordable coverage at this income.',
+  elig_calfresh_gross_below_130: 'Gross household income is {fplPercent} of FPL, below the 130% federal gross-income screen for a household of {householdSize}.',
+  elig_calfresh_no_asset_test: 'California has no CalFresh asset test for most households.',
+  elig_calfresh_within_mce_200: 'Gross household income is {fplPercent} of FPL, within California’s 200% Modified Categorical Eligibility limit of {grossLimit}.',
+  elig_calfresh_net_income_depends: 'The final benefit depends on net income after the housing and utility deductions.',
+  elig_calfresh_gross_above_200: 'Gross household income is {fplPercent} of FPL, above California’s 200% CalFresh gross-income limit of {grossLimit}.',
+  elig_calworks_no_child_or_pregnancy: 'No dependent child and no pregnancy was identified in the household. CalWORKs requires a needy child in the home or a pregnancy.',
+  elig_calworks_pregnancy_within_mbsac: 'The household includes a pregnancy and income is {fplPercent} of FPL, within the range where the CalWORKs MBSAC test is commonly met.',
+  elig_calworks_children_within_mbsac_one: 'The household includes one dependent child and income is {fplPercent} of FPL, within the range where the CalWORKs MBSAC test is commonly met.',
+  elig_calworks_children_within_mbsac_other: 'The household includes {children} dependent children and income is {fplPercent} of FPL, within the range where the CalWORKs MBSAC test is commonly met.',
+  elig_calworks_near_mbsac: 'Income is {fplPercent} of FPL, near the CalWORKs Minimum Basic Standard of Adequate Care for a household of {householdSize}. The determination depends on countable income after disregards.',
+  elig_calworks_above_mbsac: 'Income of {fplPercent} of FPL is above the CalWORKs Minimum Basic Standard of Adequate Care for a household of {householdSize}.',
+  missing_monthly_rent_or_mortgage: 'Monthly rent or mortgage amount',
+  missing_monthly_utilities: 'Monthly utility costs',
+  missing_monthly_housing_costs: 'Monthly housing costs',
+  missing_countable_property_and_vehicles: 'Countable property and vehicle resources',
+  missing_child_citizenship_status: 'Each child’s citizenship or immigration status',
+  missing_expected_due_date: 'Expected due date',
+  prog_other_explanation: 'The application has an “Other” box on page 1. Tell us which program so we can write it on the form.',
+
+  api_error_field_problems: 'Some answers cannot be written to the form. Please review them and try again.',
+  api_error_workflow_unavailable: 'The analysis service is temporarily unavailable. Please try again shortly.',
+
 } as const;
 
 export default en;

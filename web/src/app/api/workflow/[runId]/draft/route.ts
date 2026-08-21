@@ -178,6 +178,13 @@ const fieldProblems = findApplicationFieldProblems(applicationData);
 if (fieldProblems.length > 0) {
   return NextResponse.json(
     {
+      /*
+       * Both an `errorKey` and an `error`. The key is what the UI renders, in
+       * the applicant's language; the English text stays for logs and for any
+       * client that does not know the key. The route itself has no locale — it
+       * is not the place to choose words.
+       */
+      errorKey: 'api_error_field_problems',
       error: 'The application contains values that cannot be written to the form.',
       fieldProblems,
     },
