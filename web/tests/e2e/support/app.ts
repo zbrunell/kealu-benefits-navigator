@@ -23,6 +23,7 @@
  */
 
 import type { Locator, Page } from '@playwright/test';
+import en from '../../../src/i18n/messages/en';
 
 // ---------------------------------------------------------------------------
 // Intake conversation
@@ -391,7 +392,11 @@ export async function answerEveryQuestion(page: Page): Promise<void> {
   await progress.waitFor({ state: 'visible' });
 
   for (let guard = 0; guard < 250; guard += 1) {
-    if ((await progress.textContent())?.includes('All questions answered')) {
+    // Read the completion text from the catalog rather than repeating it.
+    // These two drifted apart once already: the catalog moved to "Everything we
+    // need is answered" while this loop still looked for the old wording, so it
+    // answered every question and then reported that it could not.
+    if ((await progress.textContent())?.includes(en.questionnaire_all_answered)) {
       return;
     }
 
@@ -426,5 +431,7 @@ export async function answerEveryQuestion(page: Page): Promise<void> {
     );
   }
 
-  throw new Error('The questionnaire did not reach "All questions answered"');
+  throw new Error(
+    `The questionnaire never reached "${en.questionnaire_all_answered}"`,
+  );
 }

@@ -27,6 +27,7 @@ import {
   completeSaws2Application,
   fillRequiredIdentityFields,
 } from './support/app';
+import en from '../../src/i18n/messages/en';
 
 /*
  * One journey, many assertions.
@@ -249,7 +250,8 @@ test.describe('questionnaire progress', () => {
        * draft it produces may still — correctly — list Social Security boxes,
        * signatures and Q23f as work to do by hand.
        */
-      await expect(progress).toHaveText('All questions answered');
+      // From the catalog, so a wording change does not silently break this.
+      await expect(progress).toHaveText(en.questionnaire_all_answered);
       await expect(own.getByRole('progressbar', { name: 'Application completion' }))
         .toHaveAttribute('aria-valuenow', '100');
 

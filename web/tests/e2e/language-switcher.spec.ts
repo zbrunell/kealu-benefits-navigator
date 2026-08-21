@@ -123,84 +123,82 @@ test.describe('Language switcher (KEA-1 / KEA-7)', () => {
  * canonical state. This proves it in a real browser, where the failure would
  * actually be visible: a switch that re-mounts the tree and loses what someone
  * has already typed.
+ *
+ * The input is located by role with a locale-specific accessible name, so it is
+ * re-resolved after each switch instead of being captured once.
  */
 test.describe('language switch mid-flow keeps answers', () => {
+  const INPUT_NAME = {
+    en: 'Your message',
+    es: 'Su mensaje',
+    'zh-CN': '您的消息',
+  } as const;
+
+  async function answerZip(page: import('@playwright/test').Page) {
+    const input = page.getByRole('textbox', { name: INPUT_NAME.en });
+    await expect(input).toBeVisible();
+    await input.fill('90001');
+    await page.getByRole('button', { name: 'Send message' }).click();
+    await expect(page.getByTestId('chat-messages')).toContainText('90001');
+  }
+
   test('an answered intake question survives switching to Spanish', async ({
     page,
   }) => {
     await page.goto('/');
+    await answerZip(page);
 
-    const input = page.locator('[data-testid="chat-input"]');
-    await expect(input).toBeVisible();
-
-    // Answer the first intake question.
-    await input.fill('90001');
-    await page.locator('[data-testid="chat-send"]').click();
-
-    // The answer is now part of the conversation.
-    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
-      '90001',
-    );
-
-    const englishPrompt = await page
-      .locator('[data-testid="chat-messages"]')
-      .innerText();
-
-    // Switch language with an answer already given.
     await page.locator('header select').selectOption('es');
 
-    // The answer is still there — not reset, not re-asked from scratch.
-    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
-      '90001',
-    );
+    // The answer is still in the conversation — not reset, not re-asked.
+    await expect(page.getByTestId('chat-messages')).toContainText('90001');
 
-    // And the interface really did change language.
-    const spanishPrompt = await page
-      .locator('[data-testid="chat-messages"]')
-      .innerText();
-
-    expect(spanishPrompt).not.toBe(englishPrompt);
+    // And the interface really did change language: the input's accessible
+    // name now comes from the Spanish catalog.
+    await expect(
+      page.getByRole('textbox', { name: INPUT_NAME.es }),
+    ).toBeVisible();
   });
 
   test('switching to Simplified Chinese keeps the answer and changes the UI', async ({
     page,
   }) => {
     await page.goto('/');
-
-    const input = page.locator('[data-testid="chat-input"]');
-    await input.fill('90001');
-    await page.locator('[data-testid="chat-send"]').click();
-    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
-      '90001',
-    );
+    await answerZip(page);
 
     await page.locator('header select').selectOption('zh-CN');
 
-    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
-      '90001',
-    );
-
-    // Simplified Chinese characters are on screen somewhere in the shell.
-    await expect(page.locator('body')).toContainText(/[一-鿿]/);
+    await expect(page.getByTestId('chat-messages')).toContainText('90001');
+    await expect(
+      page.getByRole('textbox', { name: INPUT_NAME['zh-CN'] }),
+    ).toBeVisible();
   });
 
-  test('the locale survives a reload with the answer intact', async ({ page }) => {
+  test('the answer and the chosen language both survive a reload', async ({
+    page,
+  }) => {
     await page.goto('/');
-
-    const input = page.locator('[data-testid="chat-input"]');
-    await input.fill('90001');
-    await page.locator('[data-testid="chat-send"]').click();
-    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
-      '90001',
-    );
+    await answerZip(page);
 
     await page.locator('header select').selectOption('es');
     await page.reload();
 
-    // Both the choice and the session answer come back.
     await expect(page.locator('header select')).toHaveValue('es');
-    await expect(page.locator('[data-testid="chat-messages"]')).toContainText(
-      '90001',
-    );
+    await expect(page.getByTestId('chat-messages')).toContainText('90001');
+  });
+
+  test('switching back to English keeps the answer', async ({ page }) => {
+    await page.goto('/');
+    await answerZip(page);
+
+    await page.locator('header select').selectOption('es');
+    await expect(page.getByTestId('chat-messages')).toContainText('90001');
+
+    await page.locator('header select').selectOption('en');
+
+    await expect(page.getByTestId('chat-messages')).toContainText('90001');
+    await expect(
+      page.getByRole('textbox', { name: INPUT_NAME.en }),
+    ).toBeVisible();
   });
 });
