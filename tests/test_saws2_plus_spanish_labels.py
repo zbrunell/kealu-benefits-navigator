@@ -61,9 +61,11 @@ def checked_in_spanish() -> dict[str, str]:
     source = LABELS_TS.read_text()
     entries: dict[str, str] = {}
 
-    # key: { en: '...', es: '...' }
+    # key: { en: '...', es: '...' } — on one line or several, since prettier
+    # collapses short entries and a layout change must not silently drop an
+    # entry out of this fixture and out of every test that depends on it.
     for match in re.finditer(
-        r"(\w+):\s*\{\s*\n\s*en:\s*'((?:[^'\\]|\\.)*)',\s*\n\s*es:\s*'((?:[^'\\]|\\.)*)',",
+        r"(\w+):\s*\{\s*en:\s*'((?:[^'\\]|\\.)*)',\s*es:\s*'((?:[^'\\]|\\.)*)'",
         source,
     ):
         entries[match.group(1)] = match.group(3).replace("\\'", "'")
@@ -92,7 +94,7 @@ def test_the_spanish_form_is_the_same_revision_as_the_english_one(
 
 def test_every_checked_in_spanish_quotation_was_found(checked_in_spanish):
     """The extractor must actually have parsed the file."""
-    assert len(checked_in_spanish) >= 14, checked_in_spanish
+    assert len(checked_in_spanish) >= 19, checked_in_spanish
 
 
 def test_every_spanish_quotation_appears_in_the_spanish_form(

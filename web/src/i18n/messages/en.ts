@@ -798,6 +798,12 @@ const en = {
   dcg_health_body: 'Medi-Cal and other health coverage can also be applied for through Covered California.',
   dcg_calfresh_note: 'For CalFresh, your benefits start from the date the county receives your application, even if some documents arrive later.',
 
+  guide_skipped_appendix_a: 'nobody in this household has a job that offers health coverage',
+  guide_skipped_appendix_b: 'nobody applying is American Indian or Alaska Native',
+  guide_skipped_appendix_c: 'no authorized representative was named for health coverage',
+  guide_skipped_appendix_d: 'it is for cash aid with two or more adults applying',
+  guide_skipped_appendix_e: 'detailed vehicle information is only needed for cash aid, or for health care where someone applying is 65 or older or disabled',
+
 } as const;
 
 export default en;

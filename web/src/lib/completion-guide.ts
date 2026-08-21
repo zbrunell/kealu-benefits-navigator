@@ -40,6 +40,7 @@ import { documentLanguageFor, DEFAULT_LOCALE, type Locale } from '@/lib/locale';
 import { interpolate, messages, t } from '@/i18n';
 import {
   PRINTED_LABELS,
+  PRINTED_APPENDICES,
   PRINTED_SECTIONS,
   printedTextFor,
 } from '@/lib/printed-labels';
@@ -252,6 +253,8 @@ function reviewSection(
   completion: DraftCompletion,
   audience: GuideAudience,
   tr: (key: string) => string,
+  /* Appendix names quote the printed page, so they follow the document. */
+  documentLanguage: Locale,
 ): GuideSection {
   const items: GuideItem[] = [
     {
@@ -271,8 +274,23 @@ function reviewSection(
       title: tr('guide_review_appendices_title'),
       detail:
         interpolate(tr('guide_review_appendices_detail'), {
+          /*
+             Two languages in one line, deliberately: the appendix name is a
+             pointer to a heading on the printed page, so it follows the
+             document language, while the reason is our own explanation and
+             follows the interface language.
+          */
           list: completion.skippedSections
-            .map((section) => `${section.saws} (${section.reason})`)
+            .map((section) => {
+              const name =
+                printedTextFor(
+                  PRINTED_APPENDICES,
+                  section.sawsKey,
+                  documentLanguage,
+                ) ?? section.saws;
+
+              return `${name} (${tr(section.reasonKey)})`;
+            })
             .join(' '),
         })
         + (audience === 'associate'
@@ -454,8 +472,14 @@ export function buildCompletionGuide(
 
   const tr = (key: string) => t(msgs, key);
 
+  /*
+   * The paper's language, which is not the interface language: Spanish has an
+   * official translated form, Simplified Chinese does not.
+   */
+  const documentLanguage = documentLanguageFor(locale);
+
   const sections: GuideSection[] = [
-    reviewSection(completion, audience, tr),
+    reviewSection(completion, audience, tr, documentLanguage),
   ];
 
   for (const reason of SECTION_ORDER) {
@@ -464,7 +488,7 @@ export function buildCompletionGuide(
       reason,
       audience,
       locale,
-      documentLanguageFor(locale),
+      documentLanguage,
     );
 
     if (items.length === 0) continue;
@@ -488,7 +512,7 @@ export function buildCompletionGuide(
   return {
     audience,
     locale,
-    documentLanguage: documentLanguageFor(locale),
+    documentLanguage,
     title: t(
       msgs,
       audience === 'associate'

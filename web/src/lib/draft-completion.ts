@@ -205,6 +205,19 @@ export interface SkippedSection {
   page: number;
   /** Why this household does not need it. */
   reason: string;
+  /**
+   * The appendix reference, keyed for `PRINTED_APPENDICES`.
+   *
+   * It follows the *document* language, because it points at a heading on the
+   * page in the applicant's hands.
+   */
+  sawsKey: string;
+  /**
+   * The reason, keyed for the catalog.
+   *
+   * Ours rather than the form's, so it follows the *interface* language.
+   */
+  reasonKey: string;
 }
 
 export interface DraftCompletion {
@@ -843,52 +856,74 @@ function skippedSections(
 ): SkippedSection[] {
   const active = new Set(getActiveAppendices(application).map((a) => a.id));
 
-  const candidates: Array<[string, string, number, boolean, string]> = [
-    [
-      'Appendix A',
-      'Health coverage from jobs',
-      24,
-      active.has('A'),
-      'Nobody in this household has a job that offers health coverage.',
-    ],
-    [
-      'Appendix B',
-      'Questions for American Indian and Alaska Native individuals',
-      25,
-      active.has('B'),
-      'Nobody applying is American Indian or Alaska Native.',
-    ],
-    [
-      'Appendix C',
-      'Assistance with completing this application',
-      26,
-      active.has('C'),
-      'No authorized representative was named for health coverage.',
-    ],
-    [
-      'Appendix D',
-      'Employment history',
-      27,
-      active.has('D'),
-      'Appendix D is for cash aid with two or more adults applying.',
-    ],
-    [
-      'Appendix E',
-      'Vehicle information',
-      29,
-      active.has('E'),
-      'Detailed vehicle information is only needed for cash aid, or for ' +
+  const candidates: Array<{
+    saws: string;
+    sawsKey: string;
+    printedSection: string;
+    page: number;
+    isActive: boolean;
+    reason: string;
+    reasonKey: string;
+  }> = [
+    {
+      saws: 'Appendix A',
+      sawsKey: 'appendix_a',
+      printedSection: 'Health coverage from jobs',
+      page: 24,
+      isActive: active.has('A'),
+      reason: 'Nobody in this household has a job that offers health coverage.',
+      reasonKey: 'guide_skipped_appendix_a',
+    },
+    {
+      saws: 'Appendix B',
+      sawsKey: 'appendix_b',
+      printedSection:
+        'Questions for American Indian and Alaska Native individuals',
+      page: 25,
+      isActive: active.has('B'),
+      reason: 'Nobody applying is American Indian or Alaska Native.',
+      reasonKey: 'guide_skipped_appendix_b',
+    },
+    {
+      saws: 'Appendix C',
+      sawsKey: 'appendix_c',
+      printedSection: 'Assistance with completing this application',
+      page: 26,
+      isActive: active.has('C'),
+      reason: 'No authorized representative was named for health coverage.',
+      reasonKey: 'guide_skipped_appendix_c',
+    },
+    {
+      saws: 'Appendix D',
+      sawsKey: 'appendix_d',
+      printedSection: 'Employment history',
+      page: 27,
+      isActive: active.has('D'),
+      reason: 'Appendix D is for cash aid with two or more adults applying.',
+      reasonKey: 'guide_skipped_appendix_d',
+    },
+    {
+      saws: 'Appendix E',
+      sawsKey: 'appendix_e',
+      printedSection: 'Vehicle information',
+      page: 29,
+      isActive: active.has('E'),
+      reason:
+        'Detailed vehicle information is only needed for cash aid, or for ' +
         'health care where someone applying is 65 or older or disabled.',
-    ],
+      reasonKey: 'guide_skipped_appendix_e',
+    },
   ];
 
   return candidates
-    .filter(([, , , isActive]) => !isActive)
-    .map(([saws, printedSection, page, , reason]) => ({
+    .filter((candidate) => !candidate.isActive)
+    .map(({ saws, sawsKey, printedSection, page, reason, reasonKey }) => ({
       saws,
+      sawsKey,
       printedSection,
       page,
       reason,
+      reasonKey,
     }));
 }
 

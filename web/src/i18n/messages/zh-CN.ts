@@ -773,6 +773,12 @@ const zhCN: Messages = {
   dcg_health_body: 'Medi-Cal 和其他健康保险也可以通过 Covered California 申请。',
   dcg_calfresh_note: '对于 CalFresh，您的福利从县政府收到申请之日起计算，即使部分文件较晚送达也是如此。',
 
+  guide_skipped_appendix_a: '本户没有人的工作提供健康保险',
+  guide_skipped_appendix_b: '申请人中没有美洲印第安人或阿拉斯加原住民',
+  guide_skipped_appendix_c: '没有为健康保险指定授权代表',
+  guide_skipped_appendix_d: '该附录适用于有两名或以上成年人申请现金援助的情况',
+  guide_skipped_appendix_e: '只有申请现金援助，或申请医疗照护且申请人中有人年满 65 岁或有残疾时，才需要详细的车辆信息',
+
 } as const;
 
 export default zhCN;

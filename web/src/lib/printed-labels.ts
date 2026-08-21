@@ -140,6 +140,23 @@ export const PRINTED_LABELS: Record<string, PrintedText> = {
  * Falls back to English when Spanish has not been verified, because an
  * unverified Spanish quotation would look correct and be unfindable.
  */
+/**
+ * The appendix references the guide prints.
+ *
+ * Extracted from the Spanish form, not translated: page 26 of
+ * `CA-SAWS-2-PLUS-ES.pdf` heads its section "Apéndice C AYUDA PARA COMPLETAR
+ * ESTA SOLICITUD", and the body text on page 8 writes "Apéndice C (Appendix
+ * C)" — giving both names, because an applicant may be handed either edition.
+ * We print the one that matches the document they have.
+ */
+export const PRINTED_APPENDICES: Record<string, PrintedText> = {
+  appendix_a: { en: 'Appendix A', es: 'Apéndice A' },
+  appendix_b: { en: 'Appendix B', es: 'Apéndice B' },
+  appendix_c: { en: 'Appendix C', es: 'Apéndice C' },
+  appendix_d: { en: 'Appendix D', es: 'Apéndice D' },
+  appendix_e: { en: 'Appendix E', es: 'Apéndice E' },
+};
+
 export function printedTextFor(
   table: Record<string, PrintedText>,
   key: string,

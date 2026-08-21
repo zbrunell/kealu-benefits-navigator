@@ -793,6 +793,12 @@ const es: Messages = {
   dcg_health_body: 'Medi-Cal y otras coberturas de salud también se pueden solicitar por medio de Covered California.',
   dcg_calfresh_note: 'Para CalFresh, sus beneficios comienzan a partir de la fecha en que el condado recibe su solicitud, aunque algunos documentos lleguen después.',
 
+  guide_skipped_appendix_a: 'nadie en este hogar tiene un trabajo que ofrezca cobertura de salud',
+  guide_skipped_appendix_b: 'ninguna persona que solicita es indígena estadounidense ni nativa de Alaska',
+  guide_skipped_appendix_c: 'no se nombró a ningún representante autorizado para la cobertura de salud',
+  guide_skipped_appendix_d: 'es para ayuda en efectivo cuando solicitan dos o más adultos',
+  guide_skipped_appendix_e: 'la información detallada sobre vehículos solo se necesita para ayuda en efectivo, o para atención médica cuando alguien que solicita tiene 65 años o más o tiene una discapacidad',
+
 } as const;
 
 export default es;
