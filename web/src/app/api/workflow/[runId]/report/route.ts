@@ -60,12 +60,27 @@ export async function GET(
   const sessionCookieMatch = rawCookie.match(/(?:^|;\s*)session=([^;]+)/);
   const cookieValue = sessionCookieMatch?.[1];
   const session = cookieValue ? sessionStore.get(cookieValue) : null;
-  const localeCookieMatch = rawCookie.match(/(?:^|;\s*)kbn-locale=([^;]+)/);
+  /*
+   * Read the locale through the shared helper rather than matching the cookie
+   * here. It is the one place that decides what an unsupported tag falls back
+   * to — zh-TW becomes English rather than being treated as zh-CN — and a
+   * second parser in this route would be free to disagree with it.
+   */
+  const { localeFromCookieHeader } = await import("@/lib/locale");
+  const locale = localeFromCookieHeader(rawCookie);
 
-  const locale = localeCookieMatch?.[1] ?? "en";
-
+  /*
+   * Named for the model that writes the report body. "Chinese" alone is
+   * ambiguous, and this project cares about the difference: the official
+   * Chinese SAWS form is Traditional, so an unqualified request risks a report
+   * in a different script from the interface around it.
+   */
   const preferredLanguage =
-    locale === "es" ? "Spanish" : locale === "zh-CN" ? "Chinese" : "English";
+    locale === "es"
+      ? "Spanish"
+      : locale === "zh-CN"
+        ? "Simplified Chinese"
+        : "English";
   /*
    * Household size and the additional-member rows are derived from the intake
    * household answer, never asked again. Once the applicant edits the household
