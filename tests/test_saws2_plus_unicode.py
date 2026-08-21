@@ -123,3 +123,52 @@ def test_the_spanish_template_also_regenerates_appearances():
 
     assert flag is not None
     assert bool(flag) is True
+
+
+# ---------------------------------------------------------------------------
+# The entry point, not just the generator
+# ---------------------------------------------------------------------------
+
+
+def test_the_real_entry_point_sets_the_flag_for_a_california_application():
+    """The flag above is set by ``generate_saws2_plus_pdf``. This checks that
+    the function the web app actually calls routes there.
+
+    ``form_filler.generate_application`` has a second path,
+    ``fill_official_form``, which fills with ``auto_regenerate=False`` and so
+    produces a PDF with no ``/NeedAppearances``. A Chinese name written through
+    that path would be stored correctly and print as nothing. This pins which
+    path a California application with a field plan takes, so the CJK guarantee
+    cannot be lost by a change in routing rather than in the generator.
+    """
+    from benefits_navigator.form_filler import generate_application
+
+    args = {
+        "state": "CA",
+        "county": "Los Angeles",
+        "zip_code": "90001",
+        "locale": "zh-CN",
+        "application_field_plan": [
+            {"key": "applicant.first_name", "value": CJK_NAME},
+            {"key": "applicant.home_address.state", "value": "CA"},
+            {"key": "applicant.home_address.zip_code", "value": "90001"},
+        ],
+    }
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path, form_type = generate_application(args, "", pathlib.Path(tmp))
+
+        assert form_type == "official"
+
+        reader = PdfReader(str(path))
+        acro = reader.trailer["/Root"].get("/AcroForm")
+
+        assert acro is not None, "the entry point must produce a fillable form"
+
+        flag = acro.get("/NeedAppearances")
+
+        assert flag is not None, (
+            "the path the web app takes must set /NeedAppearances; without it a "
+            "CJK value is stored and printed blank"
+        )
+        assert bool(flag) is True
