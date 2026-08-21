@@ -437,6 +437,12 @@ def _age_on_date(
     )
 
 
+#: How many authorized representatives the canonical layer may emit. The
+#: printed form has one page-2 block and one Appendix C block, so more than a
+#: couple would have nowhere to go; this only bounds the search.
+_MAX_AUTHORIZED_REPRESENTATIVES = 4
+
+
 class Saws2PlusFieldAdapter:
     """Translate canonical values to the official SAWS 2 PLUS PDF.
 
@@ -2316,9 +2322,23 @@ class Saws2PlusFieldAdapter:
     # is left for them and reported as manual.
     #
     #: canonical suffix -> printed text destination
+    # Verified by widget coordinate against the printed item numbers on
+    # page 26: the label above each box shares its x position.
+    #
+    #   Text1  y654 x52   1. Name of authorized representative
+    #   Text2  y618 x52   2. Address
+    #   Text3  y639 x437  3. Apartment or Suite number
+    #   Text4  y582 x52   4. City
+    #   Text5  y582 x264  5. State
+    #   Text6  y582 x437  6. Zip code
+    #   Text9  y510 x50   8. Organization name (if applicable)
     APPENDIX_C_REPRESENTATIVE = {
         "name": "Text1 APPX B",
         "address": "Text2 APPX B",
+        "apartment": "Text3 APPX B",
+        "city": "Text4 APPX B",
+        "state": "Text5 APPX B",
+        "zip_code": "Text6 APPX B",
         "organization": "Text9 APPX B",
     }
 
@@ -2326,11 +2346,27 @@ class Saws2PlusFieldAdapter:
     APPENDIX_C_PHONE = ("Text7 APPX B", "Text8 APPX B")
 
     # Not written, and recorded so the search is not repeated:
-    #   Text3 (apartment), Text4-6 (city/state/zip) — the model holds one
-    #     address string and splitting it would be guessing which part is which.
-    #   Text10 (I.D. number) — not collected.
+    #   Text10 (I.D. number) — not collected. The printed box says "if
+    #     applicable"; an authorized representative's county-issued I.D. number
+    #     is not something intake can know, and inventing one would be worse
+    #     than the blank the applicant can fill in.
     #   Text11 — the date beside item 10's signature.
     #   Text12-15 — the counsellor/navigator block.
+
+    # -----------------------------------------------------------------------
+    # Page 2 — the CalFresh authorized representative
+    # -----------------------------------------------------------------------
+    #
+    # Section 2, "HOUSEHOLD'S AUTHORIZED REPRESENTATIVE", prints only a name
+    # and a phone number; the fuller address block belongs to Appendix C. Both
+    # labels sit at y=630.9 with the fields left and right of each other:
+    #
+    #   Text3 PG 2  x=33.9   AUTHORIZED REPRESENTATIVE NAME
+    #   Text4 PG 2  x=368.5  AUTHORIZED REPRESENTATIVE PHONE NUMBER
+    PAGE_2_REPRESENTATIVE = {
+        "name": "Text3 PG 2",
+        "phone": "Text4 PG 2",
+    }
 
     #: Q14's two printed free-text lines.
     PAGE_11_SPECIAL_NEED_TEXT = {
@@ -2430,6 +2466,7 @@ class Saws2PlusFieldAdapter:
             *APPENDIX_A_PHONE,
             *APPENDIX_C_REPRESENTATIVE.values(),
             *APPENDIX_C_PHONE,
+            *PAGE_2_REPRESENTATIVE.values(),
             *APPENDIX_A_OTHER_ELIGIBLE,
             *(f for pair in APPENDIX_A_YES_NO.values() for f in pair),
             *APPENDIX_A_PREMIUM_FREQUENCY.values(),
@@ -3052,6 +3089,41 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # -------------------------------------------------------------------
+        # Page 2 — the CalFresh authorized representative
+        # -------------------------------------------------------------------
+        #
+        # Section 2 prints one name and one phone box, so the first
+        # representative the household named for CalFresh takes them. A
+        # representative appointed only for health coverage does not belong
+        # here: the printed question asks about the CalFresh case.
+        for rep_index in range(_MAX_AUTHORIZED_REPRESENTATIVES):
+            rep_prefix = f"household.authorized_representative.{rep_index}"
+
+            if canonical_values.get(f"{rep_prefix}.for_calfresh") is not True:
+                continue
+
+            set_field(
+                self.PAGE_2_REPRESENTATIVE["name"],
+                canonical_values.get(f"{rep_prefix}.name"),
+            )
+
+            digits = "".join(
+                character
+                for character in str(
+                    canonical_values.get(f"{rep_prefix}.phone") or ""
+                )
+                if character.isdigit()
+            )
+
+            if len(digits) == 10:
+                set_field(
+                    self.PAGE_2_REPRESENTATIVE["phone"],
+                    f"({digits[:3]}) {digits[3:6]}-{digits[6:]}",
+                )
+
+            break
 
         # -------------------------------------------------------------------
         # Appendix C — the health-insurance authorized representative

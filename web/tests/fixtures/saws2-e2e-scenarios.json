@@ -4003,8 +4003,20 @@
         "value": "5595550188"
       },
       {
-        "key": "household.authorized_representative.0.address",
-        "value": "900 Elm Street, Fresno CA 93701"
+        "key": "household.authorized_representative.0.address.street",
+        "value": "900 Elm Street"
+      },
+      {
+        "key": "household.authorized_representative.0.address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "household.authorized_representative.0.address.state",
+        "value": "CA"
+      },
+      {
+        "key": "household.authorized_representative.0.address.zip_code",
+        "value": "93701"
       },
       {
         "key": "household.authorized_representative.0.for_calfresh",
@@ -4027,8 +4039,24 @@
         "value": "5595550199"
       },
       {
-        "key": "household.authorized_representative.1.address",
-        "value": "44 Cedar Avenue, Fresno CA 93702"
+        "key": "household.authorized_representative.1.address.street",
+        "value": "44 Cedar Avenue"
+      },
+      {
+        "key": "household.authorized_representative.1.address.apartment",
+        "value": "Suite 3"
+      },
+      {
+        "key": "household.authorized_representative.1.address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "household.authorized_representative.1.address.state",
+        "value": "CA"
+      },
+      {
+        "key": "household.authorized_representative.1.address.zip_code",
+        "value": "93702"
       },
       {
         "key": "household.authorized_representative.1.for_calfresh",
@@ -4044,7 +4072,23 @@
       },
       {
         "key": "appendices.representative.address",
-        "value": "44 Cedar Avenue, Fresno CA 93702"
+        "value": "44 Cedar Avenue"
+      },
+      {
+        "key": "appendices.representative.apartment",
+        "value": "Suite 3"
+      },
+      {
+        "key": "appendices.representative.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "appendices.representative.state",
+        "value": "CA"
+      },
+      {
+        "key": "appendices.representative.zip_code",
+        "value": "93702"
       },
       {
         "key": "appendices.representative.organization",

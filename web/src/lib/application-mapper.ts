@@ -907,7 +907,11 @@ function mapQuestionnaire(
     text(`${prefix}.name`, representative.name);
     text(`${prefix}.organization`, representative.organization);
     text(`${prefix}.phone`, representative.phone);
-    text(`${prefix}.address`, representative.address);
+    text(`${prefix}.address.street`, representative.street);
+    text(`${prefix}.address.apartment`, representative.apartment);
+    text(`${prefix}.address.city`, representative.city);
+    text(`${prefix}.address.state`, representative.state);
+    text(`${prefix}.address.zip_code`, representative.zipCode);
     tri(`${prefix}.for_calfresh`, representative.forCalFresh);
     tri(`${prefix}.for_health_coverage`, representative.forHealthCoverage);
   }
@@ -924,7 +928,11 @@ function mapQuestionnaire(
 
   if (healthRepresentative) {
     text("appendices.representative.name", healthRepresentative.name);
-    text("appendices.representative.address", healthRepresentative.address);
+    text("appendices.representative.address", healthRepresentative.street);
+    text("appendices.representative.apartment", healthRepresentative.apartment);
+    text("appendices.representative.city", healthRepresentative.city);
+    text("appendices.representative.state", healthRepresentative.state);
+    text("appendices.representative.zip_code", healthRepresentative.zipCode);
     text(
       "appendices.representative.organization",
       healthRepresentative.organization,
