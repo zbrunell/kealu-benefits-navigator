@@ -87,7 +87,7 @@ test.describe('SAWS 2 PLUS draft (production gate)', () => {
     await expect(guide).toBeVisible();
 
     await expect(
-      guide.getByRole('link', { name: 'Open printable guide' }),
+      guide.getByRole('link', { name: en.dcg_open_guide }),
     ).toHaveAttribute('href', /\/api\/workflow\/.+\/guide/);
     await expect(
       guide.getByRole('link', { name: 'Download guide' }),
@@ -126,7 +126,7 @@ test.describe('SAWS 2 PLUS draft (production gate)', () => {
     // The same reference is printed on the guide the links point at.
     const guideHref = await page
       .getByTestId('completion-guide-download')
-      .getByRole('link', { name: 'Open printable guide' })
+      .getByRole('link', { name: en.dcg_open_guide })
       .getAttribute('href');
 
     const guideHtml = await (await page.request.get(guideHref!)).text();
@@ -137,7 +137,7 @@ test.describe('SAWS 2 PLUS draft (production gate)', () => {
 
     const guideHref = await page
       .getByTestId('completion-guide-download')
-      .getByRole('link', { name: 'Open printable guide' })
+      .getByRole('link', { name: en.dcg_open_guide })
       .getAttribute('href');
 
     const response = await page.request.get(guideHref!);

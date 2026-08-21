@@ -145,6 +145,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0"
     ],
     "manualCounts": {
@@ -155,7 +156,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 66,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -474,6 +477,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.child.0",
@@ -487,7 +491,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -1046,6 +1052,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.adult.2",
@@ -1065,7 +1072,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -1756,6 +1765,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.adult.2",
@@ -1778,7 +1788,9 @@
       "overflow": 3,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -1923,6 +1935,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0"
     ],
     "manualCounts": {
@@ -1933,7 +1946,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 67,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -2090,6 +2105,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0"
     ],
     "manualCounts": {
@@ -2100,7 +2116,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -2305,6 +2323,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0"
     ],
     "manualCounts": {
@@ -2315,7 +2334,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -2552,6 +2573,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "overflow.income.earned.5",
       "overflow.income.earned.6"
@@ -2564,7 +2586,9 @@
       "overflow": 2,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -2967,6 +2991,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "write_in.appendix_d.0.0",
@@ -2984,7 +3009,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -3355,6 +3382,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.adult.2",
@@ -3373,7 +3401,9 @@
       "overflow": 2,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -3608,6 +3638,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.appendix_a_employee"
@@ -3620,7 +3651,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -3835,6 +3868,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1"
     ],
@@ -3846,7 +3880,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -4103,6 +4139,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "signature.appendix_c",
       "signature.appendix_c_date",
@@ -4116,7 +4153,9 @@
       "overflow": 0,
       "unsupported": 1,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -4449,6 +4488,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "overflow.appendices.vehicle.4"
     ],
@@ -4460,7 +4500,9 @@
       "overflow": 1,
       "unsupported": 0,
       "missing_answer": 80,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -4633,6 +4675,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "overflow.resources.personal_property.4"
     ],
@@ -4644,7 +4687,9 @@
       "overflow": 1,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -4845,6 +4890,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0"
     ],
     "manualCounts": {
@@ -4855,7 +4901,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 56,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -5298,6 +5346,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.child.0",
@@ -5313,7 +5362,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   }
 ]

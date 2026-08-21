@@ -556,11 +556,11 @@ const zhCN: Messages = {
   dcg_official_note: '这是已填入您答案的加州官方 SAWS 2 PLUS 表格。',
   dcg_open_draft: '打开草稿',
   dcg_download_draft: '下载草稿',
-  dcg_take_guide: '请随身携带这份分步指南',
-  dcg_guide_intro: '按章节分页的清单，列出此草稿上仍需完成的所有事项。',
-  dcg_open_guide: '打开可打印指南',
+  dcg_take_guide: '您的分步指南',
+  dcg_guide_intro: '指南列出此草稿上所有仍需填写的内容。您可以在此打开、下载，或打印出来放在申请表旁边，一边填写剩余部分。',
+  dcg_open_guide: '打开指南',
   dcg_download_guide: '下载指南',
-  dcg_helper_guide: '供协助者使用的指南',
+  dcg_helper_guide: '供协助者使用的版本',
   dcg_finish_by_hand: '提交前：请手工完成以下事项',
   dcg_where_to_submit: '申请提交地点',
   dcg_online_fastest: '在线提交（最快）：',
@@ -760,7 +760,6 @@ const zhCN: Messages = {
 
   // ── 草稿填写指南 ─────────────────────────────────────────────────────────
   dcg_draft_reference: '草稿编号 {reference}。下方的指南上印有相同的编号，因此如果您生成了多份草稿，可以分辨哪份指南对应哪份草稿。',
-  dcg_print_note: '打开指南，使用浏览器的「打印」功能打印，或另存为 PDF。版面按美国 Letter 尺寸纸张排版。',
   dcg_questions_blank: '印在表格上但留空的问题（{count}）',
   dcg_county_known: '您的邮政编码属于{county}县，因此由{county}县处理您的申请。',
   dcg_county_unknown: '我们无法根据您的邮政编码确定所属的县，请在提交前确认哪个县负责您的地址。',
@@ -795,6 +794,29 @@ const zhCN: Messages = {
 
   field_sex: '性别',
   field_state: '州',
+
+  guide_section_not_collected_title: '表格要求但我们无法填写的信息',
+  guide_section_not_collected_intro: '请手写填入。印制的表格上有这些栏位，而我们没有办法代为填写。',
+  guide_section_optional_not_collected_title: '我们留给您的选填栏位',
+  guide_section_optional_not_collected_intro: '表格将这些视为选填。您可以填写，也可以留空；无论哪种方式，您的申请都是完整的。',
+  vt_race_checkboxes: '选填的勾选栏',
+  vt_contact_blocks: '每个人的姓名、地址和电话',
+  instr_uncollected_race_ethnicity: '我们不询问种族或族裔，因此此栏留空。表格说明填写此项是选填的，并且不影响您的资格或福利金额；您可以填写，也可以留空。',
+  instr_uncollected_member_contact: '您告知我们并非所有人的联络信息都相同。印制的表格要求填写每位联络信息不同者的姓名、住家与邮寄地址、电话号码及电子邮件，而我们不收集这些信息，因此请将其填写在此问题下方的两个栏位中。',
+
+  q_record_field_needed: '第 {number} 条记录缺少「{field}」。',
+  qfield_description: '说明',
+  qfield_kind: '类型',
+  qfield_make: '品牌与型号',
+  qfield_name: '姓名',
+  qfield_source: '来源',
+
+  qfield_street: '街道地址',
+  qfield_apartment: '公寓或套房号',
+  qfield_city: '城市',
+  qfield_state: '州',
+  qfield_zipCode: '邮政编码',
+  qfield_phone: '电话号码',
 
 } as const;
 

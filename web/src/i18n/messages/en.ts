@@ -572,11 +572,11 @@ const en = {
   dcg_official_note: 'This is the official California SAWS 2 PLUS form with your answers filled in.',
   dcg_open_draft: 'Open draft',
   dcg_download_draft: 'Download draft',
-  dcg_take_guide: 'Take the step-by-step guide with you',
-  dcg_guide_intro: 'A one-page-per-section checklist of everything left to do on this draft.',
-  dcg_open_guide: 'Open printable guide',
+  dcg_take_guide: 'Your step-by-step guide',
+  dcg_guide_intro: 'It lists everything still to be completed on this draft. Open it here, download it, or print it and keep it beside the application while you fill in the rest.',
+  dcg_open_guide: 'Open guide',
   dcg_download_guide: 'Download guide',
-  dcg_helper_guide: 'Guide for someone helping you',
+  dcg_helper_guide: 'Version for someone helping you',
   dcg_finish_by_hand: 'Before you submit: finish these by hand',
   dcg_where_to_submit: 'Where to submit your application',
   dcg_online_fastest: 'Online (fastest):',
@@ -785,7 +785,6 @@ const en = {
 
   // ── Draft completion guide ──────────────────────────────────────────────
   dcg_draft_reference: 'Draft reference {reference}. The same reference is printed on the guide below, so you can tell which guide goes with which draft if you generate more than one.',
-  dcg_print_note: 'Open the guide and use your browser’s Print command to print it or save it as a PDF. It is laid out for US Letter paper.',
   dcg_questions_blank: 'Printed questions left blank ({count})',
   dcg_county_known: 'Your ZIP code is in {county} County, so {county} County processes your application.',
   dcg_county_unknown: 'We could not determine your county from your ZIP code, so check which county serves your address before you submit.',
@@ -820,6 +819,29 @@ const en = {
 
   field_sex: 'Sex',
   field_state: 'State',
+
+  guide_section_not_collected_title: 'Information the form asks for that we could not supply',
+  guide_section_not_collected_intro: 'Write these in by hand. The printed form has boxes for them and we had no way to fill them.',
+  guide_section_optional_not_collected_title: 'Optional boxes we left for you',
+  guide_section_optional_not_collected_intro: 'The form treats these as optional. You may fill them in or leave them blank — either way your application is complete.',
+  vt_race_checkboxes: 'Optional checkboxes',
+  vt_contact_blocks: 'Name, address and phone for each person',
+  instr_uncollected_race_ethnicity: 'We do not ask about race or ethnicity, so this block is blank. The form says answering is optional and that it does not affect your eligibility or benefit amount — you may fill it in or leave it blank.',
+  instr_uncollected_member_contact: 'You told us not everyone has the same contact information. The printed form asks for the name, home and mailing address, phone numbers and email of each person whose details differ, and we do not collect those, so write them into the two blocks under this question.',
+
+  q_record_field_needed: '{field} is needed for entry {number}.',
+  qfield_description: 'Description',
+  qfield_kind: 'Type',
+  qfield_make: 'Make and model',
+  qfield_name: 'Name',
+  qfield_source: 'Source',
+
+  qfield_street: 'Street address',
+  qfield_apartment: 'Apartment or suite',
+  qfield_city: 'City',
+  qfield_state: 'State',
+  qfield_zipCode: 'ZIP code',
+  qfield_phone: 'Phone number',
 
 } as const;
 

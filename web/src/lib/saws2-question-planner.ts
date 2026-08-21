@@ -242,7 +242,21 @@ export type UnstampedQuestion = Omit<
   // message key can never be written by hand into something the id disagrees
   // with.
   'tier' | 'requirement' | 'sawsQuestion' | 'store' | 'promptKey' | 'helpKey'
-> & { store?: AnswerStore };
+> & {
+  store?: AnswerStore;
+  /*
+   * A stable catalog key, for the questions whose id carries an index.
+   *
+   * `questionMessageKey` derives a key from the id, which works while ids are
+   * fixed. A per-entry question's id cannot be — it is
+   * `…authorized_representative.0.name` — so the derived key can never have a
+   * catalog entry and the UI falls back to the English source text. Naming a
+   * stable key here, with the varying parts as `promptVars`, is what lets these
+   * be translated at all.
+   */
+  promptKey?: string;
+  promptVars?: Record<string, string | number>;
+};
 
 /**
  * Priority and SAWS 2 PLUS question number for every question we ask.
@@ -322,7 +336,7 @@ function withPriority(question: UnstampedQuestion): PlannedQuestion {
     ...question,
     tier,
     requirement: requirementForTier(tier),
-    promptKey: questionMessageKey(question.id, 'prompt'),
+    promptKey: question.promptKey ?? questionMessageKey(question.id, 'prompt'),
     ...(question.help
       ? { helpKey: questionMessageKey(question.id, 'help') }
       : {}),
@@ -613,7 +627,12 @@ interface RecordGatewaySpec extends GatewaySpec {
   sectionPath: string;
   recordPrompt: string;
   /** Fields every record must have before the section counts as complete. */
-  requiredFields: Array<{ key: string; label: string }>;
+  /*
+   * Fields a record is incomplete without. `labelKey` rather than a label: the
+   * prompt built from it is shown to the applicant, so English here reached the
+   * screen in every language.
+   */
+  requiredFields: Array<{ key: string; labelKey: string }>;
 }
 
 /** Gateways that unlock repeatable records. */
@@ -626,7 +645,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     prompt: 'Do you want someone else to be able to act for your household?',
     help: 'An authorized representative can speak for you at the interview and help with forms.',
     recordPrompt: 'Who is your authorized representative?',
-    requiredFields: [{ key: 'name', label: 'Representative’s name' }],
+    requiredFields: [{ key: 'name', labelKey: 'qfield_name' }],
   },
   {
     section: 'circumstances',
@@ -636,7 +655,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     prompt:
       'Has anyone been in the U.S. military, or are they the spouse, parent, or child of someone who was?',
     recordPrompt: 'Who has the military connection?',
-    requiredFields: [{ key: 'memberId', label: 'Household member' }],
+    requiredFields: [{ key: 'memberId', labelKey: 'qfield_memberId' }],
   },
   {
     section: 'circumstances',
@@ -645,7 +664,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'circumstances.students.answer',
     prompt: 'Is anyone applying attending a college or vocational school?',
     recordPrompt: 'Who is attending school?',
-    requiredFields: [{ key: 'memberId', label: 'Household member' }],
+    requiredFields: [{ key: 'memberId', labelKey: 'qfield_memberId' }],
   },
   {
     section: 'circumstances',
@@ -654,7 +673,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'circumstances.absentParents.answer',
     prompt: 'Does any child in the household have a parent living outside the home?',
     recordPrompt: 'Which child, and who is the absent parent?',
-    requiredFields: [{ key: 'memberId', label: 'Child' }],
+    requiredFields: [{ key: 'memberId', labelKey: 'qfield_memberId' }],
   },
   {
     section: 'circumstances',
@@ -663,7 +682,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'circumstances.fosterCare.answer',
     prompt: 'Is a foster child living in your home and receiving foster-care services?',
     recordPrompt: 'Which child is in foster care?',
-    requiredFields: [{ key: 'memberId', label: 'Child' }],
+    requiredFields: [{ key: 'memberId', labelKey: 'qfield_memberId' }],
   },
   {
     section: 'income',
@@ -674,8 +693,8 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     help: 'Include part-time and temporary work. Self-employment is asked separately.',
     recordPrompt: 'Tell us about each job',
     requiredFields: [
-      { key: 'memberId', label: 'Who has this job' },
-      { key: 'employerName', label: 'Employer name' },
+      { key: 'memberId', labelKey: 'qfield_memberId' },
+      { key: 'employerName', labelKey: 'qfield_employerName' },
     ],
   },
   {
@@ -686,8 +705,8 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     prompt: 'Is anyone self-employed?',
     recordPrompt: 'Tell us about the business',
     requiredFields: [
-      { key: 'memberId', label: 'Who is self-employed' },
-      { key: 'businessType', label: 'Type of business' },
+      { key: 'memberId', labelKey: 'qfield_memberId' },
+      { key: 'businessType', labelKey: 'qfield_businessType' },
     ],
   },
   {
@@ -700,8 +719,8 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
       'For example unemployment, disability, Social Security, SSI, child support, or retirement.',
     recordPrompt: 'Tell us about each source',
     requiredFields: [
-      { key: 'memberId', label: 'Who receives it' },
-      { key: 'source', label: 'Where it comes from' },
+      { key: 'memberId', labelKey: 'qfield_memberId' },
+      { key: 'source', labelKey: 'qfield_source' },
     ],
   },
   {
@@ -712,7 +731,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     prompt:
       'Does anyone get housing, utilities, food, or clothing free or in exchange for work?',
     recordPrompt: 'Tell us what is provided',
-    requiredFields: [{ key: 'providedBy', label: 'Who provides it' }],
+    requiredFields: [{ key: 'providedBy', labelKey: 'qfield_providedBy' }],
   },
   {
     section: 'income',
@@ -721,7 +740,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'income.recentJobChange.answer',
     prompt: 'Has anyone lost a job or had their hours change recently?',
     recordPrompt: 'Tell us what changed',
-    requiredFields: [{ key: 'memberId', label: 'Who' }],
+    requiredFields: [{ key: 'memberId', labelKey: 'qfield_memberId' }],
   },
   {
     section: 'expenses',
@@ -731,7 +750,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     prompt: 'Does your household pay rent, a mortgage, or utilities?',
     help: 'Housing and utility costs can increase your CalFresh benefit.',
     recordPrompt: 'Add each housing or utility cost',
-    requiredFields: [{ key: 'kind', label: 'Type of cost' }],
+    requiredFields: [{ key: 'kind', labelKey: 'qfield_kind' }],
   },
   {
     section: 'expenses',
@@ -740,7 +759,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'expenses.dependentCare.answer',
     prompt: 'Does anyone pay for child care or care for a dependent adult?',
     recordPrompt: 'Tell us about the care you pay for',
-    requiredFields: [{ key: 'memberId', label: 'Who needs the care' }],
+    requiredFields: [{ key: 'memberId', labelKey: 'qfield_memberId' }],
   },
   {
     section: 'expenses',
@@ -749,7 +768,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'expenses.childSupportPaid.answer',
     prompt: 'Does anyone pay child support?',
     recordPrompt: 'Tell us about the child support paid',
-    requiredFields: [{ key: 'memberId', label: 'Who pays it' }],
+    requiredFields: [{ key: 'memberId', labelKey: 'qfield_memberId' }],
   },
   {
     section: 'expenses',
@@ -758,7 +777,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'expenses.spousalSupportPaid.answer',
     prompt: 'Is anyone legally required to pay spousal support or alimony?',
     recordPrompt: 'Tell us about the spousal support paid',
-    requiredFields: [{ key: 'memberId', label: 'Who pays it' }],
+    requiredFields: [{ key: 'memberId', labelKey: 'qfield_memberId' }],
   },
   {
     section: 'expenses',
@@ -767,7 +786,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'expenses.otherTaxDeductible.answer',
     prompt: 'Does anyone have other expenses they deduct on their taxes?',
     recordPrompt: 'Add each deductible expense',
-    requiredFields: [{ key: 'description', label: 'Expense' }],
+    requiredFields: [{ key: 'description', labelKey: 'qfield_description' }],
   },
   {
     section: 'health',
@@ -777,8 +796,8 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     prompt: 'Does anyone currently have health insurance?',
     recordPrompt: 'Tell us about each plan',
     requiredFields: [
-      { key: 'memberId', label: 'Who is covered' },
-      { key: 'planName', label: 'Plan name' },
+      { key: 'memberId', labelKey: 'qfield_memberId' },
+      { key: 'planName', labelKey: 'qfield_planName' },
     ],
   },
   {
@@ -788,7 +807,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'health.coverageEnding.answer',
     prompt: 'Is anyone’s health coverage ending soon?',
     recordPrompt: 'Tell us which coverage is ending',
-    requiredFields: [{ key: 'memberId', label: 'Who is covered' }],
+    requiredFields: [{ key: 'memberId', labelKey: 'qfield_memberId' }],
   },
   {
     section: 'health',
@@ -799,8 +818,8 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     help: 'This adds Appendix A to your application.',
     recordPrompt: 'Tell us about the employer’s coverage',
     requiredFields: [
-      { key: 'memberId', label: 'Who' },
-      { key: 'employerName', label: 'Employer name' },
+      { key: 'memberId', labelKey: 'qfield_memberId' },
+      { key: 'employerName', labelKey: 'qfield_employerName' },
     ],
   },
   {
@@ -810,7 +829,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'resources.accounts.answer',
     prompt: 'Does anyone have cash, a bank account, or other savings?',
     recordPrompt: 'Add each account or resource',
-    requiredFields: [{ key: 'kind', label: 'Type' }],
+    requiredFields: [{ key: 'kind', labelKey: 'qfield_kind' }],
   },
   {
     section: 'resources',
@@ -819,7 +838,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'resources.vehicles.answer',
     prompt: 'Does anyone own or use a vehicle?',
     recordPrompt: 'Add each vehicle',
-    requiredFields: [{ key: 'make', label: 'Make' }],
+    requiredFields: [{ key: 'make', labelKey: 'qfield_make' }],
   },
   {
     section: 'resources',
@@ -828,7 +847,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     path: 'resources.realProperty.answer',
     prompt: 'Does anyone own a home, land, or other property?',
     recordPrompt: 'Add each property',
-    requiredFields: [{ key: 'kind', label: 'Type' }],
+    requiredFields: [{ key: 'kind', labelKey: 'qfield_kind' }],
   },
   {
     section: 'resources',
@@ -838,7 +857,7 @@ const RECORD_GATEWAYS: RecordGatewaySpec[] = [
     prompt:
       'Has anyone sold, traded, or given away property in the last 30 months?',
     recordPrompt: 'Tell us what was transferred',
-    requiredFields: [{ key: 'description', label: 'What it was' }],
+    requiredFields: [{ key: 'description', labelKey: 'qfield_description' }],
   },
 ];
 
@@ -1088,7 +1107,14 @@ function missingRequiredFields(
           id: `${spec.id}.${index}.${field.key}`,
           section: spec.section,
           kind: 'field',
-          prompt: `${field.label} is needed for entry ${index + 1}.`,
+          /*
+             English source text, kept for logs and tests; the UI reads
+             promptKey. The sentence is one catalog entry with both values
+             interpolated, not a label glued to " is needed for entry ".
+          */
+          prompt: `${field.labelKey} is needed for entry ${index + 1}.`,
+          promptKey: 'q_record_field_needed',
+          promptVars: { field: field.labelKey, number: index + 1 },
           path: `${spec.sectionPath}.entries.${index}.${field.key}`,
         });
       }

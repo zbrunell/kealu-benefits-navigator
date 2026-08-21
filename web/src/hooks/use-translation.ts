@@ -55,7 +55,11 @@ export function useTranslation() {
       vars?: Record<string, string | number>,
     ): string => tPlural(msgs, locale, baseKey, count, vars),
     /** Translate a planned question's wording. */
-    tq: (question: { promptKey: string; prompt: string }): string =>
+    tq: (question: {
+      promptKey: string;
+      prompt: string;
+      promptVars?: Record<string, string | number>;
+    }): string =>
       translateQuestion(msgs, question),
     /** Translate a planned question's clarifying sentence, if it has one. */
     tqHelp: (question: { helpKey?: string; help?: string }): string | undefined =>

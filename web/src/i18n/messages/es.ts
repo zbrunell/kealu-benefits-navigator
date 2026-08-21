@@ -576,11 +576,11 @@ const es: Messages = {
   dcg_official_note: 'Este es el formulario oficial SAWS 2 PLUS de California con sus respuestas completadas.',
   dcg_open_draft: 'Abrir el borrador',
   dcg_download_draft: 'Descargar el borrador',
-  dcg_take_guide: 'Lleve consigo la guía paso a paso',
-  dcg_guide_intro: 'Una lista de verificación, una página por sección, de todo lo que falta hacer en este borrador.',
-  dcg_open_guide: 'Abrir la guía para imprimir',
+  dcg_take_guide: 'Su guía paso a paso',
+  dcg_guide_intro: 'Enumera todo lo que falta completar en este borrador. Ábrala aquí, descárguela, o imprímala y téngala al lado de la solicitud mientras llena el resto.',
+  dcg_open_guide: 'Abrir la guía',
   dcg_download_guide: 'Descargar la guía',
-  dcg_helper_guide: 'Guía para quien le ayuda',
+  dcg_helper_guide: 'Versión para quien le ayuda',
   dcg_finish_by_hand: 'Antes de enviar: complete esto a mano',
   dcg_where_to_submit: 'Dónde enviar su solicitud',
   dcg_online_fastest: 'En línea (lo más rápido):',
@@ -780,7 +780,6 @@ const es: Messages = {
 
   // ── Guía para completar el borrador ─────────────────────────────────────
   dcg_draft_reference: 'Referencia del borrador {reference}. La misma referencia se imprime en la guía de abajo, para que sepa qué guía corresponde a qué borrador si genera más de uno.',
-  dcg_print_note: 'Abra la guía y use el comando Imprimir de su navegador para imprimirla o guardarla como PDF. Está diseñada para papel tamaño carta.',
   dcg_questions_blank: 'Preguntas impresas que quedaron en blanco ({count})',
   dcg_county_known: 'Su código postal está en el Condado de {county}, así que el Condado de {county} procesa su solicitud.',
   dcg_county_unknown: 'No pudimos determinar su condado a partir de su código postal, así que verifique qué condado atiende su dirección antes de entregar la solicitud.',
@@ -815,6 +814,29 @@ const es: Messages = {
 
   field_sex: 'Sexo',
   field_state: 'Estado',
+
+  guide_section_not_collected_title: 'Información que el formulario pide y que no pudimos proporcionar',
+  guide_section_not_collected_intro: 'Anote esto a mano. El formulario impreso tiene casillas para esta información y no tuvimos manera de llenarlas.',
+  guide_section_optional_not_collected_title: 'Casillas opcionales que dejamos para usted',
+  guide_section_optional_not_collected_intro: 'El formulario considera esto opcional. Puede llenarlo o dejarlo en blanco; de cualquier manera su solicitud está completa.',
+  vt_race_checkboxes: 'Casillas opcionales',
+  vt_contact_blocks: 'Nombre, dirección y teléfono de cada persona',
+  instr_uncollected_race_ethnicity: 'No preguntamos sobre raza ni etnia, así que este bloque quedó en blanco. El formulario indica que responder es opcional y que no afecta su elegibilidad ni el monto de sus beneficios; puede llenarlo o dejarlo en blanco.',
+  instr_uncollected_member_contact: 'Usted nos indicó que no todas las personas tienen la misma información para contacto. El formulario impreso pide el nombre, la dirección de casa y postal, los números de teléfono y el correo electrónico de cada persona cuya información sea diferente, y nosotros no recogemos esos datos, así que anótelos en los dos bloques debajo de esta pregunta.',
+
+  q_record_field_needed: 'Falta {field} en la entrada {number}.',
+  qfield_description: 'Descripción',
+  qfield_kind: 'Tipo',
+  qfield_make: 'Marca y modelo',
+  qfield_name: 'Nombre',
+  qfield_source: 'Fuente',
+
+  qfield_street: 'Dirección',
+  qfield_apartment: 'Apartamento o suite',
+  qfield_city: 'Ciudad',
+  qfield_state: 'Estado',
+  qfield_zipCode: 'Código postal',
+  qfield_phone: 'Número de teléfono',
 
 } as const;
 

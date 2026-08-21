@@ -364,11 +364,11 @@ describe('post-generation completion guide', () => {
   it('offers the printable guide beside the draft', () => {
     expect(guide).toContain('data-testid="completion-guide-download"');
     expect(guide).toContain('dcg_open_guide');
-    expect(messages.en.dcg_open_guide).toBe('Open printable guide');
+    expect(messages.en.dcg_open_guide).toBe('Open guide');
     expect(guide).toContain('dcg_download_guide');
     expect(messages.en.dcg_download_guide).toBe('Download guide');
     expect(guide).toContain('dcg_helper_guide');
-    expect(messages.en.dcg_helper_guide).toBe('Guide for someone helping you');
+    expect(messages.en.dcg_helper_guide).toBe('Version for someone helping you');
   });
 
   it('uses real links, so every action is keyboard reachable', () => {
@@ -391,13 +391,32 @@ describe('post-generation completion guide', () => {
     }
   });
 
-  it('tells the user how to print the guide', () => {
-    // The component names the string; the catalog holds the words. Asserting
-    // both keeps the behaviour covered without pinning the English into the
-    // component, where it could no longer be translated.
-    expect(guide).toContain('dcg_print_note');
-    expect(messages.en.dcg_print_note).toMatch(/Print command/i);
-    expect(messages.en.dcg_print_note).toMatch(/US Letter/i);
+  it('tells the user the guide can be printed and kept beside the form', () => {
+    /*
+     * This used to assert a separate paragraph explaining the browser's Print
+     * command and US Letter paper. That paragraph was the clutter: the action
+     * row already offers Open and Download, so the one thing the applicant
+     * could not work out for themselves is that printing it and keeping it
+     * beside the application is what it is for. The intro now says that, and
+     * says it once.
+     */
+    expect(guide).toContain('dcg_guide_intro');
+    expect(messages.en.dcg_guide_intro).toMatch(/print/i);
+    expect(messages.en.dcg_guide_intro).toMatch(/beside the application/i);
+  });
+
+  it('offers exactly two actions on the guide, named plainly', () => {
+    expect(messages.en.dcg_open_guide).toBe('Open guide');
+    expect(messages.en.dcg_download_guide).toBe('Download guide');
+
+    // "Open printable guide" duplicated in the label what the intro explains.
+    for (const locale of ['en', 'es', 'zh-CN'] as const) {
+      const catalog = messages[locale] as unknown as Record<string, string>;
+
+      expect(catalog.dcg_open_guide, locale).not.toMatch(
+        /printable|imprimir|可打印/i,
+      );
+    }
   });
 
   it('shows the reference that pairs a guide with its draft', () => {

@@ -256,6 +256,12 @@ const RECORD_FACTORIES: Record<string, (id: string, memberId: string) => Record<
  * stored shape — while the words the applicant reads come from the catalog.
  */
 const FIELD_LABEL_KEYS: Record<string, string> = {
+  phone: "qfield_phone",
+  zipCode: "qfield_zipCode",
+  state: "qfield_state",
+  city: "qfield_city",
+  apartment: "qfield_apartment",
+  street: "qfield_street",
   memberId: "qfield_memberId",
   employerName: "qfield_employerName",
   startDate: "qfield_startDate",

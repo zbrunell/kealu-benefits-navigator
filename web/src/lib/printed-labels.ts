@@ -131,6 +131,30 @@ export const PRINTED_LABELS: Record<string, PrintedText> = {
     en: 'EMPLOYEE NAME (FIRST NAME, MIDDLE NAME, LAST NAME)',
     es: 'NOMBRE DEL EMPLEADO (PRIMER NOMBRE, SEGUNDO NOMBRE, APELLIDO)',
   },
+  /*
+   * Page 2's race and ethnicity block. The English form heads it
+   * "RACE/ETHNICITY" with a sub-heading "RACE/ETHNIC ORIGIN" over the
+   * checkboxes; the Spanish form heads the same block "RAZA/ETNIA" and
+   * "RAZA/ORIGEN ÉTNICO". Both Spanish strings were read off page 8 of
+   * CA-SAWS-2-PLUS-ES.pdf.
+   */
+  race_ethnicity: { en: 'RACE/ETHNICITY', es: 'RAZA/ETNIA' },
+  /* Section 2 of page 2, the CalFresh authorized representative. */
+  authorized_representative_household: {
+    en: '2. HOUSEHOLD’S AUTHORIZED REPRESENTATIVE',
+    es: '2. REPRESENTANTE AUTORIZADO DEL HOGAR',
+  },
+  /* Q6a's printed question, quoted so the applicant can find the line. */
+  same_contact_information: {
+    en: '6a. Does everyone listed in question 6 have the same contact information?',
+    es: '6a. ¿Tienen todas las personas anotadas en la Pregunta 6 la misma información para contacto?',
+  },
+  /* The optionality statement the form itself prints above the race boxes. */
+  race_optional_statement: {
+    en: 'Race and ethnicity information is optional.',
+    es: 'La información sobre la raza y etnia es opcional.',
+  },
+  race_ethnic_origin: { en: 'RACE/ETHNIC ORIGIN', es: 'RAZA/ORIGEN ÉTNICO' },
 };
 
 /**
