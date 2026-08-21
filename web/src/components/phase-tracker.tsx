@@ -182,7 +182,7 @@ export default function PhaseTracker({ runId, onComplete, onRestart, onEdit }: P
           }
 
           case 'error': {
-            setError({ message: event.message ?? 'Workflow failed.' });
+            setError({ message: event.message ?? t('phase_workflow_failed') });
             es.close();
             break;
           }
@@ -226,10 +226,10 @@ export default function PhaseTracker({ runId, onComplete, onRestart, onEdit }: P
         onComplete(payload);
       } else {
         const body = (await res.json()) as { error?: string };
-        setError({ message: body.error ?? 'Failed to load report.' });
+        setError({ message: body.error ?? t('phase_report_load_failed') });
       }
     } catch {
-      setError({ message: 'Failed to load report. Please try again.' });
+      setError({ message: t('phase_report_load_retry') });
     }
   }
 

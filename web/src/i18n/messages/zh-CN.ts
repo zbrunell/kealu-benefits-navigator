@@ -75,6 +75,9 @@ const zhCN: Messages = {
   phase_progress_aria: '整体分析进度',
   phase_complete_aria: '完成',
   phase_error_aria: '错误',
+  phase_workflow_failed: '分析未能完成。',
+  phase_report_load_failed: '无法加载报告。',
+  phase_report_load_retry: '无法加载报告。请重试。',
 
   report_bottom_line: '总结',
   report_expand: '展开',

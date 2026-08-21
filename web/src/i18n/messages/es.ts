@@ -82,6 +82,9 @@ const es: Messages = {
   phase_progress_aria: 'Progreso general del análisis',
   phase_complete_aria: 'Completo',
   phase_error_aria: 'Error',
+  phase_workflow_failed: 'No se pudo completar el análisis.',
+  phase_report_load_failed: 'No se pudo cargar el informe.',
+  phase_report_load_retry: 'No se pudo cargar el informe. Inténtelo de nuevo.',
 
   // ── report-view.tsx ──────────────────────────────────────────────────────
   report_bottom_line: 'Conclusión',

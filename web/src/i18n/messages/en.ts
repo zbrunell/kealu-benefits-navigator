@@ -79,6 +79,9 @@ const en = {
   phase_progress_aria: 'Overall analysis progress',
   phase_complete_aria: 'Complete',
   phase_error_aria: 'Error',
+  phase_workflow_failed: 'The analysis could not be completed.',
+  phase_report_load_failed: 'The report could not be loaded.',
+  phase_report_load_retry: 'The report could not be loaded. Please try again.',
 
   // ── report-view.tsx ──────────────────────────────────────────────────────
   report_bottom_line: 'Bottom Line',
