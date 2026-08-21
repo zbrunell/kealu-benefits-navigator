@@ -28,6 +28,8 @@ import {
 import {
   FieldLabelText,
   RequiredLegend,
+  RequiredMissingNotice,
+  continueButtonClass,
 } from "./required-marker";
 
 import type {
@@ -76,7 +78,7 @@ export default function ApplicantStep({
   onBack,
   onContinue,
 }: ApplicantStepProps) {
-  const { t, tv } = useTranslation();
+  const { t } = useTranslation();
 
   /**
    * Update one field used by the applicant's Page 3 household row.
@@ -762,53 +764,25 @@ export default function ApplicantStep({
           </button>
 
           {/*
-            Enabled but blocking, rather than disabled. A disabled button
-            cannot be focused, so someone navigating by keyboard or screen
-            reader reaches the end of the form and is told nothing; pressing
-            this one explains what is still needed. `aria-disabled` keeps the
-            state announced without removing it from the tab order.
+            Present from the start and grey until the required answers are in.
+            `aria-disabled` announces that state without removing the button
+            from the tab order, so pressing it can say why nothing happened.
           */}
           <button
             type="button"
             onClick={handleContinue}
             aria-disabled={!isValid}
-            className={
-              isValid
-                ? "rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
-                : "rounded-lg bg-green-700/40 px-4 py-2 text-sm font-medium text-white"
-            }
+            className={continueButtonClass(isValid)}
           >
             {t("applicant_continue")}
           </button>
         </div>
 
-        {/*
-          A live region, so the message is announced when it appears rather
-          than only being visible. It names the outstanding fields instead of
-          saying "some fields are missing" and leaving the applicant to hunt.
-        */}
-        <div aria-live="polite">
-          {showMissing && !isValid && (
-            <div
-              data-testid="applicant-required-missing"
-              className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3"
-            >
-              <p className="text-sm font-medium text-red-900">
-                {t("validation_required_missing")}
-              </p>
-
-              {missingRequired.length > 0 && (
-                <p className="mt-1 text-sm text-red-800">
-                  {tv("validation_still_needed", {
-                    fields: missingRequired
-                      .map((field) => t(field.labelKey))
-                      .join(", "),
-                  })}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
+        <RequiredMissingNotice
+          show={showMissing && !isValid}
+          testId="applicant-required-missing"
+          fields={missingRequired.map((field) => t(field.labelKey))}
+        />
       </div>
     </div>
   );

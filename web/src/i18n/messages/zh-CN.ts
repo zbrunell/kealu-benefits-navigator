@@ -781,7 +781,7 @@ const zhCN: Messages = {
   field_city: '城市',
   required_legend: '* 必填',
   required_suffix: '必填',
-  validation_required_missing: '请先回答标有星号的必填问题，然后再继续。',
+  validation_required_missing: '请先回答必填问题，然后再继续。',
   validation_still_needed: '仍需填写：{fields}',
   req_label_required: '必须回答才能继续',
   req_label_important: '有助于确定您的福利',

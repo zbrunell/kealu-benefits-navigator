@@ -227,7 +227,44 @@ describe('the asterisk and the gate cannot disagree', () => {
   it('keeps the button reachable so the reason can be announced', () => {
     // A disabled button cannot be focused, so the explanation never arrives.
     expect(source).toContain('aria-disabled={!isValid}');
-    expect(source).toContain('aria-live="polite"');
+    // Not `aria-disabled`, which legitimately contains the same substring.
+    expect(source).not.toMatch(/(?<!aria-)disabled=\{!isValid\}/);
+
+    // The notice itself lives in required-marker, shared with the other steps.
+    expect(source).toContain('RequiredMissingNotice');
+  });
+
+  it('greys the button rather than fading the active colour', () => {
+    // One definition of "grey until the answers are in", shared by every step
+    // that gates on required answers.
+    const marker = readFileSync(
+      path.join(SRC, 'components/application/required-marker.tsx'),
+      'utf8',
+    );
+
+    expect(marker).toContain('bg-slate-300');
+    expect(marker).toContain('aria-live="polite"');
+    expect(marker).not.toContain('bg-green-700/40');
+  });
+
+  it('gates every step that depends on required answers the same way', () => {
+    // A step that still used `disabled` would silently do nothing on click.
+    for (const step of [
+      'applicant-step.tsx',
+      'eligibility-step.tsx',
+      'household-step.tsx',
+    ]) {
+      const stepSource = readFileSync(
+        path.join(SRC, 'components/application', step),
+        'utf8',
+      );
+
+      expect(stepSource, step).toContain('RequiredMissingNotice');
+      expect(stepSource, step).toContain('continueButtonClass');
+      expect(stepSource, step).not.toMatch(
+        /(?<!aria-)disabled=\{!(isComplete|membersValid|isValid)\}/,
+      );
+    }
   });
 });
 
@@ -254,6 +291,24 @@ describe('required semantics do not change with language', () => {
           `${locale}.${field.labelKey}`,
         ).toBeTruthy();
       }
+    }
+  });
+
+  it('says the same thing on every step, in every language', () => {
+    /*
+     * One message, not one per step. The applicant meets this sentence at the
+     * applicant, eligibility and household steps, and three wordings for one
+     * situation would read as three different problems.
+     */
+    expect(messages.en.validation_required_missing).toBe(
+      'Please answer the required questions before continuing.',
+    );
+
+    for (const locale of SUPPORTED_LOCALES) {
+      const catalog = messages[locale] as unknown as Record<string, string>;
+
+      // A whole sentence, not a fragment to be assembled beside a field name.
+      expect(catalog.validation_required_missing, locale).toMatch(/[.。]$/);
     }
   });
 

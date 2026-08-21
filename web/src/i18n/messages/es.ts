@@ -801,7 +801,7 @@ const es: Messages = {
   field_city: 'Ciudad',
   required_legend: '* Obligatorio',
   required_suffix: 'obligatorio',
-  validation_required_missing: 'Responda las preguntas obligatorias marcadas con un asterisco antes de continuar.',
+  validation_required_missing: 'Responda las preguntas obligatorias antes de continuar.',
   validation_still_needed: 'Todavía falta: {fields}',
   req_label_required: 'Obligatorio para continuar',
   req_label_important: 'Ayuda a determinar sus beneficios',

@@ -96,7 +96,12 @@ function isProperNounOnly(text: string): boolean {
  * a single word must be a known interface word.
  */
 export function looksLikeProse(raw: string, allowSingleWord = false): boolean {
-  const text = raw.trim();
+  /*
+   * Interpolations are dropped first. `${shared} bg-green-700 text-white` is a
+   * class list assembled from a constant, and leaving the `${...}` in front
+   * defeated the class-list check below, which anchors on a lowercase word.
+   */
+  const text = raw.replace(/\$\{[^}]*\}/g, ' ').trim();
 
   if (text.length < 2 || !/[A-Za-z]/.test(text)) return false;
   if (TAILWIND.test(text)) return false;
@@ -266,6 +271,10 @@ describe('the detector actually detects', () => {
     ['a block comment', '/*\n  Household adults map to adult rows.\n*/'],
     ['a line comment', '  // Household adults map to adult rows.'],
     ['an HTTP method', '        method: "POST",'],
+    [
+      'an interpolated class list',
+      '    ? `${shared} bg-green-700 text-white hover:bg-green-800`',
+    ],
   ];
 
   for (const [what, sample] of NOT_LEAKS) {

@@ -9,8 +9,13 @@ import {
   allowedRelationshipsForDateOfBirth,
   type HouseholdRelationship,
 } from "@/lib/household-relationships";
+import { useState } from "react";
 import { ageOnDate, dateOfBirthBounds } from "@/lib/date-of-birth";
 import { useTranslation } from "@/hooks/use-translation";
+import {
+  RequiredMissingNotice,
+  continueButtonClass,
+} from "./required-marker";
 import type { Saws2PlusProgram } from "@/lib/report-assembler";
 
 import type {
@@ -234,6 +239,19 @@ export default function HouseholdStep({
       Boolean(member.dateOfBirth) &&
       Boolean(member.relationshipToApplicant.trim()),
   );
+
+  const [showMissing, setShowMissing] = useState(false);
+
+  function handleContinue() {
+    if (!membersValid) {
+      // Nothing is cleared; the applicant is told why Continue did nothing.
+      setShowMissing(true);
+
+      return;
+    }
+
+    onContinue();
+  }
 
   return (
     <div className="space-y-4">
@@ -786,13 +804,18 @@ export default function HouseholdStep({
 
           <button
             type="button"
-            onClick={onContinue}
-            disabled={!membersValid}
-            className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={handleContinue}
+            aria-disabled={!membersValid}
+            className={continueButtonClass(membersValid)}
           >
             {t("ui_continue")}
           </button>
         </div>
+
+        <RequiredMissingNotice
+          show={showMissing && !membersValid}
+          testId="household-required-missing"
+        />
       </div>
     </div>
   );

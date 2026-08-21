@@ -806,7 +806,7 @@ const en = {
   field_city: 'City',
   required_legend: '* Required',
   required_suffix: 'required',
-  validation_required_missing: 'Please answer the required questions marked with an asterisk before continuing.',
+  validation_required_missing: 'Please answer the required questions before continuing.',
   validation_still_needed: 'Still needed: {fields}',
   req_label_required: 'Required to continue',
   req_label_important: 'Helps determine your benefits',

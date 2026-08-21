@@ -68,3 +68,69 @@ export function RequiredLegend() {
     <p className="mt-1 text-xs text-slate-500">{t("required_legend")}</p>
   );
 }
+
+/**
+ * The Continue button's classes.
+ *
+ * One definition, because "grey until the required answers are in" is a single
+ * rule and three copies of it drift. Grey rather than a faded version of the
+ * active colour: a washed-out green still reads as the primary action, which is
+ * the opposite of what an unfinished form should signal.
+ *
+ * The button is never `disabled`. It stays clickable so that pressing it can
+ * explain why nothing happened — a disabled button cannot be focused, so
+ * someone navigating by keyboard reaches the end of the form and is told
+ * nothing at all.
+ */
+export function continueButtonClass(isComplete: boolean): string {
+  const shared = "rounded-lg px-4 py-2 text-sm font-medium";
+
+  return isComplete
+    ? `${shared} bg-green-700 text-white hover:bg-green-800`
+    : `${shared} cursor-not-allowed bg-slate-300 text-slate-600`;
+}
+
+/**
+ * Why Continue did nothing.
+ *
+ * In a live region so it is announced when it appears rather than only being
+ * visible, and rendered only after an attempt — telling someone what they have
+ * not filled in yet, before they have tried to move on, is scolding them for
+ * not having finished typing.
+ *
+ * `fields` is optional. Naming what is outstanding saves a hunt through a long
+ * form; a step whose requirement is "answer all of these" has nothing useful to
+ * list and passes nothing.
+ */
+export function RequiredMissingNotice({
+  show,
+  testId,
+  fields,
+}: {
+  show: boolean;
+  testId: string;
+  fields?: string[];
+}) {
+  const { t, tv } = useTranslation();
+
+  return (
+    <div aria-live="polite">
+      {show && (
+        <div
+          data-testid={testId}
+          className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3"
+        >
+          <p className="text-sm font-medium text-red-900">
+            {t("validation_required_missing")}
+          </p>
+
+          {fields && fields.length > 0 && (
+            <p className="mt-1 text-sm text-red-800">
+              {tv("validation_still_needed", { fields: fields.join(", ") })}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
