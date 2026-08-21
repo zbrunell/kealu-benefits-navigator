@@ -137,22 +137,52 @@ nothing would send them hunting for Chinese labels that are not on the page.
 
 ## What is still English
 
-The per-blank instructions in `web/src/lib/draft-completion.ts` (19 items) are
-not yet in the catalogs. They appear inside the guide's reason sections — the
-"what to do about this specific blank" line. The section headings, lead
-sentences, review steps, attachment list and submission instructions around them
-**are** translated.
+Deliberately, and for a reason in each case:
 
-`printedSection` and `printedLabel` on those items are deliberately *not* going
-to be translated into the interface language: they are quotations of what the
-paper says, so they must follow the **document** language. For `zh-CN` the
-document is English, so English quotations are correct. For `es` they should be
-the Spanish form's own printed text, which has not been extracted yet.
+**Proper nouns.** `SAWS 2 PLUS`, `Medi-Cal`, `CalFresh`, `CalWORKs`,
+`BenefitsCal`, `Covered California`. These are the names the applicant will see
+on the county's website and on the printed form. Translating them would send
+someone looking for a program that does not exist under that name.
 
-The application-flow step components (`applicant-step`, `household-step`,
-`eligibility-step`, `program-selection-step`, `report-view`, `app-shell`,
-`MarketplacePlans`) also still contain hard-coded English form labels and
-headings.
+**Server diagnostics.** When an API route returns an `error` string, the flow
+shows a translated headline (`mkt_unavailable`, and the phase-tracker's error
+banner) with that string beneath it as detail. The detail is not translated
+because it does not come from our catalog — it is the upstream service's own
+message. The applicant-facing line above it always is.
+
+**Stored values and identifiers.** Record keys, enum values, AcroForm field
+names, phase ids. Someone choosing "Cada dos semanas" stores `every_two_weeks`;
+the boolean behind "Sí" is `true`. This is what lets a language switch
+mid-application leave the answers alone — see
+`tests/unit/language-switch-mid-flow.test.ts`.
+
+**An unrecognised phase id.** `report-assembler.ts` carries English display
+names. `report-view` resolves `phase_*` keys from the catalog first and uses
+those names only for a phase id the catalog does not know, via `tOr` rather than
+`t` — a phase id from workflow output is data, and throwing on it would blank
+the report.
+
+### The report body
+
+The five phase sections are written by the workflow, not by the catalog. The
+report route derives a `preferredLanguage` from the locale cookie and passes it
+in, so the generated prose follows the applicant's language. For `zh-CN` it asks
+for **Simplified Chinese** specifically — "Chinese" alone is ambiguous, and this
+project cares about the difference (see the PDF note above).
+
+The frame around that prose — headings, the bottom-line label, the expand and
+collapse affordances, the screening statuses, the application call to action —
+comes from the catalog and is covered by tests.
+
+### Printed quotations
+
+`printedSection` and `printedLabel` follow the **document** language, not the
+interface language, because they quote what the paper in the applicant's hands
+actually says. `web/src/lib/printed-labels.ts` holds the Spanish text extracted
+from `forms/CA-SAWS-2-PLUS-ES.pdf` — extracted, not translated. Entries that
+describe a region rather than quote a heading ("Signature block at the foot of
+page 1") carry no `es` value, because the form prints no such words. For `zh-CN`
+the document is the English form, so English quotations are correct there.
 
 ## Running the tests
 
@@ -161,7 +191,12 @@ cd web
 npx vitest run tests/unit/localization.test.ts        # catalog parity + sweeps
 npx vitest run tests/unit/guide-localization.test.ts  # guide frame per locale
 npx vitest run tests/unit/guide-body-localization.test.ts
+npx vitest run tests/unit/component-english-leaks.test.ts   # source leak sweep
+npx vitest run tests/unit/instruction-keys.test.ts          # guide instructions
+npx vitest run tests/unit/language-switch-mid-flow.test.ts  # state survives
 npx vitest run                                        # everything
+
+npx playwright test tests/e2e/language-switcher.spec.ts     # in a real browser
 
 cd ..
 PYTHONPATH=src python3 -m pytest tests/ -q            # template selection + PDF
