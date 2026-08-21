@@ -253,7 +253,19 @@ export async function fillRequiredIdentityFields(page: Page): Promise<void> {
   ];
 
   for (const [label, value] of textFields) {
-    const fields = page.getByLabel(label, { exact: true });
+    /*
+     * The asterisk is part of the label's text, so an exact match on the bare
+     * name no longer finds a required field.
+     *
+     * It is `aria-hidden`, which keeps it out of the accessible name a screen
+     * reader announces — but getByLabel matches the label's text content, not
+     * the computed accessible name, so it sees "First name *". Allowing an
+     * optional trailing asterisk addresses the label as rendered while staying
+     * anchored at both ends, so "City" still cannot match "City, state, zip".
+     */
+    const fields = page.getByLabel(
+      new RegExp(`^${label}\\s*\\*?$`),
+    );
 
     for (let index = 0, count = await fields.count(); index < count; index += 1) {
       const field = fields.nth(index);
@@ -292,6 +304,25 @@ export async function fillRequiredIdentityFields(page: Page): Promise<void> {
     if ((await select.inputValue().catch(() => 'skip')) !== '') continue;
 
     await select.selectOption('child').catch(() => undefined);
+  }
+
+  /*
+   * Marital status, required because household composition — and so the income
+   * test — cannot be worked out without it. Addressed by substring for the same
+   * reason as the relationship select above.
+   */
+  const maritalStatuses = page.getByLabel('Marital status');
+
+  for (
+    let index = 0, count = await maritalStatuses.count();
+    index < count;
+    index += 1
+  ) {
+    const select = maritalStatuses.nth(index);
+
+    if ((await select.inputValue().catch(() => 'skip')) !== '') continue;
+
+    await select.selectOption('single').catch(() => undefined);
   }
 }
 
