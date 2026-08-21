@@ -779,6 +779,23 @@ const zhCN: Messages = {
   guide_skipped_appendix_d: '该附录适用于有两名或以上成年人申请现金援助的情况',
   guide_skipped_appendix_e: '只有申请现金援助，或申请医疗照护且申请人中有人年满 65 岁或有残疾时，才需要详细的车辆信息',
 
+  field_city: '城市',
+  required_legend: '* 必填',
+  required_suffix: '必填',
+  validation_required_missing: '请先回答标有星号的必填问题，然后再继续。',
+  validation_still_needed: '仍需填写：{fields}',
+  req_label_required: '必须回答才能继续',
+  req_label_important: '有助于确定您的福利',
+  req_label_can_complete_later: '可以稍后填写',
+  req_label_optional: '选填',
+  req_hint_required: '我们需要这项信息才能继续。',
+  req_hint_important: '回答此项有助于县政府更快处理您的申请，并确定您符合哪些资格。',
+  req_hint_can_complete_later: '您现在可以留空。县政府之后可能仍需要这项信息。',
+  req_hint_optional: '表格将此项视为选填，不影响资格认定。',
+
+  field_sex: '性别',
+  field_state: '州',
+
 } as const;
 
 export default zhCN;

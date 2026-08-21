@@ -37,6 +37,7 @@ const FLOW_COMPONENTS = [
   'components/application/program-selection-step.tsx',
   'components/application/questionnaire-step.tsx',
   'components/application/draft-completion-guide.tsx',
+  'components/application/required-marker.tsx',
 ];
 
 /**
@@ -178,9 +179,17 @@ export function leaksIn(source: string): Leak[] {
     // JSX text between tags on one line.
     for (const m of line.matchAll(/>([^<>{}]{2,})</g)) push(at, 'jsx text', m[1]);
 
-    // A bare line of JSX prose.
-    const bare = /^\s{4,}([A-Z][^<>{}=;:]*)$/.exec(line);
-    if (bare) push(at, 'jsx prose', bare[1]);
+    /*
+      A bare line of JSX prose.
+
+      Single words count here, not only the ones in SOLO: a lone capitalised
+      word on its own line inside JSX is text, because an identifier would
+      carry an operator, a call or a punctuation mark. `City` reached
+      production as a hard-coded label precisely because the single-token
+      filter treated it as code.
+    */
+    const bare = /^\s{4,}([A-Z][^<>{}=;:"'\[\]]*)$/.exec(line);
+    if (bare) push(at, 'jsx prose', bare[1], true);
 
     // A sentence chosen by a ternary.
     for (const m of line.matchAll(/[?:]\s*["'`]([^"'`]{12,})["'`]/g)) {
@@ -237,6 +246,7 @@ describe('the detector actually detects', () => {
     ['a ternary sentence', '  {count === 0 ? "No programs selected." : x}'],
     ['a template sentence', '  `Your ZIP code is in ${county} County, so it applies.`'],
     ['jsx text', '  <span>Health coverage only:</span>'],
+    ['a lone capitalised label', '              City'],
   ];
 
   for (const [what, sample] of REAL_LEAKS) {

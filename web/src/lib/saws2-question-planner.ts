@@ -107,22 +107,26 @@ export function requirementForTier(tier: QuestionTier): QuestionRequirement {
   return 'optional';
 }
 
-/** Short user-facing label for a requirement. */
-export const REQUIREMENT_LABELS: Record<QuestionRequirement, string> = {
-  required: 'Required to continue',
-  important: 'Helps determine your benefits',
-  can_complete_later: 'Can complete later',
-  optional: 'Optional',
+/**
+ * Catalog keys for the short label shown beside a question.
+ *
+ * Keys, not words: these are rendered to the applicant, and this module is
+ * imported by a component, so English here reached the screen untranslated in
+ * every locale.
+ */
+export const REQUIREMENT_LABEL_KEYS: Record<QuestionRequirement, string> = {
+  required: 'req_label_required',
+  important: 'req_label_important',
+  can_complete_later: 'req_label_can_complete_later',
+  optional: 'req_label_optional',
 };
 
-/** One-line explanation of what the requirement means for the applicant. */
-export const REQUIREMENT_HINTS: Record<QuestionRequirement, string> = {
-  required: 'We need this before moving on.',
-  important:
-    'Answering helps the County process your application faster and work out what you qualify for.',
-  can_complete_later:
-    'You can leave this blank for now. The County may still need it later.',
-  optional: 'The form treats this as optional — it does not affect eligibility.',
+/** Catalog keys for the one-line explanation of what a requirement means. */
+export const REQUIREMENT_HINT_KEYS: Record<QuestionRequirement, string> = {
+  required: 'req_hint_required',
+  important: 'req_hint_important',
+  can_complete_later: 'req_hint_can_complete_later',
+  optional: 'req_hint_optional',
 };
 
 /**

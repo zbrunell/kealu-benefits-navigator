@@ -20,6 +20,15 @@ import {
 } from "@/lib/field-validation";
 import { dateOfBirthBounds } from "@/lib/date-of-birth";
 import { useTranslation } from "@/hooks/use-translation";
+import {
+  REQUIRED_APPLICANT_FIELD_IDS,
+  hasEveryRequiredApplicantAnswer,
+  missingRequiredApplicantFields,
+} from "@/lib/required-fields";
+import {
+  FieldLabelText,
+  RequiredLegend,
+} from "./required-marker";
 
 import type {
   AdultApplicationDetails,
@@ -67,7 +76,7 @@ export default function ApplicantStep({
   onBack,
   onContinue,
 }: ApplicantStepProps) {
-  const { t } = useTranslation();
+  const { t, tv } = useTranslation();
 
   /**
    * Update one field used by the applicant's Page 3 household row.
@@ -133,14 +142,44 @@ export default function ApplicantStep({
   const errorFor = (field: string): string | null =>
     touched[field] && problems[field] ? t(problems[field]!) : null;
 
+  /*
+   * Presence comes from the requiredness metadata; format still comes from the
+   * per-field checks. The list of required fields used to be repeated here as a
+   * chain of Boolean(...) calls, which is how it drifted out of step with what
+   * the form showed — marital status was checked nowhere and marked nowhere.
+   */
+  const missingRequired = missingRequiredApplicantFields(applicant);
+
   const isValid =
     Object.values(problems).every((problem) => problem === null) &&
-    Boolean(applicant.firstName.trim()) &&
-    Boolean(applicant.lastName.trim()) &&
-    Boolean(applicant.dateOfBirth) &&
-    Boolean(applicant.homeAddress.street.trim()) &&
-    Boolean(applicant.homeAddress.city.trim()) &&
-    Boolean(applicant.homeAddress.zipCode.trim());
+    hasEveryRequiredApplicantAnswer(applicant);
+
+  /** Whether a field carries an asterisk. One source, shared with the gate. */
+  const isRequired = (id: string) => REQUIRED_APPLICANT_FIELD_IDS.has(id);
+
+  /*
+   * Shown only after a Continue attempt. Announcing what is missing before the
+   * applicant has tried to move on would be scolding them for not having
+   * finished typing.
+   */
+  const [showMissing, setShowMissing] = useState(false);
+
+  function handleContinue() {
+    if (!isValid) {
+      // Nothing is cleared: the answers already entered stay exactly as they
+      // are, and the applicant is told what is still needed.
+      setShowMissing(true);
+      setTouched((current) => {
+        const next = { ...current };
+        for (const field of missingRequired) next[field.id] = true;
+        return next;
+      });
+
+      return;
+    }
+
+    onContinue();
+  }
 
   return (
     <div className="space-y-4">
@@ -157,15 +196,18 @@ export default function ApplicantStep({
           {t("applicant_intro")}
         </p>
 
+        <RequiredLegend />
+
         {/* Basic applicant identity. */}
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              {t("field_first_name")}
+              <FieldLabelText labelKey="field_first_name" isRequired={isRequired("firstName")} />
             </span>
             <input
               type="text"
               value={applicant.firstName}
+              aria-required={isRequired("firstName")}
               onChange={(event) =>
                 onChange("firstName", event.target.value)
               }
@@ -191,11 +233,12 @@ export default function ApplicantStep({
 
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              {t("field_last_name")}
+              <FieldLabelText labelKey="field_last_name" isRequired={isRequired("lastName")} />
             </span>
             <input
               type="text"
               value={applicant.lastName}
+              aria-required={isRequired("lastName")}
               onChange={(event) =>
                 onChange("lastName", event.target.value)
               }
@@ -208,11 +251,12 @@ export default function ApplicantStep({
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">
-              {t("field_date_of_birth")}
+              <FieldLabelText labelKey="field_date_of_birth" isRequired={isRequired("dateOfBirth")} />
             </span>
             <input
               type="date"
               value={applicant.dateOfBirth}
+              aria-required={isRequired("dateOfBirth")}
               min={dateOfBirthBounds().min}
               max={dateOfBirthBounds().max}
               autoComplete="bday"
@@ -367,11 +411,12 @@ export default function ApplicantStep({
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <label className="block sm:col-span-2">
               <span className="text-sm font-medium text-slate-700">
-                {t("field_street_address")}
+                <FieldLabelText labelKey="field_street_address" isRequired={isRequired("street")} />
               </span>
               <input
                 type="text"
                 value={applicant.homeAddress.street}
+              aria-required={isRequired("street")}
                 onBlur={(event) => {
                   markTouched("street");
                   onHomeAddressChange("street", normalizeWhitespace(event.target.value));
@@ -411,11 +456,12 @@ export default function ApplicantStep({
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <label className="block">
               <span className="text-sm font-medium text-slate-700">
-                City
+                <FieldLabelText labelKey="field_city" isRequired={isRequired("city")} />
               </span>
               <input
                 type="text"
                 value={applicant.homeAddress.city}
+              aria-required={isRequired("city")}
                 onBlur={(event) => {
                   markTouched("city");
                   onHomeAddressChange("city", normalizeWhitespace(event.target.value));
@@ -436,7 +482,7 @@ export default function ApplicantStep({
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700">
-                State
+                {t("field_state")}
               </span>
               <input
                 type="text"
@@ -448,12 +494,13 @@ export default function ApplicantStep({
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700">
-                {t("field_zip_code")}
+                <FieldLabelText labelKey="field_zip_code" isRequired={isRequired("zipCode")} />
               </span>
               <input
                 type="text"
                 inputMode="numeric"
                 value={applicant.homeAddress.zipCode}
+              aria-required={isRequired("zipCode")}
                 onBlur={(event) => {
                   markTouched("zipCode");
                   onHomeAddressChange("zipCode", normalizeZipCode(event.target.value));
@@ -505,7 +552,7 @@ export default function ApplicantStep({
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-medium text-slate-700">
-                Sex
+                {t("field_sex")}
               </span>
 
               <select
@@ -528,7 +575,7 @@ export default function ApplicantStep({
 
             <label className="block">
               <span className="text-sm font-medium text-slate-700">
-                {t("field_marital_status")}
+                <FieldLabelText labelKey="field_marital_status" isRequired={isRequired("maritalStatus")} />
               </span>
 
               <select
@@ -536,6 +583,7 @@ export default function ApplicantStep({
                   applicant.householdDetails.maritalStatus
                   ?? ""
                 }
+                aria-required={isRequired("maritalStatus")}
                 onChange={(event) =>
                   updateHouseholdDetails(
                     "maritalStatus",
@@ -557,9 +605,20 @@ export default function ApplicantStep({
           </div>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <fieldset className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            {/*
+              A tri-state, so `aria-required` sits on the group rather than on
+              a control: neither button is "the" input, and the answer is
+              missing only while both are unpressed.
+            */}
+            <fieldset
+              className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+              aria-required={isRequired("citizenOrNational")}
+            >
               <legend className="px-1 text-sm font-medium text-slate-800">
-                {t("applicant_citizen_question")}
+                <FieldLabelText
+                  labelKey="applicant_citizen_question"
+                  isRequired={isRequired("citizenOrNational")}
+                />
               </legend>
 
               <div className="mt-2 flex gap-2">
@@ -647,7 +706,7 @@ export default function ApplicantStep({
 
             <fieldset className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <legend className="px-1 text-sm font-medium text-slate-800">
-                Disabled?
+                {t("hh_q_disabled")}
               </legend>
 
               <div className="mt-2 flex gap-2">
@@ -702,14 +761,53 @@ export default function ApplicantStep({
             {t("applicant_back")}
           </button>
 
+          {/*
+            Enabled but blocking, rather than disabled. A disabled button
+            cannot be focused, so someone navigating by keyboard or screen
+            reader reaches the end of the form and is told nothing; pressing
+            this one explains what is still needed. `aria-disabled` keeps the
+            state announced without removing it from the tab order.
+          */}
           <button
             type="button"
-            onClick={onContinue}
-            disabled={!isValid}
-            className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={handleContinue}
+            aria-disabled={!isValid}
+            className={
+              isValid
+                ? "rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
+                : "rounded-lg bg-green-700/40 px-4 py-2 text-sm font-medium text-white"
+            }
           >
             {t("applicant_continue")}
           </button>
+        </div>
+
+        {/*
+          A live region, so the message is announced when it appears rather
+          than only being visible. It names the outstanding fields instead of
+          saying "some fields are missing" and leaving the applicant to hunt.
+        */}
+        <div aria-live="polite">
+          {showMissing && !isValid && (
+            <div
+              data-testid="applicant-required-missing"
+              className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3"
+            >
+              <p className="text-sm font-medium text-red-900">
+                {t("validation_required_missing")}
+              </p>
+
+              {missingRequired.length > 0 && (
+                <p className="mt-1 text-sm text-red-800">
+                  {tv("validation_still_needed", {
+                    fields: missingRequired
+                      .map((field) => t(field.labelKey))
+                      .join(", "),
+                  })}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

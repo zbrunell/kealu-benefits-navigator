@@ -8,8 +8,8 @@
 import { useMemo, useState } from "react";
 
 import {
-  REQUIREMENT_HINTS,
-  REQUIREMENT_LABELS,
+  REQUIREMENT_HINT_KEYS,
+  REQUIREMENT_LABEL_KEYS,
   getActiveAppendices,
   getRequiredApplicationQuestions,
   isPersonScoped,
@@ -926,7 +926,7 @@ export default function QuestionnaireStep({
                 }`}
                 data-testid="question-requirement"
               >
-                {REQUIREMENT_LABELS[question.requirement]}
+                {t(REQUIREMENT_LABEL_KEYS[question.requirement])}
               </span>
 
               {question.sawsQuestion && (
@@ -937,7 +937,7 @@ export default function QuestionnaireStep({
             </p>
 
             <p className="mt-1 text-xs text-slate-600">
-              {REQUIREMENT_HINTS[question.requirement]}
+              {t(REQUIREMENT_HINT_KEYS[question.requirement])}
             </p>
           </div>
         )}

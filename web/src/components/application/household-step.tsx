@@ -461,7 +461,7 @@ export default function HouseholdStep({
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="block">
                         <span className="text-sm font-medium text-slate-700">
-                          Sex
+                          {t("field_sex")}
                         </span>
 
                         <select
@@ -479,13 +479,13 @@ export default function HouseholdStep({
                           className={INPUT_CLASS}
                         >
                           <option value="">
-                            Select
+                            {t("opt_select")}
                           </option>
                           <option value="male">
-                            Male
+                            {t("opt_male")}
                           </option>
                           <option value="female">
-                            Female
+                            {t("opt_female")}
                           </option>
                         </select>
                       </label>
@@ -510,22 +510,22 @@ export default function HouseholdStep({
                           className={INPUT_CLASS}
                         >
                           <option value="">
-                            Select
+                            {t("opt_select")}
                           </option>
                           <option value="single">
-                            Single
+                            {t("opt_single")}
                           </option>
                           <option value="married">
-                            Married
+                            {t("opt_married")}
                           </option>
                           <option value="separated">
-                            Separated
+                            {t("opt_separated")}
                           </option>
                           <option value="divorced">
-                            Divorced
+                            {t("opt_divorced")}
                           </option>
                           <option value="widowed">
-                            Widowed
+                            {t("opt_widowed")}
                           </option>
                         </select>
                       </label>
@@ -593,7 +593,7 @@ export default function HouseholdStep({
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="block">
                         <span className="text-sm font-medium text-slate-700">
-                          Sex
+                          {t("field_sex")}
                         </span>
 
                         <select
@@ -611,13 +611,13 @@ export default function HouseholdStep({
                           className={INPUT_CLASS}
                         >
                           <option value="">
-                            Select
+                            {t("opt_select")}
                           </option>
                           <option value="male">
-                            Male
+                            {t("opt_male")}
                           </option>
                           <option value="female">
-                            Female
+                            {t("opt_female")}
                           </option>
                         </select>
                       </label>

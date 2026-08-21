@@ -804,6 +804,23 @@ const en = {
   guide_skipped_appendix_d: 'it is for cash aid with two or more adults applying',
   guide_skipped_appendix_e: 'detailed vehicle information is only needed for cash aid, or for health care where someone applying is 65 or older or disabled',
 
+  field_city: 'City',
+  required_legend: '* Required',
+  required_suffix: 'required',
+  validation_required_missing: 'Please answer the required questions marked with an asterisk before continuing.',
+  validation_still_needed: 'Still needed: {fields}',
+  req_label_required: 'Required to continue',
+  req_label_important: 'Helps determine your benefits',
+  req_label_can_complete_later: 'Can complete later',
+  req_label_optional: 'Optional',
+  req_hint_required: 'We need this before moving on.',
+  req_hint_important: 'Answering helps the County process your application faster and work out what you qualify for.',
+  req_hint_can_complete_later: 'You can leave this blank for now. The County may still need it later.',
+  req_hint_optional: 'The form treats this as optional — it does not affect eligibility.',
+
+  field_sex: 'Sex',
+  field_state: 'State',
+
 } as const;
 
 export default en;

@@ -799,6 +799,23 @@ const es: Messages = {
   guide_skipped_appendix_d: 'es para ayuda en efectivo cuando solicitan dos o más adultos',
   guide_skipped_appendix_e: 'la información detallada sobre vehículos solo se necesita para ayuda en efectivo, o para atención médica cuando alguien que solicita tiene 65 años o más o tiene una discapacidad',
 
+  field_city: 'Ciudad',
+  required_legend: '* Obligatorio',
+  required_suffix: 'obligatorio',
+  validation_required_missing: 'Responda las preguntas obligatorias marcadas con un asterisco antes de continuar.',
+  validation_still_needed: 'Todavía falta: {fields}',
+  req_label_required: 'Obligatorio para continuar',
+  req_label_important: 'Ayuda a determinar sus beneficios',
+  req_label_can_complete_later: 'Se puede completar después',
+  req_label_optional: 'Opcional',
+  req_hint_required: 'Necesitamos esto antes de seguir adelante.',
+  req_hint_important: 'Responder ayuda al Condado a procesar su solicitud más rápido y a determinar a qué tiene derecho.',
+  req_hint_can_complete_later: 'Puede dejar esto en blanco por ahora. El Condado podría necesitarlo más adelante.',
+  req_hint_optional: 'El formulario considera esto opcional; no afecta la elegibilidad.',
+
+  field_sex: 'Sexo',
+  field_state: 'Estado',
+
 } as const;
 
 export default es;
