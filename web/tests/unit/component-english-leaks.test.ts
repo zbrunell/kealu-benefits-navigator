@@ -74,6 +74,12 @@ const PROPER_NOUNS = [
   'Medi-Cal',
   'CalFresh',
   'CalWORKs',
+  // Texas programme names, equally untranslatable: an applicant searching
+  // yourtexasbenefits.com for "SNAP" will not find a translation of it.
+  'SNAP',
+  'CHIP',
+  'TANF',
+  'Medicaid',
   'BenefitsCal',
   'Covered California',
   'Kealu',

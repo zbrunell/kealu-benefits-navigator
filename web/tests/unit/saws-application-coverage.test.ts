@@ -162,6 +162,11 @@ describe('privacy boundary', () => {
         'section heading and standing explanation for the SSN blanks the guide lists; it reads locations from draft-completion and never a value',
       'lib/completion-guide-html.ts':
         'closing note on the printed guide restating that Kealu never writes an SSN onto a form; it renders text it is given and holds none of its own',
+      // Names the SSN as something we never collect, so a manual/external
+      // application's checklist can tell the applicant to have theirs ready.
+      // It reads no SSN and writes none: there is nothing to read.
+      'lib/manual-application-guide.ts':
+        'lists the SSN as information we deliberately never collect',
       'i18n/messages/en.ts': 'manual-completion instruction shown after generation',
       'i18n/messages/es.ts': 'Spanish translation of the same instruction',
       'i18n/messages/zh-CN.ts': 'Chinese translation of the same instruction',
