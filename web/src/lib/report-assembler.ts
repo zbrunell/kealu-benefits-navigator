@@ -7,6 +7,13 @@ import { readFile, stat, rm } from "fs/promises";
 import path from "path";
 import type { ApplicationPrefill } from '@/types/application';
 import type { EligibilityReason } from '@/lib/eligibility-reasons';
+import {
+  BENEFIT_PROGRAM_IDS,
+  applicationForForm,
+  type ApplicationDelivery,
+  type BenefitProgramId,
+  type SupportedApplicationForm as FormId,
+} from '@/lib/state-applications';
 
 /** Canonical phase execution order. */
 export const PHASE_ORDER: string[] = [
@@ -26,7 +33,12 @@ export const PHASE_DISPLAY_NAMES: Record<string, string> = {
   "action-plan": "Action Plan",
 };
 
-const SAWS_PROGRAMS = ["medi_cal", "calfresh", "calworks"] as const;
+/*
+ * California's three programmes. Only a type now: the runtime checks consult
+ * the registry so they hold for every state's form, but `Saws2PlusProgram`
+ * still needs to name exactly these three.
+ */
+type SawsProgramId = "medi_cal" | "calfresh" | "calworks";
 
 const RECOMMENDATION_STATUSES = [
   "likely_eligible",
@@ -50,15 +62,25 @@ export interface ReportSection {
   expanded: boolean;
 }
 
-export type SupportedApplicationForm = "CA_SAWS_2_PLUS";
+/*
+ * Re-exported from the registry, which is now the one place that knows which
+ * applications exist. Kept as a name here because a good deal of code and
+ * several tests import it from this module.
+ */
+export type { SupportedApplicationForm } from "@/lib/state-applications";
 
-export type Saws2PlusProgram = (typeof SAWS_PROGRAMS)[number];
+export type Saws2PlusProgram = SawsProgramId;
 
 export type ProgramRecommendationStatus =
   (typeof RECOMMENDATION_STATUSES)[number];
 
 export interface ProgramRecommendation {
-  program: Saws2PlusProgram;
+  /*
+   * Any programme we support, not only California's three. `Saws2PlusProgram`
+   * stays the California set it has always been rather than being widened
+   * until it looks generic while still meaning California.
+   */
+  program: BenefitProgramId;
   status: ProgramRecommendationStatus;
   recommendedToApply: boolean;
   /*
@@ -73,7 +95,7 @@ export interface ProgramRecommendation {
 }
 
 export interface ApplicationRecommendation {
-  formId: SupportedApplicationForm;
+  formId: FormId;
   recommended: boolean;
   programs: ProgramRecommendation[];
 }
@@ -84,10 +106,18 @@ export type ApplicationStatus =
 /** Metadata for the post-report application workflow. */
 export interface ApplicationSummary {
   available: boolean;
-  formId: SupportedApplicationForm | null;
+  formId: FormId | null;
   formName: string | null;
+  /**
+   * Whether we produce a prefilled draft or hand over instructions.
+   *
+   * Null when no application is available at all, which is different from
+   * `manual`: one means we have nothing for this state yet, the other means we
+   * have a programme and a route to it but do not fill the form.
+   */
+  delivery: ApplicationDelivery | null;
   status: ApplicationStatus;
-  recommendedPrograms: Saws2PlusProgram[];
+  recommendedPrograms: BenefitProgramId[];
   recommendations: ApplicationRecommendation[];
 
   prefill: ApplicationPrefill | null;
@@ -149,10 +179,17 @@ function extractBottomLine(content: string): string {
   return match[1].trim();
 }
 
-function isSaws2PlusProgram(value: unknown): value is Saws2PlusProgram {
+/**
+ * Whether this is a programme we support at all.
+ *
+ * Checked against every state's programmes rather than California's three,
+ * which is what previously made a Texas recommendation unparseable: the guard
+ * rejected `tx_snap` and the whole recommendation was dropped silently.
+ */
+function isBenefitProgram(value: unknown): value is BenefitProgramId {
   return (
     typeof value === "string" &&
-    (SAWS_PROGRAMS as readonly string[]).includes(value)
+    (BENEFIT_PROGRAM_IDS as readonly string[]).includes(value)
   );
 }
 
@@ -240,7 +277,7 @@ function parseProgramRecommendation(
 
   const candidate = value as Record<string, unknown>;
 
-  if (!isSaws2PlusProgram(candidate.program)) {
+  if (!isBenefitProgram(candidate.program)) {
     return null;
   }
 
@@ -302,7 +339,13 @@ function parseApplicationRecommendation(
 
   const candidate = value as Record<string, unknown>;
 
-  if (candidate.formId !== "CA_SAWS_2_PLUS") {
+  if (typeof candidate.formId !== "string") {
+    return null;
+  }
+
+  const definition = applicationForForm(candidate.formId);
+
+  if (definition === null) {
     return null;
   }
 
@@ -319,18 +362,27 @@ function parseApplicationRecommendation(
     .filter((program): program is ProgramRecommendation => program !== null);
 
   /*
-   * SAWS 2 PLUS must contain exactly one valid recommendation for each
-   * supported program.
+   * An application must carry exactly one valid recommendation for each
+   * programme its own form covers — no duplicates, none missing, and none
+   * belonging to another state's form.
+   *
+   * Previously this compared against California's three programmes by name, so
+   * a Texas application could never satisfy it however well-formed it was. The
+   * check is now against whichever form the output declared, which also makes
+   * it stricter: a CalFresh recommendation inside a Texas application is
+   * rejected rather than counted.
    */
-  if (programs.length !== SAWS_PROGRAMS.length) {
+  const expected = definition.programs;
+
+  if (programs.length !== expected.length) {
     return null;
   }
 
   const uniquePrograms = new Set(programs.map((program) => program.program));
 
   if (
-    uniquePrograms.size !== SAWS_PROGRAMS.length ||
-    !SAWS_PROGRAMS.every((program) => uniquePrograms.has(program))
+    uniquePrograms.size !== expected.length ||
+    !expected.every((program) => uniquePrograms.has(program))
   ) {
     return null;
   }
@@ -348,7 +400,10 @@ function parseApplicationRecommendation(
   }
 
   return {
-    formId: "CA_SAWS_2_PLUS",
+    // The form the output declared and the registry recognised, not a
+    // constant: returning California's id for every application is how a
+    // Texas block would have been relabelled on the way through.
+    formId: definition.formId,
     recommended: candidate.recommended,
     programs,
   };
@@ -381,7 +436,7 @@ function parseApplicationRecommendations(
  *
  * Invalid or malformed output fails closed and returns an empty array.
  */
-function extractStructuredApplicationOutput(
+export function extractStructuredApplicationOutput(
   content: string,
 ): ApplicationRecommendation[] {
   /*
@@ -529,14 +584,21 @@ export async function assembleReport(
     throw error;
   }
 
-  const sawsApplication = applicationRecommendations.find(
-    (application) => application.formId === "CA_SAWS_2_PLUS",
+  /*
+   * Recommended programmes across every application in the output, not only
+   * California's.
+   *
+   * This sat in the generic assembly layer and named CA_SAWS_2_PLUS, so a Texas
+   * household's recommended programmes came back empty however well the
+   * screening had done its job. The parser has already rejected any form the
+   * registry does not know, so there is nothing to filter for here.
+   */
+  const recommendedPrograms = applicationRecommendations.flatMap(
+    (application) =>
+      application.programs
+        .filter((program) => program.recommendedToApply)
+        .map((program) => program.program),
   );
-
-  const recommendedPrograms =
-    sawsApplication?.programs
-      .filter((program) => program.recommendedToApply)
-      .map((program) => program.program) ?? [];
 
   return {
     sections,
@@ -545,6 +607,7 @@ export async function assembleReport(
       available: false,
       formId: null,
       formName: null,
+      delivery: null,
       status: 'not_started',
       recommendedPrograms,
       recommendations: applicationRecommendations,

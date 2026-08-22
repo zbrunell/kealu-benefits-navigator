@@ -8,7 +8,52 @@ import {
   buildHouseholdMemberPrefill,
   parseHouseholdComposition,
 } from "@/lib/household";
-import type { ReportPayload } from "@/lib/report-assembler";
+import type {
+  ApplicationSummary,
+  ReportPayload,
+} from "@/lib/report-assembler";
+import type { ApplicationPrefill } from "@/types/application";
+import { applicationForState } from "@/lib/state-applications";
+
+/**
+ * Decide what application, if any, this household can be offered.
+ *
+ * One place, consulted by both the cached and freshly-assembled paths, which
+ * previously each carried their own copy of `state === "CA"`.
+ *
+ * A `generated` application also needs a recommendation for its own form —
+ * without one there is nothing to prefill. A `manual` one does not: the value
+ * is the programme list, the official route and the checklist, and those exist
+ * whether or not the screening produced a form-specific recommendation.
+ */
+function applicationSummaryFor(
+  summary: ApplicationSummary,
+  state: string | undefined,
+  prefill: ApplicationPrefill,
+): ApplicationSummary {
+  const definition = applicationForState(state);
+
+  if (!definition) return summary;
+
+  if (definition.delivery === "generated") {
+    const matching = summary.recommendations.find(
+      (recommendation) => recommendation.formId === definition.formId,
+    );
+
+    if (!matching) return summary;
+  }
+
+  return {
+    ...summary,
+    available: true,
+    formId: definition.formId,
+    formName: definition.formCode,
+    delivery: definition.delivery,
+    // Only a generated draft consumes the prefill; a manual guide reads the
+    // applicant's own answers from the application data instead.
+    prefill: definition.delivery === "generated" ? prefill : null,
+  };
+}
 
 /**
  * GET /api/workflow/[runId]/report
@@ -127,28 +172,18 @@ export async function GET(
       available: false,
       formId: null,
       formName: null,
+      delivery: null,
       status: "not_started",
       recommendedPrograms: [],
       recommendations: [],
       prefill: null,
     };
 
-    const sawsRecommendation = cachedPayload.application.recommendations.find(
-      (application) => application.formId === "CA_SAWS_2_PLUS",
+    cachedPayload.application = applicationSummaryFor(
+      cachedPayload.application,
+      session.vars.state,
+      applicationPrefill,
     );
-
-    if (
-      session.vars.state?.trim().toUpperCase() === "CA" &&
-      sawsRecommendation
-    ) {
-      cachedPayload.application = {
-        ...cachedPayload.application,
-        available: true,
-        formId: "CA_SAWS_2_PLUS",
-        formName: "SAWS 2 PLUS",
-        prefill: applicationPrefill,
-      };
-    }
 
     return NextResponse.json(cachedPayload, {
       status: 200,
@@ -164,29 +199,18 @@ export async function GET(
       available: false,
       formId: null,
       formName: null,
+      delivery: null,
       status: "not_started",
       recommendedPrograms: [],
       recommendations: [],
       prefill: null,
     };
 
-    // SAWS 2 PLUS is currently supported only for California households.
-    const sawsRecommendation = payload.application.recommendations.find(
-      (application) => application.formId === "CA_SAWS_2_PLUS",
+    payload.application = applicationSummaryFor(
+      payload.application,
+      session.vars.state,
+      applicationPrefill,
     );
-
-    if (
-      session.vars.state?.trim().toUpperCase() === "CA" &&
-      sawsRecommendation
-    ) {
-      payload.application = {
-        ...payload.application,
-        available: true,
-        formId: "CA_SAWS_2_PLUS",
-        formName: "SAWS 2 PLUS",
-        prefill: applicationPrefill,
-      };
-    }
 
     // Cache report and mark the workflow complete.
     sessionStore.update(session.sessionId, {

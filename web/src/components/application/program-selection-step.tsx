@@ -10,6 +10,7 @@ import type {
   Saws2PlusProgram,
 } from "@/lib/report-assembler";
 import { useTranslation } from "@/hooks/use-translation";
+import { isSaws2PlusProgram } from "@/lib/state-applications";
 
 const PROGRAM_LABELS: Record<Saws2PlusProgram, string> = {
   medi_cal: "Medi-Cal",
@@ -77,8 +78,12 @@ export default function ProgramSelectionStep({
         </p>
 
         <div className="mt-6 space-y-3">
-          {recommendation.programs.map((program) => {
-            const checked = selectedPrograms[program.program];
+          {recommendation.programs
+            .filter((program) => isSaws2PlusProgram(program.program))
+            .map((program) => {
+            const checked = selectedPrograms[
+              program.program as Saws2PlusProgram
+            ];
 
             return (
               <label
@@ -89,7 +94,9 @@ export default function ProgramSelectionStep({
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={() => onToggleProgram(program.program)}
+                    onChange={() =>
+                      onToggleProgram(program.program as Saws2PlusProgram)
+                    }
                     className="mt-1 h-4 w-4 rounded border-slate-300 text-green-700 focus:ring-green-600"
                   />
 
@@ -97,7 +104,7 @@ export default function ProgramSelectionStep({
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-2">
                         <h2 className="font-semibold text-slate-900">
-                          {PROGRAM_LABELS[program.program]}
+                          {PROGRAM_LABELS[program.program as Saws2PlusProgram]}
                         </h2>
 
                         {program.recommendedToApply && (

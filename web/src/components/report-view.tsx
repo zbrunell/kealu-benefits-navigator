@@ -90,11 +90,21 @@ function renderMarkdown(content: string): string {
   });
 }
 
-const PROGRAM_LABELS = {
+/*
+ * Programme names are proper nouns, so they are not translated — an applicant
+ * searching a county website for "CalFresh" will not find "Comida fresca".
+ * Both states' names live here because this section renders whichever
+ * application the household's state has.
+ */
+const PROGRAM_LABELS: Record<string, string> = {
   medi_cal: "Medi-Cal",
   calfresh: "CalFresh",
   calworks: "CalWORKs",
-} as const;
+  tx_medicaid: "Medicaid",
+  tx_chip: "CHIP",
+  tx_snap: "SNAP",
+  tx_tanf: "TANF",
+};
 
 /**
  * Catalog keys for the screening outcome — the same keys

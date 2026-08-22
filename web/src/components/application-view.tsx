@@ -8,6 +8,7 @@
 import { useRef, useState } from "react";
 
 import { useTranslation } from "@/hooks/use-translation";
+import { isSaws2PlusProgram } from "@/lib/state-applications";
 
 import { buildInitialApplicationData } from "@/lib/application-data";
 import { householdSizeFromMembers } from "@/lib/household";
@@ -105,6 +106,15 @@ export default function ApplicationView({
     };
 
     for (const program of recommendation.programs) {
+      /*
+       * This view drives the SAWS 2 PLUS flow, so it handles California's three
+       * programmes and skips anything else. A Texas recommendation never
+       * reaches here — the report marks that application `manual` — and if one
+       * did, silently selecting it would start a California questionnaire for a
+       * Texas household.
+       */
+      if (!isSaws2PlusProgram(program.program)) continue;
+
       initialSelections[program.program] = program.recommendedToApply;
     }
 
