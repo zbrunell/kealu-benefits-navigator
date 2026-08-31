@@ -49,6 +49,9 @@ vi.mock('@/lib/session-store', async () => {
   store.update(TEST_SESSION_ID, {
     runId: TEST_RUN_ID,
     runStatus: 'complete',
+    // The household's state, which is what the filename is derived from. A
+    // real session always has one by the time a draft exists.
+    vars: { state: 'CA' },
     draftPath: TEST_DRAFT_PATH,
     draftFormType: 'official',
   });
@@ -173,7 +176,7 @@ describe('GET /api/workflow/[runId]/draft', () => {
   }),
 });
     const cd = res.headers.get('content-disposition') ?? '';
-expect(cd).toContain('partially-prefilled-SAWS-2-PLUS-draft.pdf');
+expect(cd).toContain('partially-prefilled-saws-2-plus-draft.pdf');
   });
 
   it('Content-Disposition includes worksheet filename for draftFormType worksheet', async () => {
@@ -187,7 +190,35 @@ expect(cd).toContain('partially-prefilled-SAWS-2-PLUS-draft.pdf');
   }),
 });
     const cd = res.headers.get('content-disposition') ?? '';
-    expect(cd).toContain('benefits-preparation-worksheet-draft.pdf');
+    expect(cd).toContain('saws-2-plus-worksheet-draft.pdf');
+  });
+
+  it('names a Texas download after Texas’s form, not California’s', async () => {
+    /*
+     * The filename was the literal "partially-prefilled-SAWS-2-PLUS-draft.pdf",
+     * so a Texas household downloading their H1010 got a file named after a
+     * California form they are not filing. It names the form and never the
+     * applicant.
+     */
+    const { sessionStore } = await import('@/lib/session-store');
+    sessionStore.update(TEST_SESSION_ID, {
+      vars: { state: 'TX' },
+      draftFormType: 'worksheet',
+    });
+
+    const req = makeDraftRequest(TEST_RUN_ID, TEST_SESSION_ID);
+    const res = await GET(req, {
+      params: Promise.resolve({ runId: TEST_RUN_ID }),
+    });
+    const cd = res.headers.get('content-disposition') ?? '';
+
+    expect(cd).toContain('h1010-worksheet-draft.pdf');
+    expect(cd).not.toContain('SAWS');
+
+    sessionStore.update(TEST_SESSION_ID, {
+      vars: { state: 'CA' },
+      draftFormType: 'official',
+    });
   });
 
   it('X-Correlation-Id header equals the runId', async () => {

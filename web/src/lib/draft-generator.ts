@@ -29,6 +29,16 @@ export interface DraftResult {
 
   /** "official" for a real state AcroForm PDF; "worksheet" for the fallback. */
   formType: 'official' | 'worksheet';
+
+  /**
+   * Absolute path to the review sheet the generator wrote beside the PDF.
+   *
+   * Present for a document rendered through the mapping layer, which writes
+   * one every time; absent for the California path, whose completion guide is
+   * computed in TypeScript from the SAWS readiness model. The guide route
+   * serves whichever exists rather than deciding by state.
+   */
+  reviewPath?: string;
 }
 
 /**
@@ -260,6 +270,7 @@ export async function generateDraft(
         const result = JSON.parse(stdout.trim()) as {
           path?: string;
           form_type?: string;
+          review_path?: string;
           error?: string;
         };
 
@@ -314,6 +325,7 @@ export async function generateDraft(
         resolve({
           path: result.path,
           formType,
+          reviewPath: result.review_path,
         });
       } catch {
         console.log(

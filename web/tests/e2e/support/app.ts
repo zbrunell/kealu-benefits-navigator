@@ -227,6 +227,30 @@ export const CALIFORNIA_TIER_1_ANSWERS: readonly string[] = [
   'Single parent with 2 kids ages 4 and 9',
 ];
 
+/**
+ * The canonical Austin demo household, exactly as specified for manual review.
+ *
+ * ZIP 78705, two adults, no children, not pregnant, $20,000 a year. Its purpose
+ * is the opposite of the California one: to prove that a household outside
+ * California reaches a coherent plan containing none of California's programs.
+ */
+export const AUSTIN_TIER_1_ANSWERS: readonly string[] = [
+  '78705',
+  '20000',
+  'Two adults, ages 34 and 31',
+];
+
+/** The California vocabulary that must never appear in a Texas plan. */
+export const CALIFORNIA_ONLY_TERMS: readonly string[] = [
+  'Medi-Cal',
+  'CalFresh',
+  'CalWORKs',
+  'SAWS 2 PLUS',
+  'BenefitsCal',
+  'GetCalFresh',
+  'Covered California',
+];
+
 /** Answer every unanswered Yes/No group on the current step with "No". */
 export async function answerAllNo(page: Page): Promise<void> {
   const noButtons = page.getByRole('button', { name: 'No', exact: true });

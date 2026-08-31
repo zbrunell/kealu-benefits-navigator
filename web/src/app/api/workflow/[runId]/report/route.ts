@@ -25,6 +25,13 @@ import { applicationForState } from "@/lib/state-applications";
  * without one there is nothing to prefill. A `manual` one does not: the value
  * is the programme list, the official route and the checklist, and those exist
  * whether or not the screening produced a form-specific recommendation.
+ *
+ * Both deliveries receive the prefill. It withheld it from `manual` on the
+ * reasoning that a manual guide reads the applicant's own answers instead — but
+ * a manual flow never runs the questionnaire, so there were no answers to read:
+ * the guide's "what you already told us" list came back holding nothing but a
+ * household size of 1. The prefill *is* the applicant's own answers, derived
+ * from intake, and carrying them across is the entire purpose of that page.
  */
 function applicationSummaryFor(
   summary: ApplicationSummary,
@@ -49,9 +56,7 @@ function applicationSummaryFor(
     formId: definition.formId,
     formName: definition.formCode,
     delivery: definition.delivery,
-    // Only a generated draft consumes the prefill; a manual guide reads the
-    // applicant's own answers from the application data instead.
-    prefill: definition.delivery === "generated" ? prefill : null,
+    prefill,
   };
 }
 
@@ -145,7 +150,15 @@ export async function GET(
      * applicant can supply it rather than being shown a guess.
      */
     city: session?.vars.city?.trim() ?? "",
-    state: session?.vars.state?.trim() || "CA",
+    /*
+     * No default. This used to fall back to "CA" when the ZIP resolved no
+     * state, which meant an unresolved location was silently treated as a
+     * California household — it was offered the SAWS 2 PLUS application and
+     * had California written into its address block. An empty state now stays
+     * empty: `applicationForState` returns null, no form is offered, and the
+     * applicant is asked rather than guessed at.
+     */
+    state: session?.vars.state?.trim() ?? "",
     county: session?.vars.county?.trim() ?? "",
 
     preferredLanguage,

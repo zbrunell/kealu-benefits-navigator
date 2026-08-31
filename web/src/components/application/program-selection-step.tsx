@@ -5,18 +5,12 @@
 
 "use client";
 
-import type {
-  ApplicationRecommendation,
-  Saws2PlusProgram,
-} from "@/lib/report-assembler";
+import type { ProgramRecommendation } from "@/lib/report-assembler";
 import { useTranslation } from "@/hooks/use-translation";
-import { isSaws2PlusProgram } from "@/lib/state-applications";
-
-const PROGRAM_LABELS: Record<Saws2PlusProgram, string> = {
-  medi_cal: "Medi-Cal",
-  calfresh: "CalFresh",
-  calworks: "CalWORKs",
-};
+import {
+  programNameKey,
+  type BenefitProgramId,
+} from "@/lib/state-applications";
 
 /**
  * Catalog keys for the screening outcome. report-view resolves the same keys —
@@ -29,25 +23,42 @@ const STATUS_LABEL_KEYS = {
   insufficient_information: "status_insufficient_information",
 } as const;
 
+/**
+ * "What are you applying for?", for any state's form.
+ *
+ * Generic over `BenefitProgramId` because the question is: every state's form
+ * opens by asking which of its programmes you want. It used to hold its own
+ * English map of California's three, which meant a Spanish-speaking applicant
+ * read translated help beside an untranslated programme name and a Texas
+ * programme rendered as blank — so the caller now passes the programmes it
+ * covers and the name comes from the shared catalog lookup.
+ *
+ * The "Other" box is optional: SAWS 2 PLUS prints one and H1010 does not, and a
+ * form without it should not render a checkbox that maps to nothing.
+ */
 interface ProgramSelectionStepProps {
-  recommendation: ApplicationRecommendation;
-  selectedPrograms: Record<Saws2PlusProgram, boolean>;
-  onToggleProgram: (program: Saws2PlusProgram) => void;
-  /** Page 1 "Other" program box. */
-  otherRequested: boolean;
-  otherDescription: string;
-  onToggleOther: () => void;
-  onOtherDescriptionChange: (value: string) => void;
+  /** The agency's own designation, printed above the heading. */
+  formCode: string;
+  /** The programmes this form covers, already screened for this household. */
+  programs: readonly ProgramRecommendation[];
+  isSelected: (program: BenefitProgramId) => boolean;
+  onToggleProgram: (program: BenefitProgramId) => void;
+  /** Page 1 "Other" program box, for a form that prints one. */
+  otherRequested?: boolean;
+  otherDescription?: string;
+  onToggleOther?: () => void;
+  onOtherDescriptionChange?: (value: string) => void;
   onBack: () => void;
   onContinue: () => void;
 }
 
 export default function ProgramSelectionStep({
-  recommendation,
-  selectedPrograms,
+  formCode,
+  programs,
+  isSelected,
   onToggleProgram,
-  otherRequested,
-  otherDescription,
+  otherRequested = false,
+  otherDescription = "",
   onToggleOther,
   onOtherDescriptionChange,
   onBack,
@@ -55,9 +66,11 @@ export default function ProgramSelectionStep({
 }: ProgramSelectionStepProps) {
   const { t, tn, tReasons } = useTranslation();
 
+  const offersOther = Boolean(onToggleOther);
+
   const selectedCount =
-    Object.values(selectedPrograms).filter(Boolean).length +
-    (otherRequested ? 1 : 0);
+    programs.filter((program) => isSelected(program.program)).length +
+    (offersOther && otherRequested ? 1 : 0);
 
   return (
     <div
@@ -66,7 +79,7 @@ export default function ProgramSelectionStep({
     >
       <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
-          SAWS 2 PLUS
+          {formCode}
         </p>
 
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">
@@ -78,12 +91,8 @@ export default function ProgramSelectionStep({
         </p>
 
         <div className="mt-6 space-y-3">
-          {recommendation.programs
-            .filter((program) => isSaws2PlusProgram(program.program))
-            .map((program) => {
-            const checked = selectedPrograms[
-              program.program as Saws2PlusProgram
-            ];
+          {programs.map((program) => {
+            const checked = isSelected(program.program);
 
             return (
               <label
@@ -94,9 +103,7 @@ export default function ProgramSelectionStep({
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={() =>
-                      onToggleProgram(program.program as Saws2PlusProgram)
-                    }
+                    onChange={() => onToggleProgram(program.program)}
                     className="mt-1 h-4 w-4 rounded border-slate-300 text-green-700 focus:ring-green-600"
                   />
 
@@ -104,7 +111,7 @@ export default function ProgramSelectionStep({
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-2">
                         <h2 className="font-semibold text-slate-900">
-                          {PROGRAM_LABELS[program.program as Saws2PlusProgram]}
+                          {t(programNameKey(program.program))}
                         </h2>
 
                         {program.recommendedToApply && (
@@ -153,7 +160,8 @@ export default function ProgramSelectionStep({
           </p>
         </div>
 
-                {/* Page 1 also offers an "Other" program box with a description. */}
+        {/* Page 1 also offers an "Other" program box with a description. */}
+        {offersOther && (
         <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
           <label className="flex items-start gap-3">
             <input
@@ -176,13 +184,16 @@ export default function ProgramSelectionStep({
             <input
               type="text"
               value={otherDescription}
-              onChange={(event) => onOtherDescriptionChange(event.target.value)}
+              onChange={(event) =>
+                onOtherDescriptionChange?.(event.target.value)
+              }
               placeholder={t("programs_other_placeholder")}
               aria-label={t("programs_other_aria")}
               className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
             />
           )}
         </div>
+        )}
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
           <button

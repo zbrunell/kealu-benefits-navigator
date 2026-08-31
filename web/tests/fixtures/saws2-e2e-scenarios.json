@@ -455,6 +455,10 @@
         "value": true
       },
       {
+        "key": "income.earned.0.present",
+        "value": true
+      },
+      {
         "key": "income.earned.0.member_id",
         "value": "applicant"
       },
@@ -2085,6 +2089,10 @@
         "value": true
       },
       {
+        "key": "income.earned.0.present",
+        "value": true
+      },
+      {
         "key": "income.earned.0.member_id",
         "value": "applicant"
       },
@@ -2255,6 +2263,10 @@
         "value": true
       },
       {
+        "key": "income.earned.0.present",
+        "value": true
+      },
+      {
         "key": "income.earned.0.member_id",
         "value": "applicant"
       },
@@ -2268,6 +2280,10 @@
       },
       {
         "key": "income.earned.0.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.1.present",
         "value": true
       },
       {
@@ -2287,6 +2303,10 @@
         "value": true
       },
       {
+        "key": "income.earned.2.present",
+        "value": true
+      },
+      {
         "key": "income.earned.2.member_id",
         "value": "applicant"
       },
@@ -2300,6 +2320,10 @@
       },
       {
         "key": "income.earned.2.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.3.present",
         "value": true
       },
       {
@@ -2473,6 +2497,10 @@
         "value": true
       },
       {
+        "key": "income.earned.0.present",
+        "value": true
+      },
+      {
         "key": "income.earned.0.member_id",
         "value": "applicant"
       },
@@ -2486,6 +2514,10 @@
       },
       {
         "key": "income.earned.0.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.1.present",
         "value": true
       },
       {
@@ -2505,6 +2537,10 @@
         "value": true
       },
       {
+        "key": "income.earned.2.present",
+        "value": true
+      },
+      {
         "key": "income.earned.2.member_id",
         "value": "applicant"
       },
@@ -2518,6 +2554,10 @@
       },
       {
         "key": "income.earned.2.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.3.present",
         "value": true
       },
       {
@@ -2537,6 +2577,10 @@
         "value": true
       },
       {
+        "key": "income.earned.4.present",
+        "value": true
+      },
+      {
         "key": "income.earned.4.member_id",
         "value": "applicant"
       },
@@ -2550,6 +2594,10 @@
       },
       {
         "key": "income.earned.4.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.5.present",
         "value": true
       },
       {
@@ -3580,6 +3628,10 @@
         "value": true
       },
       {
+        "key": "appendices.employer_coverage.0.present",
+        "value": true
+      },
+      {
         "key": "appendices.employer_coverage.0.employee_name",
         "value": "Maria Delgado"
       },
@@ -3606,6 +3658,10 @@
       {
         "key": "appendices.employer_coverage.0.plan_change",
         "value": "no_changes_expected"
+      },
+      {
+        "key": "health.employer_coverage.0.present",
+        "value": true
       },
       {
         "key": "health.employer_coverage.0.member_id",
@@ -3830,6 +3886,10 @@
         "value": true
       },
       {
+        "key": "appendices.tribal.0.present",
+        "value": true
+      },
+      {
         "key": "appendices.tribal.0.person_name",
         "value": "Maria Delgado"
       },
@@ -4027,6 +4087,10 @@
         "value": true
       },
       {
+        "key": "household.authorized_representative.0.present",
+        "value": true
+      },
+      {
         "key": "household.authorized_representative.0.name",
         "value": "Dana Okafor"
       },
@@ -4061,6 +4125,10 @@
       {
         "key": "household.authorized_representative.0.for_health_coverage",
         "value": false
+      },
+      {
+        "key": "household.authorized_representative.1.present",
+        "value": true
       },
       {
         "key": "household.authorized_representative.1.name",
@@ -4292,6 +4360,10 @@
         "value": true
       },
       {
+        "key": "appendices.vehicle.0.present",
+        "value": true
+      },
+      {
         "key": "appendices.vehicle.0.owner_name",
         "value": "Maria Delgado"
       },
@@ -4318,6 +4390,10 @@
       {
         "key": "appendices.vehicle.0.fair_market_value_source",
         "value": "kelly_blue_book"
+      },
+      {
+        "key": "appendices.vehicle.1.present",
+        "value": true
       },
       {
         "key": "appendices.vehicle.1.owner_name",
@@ -4348,6 +4424,10 @@
         "value": "kelly_blue_book"
       },
       {
+        "key": "appendices.vehicle.2.present",
+        "value": true
+      },
+      {
         "key": "appendices.vehicle.2.owner_name",
         "value": "Maria Delgado"
       },
@@ -4374,6 +4454,10 @@
       {
         "key": "appendices.vehicle.2.fair_market_value_source",
         "value": "kelly_blue_book"
+      },
+      {
+        "key": "appendices.vehicle.3.present",
+        "value": true
       },
       {
         "key": "appendices.vehicle.3.owner_name",
@@ -4404,6 +4488,10 @@
         "value": "kelly_blue_book"
       },
       {
+        "key": "resources.vehicles.0.present",
+        "value": true
+      },
+      {
         "key": "resources.vehicles.0.member_id",
         "value": "applicant"
       },
@@ -4422,6 +4510,10 @@
       {
         "key": "resources.vehicles.0.used_for",
         "value": "Getting to work"
+      },
+      {
+        "key": "resources.vehicles.1.present",
+        "value": true
       },
       {
         "key": "resources.vehicles.1.member_id",
@@ -4444,6 +4536,10 @@
         "value": "Getting to work"
       },
       {
+        "key": "resources.vehicles.2.present",
+        "value": true
+      },
+      {
         "key": "resources.vehicles.2.member_id",
         "value": "applicant"
       },
@@ -4462,6 +4558,10 @@
       {
         "key": "resources.vehicles.2.used_for",
         "value": "Getting to work"
+      },
+      {
+        "key": "resources.vehicles.3.present",
+        "value": true
       },
       {
         "key": "resources.vehicles.3.member_id",
@@ -4639,12 +4739,20 @@
         "value": true
       },
       {
+        "key": "resources.personal_property.0.present",
+        "value": true
+      },
+      {
         "key": "resources.personal_property.0.member_id",
         "value": "applicant"
       },
       {
         "key": "resources.personal_property.0.person_name",
         "value": "Maria Delgado"
+      },
+      {
+        "key": "resources.personal_property.1.present",
+        "value": true
       },
       {
         "key": "resources.personal_property.1.member_id",
@@ -4655,12 +4763,20 @@
         "value": "Maria Delgado"
       },
       {
+        "key": "resources.personal_property.2.present",
+        "value": true
+      },
+      {
         "key": "resources.personal_property.2.member_id",
         "value": "applicant"
       },
       {
         "key": "resources.personal_property.2.person_name",
         "value": "Maria Delgado"
+      },
+      {
+        "key": "resources.personal_property.3.present",
+        "value": true
       },
       {
         "key": "resources.personal_property.3.member_id",
@@ -5140,6 +5256,10 @@
         "value": true
       },
       {
+        "key": "appendices.vehicle.0.present",
+        "value": true
+      },
+      {
         "key": "appendices.vehicle.0.owner_name",
         "value": "Maria Delgado"
       },
@@ -5168,6 +5288,10 @@
         "value": "kelly_blue_book"
       },
       {
+        "key": "resources.vehicles.0.present",
+        "value": true
+      },
+      {
         "key": "resources.vehicles.0.member_id",
         "value": "applicant"
       },
@@ -5192,6 +5316,10 @@
         "value": true
       },
       {
+        "key": "appendices.employer_coverage.0.present",
+        "value": true
+      },
+      {
         "key": "appendices.employer_coverage.0.employee_name",
         "value": "Luis Reyes"
       },
@@ -5209,6 +5337,10 @@
       },
       {
         "key": "health.american_indian_or_alaska_native",
+        "value": true
+      },
+      {
+        "key": "appendices.tribal.0.present",
         "value": true
       },
       {
@@ -5318,6 +5450,10 @@
       {
         "key": "appendices.employment.1.job.0.pay_frequency",
         "value": "hourly"
+      },
+      {
+        "key": "health.employer_coverage.0.present",
+        "value": true
       },
       {
         "key": "health.employer_coverage.0.member_id",

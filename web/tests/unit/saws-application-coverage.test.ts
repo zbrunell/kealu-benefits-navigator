@@ -167,6 +167,12 @@ describe('privacy boundary', () => {
       // It reads no SSN and writes none: there is nothing to read.
       'lib/manual-application-guide.ts':
         'lists the SSN as information we deliberately never collect',
+      // The Texas question configuration states, at the top of the file, the
+      // list of things it does not ask for. Naming them is what makes the
+      // omission reviewable: a question set with no such list can lose a
+      // refusal by accident. It declares no question that reads or writes one.
+      'lib/form-intake/tx-h1010.ts':
+        'names the SSN among the answers the Texas intake deliberately never collects',
       'i18n/messages/en.ts': 'manual-completion instruction shown after generation',
       'i18n/messages/es.ts': 'Spanish translation of the same instruction',
       'i18n/messages/zh-CN.ts': 'Chinese translation of the same instruction',
@@ -297,7 +303,26 @@ describe('structured application output', () => {
     );
 
     expect(actionPlan?.content).toContain('## Bottom Line');
-    expect(actionPlan?.content).toContain('## Document Checklist');
+
+    /*
+     * The single "Document Checklist" section was replaced by three, because
+     * one list could not distinguish what blocks submission from what is
+     * verified later — the plan used to print "No additional documentation is
+     * required to start" directly above a list of required documents.
+     */
+    expect(actionPlan?.content).toContain(
+      '## What you need to submit an application',
+    );
+    expect(actionPlan?.content).toContain(
+      '## What you will likely be asked to verify',
+    );
+    expect(actionPlan?.content).toContain(
+      '## What may be requested, depending on your household',
+    );
+    expect(actionPlan?.content).not.toContain(
+      'No additional documentation is required to start',
+    );
+
     // A section that follows the stripped block must survive.
     expect(actionPlan?.content).toContain('## Income Cliff Warnings');
     expect(payload.bottomLine.length).toBeGreaterThan(0);

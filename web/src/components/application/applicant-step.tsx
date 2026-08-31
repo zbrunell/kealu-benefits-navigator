@@ -38,6 +38,33 @@ import type {
 } from "@/types/application";
 
 interface ApplicantStepProps {
+  /**
+   * The agency's own designation, printed above the heading.
+   *
+   * A prop rather than the literal "SAWS 2 PLUS" it used to be: every field on
+   * this step — name, date of birth, address, marital status, citizenship — is
+   * asked by every benefits application in the country, so the step is reused
+   * by Texas, and a Texas applicant should not be told they are filling in a
+   * California form.
+   */
+  formCode: string;
+  /**
+   * Whether to ask "my mail comes here" as a checkbox on this step.
+   *
+   * California asks it here and collects the differing address later in the
+   * questionnaire. Texas asks it as a proper Yes/No with the address follow-up
+   * immediately beneath, so it hides this one rather than putting two controls
+   * for the same answer on two screens.
+   */
+  showMailingSameCheckbox?: boolean;
+  /**
+   * Catalog key for the Continue button.
+   *
+   * California's says "Continue to eligibility questions", which is what comes
+   * next there. Texas goes to "Where you live", so it passes its own rather
+   * than telling the applicant they are about to do something they are not.
+   */
+  continueLabelKey?: string;
   applicant: ApplicantInformation;
   onChange: <K extends keyof ApplicantInformation>(
     field: K,
@@ -72,6 +99,9 @@ function FieldError({ id, message }: { id: string; message: string | null }) {
 }
 
 export default function ApplicantStep({
+  formCode,
+  showMailingSameCheckbox = true,
+  continueLabelKey = "applicant_continue",
   applicant,
   onChange,
   onHomeAddressChange,
@@ -187,7 +217,7 @@ export default function ApplicantStep({
     <div className="space-y-4">
       <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
-          SAWS 2 PLUS
+          {formCode}
         </p>
 
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">
@@ -524,6 +554,7 @@ export default function ApplicantStep({
           </div>
         </fieldset>
 
+        {showMailingSameCheckbox && (
         <label className="mt-6 flex items-start gap-3">
           <input
             type="checkbox"
@@ -540,8 +571,10 @@ export default function ApplicantStep({
             {t("applicant_mailing_same")}
           </span>
         </label>
+        )}
 
-        {/* Applicant row details used on SAWS Page 3. */}
+        {/* The applicant's own person-level details, which every state's form
+            asks for in one shape or another. */}
         <section className="mt-8 border-t border-slate-200 pt-6">
           <h2 className="text-base font-semibold text-slate-900">
             {t("applicant_household_details")}
@@ -774,7 +807,7 @@ export default function ApplicantStep({
             aria-disabled={!isValid}
             className={continueButtonClass(isValid)}
           >
-            {t("applicant_continue")}
+            {t(continueLabelKey)}
           </button>
         </div>
 

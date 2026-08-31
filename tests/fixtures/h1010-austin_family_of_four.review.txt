@@ -1,0 +1,162 @@
+H1010 — Texas Works Application for Assistance
+
+THIS IS NOT THE OFFICIAL FORM.
+
+It is a prefilled worksheet carrying your answers. Submit the official application through the agency's own channel and copy these answers across.
+
+Why: HHSC does not publish Form H1010 as a retrievable PDF: its own forms page links to a YourTexasBenefits web application for both the English and the Spanish edition, and direct file requests to hhs.texas.gov are refused or return nothing. Rather than guess where the boxes sit on a document we have not inspected, this renders a Navigator-authored worksheet whose coordinates we own. Replace base_document and the boxes once the official PDF is obtained.
+
+Filled in for you:
+  What are you applying for?
+    Food benefits (SNAP): X
+    Healthcare (Medicaid): X
+    Healthcare (CHIP): X
+    Cash help for families (TANF): X
+  About you
+    First name: Marisol
+    Middle name: Elena
+    Last name: Ramirez
+    Date of birth (mm/dd/yyyy): 03/14/1991
+    Home phone: (512) 555-1234
+    Email address: marisol.ramirez@example.test
+    Language you prefer: Spanish
+    Marital status: Married
+    Sex: Female
+    Are you a U.S. citizen or U.S. national?: Yes
+    Do you have a disability?: No
+  Where you live
+    Street address: 2100 Nueces Street
+    Apt or unit: Apt 4B
+    City: Austin
+    County: Travis
+    State: TX
+    ZIP code: 78705
+    Is anyone in your home homeless?: No
+    Does anyone live in a shelter, group home, or institution?: No
+  Where you get your mail
+    Do you get your mail at the address above?: No
+    Mailing street address: PO Box 4477
+    City: Austin
+    County: Travis
+    State: TX
+    ZIP code: 78765
+  People who live with you
+    How many people live in your home?: 4
+    Adults: 2
+    Children: 2
+    Do you buy and prepare food together?: Yes
+    Is anyone in your home pregnant?: No
+    Is anyone in your home a student?: Yes
+    Person 1 — First name: Diego
+    Person 1 — Last name: Ramirez
+    Person 1 — How they are related to you: Spouse
+    Person 1 — Date of birth: 07/19/1989
+    Person 1 — Sex: Male
+    Person 1 — U.S. citizen?: Yes
+    Person 2 — First name: Sofia
+    Person 2 — Last name: Ramirez
+    Person 2 — How they are related to you: Child
+    Person 2 — Date of birth: 09/08/2016
+    Person 2 — Sex: Female
+    Person 2 — U.S. citizen?: Yes
+    Person 3 — First name: Mateo
+    Person 3 — Last name: Ramirez
+    Person 3 — How they are related to you: Child
+    Person 3 — Date of birth: 11/30/2020
+    Person 3 — Sex: Male
+    Person 3 — U.S. citizen?: Yes
+  Money you get
+    Total yearly household income ($): 41,000
+    Kind of income: Two jobs
+    Does anyone in your home have a job?: Yes
+    Is anyone self-employed or running a business?: No
+    Does anyone get money from anywhere else (child support, unemployment, Social Security, retirement)?: Yes
+    Does anyone's income change during the year?: Yes
+  Jobs
+    Job 1 — Who works there: Marisol Ramirez
+    Job 1 — Employer: Austin Independent School District
+    Job 1 — Employer address: 100 Congress Avenue, Austin TX
+    Job 1 — Gross pay this month ($): 1,600
+    Job 1 — How often paid: Every two weeks
+    Job 1 — Hours a week: 32
+    Job 2 — Who works there: Diego Ramirez
+    Job 2 — Employer: H-E-B
+    Job 2 — Employer address: 101 Congress Avenue, Austin TX
+    Job 2 — Gross pay this month ($): 1,650
+    Job 2 — How often paid: Every two weeks
+    Job 2 — Hours a week: 32
+  Other money you get
+    Other income 1 — Who gets it: Marisol Ramirez
+    Other income 1 — Where it comes from: Child support
+    Other income 1 — How much ($): 250
+    Other income 1 — How often: Monthly
+    Other income 2 — Who gets it: Diego Ramirez
+    Other income 2 — Where it comes from: Unemployment
+    Other income 2 — How much ($): 275
+    Other income 2 — How often: Monthly
+  Bills you pay
+    Do you pay rent, a mortgage, or utility bills?: Yes
+    Do you pay for child care or adult care so someone can work or go to school?: Yes
+    Does anyone pay child support to someone outside your home?: No
+    Does anyone 60 or older, or with a disability, have medical costs?: No
+    Bill 1 — Kind of bill: Rent or mortgage
+    Bill 1 — Cost each month ($): 1,600
+    Bill 2 — Kind of bill: Electricity
+    Bill 2 — Cost each month ($): 180
+    Bill 3 — Kind of bill: Water
+    Bill 3 — Cost each month ($): 65
+    Bill 4 — Kind of bill: Other
+    Bill 4 — Details: Trash and recycling
+    Bill 4 — Cost each month ($): 40
+  Things you own
+    Does anyone have a bank account, cash, or savings?: Yes
+    Does anyone own a car or truck?: Yes
+    Does anyone own a home, land, or other property?: No
+    Does anyone own anything else of value?: No
+  If you need food benefits right away
+    Is your monthly income under $150 and your cash on hand $100 or less?: No
+    Are your income and cash together less than your rent and utilities this month?: Yes
+    Is anyone a migrant or seasonal farm worker?: No
+    Will your food run out in the next three days?: Yes
+    Have you been given an eviction notice?: No
+    Have your utilities been shut off, or been threatened with shut-off?: Yes
+    Does anyone need essential clothing?: No
+    Does anyone need transportation to meet an emergency need?: No
+  Your situation
+    Has anyone in your home served in the military?: Yes
+    Does a disability limit anyone's daily activities?: No
+    Was anyone in your home ever in foster care?: No
+    Has anyone in your home received benefits before?: Yes
+    Benefits anyone already gets: WIC for the youngest child
+  Someone helping you apply
+    Is someone applying on your behalf?: Yes
+    Their name: Ana Villarreal
+    Organization: Central Texas Food Bank
+    Phone: (512) 555-6677
+    Street address: 6500 Metropolis Drive
+    City: Austin
+    State: TX
+    ZIP code: 78744
+
+Left blank on purpose:
+    Your signature and the date you sign. We never fill these in.
+    Social Security numbers and immigration document numbers. We do not ask for them and never write them onto a form.
+
+Only if it applies to you — blank is a complete answer:
+  About you
+    Other names you have used
+    Other phone
+  Where you get your mail
+    Apt or unit
+  Bills you pay
+    Bill 1 — Details
+    Bill 2 — Details
+    Bill 3 — Details
+
+Not applicable to your household — leave these blank:
+  Person rows: you filled 3 of 6. Leave the other 3 blank — there is no person to put in them.
+  Job rows: you filled 2 of 3. Leave the other 1 blank — there is no job to put in them.
+  Other income rows: you filled 2 of 3. Leave the other 1 blank — there is no other income to put in them.
+  Bill rows: you filled 4 of 5. Leave the other 1 blank — there is no bill to put in them.
+
+Review every page before submitting.

@@ -51,6 +51,24 @@ const IDENTICAL_BY_DESIGN = new Set([
   'lang_zh_CN',
   // A ZIP code example is digits.
   'intake_zip_code_placeholder',
+  /*
+   * Official program names, which are proper nouns and are deliberately not
+   * translated — an applicant searching for "Covered California" or "Healthy
+   * Texas Women" on an agency site will not find a translated version. The
+   * sibling test "keeps official program names untranslated, as proper nouns"
+   * asserts the same policy from the other direction.
+   *
+   * "WIC" and "CHIP Perinatal" are the names the agencies print, and Spanish
+   * agency material uses them unchanged. Only the surrounding descriptions in
+   * the `_summary` keys are translated.
+   */
+  'program_federal_wic',
+  'program_covered_california',
+  'program_ca_lifeline',
+  'program_tx_chip_perinatal',
+  'program_tx_healthy_texas_women',
+  // "Federal" is spelled identically in English and Spanish.
+  'report_jurisdiction_federal',
   // "Error" is the Spanish word for error. Translating it to something else
   // to satisfy this test would make the Spanish worse, not better.
   'phase_status_error',

@@ -4,16 +4,20 @@
 //
 
 /**
- * Texas support: a manual application, and a guide that stands on its own.
+ * Texas support: the H1010 route, and the manual kind it no longer uses.
  *
- * The question these answer is not "does a Texas draft get produced" — none
- * does, deliberately — but "does a Texas household reach the end of the journey
- * with something useful?" Before this, the report route gated on
- * `state === "CA"` and a Texas household reached the report and stopped.
+ * The question these answer is "does a Texas household reach the end of the
+ * journey with something useful?" The answer has changed twice. It was once
+ * "no" — the report route gated on `state === "CA"` and a Texas household
+ * stopped at the report. It became "a guide they transcribe from". It is now "a
+ * generated Form H1010 worksheet carrying their own answers", because the
+ * mapping layer holds the form's fields and the Texas intake collects them.
  *
- * Nothing here asserts anything about Form H1010's internals. The form has not
- * been inspected; if these tests referred to its fields they would be asserting
- * a guess.
+ * The manual *kind* is still modeled and still tested, against a synthetic
+ * definition rather than against Texas. No state uses it today, and that is a
+ * fact about our coverage rather than about the design: the next state we add
+ * will almost certainly have no fillable form, and a navigator that can only
+ * help where one exists is not a navigator.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -21,6 +25,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { buildManualApplicationGuide } from '@/lib/manual-application-guide';
+import type { StateApplicationDefinition } from '@/lib/state-applications';
 import {
   applicationForForm,
   applicationForState,
@@ -51,16 +56,26 @@ describe('state routing', () => {
     expect(hasGeneratedApplication('CA')).toBe(true);
   });
 
-  it('routes Texas to a manual application', () => {
+  it('routes Texas to a generated application', () => {
     const definition = applicationForState('TX');
 
     expect(definition?.formId).toBe('TX_H1010');
     expect(definition?.formCode).toBe('H1010');
-    expect(definition?.delivery).toBe('manual');
+    expect(definition?.delivery).toBe('generated');
+    expect(hasGeneratedApplication('TX')).toBe(true);
+  });
 
-    // The distinction that matters: manual is not "unsupported".
-    expect(definition).not.toBeNull();
-    expect(hasGeneratedApplication('TX')).toBe(false);
+  it('does not claim the generated Texas document is the agency’s own form', () => {
+    /*
+     * `generated` says we fill a form; it does not say whose paper it is. HHSC
+     * publishes H1010 only through a web application, so the document carries
+     * the applicant's answers on a worksheet and every surface that shows it
+     * says so — including the link to where the real application lives.
+     */
+    const definition = applicationForState('TX')!;
+
+    expect(definition.officialUrl).toBe('https://www.yourtexasbenefits.com/');
+    expect(definition.channels).toContain('online');
   });
 
   it('accepts lower case and padded state codes', () => {
@@ -443,9 +458,24 @@ describe('the report offers an application by state, not by name', () => {
     expect(calls.length).toBe(3);
   });
 
-  it('gives a manual application no prefill', () => {
-    // Prefill exists to fill a form; there is no form being filled.
-    expect(source).toMatch(/delivery === "generated" \? prefill : null/);
+  it('gives a manual application the prefill too', () => {
+    /*
+     * This previously asserted the opposite — `delivery === "generated" ?
+     * prefill : null` — on the reasoning that prefill exists to fill a form and
+     * a manual flow fills none.
+     *
+     * That reasoning was wrong about where a manual guide gets its content. A
+     * manual flow never runs the SAWS questionnaire, so there is no
+     * application data for the guide to read instead: withholding the prefill
+     * left "what you already told us" holding nothing but a household size of
+     * 1, with the city, state and ZIP the applicant had just given us dropped.
+     * A browser test caught it (tests/e2e/austin-demo.spec.ts).
+     *
+     * The prefill *is* the intake answers. Carrying them across is the whole
+     * purpose of the manual guide, so both deliveries receive it.
+     */
+    expect(source).not.toMatch(/delivery === "generated" \? prefill : null/);
+    expect(source).toMatch(/prefill,/);
   });
 });
 
@@ -479,13 +509,42 @@ describe('generated and manual stay separate kinds', () => {
     expect(guide.programs.map((p) => p.program)).toContain('tx_snap');
   });
 
-  it('does not describe the Texas form as fillable anywhere', () => {
-    const definition = applicationForState('TX')!;
+  it('keeps form internals out of the registry, for either kind', () => {
+    /*
+     * No field map, no page references, no template path. Where each box sits
+     * belongs to the layer that verified it — `formmap/forms/h1010.py` for
+     * Texas — and a registry that knew would have to be edited every time a
+     * form was re-measured.
+     */
+    for (const state of ['TX', 'CA']) {
+      const definition = applicationForState(state)!;
 
-    // No prefill, no field map, no page references: the form is uninspected.
-    expect(definition.delivery).toBe('manual');
-    expect(Object.keys(definition)).not.toContain('fields');
-    expect(Object.keys(definition)).not.toContain('template');
+      expect(Object.keys(definition)).not.toContain('fields');
+      expect(Object.keys(definition)).not.toContain('template');
+    }
+  });
+
+  it('still models the manual kind, for a state whose form we cannot fill', () => {
+    /*
+     * No state uses `manual` today. That is a fact about our coverage, not
+     * about the design: most benefit applications in most states have no
+     * fillable form, and the kind has to survive both states having one.
+     */
+    const manual: StateApplicationDefinition = {
+      ...applicationForState('TX')!,
+      state: 'ZZ',
+      delivery: 'manual',
+    };
+
+    const guide = buildManualApplicationGuide(
+      manual,
+      TX_RECOMMENDATIONS,
+      household(),
+    );
+
+    expect(manual.delivery).toBe('manual');
+    expect(guide.steps.length).toBeGreaterThan(0);
+    expect(guide.notCollected.length).toBeGreaterThan(0);
   });
 
   it('keeps California generated, unchanged', () => {

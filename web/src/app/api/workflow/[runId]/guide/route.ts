@@ -12,11 +12,20 @@ import { NextResponse } from 'next/server';
  * The completion guide for the draft this session generated, as a
  * self-contained HTML page that prints cleanly on US Letter.
  *
- * It is built from `session.draftApplicationData` — the state the PDF was
- * generated from — rather than from anything the client sends, so the guide
- * always describes the draft the applicant is holding. Editing an answer
- * without regenerating leaves both the PDF and its guide unchanged, which is
- * the only way the two can be trusted to match.
+ * Two sources, chosen by which one exists rather than by which state:
+ *
+ * - A document rendered through the mapping layer arrives with a **review
+ *   sheet** already written beside it, naming what was filled in, what a blank
+ *   completes, what the applicant's own answers make inapplicable and why, and
+ *   anything too long for its printed box. That is the guide for that document,
+ *   already in the language the document was filled in, and computing a second
+ *   one in TypeScript could only disagree with it.
+ * - California's SAWS 2 PLUS draft is written by the native-field generator and
+ *   has no review sheet, so its guide is built here from the readiness model.
+ *
+ * Either way it describes the draft the applicant is holding, not whatever the
+ * client sends: editing an answer without regenerating leaves both the PDF and
+ * its guide unchanged, which is the only way the two can be trusted to match.
  *
  * Query parameters:
  * - audience=associate — the field-location guide for whoever is helping.
@@ -64,6 +73,50 @@ export async function GET(
       { error: 'No draft has been generated for this run yet.' },
       { status: 404 },
     );
+  }
+
+  if (session.draftReviewPath) {
+    const { renderReviewSheetHtml } = await import('@/lib/review-sheet-html');
+    const { readFile } = await import('fs/promises');
+    const { getDraftsBase } = await import('@/lib/report-assembler');
+
+    /*
+     * The same path-traversal guard the draft route applies to the PDF. The
+     * path is written by this server and never by a client, but the two files
+     * are served the same way and should be defended the same way.
+     */
+    const resolvedReview = path.resolve(session.draftReviewPath);
+    const resolvedBase = path.resolve(getDraftsBase());
+
+    if (!resolvedReview.startsWith(resolvedBase + path.sep)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    let review: string;
+
+    try {
+      review = await readFile(resolvedReview, 'utf8');
+    } catch {
+      return NextResponse.json(
+        { error: 'Review sheet not found on disk.' },
+        { status: 404 },
+      );
+    }
+
+    const reference = draftReferenceFrom(runId);
+
+    return new Response(renderReviewSheetHtml(review, reference), {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Disposition': `${
+          download ? 'attachment' : 'inline'
+        }; filename="application-review-${reference}.html"`,
+        // It names the applicant, so it is never cached by a proxy.
+        'Cache-Control': 'private, no-store',
+        'X-Correlation-Id': runId,
+      },
+    });
   }
 
   /*

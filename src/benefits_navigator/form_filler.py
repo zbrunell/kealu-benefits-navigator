@@ -302,24 +302,114 @@ def generate_application(
 ) -> tuple[Path, str]:
     """Generate a benefit application PDF.
 
-    Structured California application data uses the official SAWS 2 PLUS
-    generator. Legacy callers without an application field plan retain the
-    existing state-form/worksheet fallback behavior.
+    The path and the kind of document. Callers that also need the review sheet
+    — there is exactly one, the subprocess helper — use
+    :func:`generate_application_with_review`.
+    """
+    path, kind, _ = generate_application_with_review(
+        args, workflow_output, output_dir
+    )
+
+    return path, kind
+
+
+def generate_application_with_review(
+    args: dict[str, Any],
+    workflow_output: str,
+    output_dir: Path | None = None,
+) -> tuple[Path, str, Path | None]:
+    """The same, plus the review sheet when the mapping layer wrote one.
+
+    Reported rather than discovered. The helper used to look for a sibling
+    ``.review.txt`` and found California's, which the SAWS generator also
+    writes — so the guide route served a plain text sheet in place of the
+    completion guide computed from the readiness model, which is a different
+    and much poorer document. Only the layer that wrote a sheet knows it did.
+
+    Three routes, in the order they are tried:
+
+    1. **California**, which has a real 1,444-field AcroForm, a reviewed
+       destination allowlist and its own generator. Left exactly where it is.
+    2. **Any other state the mapping layer describes** — today Texas — through
+       ``formmap``, which maps the same canonical field plan onto that state's
+       form. This is the route that makes a second jurisdiction a data change
+       rather than a new code path.
+    3. The legacy per-state template fill, then the generic worksheet, for
+       callers with no field plan at all.
+
+    California is checked first and by name rather than through the registry
+    because the two are genuinely different jobs: SAWS 2 PLUS is filled by
+    writing native form fields, which the mapping layer describes but
+    deliberately does not do (see ``NativeFieldFormNotRenderable``).
     """
     state = str(args.get("state") or "").upper()
     field_plan = args.get("application_field_plan")
+    has_plan = isinstance(field_plan, list) and bool(field_plan)
 
-    if state == "CA" and isinstance(field_plan, list) and field_plan:
+    if state == "CA" and has_plan:
         from benefits_navigator.pdf_generator import generate_saws2_plus_pdf
 
         path = generate_saws2_plus_pdf(args, workflow_output, output_dir)
-        return path, "official"
+        return path, "official", None
+
+    if has_plan:
+        result = _generate_mapped_form(state, field_plan, output_dir)
+
+        if result is not None:
+            return result
 
     path = fill_official_form(args, workflow_output, output_dir)
     if path is not None:
-        return path, "official"
+        return path, "official", None
 
     from benefits_navigator.pdf_generator import generate_application_pdf
 
     path = generate_application_pdf(args, workflow_output, output_dir)
-    return path, "worksheet"
+    return path, "worksheet", None
+
+
+def _generate_mapped_form(
+    state: str,
+    field_plan: list[dict[str, Any]],
+    output_dir: Path | None,
+) -> tuple[Path, str, Path | None] | None:
+    """Render this state's form through the mapping layer, if it can.
+
+    Returns None — falling through to the older routes — when the state has no
+    definition, or has one whose fields are all native. Never returns a
+    document for a form it could not actually draw values onto: a blank PDF
+    presented as a prefilled application is worse than no PDF at all.
+    """
+    from benefits_navigator.formmap import (
+        canonical_values_from_field_plan,
+        definition_for_form,
+        form_id_for_state,
+        generate_form,
+        output_filename,
+    )
+
+    form_id = form_id_for_state(state)
+
+    if form_id is None or not definition_for_form(form_id).is_overlay:
+        return None
+
+    canonical_values = canonical_values_from_field_plan(field_plan)
+    generated = generate_form(form_id, canonical_values)
+
+    if output_dir is None:
+        output_dir = Path.home() / "Documents" / "benefits-applications"
+
+    zip_code = str(
+        canonical_values.get("applicant.home_address.zip_code") or ""
+    )
+
+    path = output_dir / output_filename(form_id, zip_code=zip_code[:5])
+    generated.write(path)
+
+    # The word the caller shows the applicant. "official" is reserved for a
+    # document that is the government's own paper with our answers on it.
+    kind = "official" if generated.is_official_document else "worksheet"
+
+    # `write` always puts the review sheet beside the document, so this is a
+    # statement rather than a search.
+    return path, kind, path.with_suffix(".review.txt")

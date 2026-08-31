@@ -67,10 +67,16 @@ const PARAM_FORMATS: Record<string, 'currency' | 'percent' | 'integer'> = {
   income: 'currency',
   limitAmount: 'currency',
   grossLimit: 'currency',
+  // A monthly figure from a state's published dollar table, not an annual one.
+  monthlyIncome: 'currency',
   fplPercent: 'percent',
   limitPercent: 'percent',
+  headroomPercent: 'percent',
   householdSize: 'integer',
   children: 'integer',
+  // Counts of days and months from a program's own published rules.
+  days: 'integer',
+  months: 'integer',
   // A year is a plain number: "2,025" would be wrong in every locale.
   fplYear: 'integer',
 };
@@ -131,7 +137,13 @@ export function formatReasonParam(
      */
     return new Intl.NumberFormat(formattingLocale, {
       style: 'percent',
-      maximumFractionDigits: 0,
+      /*
+       * Whole points for a whole threshold, one decimal for a fractional one.
+       * Healthy Texas Women's limit is published as 204.2% FPL; rounding it to
+       * "204%" would quietly restate a real agency figure, and hardcoding one
+       * decimal everywhere would render every other limit as "138.0%".
+       */
+      maximumFractionDigits: Number.isInteger(value) ? 0 : 1,
     }).format(value / 100);
   }
 

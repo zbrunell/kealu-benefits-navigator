@@ -45,6 +45,10 @@ import {
 } from '@/lib/saws2-question-planner';
 import type { Saws2PlusApplicationData } from '@/types/application';
 import type { Saws2PlusProgram } from '@/lib/report-assembler';
+import {
+  isSaws2PlusProgram,
+  type BenefitProgramId,
+} from '@/lib/state-applications';
 
 /** Which stage a requirement belongs to. */
 export type ReadinessStage = 'filing' | 'determination' | 'expedited' | 'optional';
@@ -613,9 +617,16 @@ function draftCompleteness(data: Saws2PlusApplicationData): DraftCompleteness {
  */
 export function evaluateApplicationReadiness(
   data: Saws2PlusApplicationData,
-  selectedPrograms: Saws2PlusProgram[] = data.selectedPrograms,
+  selectedPrograms: readonly BenefitProgramId[] = data.selectedPrograms,
 ): ApplicationReadiness {
-  const programs = [...new Set(selectedPrograms)];
+  /*
+   * Everything below this line is California's readiness model — CalFresh,
+   * CalWORKs and Medi-Cal determination rules read off the SAWS 2 PLUS
+   * questionnaire. So the narrowing happens here, once, in the open: a Texas
+   * programme id in the selection is not an error, it simply has no SAWS
+   * determination to be ready for.
+   */
+  const programs = [...new Set(selectedPrograms)].filter(isSaws2PlusProgram);
 
   const sharedFiling = sharedFilingRequirements(data);
   const manual = manualRequirements(data, programs);

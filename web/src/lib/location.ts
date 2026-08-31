@@ -15,8 +15,12 @@
  * Resolution order:
  *
  * 1. `ZIP_LOCATIONS` — an exact five-digit table (city + county). Offline,
- *    instant, deterministic. Coverage is partial and California-focused, since
- *    California is the only state whose application form is supported.
+ *    instant, deterministic. Coverage is partial: the fully supported markets
+ *    first (California, and Austin/Travis County in Texas), then the ZIPs used
+ *    by the demo and the test suite. City and county are what promote a ZIP
+ *    from "some state" to a jurisdiction that county- and city-level programs
+ *    can be matched against, so a market is not deeply supported until its
+ *    ZIPs are listed here.
  * 2. The CMS Marketplace `/counties/by/zip` endpoint — authoritative for county
  *    and state, already used elsewhere in the app. Results are memoized per ZIP.
  *    CMS does not return a city, so city comes only from step 1.
@@ -75,10 +79,16 @@ const ZIP_PREFIX_STATES: ReadonlyArray<readonly [number, number, string]> = [
  * here, because neither can be inferred from a ZIP prefix without guessing
  * (91744 and 91764 share the 917 prefix but sit in different counties).
  *
- * Coverage is partial — the most populous California cities plus the ZIPs used
- * by the demo and the test suite. An unlisted ZIP falls through to CMS for
- * county/state and simply has no city. Extend this table freely; it is data,
- * not logic.
+ * Coverage is partial — the most populous California cities, Austin/Travis
+ * County, and the ZIPs used by the demo and the test suite. An unlisted ZIP
+ * falls through to CMS for county/state and simply has no city. Extend this
+ * table freely; it is data, not logic.
+ *
+ * ZIPs that straddle a county line are deliberately absent rather than
+ * assigned to the larger share. Austin spills north into Williamson County
+ * (78717, 78726–78730, 78750), so those are left to CMS, which returns state
+ * alone for an ambiguous ZIP. A household given the wrong county silently
+ * loses every county program it qualifies for and gains ones it does not.
  */
 const ZIP_LOCATIONS: Readonly<
   Record<string, readonly [city: string, county: string, state: string]>
@@ -380,6 +390,69 @@ const ZIP_LOCATIONS: Readonly<
   '96001': ['Redding', 'Shasta', 'CA'],
   '96002': ['Redding', 'Shasta', 'CA'],
   '95501': ['Eureka', 'Humboldt', 'CA'],
+
+  // ── Texas ────────────────────────────────────────────────────────────────
+  //
+  // Austin / Travis County is the first deeply supported local market outside
+  // California, so its ZIPs are enumerated rather than left to CMS: Central
+  // Health MAP and the Austin Energy Customer Assistance Program are matched
+  // on county and city, and neither can be matched from a state code alone.
+  //
+  // Travis County only. The Williamson County side of Austin is omitted on
+  // purpose — see the note above.
+  '78701': ['Austin', 'Travis', 'TX'],
+  '78702': ['Austin', 'Travis', 'TX'],
+  '78703': ['Austin', 'Travis', 'TX'],
+  '78704': ['Austin', 'Travis', 'TX'],
+  '78705': ['Austin', 'Travis', 'TX'],
+  '78712': ['Austin', 'Travis', 'TX'],
+  '78719': ['Austin', 'Travis', 'TX'],
+  '78721': ['Austin', 'Travis', 'TX'],
+  '78722': ['Austin', 'Travis', 'TX'],
+  '78723': ['Austin', 'Travis', 'TX'],
+  '78724': ['Austin', 'Travis', 'TX'],
+  '78725': ['Austin', 'Travis', 'TX'],
+  '78731': ['Austin', 'Travis', 'TX'],
+  '78732': ['Austin', 'Travis', 'TX'],
+  '78733': ['Austin', 'Travis', 'TX'],
+  '78735': ['Austin', 'Travis', 'TX'],
+  '78736': ['Austin', 'Travis', 'TX'],
+  '78737': ['Austin', 'Travis', 'TX'],
+  '78739': ['Austin', 'Travis', 'TX'],
+  '78741': ['Austin', 'Travis', 'TX'],
+  '78742': ['Austin', 'Travis', 'TX'],
+  '78744': ['Austin', 'Travis', 'TX'],
+  '78745': ['Austin', 'Travis', 'TX'],
+  '78746': ['Austin', 'Travis', 'TX'],
+  '78747': ['Austin', 'Travis', 'TX'],
+  '78748': ['Austin', 'Travis', 'TX'],
+  '78749': ['Austin', 'Travis', 'TX'],
+  '78751': ['Austin', 'Travis', 'TX'],
+  '78752': ['Austin', 'Travis', 'TX'],
+  '78753': ['Austin', 'Travis', 'TX'],
+  '78754': ['Austin', 'Travis', 'TX'],
+  '78756': ['Austin', 'Travis', 'TX'],
+  '78757': ['Austin', 'Travis', 'TX'],
+  '78758': ['Austin', 'Travis', 'TX'],
+  '78759': ['Austin', 'Travis', 'TX'],
+
+  // Other Travis County cities, which are in Texas and Travis County but not
+  // in the City of Austin — the case that proves a city program stays inside
+  // its city.
+  '78610': ['Buda', 'Hays', 'TX'],
+  '78641': ['Leander', 'Williamson', 'TX'],
+  '78652': ['Manchaca', 'Travis', 'TX'],
+  '78653': ['Manor', 'Travis', 'TX'],
+  '78669': ['Spicewood', 'Travis', 'TX'],
+
+  // Texas outside Travis County — the case that proves an Austin program does
+  // not leak to the rest of the state.
+  '77002': ['Houston', 'Harris', 'TX'],
+  '77004': ['Houston', 'Harris', 'TX'],
+  '75201': ['Dallas', 'Dallas', 'TX'],
+  '75204': ['Dallas', 'Dallas', 'TX'],
+  '78205': ['San Antonio', 'Bexar', 'TX'],
+  '79901': ['El Paso', 'El Paso', 'TX'],
 };
 
 /** Normalize a five-digit ZIP from user input; "" when not five digits. */

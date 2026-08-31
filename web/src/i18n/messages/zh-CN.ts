@@ -533,8 +533,7 @@ const zhCN: Messages = {
   programs_other_aria: '您还在申请哪个其他项目？',
   programs_back: '返回报告',
   programs_continue: '以所选项目继续',
-  report_ca_application: '加州福利申请',
-  report_saws_application: 'SAWS 2 PLUS 申请',
+  report_state_application: '您所在州的福利申请',
   report_action_plan_intro: '您的行动计划依据已完成的资格评估与证明材料核查阶段，得出了以下申请建议。',
   report_screening_note: '以上为初步筛查建议，并非正式的资格认定结果。',
   shell_rec_unavailable: '暂无申请建议',
@@ -877,6 +876,355 @@ const zhCN: Messages = {
   manual_channel_in_person: 'In person',
   manual_channel_mail: 'By mail',
   field_household_size: 'Household size',
+
+
+  // ── Multi-jurisdiction program registry ───────────────────────────────────
+  //
+  // Program names, summaries, eligibility explanations, benefit-estimate
+  // statements and income-cliff warnings for every jurisdiction in
+  // lib/programs/. Added alongside the California keys above rather than
+  // replacing them: California is still fully supported.
+
+  program_federal_marketplace: 'HealthCare.gov 市场保险',
+  program_federal_wic: 'WIC 妇幼营养计划',
+  program_federal_liheap: 'LIHEAP 家庭能源补助',
+  program_federal_lifeline: 'Lifeline 电话和网络折扣',
+  program_federal_medicare_savings: 'Medicare 储蓄计划',
+  program_covered_california: 'Covered California',
+  program_ca_care: 'CARE 公共事业费折扣',
+  program_ca_lifeline: '加州 LifeLine',
+  program_ca_wic: '加州 WIC',
+  program_tx_medicaid_child: '儿童 Medicaid（STAR）',
+  program_tx_medicaid_pregnancy: '孕妇 Medicaid',
+  program_tx_chip_perinatal: 'CHIP 围产期计划',
+  program_tx_healthy_texas_women: 'Healthy Texas Women 女性健康计划',
+  program_tx_medicaid_parent: '父母及照顾亲属 Medicaid',
+  program_tx_wic: '德州 WIC',
+  program_tx_ceap: '综合能源补助计划（CEAP）',
+  program_travis_central_health_map: 'Central Health 医疗服务计划（MAP）',
+  program_austin_energy_cap: 'Austin Energy 客户补助计划',
+  program_austin_plus1: 'Austin Energy Plus 1 紧急账单援助',
+  program_federal_marketplace_summary: '通过联邦保险市场购买的私营健康计划，可获得保费税收抵免。',
+  program_federal_wic_summary: '为孕期、产后母亲和五岁以下儿童提供食品、配方奶和营养支持。',
+  program_federal_liheap_summary: '联邦资金拨给州和地方机构，帮助支付家庭取暖和制冷费用。',
+  program_federal_lifeline_summary: '为低收入家庭提供的电话或网络服务每月折扣。',
+  program_federal_medicare_savings_summary: '由州管理的补助，帮助支付 Medicare 的保费、自付额和共付额。',
+  program_ca_medi_cal_summary: '加州的 Medicaid 计划：免费或低价健康保险，成年人仅凭收入即可符合条件。',
+  program_ca_calfresh_summary: '加州的 SNAP 计划：每月食品补助，存入 EBT 卡。',
+  program_ca_calworks_summary: '为有子女的加州家庭提供每月现金补助，并附带就业服务。',
+  program_ca_covered_california_summary: '加州自营的健康保险市场，提供州和联邦两级保费补助。',
+  program_ca_care_summary: '为符合收入条件的加州用户提供燃气和电费折扣。',
+  program_ca_lifeline_summary: '加州在联邦 Lifeline 之外另行提供的固话或手机服务折扣。',
+  program_ca_wic_summary: '由加州公共卫生部管理的 WIC 计划。',
+  program_tx_medicaid_child_summary: '为德州儿童提供免费健康保险，收入上限按孩子年龄不同而异。',
+  program_tx_chip_summary: '为家庭收入超过儿童 Medicaid 上限的德州儿童提供低价健康保险。',
+  program_tx_medicaid_pregnancy_summary: '孕期以及产后十二个月内的健康保险。',
+  program_tx_chip_perinatal_summary: '为无法由 Medicaid 承保的孕期（包括因移民身份原因）提供产前和分娩护理。',
+  program_tx_healthy_texas_women_summary: '为 15 至 44 岁德州女性提供的女性健康和计划生育服务。',
+  program_tx_medicaid_parent_summary: '面向照顾子女的父母和亲属的德州 Medicaid，范围极为有限，收入上限远低于贫困线。',
+  program_tx_snap_summary: '德州的 SNAP 计划：每月食品补助，存入 Lone Star 卡。',
+  program_tx_tanf_summary: '为照顾子女的德州家庭提供的小额每月现金补助。',
+  program_tx_ceap_summary: '德州能源补助，将部分电费直接支付给供电公司。',
+  program_travis_central_health_map_summary: '特拉维斯县的本地医疗计划：通过本地网络提供医生、专科和药房服务，不论移民身份，居民均可申请。',
+  program_austin_energy_cap_summary: '长期减免奥斯汀市的电费、水费、污水处理费和排水费。',
+  program_austin_plus1_summary: '针对奥斯汀市逾期公共事业账单的一次性紧急援助。',
+  elig_marketplace_below_subsidy_floor: '家庭收入为联邦贫困线的 {fplPercent}，低于市场保费税收抵免的 {limitPercent} 下限。由于德州未扩大 Medicaid，处于此区间的家庭可能没有任何可获补贴的保险选择——这就是 Medicaid 覆盖缺口。',
+  elig_marketplace_above_subsidy_ceiling: '家庭收入为联邦贫困线的 {fplPercent}，超过保费税收抵免通常终止的 {limitPercent}。您仍可按全价购买计划。',
+  elig_marketplace_subsidy_range: '家庭收入为联邦贫困线的 {fplPercent}，处于 {limitPercent} 以内的范围，保费税收抵免可降低市场计划的月费。',
+  elig_wic_no_qualifying_person: 'WIC 服务对象为孕期和产后女性、婴儿以及五岁以下儿童。家庭中未报告有人属于这些类别。',
+  elig_wic_income_above_limit: '家庭收入为联邦贫困线的 {fplPercent}，超过 WIC 的 {limitPercent} 收入上限。',
+  elig_wic_pregnancy_qualifies: '已报告孕期情况，这是 WIC 服务的类别之一。',
+  elig_wic_young_child_qualifies: '已报告有五岁以下儿童，这是 WIC 服务的类别之一。',
+  elig_wic_income_within_limit: '家庭收入为联邦贫困线的 {fplPercent}，在 WIC 的 {limitPercent} 收入上限之内。',
+  elig_no_published_threshold: '我们没有该计划公布的收入标准，因此无法进行筛查。由机构决定。',
+  elig_program_available_no_rule: '该计划在您所在地区可用。我们尚未编入其资格规则，因此无法判断您是否符合条件——值得去咨询。',
+  elig_msp_no_medicare_signal: '家庭情况中没有迹象显示有人参加了 Medicare，而这是这些计划的前提条件。',
+  elig_msp_age_signal: '家庭中有人年满 65 岁，可能已参加 Medicare，这些计划可帮助支付相关费用。',
+  elig_msp_disability_signal: '已报告残疾情况，这可能使人在 65 岁之前即可参加 Medicare。',
+  elig_lifeline_within_limit: '家庭收入为联邦贫困线的 {fplPercent}，在 Lifeline 的 {limitPercent} 上限之内。参加 SNAP 或 Medicaid 也可符合条件。',
+  elig_lifeline_above_limit: '家庭收入为联邦贫困线的 {fplPercent}，超过 Lifeline 的 {limitPercent} 收入上限。',
+  elig_ca_care_within_limit: '家庭收入为联邦贫困线的 {fplPercent}，在 CARE 燃气和电费折扣的 {limitPercent} 上限之内。',
+  elig_ca_care_above_limit: '家庭收入为联邦贫困线的 {fplPercent}，超过 CARE 的 {limitPercent} 收入上限。',
+  elig_tx_ceap_within_limit: '家庭收入为联邦贫困线的 {fplPercent}，在德州能源补助的 {limitPercent} 上限之内。资金有限，申请由本地机构受理。',
+  elig_tx_ceap_above_limit: '家庭收入为联邦贫困线的 {fplPercent}，超过德州能源补助的 {limitPercent} 上限。',
+  elig_austin_cap_within_limit: '家庭收入为联邦贫困线的 {fplPercent}，在奥斯汀市公共事业折扣的 {limitPercent} 上限之内。获批 SNAP、Medicaid、CHIP 或 MAP 也会自动为您登记。',
+  elig_austin_cap_above_limit: '家庭收入为联邦贫困线的 {fplPercent}，超过奥斯汀市公共事业折扣的 {limitPercent} 收入上限。',
+  elig_tx_medicaid_child_no_child: '家庭中未报告有儿童。儿童 Medicaid 覆盖 19 岁以下的儿童。',
+  elig_tx_medicaid_child_within_band: '家庭收入为联邦贫困线的 {fplPercent}，在适用于最小孩子年龄段的 {limitPercent} 上限之内。',
+  elig_tx_medicaid_child_bands_by_age: '德州按年龄设定不同上限：一岁以下为贫困线的 198%，一至五岁为 144%，六至十八岁为 133%。同一家庭中年龄不同的孩子可能得到不同结果。',
+  elig_tx_medicaid_child_above_band: '家庭收入为联邦贫困线的 {fplPercent}，超过该年龄段儿童 Medicaid 的 {limitPercent} 上限。',
+  elig_tx_chip_next_step: '对于超过 Medicaid 上限的孩子，CHIP 是下一步，且同一份申请即可覆盖两者。',
+  elig_tx_chip_no_child: '家庭中未报告有儿童。CHIP 覆盖 19 岁以下的儿童。',
+  elig_tx_chip_above_limit: '家庭收入为联邦贫困线的 {fplPercent}，超过 CHIP 的 {limitPercent} 上限。',
+  elig_tx_chip_within_limit: '家庭收入为联邦贫困线的 {fplPercent}，在 CHIP 的 {limitPercent} 上限之内。',
+  elig_tx_chip_after_medicaid_screen: '德州先审核儿童 Medicaid，若收入过高则将孩子转入 CHIP。一份申请即可完成两项审核，您无需自行选择。',
+  elig_tx_pregnancy_not_reported: '家庭中未报告孕期情况。',
+  elig_tx_pregnancy_above_limit: '家庭收入为联邦贫困线的 {fplPercent}，超过孕妇 Medicaid 的 {limitPercent} 上限。',
+  elig_tx_pregnancy_within_limit: '家庭收入为联邦贫困线的 {fplPercent}，在孕妇 Medicaid 的 {limitPercent} 上限之内。',
+  elig_tx_pregnancy_postpartum_coverage: '保险在分娩后继续覆盖 {months} 个月。',
+  elig_tx_chip_perinatal_next_step: '当 Medicaid 无法承保时，CHIP 围产期计划可覆盖孕期，值得申请。',
+  elig_tx_chip_perinatal_above_limit: '家庭收入为联邦贫困线的 {fplPercent}，超过 CHIP 围产期计划的 {limitPercent} 上限。',
+  elig_tx_chip_perinatal_within_limit: '家庭收入为联邦贫困线的 {fplPercent}，在 CHIP 围产期计划的 {limitPercent} 上限之内。',
+  elig_tx_chip_perinatal_status_independent: 'CHIP 围产期计划不论移民身份均可申请，因此在无法获得 Medicaid 时，它是获得产前护理的途径。',
+  elig_tx_htw_above_limit: '家庭收入为联邦贫困线的 {fplPercent}，超过 Healthy Texas Women 的 {limitPercent} 上限。',
+  elig_tx_htw_no_one_in_age_range: 'Healthy Texas Women 服务 15 至 44 岁的女性，收入上限为贫困线的 {limitPercent}。所报告的年龄中没有人处于该范围。',
+  elig_tx_htw_income_within_limit: '家庭收入为联邦贫困线的 {fplPercent}，在 Healthy Texas Women 的 {limitPercent} 上限之内。',
+  elig_tx_parent_medicaid_no_child: '该计划仅面向在家照顾儿童的父母或亲属，而家庭中未报告有儿童。',
+  elig_tx_parent_medicaid_very_low_standard: '德州仅在收入远低于贫困线时才为父母和照顾亲属提供保险——这是全国最低的门槛之一。大多数在职父母的收入都超过该标准。',
+  elig_tx_parent_medicaid_no_published_percent: '该上限是德州设定的美元标准，而非贫困线百分比，我们没有当前的数据表。只有德州健康与人类服务委员会能告知确切数额。',
+  elig_tx_snap_within_gross_limit: '家庭月收入 {monthlyIncome} 等于或低于德州 SNAP 对 {householdSize} 人家庭的总收入上限 {limitAmount}。',
+  elig_tx_snap_net_test_follows: '随后会对扣除各项支出后的收入进行第二次审核，上限为每月 {limitAmount}。房租和公共事业费用会减少计入的收入。',
+  elig_tx_snap_expedited_possible: '月收入低于 {limitAmount}，因此您可能符合加急处理条件，在 {days} 天内获得补助。',
+  elig_tx_snap_within_categorical: '家庭月收入 {monthlyIncome} 超过标准上限，但在贫困线 {fplPercent} 对应的 {limitAmount} 之内，德州在此范围内仍会认定资格。',
+  elig_tx_snap_net_income_depends: '是否符合条件取决于扣除房租、公共事业和被抚养人照护费用后的收入，而我们并未询问这些。',
+  elig_tx_snap_above_gross_limit: '家庭月收入 {monthlyIncome} 超过德州 SNAP 对 {householdSize} 人家庭的上限 {limitAmount}。',
+  elig_tx_tanf_no_dependent_child: '德州 TANF 仅面向照顾 18 岁及以下儿童的家庭。仅收入低并不能使只有成年人的家庭符合条件。',
+  elig_tx_tanf_pregnancy_may_qualify: '已报告孕期情况。德州可在孕期后段、孩子出生之前即开始发放 TANF。',
+  elig_tx_tanf_dependent_child_one: '家庭中有一名儿童，这是德州 TANF 的首要条件。',
+  elig_tx_tanf_dependent_child_other: '家庭中有 {children} 名儿童，这是德州 TANF 的首要条件。',
+  elig_tx_tanf_needs_tests: '德州随后会进行两项以美元为基准的需求测试，我们没有相关数据，因此只有德州健康与人类服务委员会能作出决定。',
+  elig_tx_tanf_grant_is_small: '补助金额很小——约为联邦贫困线的 {fplPercent}——因此主要值得与 SNAP 和 Medicaid 一并申请，而不是单独申请。',
+  elig_travis_map_above_limit: '家庭收入为联邦贫困线的 {fplPercent}，超过特拉维斯县医疗服务计划的 {limitPercent} 上限。',
+  elig_travis_map_within_limit: '家庭收入为联邦贫困线的 {fplPercent}，在特拉维斯县医疗服务计划的 {limitPercent} 上限之内。',
+  elig_travis_map_not_insurance: 'MAP 不是健康保险。它为特拉维斯县指定范围内的本地诊所、专科医生和药房提供的服务付费。',
+  elig_travis_map_status_independent: 'MAP 不论移民身份，向特拉维斯县居民开放，因此对于无法获得德州 Medicaid 的成年人来说是主要选择。',
+  elig_travis_map_income_lookback: '资格依据您最近 {days} 天的收入认定，而非去年的收入。',
+  missing_household_tax_filing_status: '家庭如何申报税务，以及申报表上包含哪些人',
+  missing_wic_appointment_documents: '孕期证明或孩子年龄证明，需带到 WIC 预约时出示',
+  missing_published_income_standard: '机构当前的收入标准，我们没有该数据',
+  missing_medicare_enrollment: '家庭中是否有人已参加 Medicare',
+  missing_countable_resources: '现金、银行余额及其他可计入的资产',
+  missing_countable_resources_against_limit: '现金、银行余额及其他可计入的资产，与 {limitAmount} 的上限对照',
+  missing_child_ages: '每个孩子的年龄，这决定适用的收入上限',
+  missing_htw_sex_and_age: '家庭中是否有 15 至 44 岁的女性——我们不询问这一点',
+  missing_travis_residency_proof: '您居住在特拉维斯县的证明',
+  missing_current_insurance_status: '申请人中是否已有人拥有健康保险',
+  missing_austin_utility_account: '您的奥斯汀市公共事业账户号码',
+  estimate_method_snap_allotment: '根据 SNAP 公布的公式估算：按家庭人数的最高补助额，减去扣除标准扣除额后收入的 30%。房租和公共事业扣除额（我们未询问）通常会提高该数额。',
+  estimate_unknown_premium_varies: '不予显示——保费取决于您选择的计划和确切年龄，任何单一数字都会造成误导。',
+  estimate_unknown_food_package: '不予显示——WIC 发放指定食品，而非现金金额。',
+  estimate_unknown_coverage_not_cash: '不予显示——这是健康保险，不是付款。其价值取决于您实际使用的医疗服务。',
+  estimate_unknown_over_income: '不予显示——收入似乎超过该计划的上限。',
+  estimate_unknown_not_eligible_category: '不予显示——家庭不符合该计划的基本条件。',
+  estimate_unknown_grant_after_disregards: '不予显示——补助金按机构扣除各项支出后的可计入收入计算。',
+  estimate_unknown_state_determined: '不予显示——只有机构能计算该金额。',
+  estimate_unknown_discount_varies: '不予显示——折扣取决于您的用量和供应商当前的费率。',
+  estimate_unknown_payment_to_utility: '不予显示——付款金额按当年可用资金逐户确定。',
+  estimate_unknown_no_cash_value: '不予显示——该计划没有可估算的现金价值。',
+  cliff_approaching_fpl_limit: '收入距该计划 {limitPercent} 的上限仅差 {headroomPercent}（按您的家庭人数计算为每年 {limitAmount}）。收入超过该数额可能导致资格终止。',
+  report_jurisdiction_heading: '这些计划的来源层级',
+  report_jurisdiction_federal: '联邦',
+  report_jurisdiction_state: '州',
+  report_jurisdiction_county: '县',
+  report_jurisdiction_city: '市及本地',
+  report_application_heading: '您的申请',
+  report_coverage_gap_heading: 'Medicaid 覆盖缺口',
+  report_coverage_gap_body: '德州未扩大 Medicaid，因此未怀孕、未照顾子女且无残疾的成年人，无论收入多少通常都无法获得 Medicaid。收入低于贫困线时，他们同样无法获得市场保险补贴。本地计划是切实可行的就医途径。',
+  report_estimate_disclaimer: '美元数额是根据公布公式作出的估算，而非决定。只有机构能告知您将实际获得的金额。',
+  docs_to_submit_heading: '提交申请所需的材料',
+  docs_to_submit_intro: '仅凭这些即可提交。不要等到备齐下面所有材料再申请。',
+  docs_to_verify_heading: '可能需要您提供的核验材料',
+  docs_to_verify_intro: '备齐后再提交即可。机构会告知截止日期，而尽早申请可确定更早的补助起始日。',
+  docs_maybe_heading: '视家庭情况可能被要求提供的材料',
+  docs_maybe_intro: '只有部分家庭会被要求提供这些材料。',
+  docs_file_now_note: '今天提交可保护您的补助起始日。缺少的材料可以随后补交。',
+
+
+  // ── Manual (non-generated) application view ──────────────────────────────
+  manual_open_official_link: '打开官方申请页面',
+  manual_programs_heading: '您可能符合条件的计划',
+  manual_steps_heading: '按顺序需要做的事',
+  manual_contact_heading: '您的个人信息，便于抄录',
+  manual_contact_intro: '可选填。您在此填写的内容会加入下方清单，这样在办事处就不必重复回答同样的问题。',
+  report_manual_cta: '查看如何申请',
+
+  // ── 德州 H1010 表格申请 ───────────────────────────────────────────────────
+  // 各州表格流程共用的填写控件。
+  intake_continue: '继续',
+  report_review_application: '查看您的申请',
+  intake_clear_answer: '清除',
+  intake_remove_row: '移除',
+  intake_row_number: '第 {number} 项',
+  intake_overflow_row:
+    '印制表格只有 {rows} 行的空间。请将这一项附在单独的纸上。',
+  intake_overflow_total:
+    '比印制表格可容纳的 {rows} 行多出 {count} 项。这些内容会保留，核对单会提示您另附。',
+
+  // 页面。
+  tx_screen_where: '您的住址和收信地址',
+  tx_screen_household: '与您同住的人',
+  tx_screen_money: '您获得的收入',
+  tx_screen_bills: '您支付的费用',
+  tx_screen_own: '您拥有的财产',
+  tx_screen_urgent: '如果您急需食品福利',
+  tx_screen_situation: '您的情况',
+  tx_screen_helper: '协助您申请的人',
+  tx_progress: '已回答 {answered} / {asked}',
+  tx_generating: '正在准备您的表格…',
+
+  // 收信地址。
+  tx_section_mailing: '您的收信地址',
+  tx_section_mailing_intro:
+    '请回答第一个问题。只有回答“否”时才需要填写邮寄地址。',
+  tx_q_mail_same: '您在居住地址收信吗？',
+
+  // 居住地。
+  tx_section_home: '您的住址',
+  tx_section_home_intro:
+    '即使您目前没有住处，德州仍可以受理您的申请。请在此说明，办事处会提供帮助。',
+  tx_q_homeless: '家中是否有人无家可归？',
+  tx_q_institutional: '是否有人住在收容所、集体住所或福利机构？',
+
+  // 与您同住的人。
+  tx_section_household: '关于您的家庭',
+  tx_section_household_intro:
+    '这些答案决定谁算作您的家庭成员，以及可以为您筛查哪些项目。',
+  tx_q_food_together: '你们是否一起采购和做饭？',
+  tx_q_food_together_help:
+    '就食品福利而言，一起采购和做饭的人算作同一个家庭，即使没有亲属关系。',
+  tx_q_pregnant: '家中是否有人怀孕？',
+  tx_q_pregnant_help:
+    '德州 Medicaid 覆盖孕期，因此这可能打开一条原本关闭的保险途径。',
+  tx_q_students: '家中是否有人在上学？',
+  tx_roster_title: '家中的其他成员',
+  tx_roster_intro:
+    '除您本人以外与您同住的所有人。您本人的信息在上一页。',
+  tx_roster_add: '添加一位成员',
+  tx_roster_empty: '尚未添加任何人。如果您独居，请继续。',
+  tx_roster_citizen: '此人是美国公民或美国国民吗？',
+  tx_roster_age: '{age} 岁',
+
+  // 收入。
+  tx_section_money: '收入来源',
+  tx_section_money_intro:
+    '请填写税前收入。您提交申请后，德州 HHSC 会要求提供证明。',
+  tx_q_annual_income: '家庭年度总收入',
+  tx_q_annual_income_help:
+    '大致数字即可。办事处主要依据下面的工作和收入明细。',
+  tx_q_income_kind: '收入类型',
+  tx_q_has_job: '家中是否有人有工作？',
+  tx_q_self_employed: '是否有人自雇或经营生意？',
+  tx_q_other_income: '是否有人从其他来源获得收入？',
+  tx_q_other_income_help:
+    '子女抚养费、失业金、社会保障金、退休金、退伍军人福利。',
+  tx_q_income_varies: '是否有人的收入在一年中会变化？',
+  tx_jobs_title: '工作',
+  tx_jobs_intro: '家中每一份工作填写一行。',
+  tx_jobs_add: '添加一份工作',
+  tx_jobs_empty: '尚未添加工作。',
+  tx_job_employer: '雇主',
+  tx_job_employer_address: '雇主地址',
+  tx_job_employer_address_help:
+    'HHSC 会向雇主核实收入。如果知道地址，请填写。',
+  tx_job_gross_this_month: '本月已收到的税前工资',
+  tx_job_gross_this_month_help:
+    '本月扣除前收到的全部金额，而不是单张工资单。',
+  tx_job_pay_frequency: '发薪频率',
+  tx_job_hours: '每周工时',
+  tx_other_income_title: '其他收入',
+  tx_other_income_intro: '每一项非工作收入填写一行。',
+  tx_other_income_add: '添加一项来源',
+  tx_other_income_empty: '尚未添加其他收入。',
+  tx_other_income_source: '收入来源',
+  tx_other_income_source_help: '例如：子女抚养费、失业金、社会保障金。',
+  tx_other_income_amount: '金额',
+  tx_other_income_frequency: '频率',
+
+  // 支出。
+  tx_section_bills: '您的支出',
+  tx_section_bills_intro:
+    '房租、房贷和水电费可以提高您的食品福利，因此即使拖欠也请如实填写。',
+  tx_q_has_bills: '您是否支付房租、房贷或水电费？',
+  tx_q_has_bills_help: '请填写账单金额，即使有他人帮您分担。',
+  tx_q_dependent_care:
+    '您是否为了让家人能工作或上学而支付儿童或成人照护费用？',
+  tx_q_child_support: '是否有人向家庭以外的人支付子女抚养费？',
+  tx_q_medical_costs: '家中 60 岁以上或有残疾的人是否有医疗费用？',
+  tx_q_medical_costs_help:
+    '这些家庭成员的医疗费用可作为食品福利的扣除项。',
+  tx_bills_title: '您每月支付的费用',
+  tx_bills_intro: '每一项住房或水电费用填写一行。',
+  tx_bills_add: '添加一项费用',
+  tx_bills_empty: '尚未添加费用。',
+  tx_bill_kind: '费用类型',
+  tx_bill_amount: '每月金额',
+  tx_bill_description: '说明',
+  tx_bill_description_help: '仅在选择“其他”时需要填写。',
+
+  // 财产。
+  tx_section_own: '您拥有的财产',
+  tx_section_own_intro:
+    '就食品福利而言，德州不计算大部分储蓄，但州政府仍会询问。若需要证明，HHSC 会通知您。',
+  tx_q_accounts: '是否有人拥有银行账户、现金或储蓄？',
+  tx_q_accounts_help:
+    '我们从不询问账号，表格上也不会写入任何账号。',
+  tx_q_vehicles: '是否有人拥有汽车或卡车？',
+  tx_q_real_property: '是否有人拥有房屋、土地或其他不动产？',
+  tx_q_personal_property: '是否有人拥有其他贵重物品？',
+
+  // 加急筛查。
+  tx_section_urgent: '如果您急需食品福利',
+  tx_section_urgent_intro:
+    '德州会对每一份食品福利申请进行加急服务筛查，符合条件的可在几天内获得福利。前三个问题是联邦标准，其余是您的个案专员应当了解的紧急需要。',
+  tx_q_expedited_income:
+    '您的月收入是否低于 150 美元，且手头现金在 100 美元以内？',
+  tx_q_expedited_housing:
+    '您的收入和现金加起来是否少于本月的房租和水电费？',
+  tx_q_expedited_farm: '是否有人是流动或季节性农业工人？',
+  tx_q_expedited_food: '您的食物是否会在未来三天内耗尽？',
+  tx_q_expedited_eviction: '您是否收到过驱逐通知？',
+  tx_q_expedited_utilities:
+    '您的水电是否已被切断，或收到过停止供应的通知？',
+  tx_q_expedited_clothing: '是否有人需要必需的衣物？',
+  tx_q_expedited_transport: '是否有人需要交通工具来应对紧急需要？',
+
+  // 您的情况。
+  tx_section_situation: '您的情况',
+  tx_section_situation_intro:
+    '这些问题本身不会决定您的申请结果，而是告诉办事处需要核查哪些规定。',
+  tx_q_military: '家中是否有人服过兵役？',
+  tx_q_disability: '是否有人因残疾而影响日常活动？',
+  tx_q_foster_care: '家中是否有人曾接受寄养照顾？',
+  tx_q_foster_care_help:
+    '德州为部分曾接受寄养照顾的年轻人提供保险，最高至 26 岁。',
+  tx_q_prior_assistance: '家中是否有人以前领取过福利？',
+  tx_q_existing_benefits: '目前已领取的福利',
+
+  // 协助您申请的人。
+  tx_section_helper: '协助您申请的人',
+  tx_section_helper_intro:
+    '授权代表可以代您提交申请、接受面谈并接收通知。',
+  tx_q_has_helper: '是否有人代您提交申请？',
+  tx_q_has_helper_help:
+    '该代表必须亲自在官方表格上签名。我们从不代填签名。',
+  tx_helper_details_title: '该代表的信息',
+  tx_helper_details_intro:
+    '足以让办事处联系到他们即可。只有姓名是必填项。',
+  tx_helper_add: '添加代表信息',
+  tx_helper_empty: '尚未添加信息。',
+  tx_helper_name: '代表姓名',
+  tx_helper_organization: '所属机构',
+
+  // 核对与生成。
+  tx_job_who: '这份工作属于谁？',
+  tx_other_income_who: '这笔收入由谁获得？',
+  tx_person_you: '您本人',
+  tx_review_heading: '核对并准备您的表格',
+  tx_review_intro:
+    '请核对您提供的信息，然后准备 H1010 表格。您可以返回修改任何答案。',
+  tx_review_programs: '申请项目',
+  tx_review_household_size: '家庭人数',
+  tx_review_answered: '已回答的问题',
+  tx_review_worksheet_note:
+    '德州 HHSC 仅通过其官方网站提供 H1010 表格，因此我们准备的是一份填好您答案的工作表，而不是官方表格本身。请在 YourTexasBenefits.com 提交申请，并把答案抄录过去。',
+  tx_draft_ready: '您的 H1010 表格工作表已准备好',
+  tx_draft_worksheet:
+    '这不是官方表格。它载有您的答案，让您无需从空白页开始填写。',
+  tx_draft_download: '下载您的工作表',
+  tx_draft_open_review: '我们填写的内容与尚待完成的部分',
+  tx_draft_official_link: '前往 YourTexasBenefits.com',
+  tx_draft_next_steps:
+    '您可以在线申请、拨打 2-1-1，或前往当地 HHSC 福利办事处。请携带这份工作表。',
 
 } as const;
 

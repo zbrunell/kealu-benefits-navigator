@@ -8,7 +8,8 @@ Reads a JSON payload from stdin:
   {"args": {...}, "workflow_output": "...", "output_dir": "..."}
 
 Writes one of two JSON payloads to stdout:
-  Success: {"path": "<absolute_path>", "form_type": "official"|"worksheet"}
+  Success: {"path": "<absolute_path>", "form_type": "official"|"worksheet",
+            "review_path": "<absolute_path>"}   (review_path when one was written)
   Failure: {"error": "<message>"}  (exit code 1)
 
 No LLM calls are made. No user PII is logged.
@@ -41,12 +42,24 @@ def main() -> None:
     output_dir = Path(output_dir_str)
 
     try:
-        from benefits_navigator.form_filler import generate_application
-
-        path, form_type = generate_application(args, workflow_output, output_dir)
-        sys.stdout.write(
-            json.dumps({"path": str(path), "form_type": form_type}) + "\n"
+        from benefits_navigator.form_filler import (
+            generate_application_with_review,
         )
+
+        path, form_type, review = generate_application_with_review(
+            args, workflow_output, output_dir
+        )
+
+        result: dict[str, str] = {"path": str(path), "form_type": form_type}
+
+        # Reported by the generator, never guessed at from a sibling filename:
+        # California's generator writes a review file of its own, and serving
+        # that in place of its completion guide is a downgrade the caller
+        # cannot detect.
+        if review is not None and review.exists():
+            result["review_path"] = str(review)
+
+        sys.stdout.write(json.dumps(result) + "\n")
     except Exception as exc:  # noqa: BLE001 — broad catch to ensure JSON error output
         sys.stdout.write(json.dumps({"error": str(exc)}) + "\n")
         sys.exit(1)

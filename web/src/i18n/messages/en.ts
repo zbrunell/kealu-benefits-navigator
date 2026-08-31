@@ -549,8 +549,7 @@ const en = {
   programs_other_aria: 'Which other program are you applying for?',
   programs_back: 'Back to report',
   programs_continue: 'Continue with selected programs',
-  report_ca_application: 'California benefits application',
-  report_saws_application: 'SAWS 2 PLUS application',
+  report_state_application: 'Your state’s benefits application',
   report_action_plan_intro: 'Your action plan identified the following application recommendations using the completed eligibility and evidence-verification phases.',
   report_screening_note: 'These are screening recommendations, not official eligibility determinations.',
   shell_rec_unavailable: 'Application recommendation unavailable',
@@ -902,6 +901,362 @@ const en = {
   manual_channel_in_person: 'In person',
   manual_channel_mail: 'By mail',
   field_household_size: 'Household size',
+
+
+  // ── Multi-jurisdiction program registry ───────────────────────────────────
+  //
+  // Program names, summaries, eligibility explanations, benefit-estimate
+  // statements and income-cliff warnings for every jurisdiction in
+  // lib/programs/. Added alongside the California keys above rather than
+  // replacing them: California is still fully supported.
+
+  program_federal_marketplace: 'HealthCare.gov Marketplace coverage',
+  program_federal_wic: 'WIC',
+  program_federal_liheap: 'LIHEAP home energy assistance',
+  program_federal_lifeline: 'Lifeline phone and internet discount',
+  program_federal_medicare_savings: 'Medicare Savings Programs',
+  program_covered_california: 'Covered California',
+  program_ca_care: 'CARE utility discount',
+  program_ca_lifeline: 'California LifeLine',
+  program_ca_wic: 'California WIC',
+  program_tx_medicaid_child: 'Children’s Medicaid (STAR)',
+  program_tx_medicaid_pregnancy: 'Medicaid for Pregnant Women',
+  program_tx_chip_perinatal: 'CHIP Perinatal',
+  program_tx_healthy_texas_women: 'Healthy Texas Women',
+  program_tx_medicaid_parent: 'Medicaid for Parents and Caretaker Relatives',
+  program_tx_wic: 'Texas WIC',
+  program_tx_ceap: 'Comprehensive Energy Assistance Program (CEAP)',
+  program_travis_central_health_map: 'Central Health Medical Access Program (MAP)',
+  program_austin_energy_cap: 'Austin Energy Customer Assistance Program',
+  program_austin_plus1: 'Austin Energy Plus 1 emergency bill help',
+  program_federal_marketplace_summary: 'Private health plans with premium tax credits, bought through the federal marketplace.',
+  program_federal_wic_summary: 'Food, formula, and nutrition support for pregnancy, new mothers, and children under five.',
+  program_federal_liheap_summary: 'Federal money, passed to state and local agencies, that helps pay home heating and cooling bills.',
+  program_federal_lifeline_summary: 'A monthly discount on phone or internet service for low-income households.',
+  program_federal_medicare_savings_summary: 'State-run help paying Medicare premiums, deductibles, and copays.',
+  program_ca_medi_cal_summary: 'California’s Medicaid program: free or low-cost health coverage, including for adults on income alone.',
+  program_ca_calfresh_summary: 'California’s SNAP program: a monthly food benefit loaded onto an EBT card.',
+  program_ca_calworks_summary: 'Monthly cash aid for California families with children, plus welfare-to-work services.',
+  program_ca_covered_california_summary: 'California’s own health insurance marketplace, with state and federal premium help.',
+  program_ca_care_summary: 'A discount on gas and electric bills for income-qualified California utility customers.',
+  program_ca_lifeline_summary: 'A California discount on home or mobile phone service, on top of the federal Lifeline benefit.',
+  program_ca_wic_summary: 'California’s WIC program, run by the Department of Public Health.',
+  program_tx_medicaid_child_summary: 'Free health coverage for Texas children, with income limits that differ by the child’s age.',
+  program_tx_chip_summary: 'Low-cost health coverage for Texas children whose family earns too much for Children’s Medicaid.',
+  program_tx_medicaid_pregnancy_summary: 'Health coverage during pregnancy and for twelve months after the birth.',
+  program_tx_chip_perinatal_summary: 'Prenatal and delivery care for a pregnancy that cannot be covered by Medicaid, including because of immigration status.',
+  program_tx_healthy_texas_women_summary: 'Women’s health and family planning services for Texas women aged 15 to 44.',
+  program_tx_medicaid_parent_summary: 'Very limited Texas Medicaid for parents and relatives caring for a child, with an income limit far below the poverty line.',
+  program_tx_snap_summary: 'Texas’s SNAP program: a monthly food benefit on a Lone Star Card.',
+  program_tx_tanf_summary: 'A small monthly cash grant for Texas families caring for a child.',
+  program_tx_ceap_summary: 'Texas energy assistance that pays part of your electricity bill directly to the utility.',
+  program_travis_central_health_map_summary: 'Travis County’s local health care program: doctors, specialists, and prescriptions through a local network, open to residents regardless of immigration status.',
+  program_austin_energy_cap_summary: 'Ongoing discounts on City of Austin electric, water, wastewater, and drainage charges.',
+  program_austin_plus1_summary: 'One-time emergency help with an overdue City of Austin utility bill.',
+  elig_marketplace_below_subsidy_floor: 'Household income is {fplPercent} of the Federal Poverty Level, below the {limitPercent} floor for marketplace premium tax credits. Because Texas did not expand Medicaid, a household in this range may have no subsidised coverage option — this is the Medicaid coverage gap.',
+  elig_marketplace_above_subsidy_ceiling: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} level where premium tax credits normally end. You can still buy a plan at full price.',
+  elig_marketplace_subsidy_range: 'Household income is {fplPercent} of the Federal Poverty Level, within the range up to {limitPercent} where premium tax credits reduce the monthly cost of a marketplace plan.',
+  elig_wic_no_qualifying_person: 'WIC serves pregnant and postpartum women, infants, and children under five. No one in the household was reported as fitting one of those groups.',
+  elig_wic_income_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} WIC income limit.',
+  elig_wic_pregnancy_qualifies: 'A pregnancy was reported, which is one of the categories WIC serves.',
+  elig_wic_young_child_qualifies: 'A child under five was reported, which is one of the categories WIC serves.',
+  elig_wic_income_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} WIC income limit.',
+  elig_no_published_threshold: 'We do not hold this program’s published income standard, so we cannot screen it. The agency decides.',
+  elig_program_available_no_rule: 'This program is available where you live. We have not encoded its eligibility rules, so we cannot say whether you qualify — it is worth asking about.',
+  elig_msp_no_medicare_signal: 'Nothing in the household suggests anyone is on Medicare, which these programs require.',
+  elig_msp_age_signal: 'Someone in the household is 65 or older and may be on Medicare, which these programs help pay for.',
+  elig_msp_disability_signal: 'A disability was reported, which can bring someone onto Medicare before 65.',
+  elig_lifeline_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} Lifeline limit. Taking part in SNAP or Medicaid also qualifies you.',
+  elig_lifeline_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} Lifeline income limit.',
+  elig_ca_care_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} CARE limit for a discount on gas and electricity.',
+  elig_ca_care_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} CARE income limit.',
+  elig_tx_ceap_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} limit for Texas energy assistance. Funding is limited and applications are taken by a local agency.',
+  elig_tx_ceap_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} limit for Texas energy assistance.',
+  elig_austin_cap_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} limit for the City of Austin utility discount. Approval for SNAP, Medicaid, CHIP, or MAP also enrols you automatically.',
+  elig_austin_cap_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} income limit for the City of Austin utility discount.',
+  elig_tx_medicaid_child_no_child: 'No child was reported in the household. Children’s Medicaid covers children under 19.',
+  elig_tx_medicaid_child_within_band: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} limit that applies to the youngest child’s age band.',
+  elig_tx_medicaid_child_bands_by_age: 'Texas sets a different limit for each age: 198% of poverty under age one, 144% for ages one to five, and 133% for ages six to eighteen. Children of different ages in the same household can get different answers.',
+  elig_tx_medicaid_child_above_band: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} Children’s Medicaid limit for this age band.',
+  elig_tx_chip_next_step: 'CHIP is the next step for a child over the Medicaid limit, and the same application covers both.',
+  elig_tx_chip_no_child: 'No child was reported in the household. CHIP covers children under 19.',
+  elig_tx_chip_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} CHIP limit.',
+  elig_tx_chip_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} CHIP limit.',
+  elig_tx_chip_after_medicaid_screen: 'Texas checks Children’s Medicaid first and moves the child to CHIP if income is too high. One application does both, so you do not choose between them.',
+  elig_tx_pregnancy_not_reported: 'No pregnancy was reported in the household.',
+  elig_tx_pregnancy_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} limit for Medicaid for Pregnant Women.',
+  elig_tx_pregnancy_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} limit for Medicaid for Pregnant Women.',
+  elig_tx_pregnancy_postpartum_coverage: 'Coverage continues for {months} months after the birth.',
+  elig_tx_chip_perinatal_next_step: 'CHIP Perinatal covers the pregnancy when Medicaid cannot, and is worth applying for.',
+  elig_tx_chip_perinatal_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} CHIP Perinatal limit.',
+  elig_tx_chip_perinatal_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} CHIP Perinatal limit.',
+  elig_tx_chip_perinatal_status_independent: 'CHIP Perinatal is open regardless of immigration status, so it is a route to prenatal care when Medicaid is not available.',
+  elig_tx_htw_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} Healthy Texas Women limit.',
+  elig_tx_htw_no_one_in_age_range: 'Healthy Texas Women serves women aged 15 to 44, and the income limit is {limitPercent} of poverty. No one in the reported ages falls in that range.',
+  elig_tx_htw_income_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} Healthy Texas Women limit.',
+  elig_tx_parent_medicaid_no_child: 'This program is only for a parent or relative caring for a child in the home, and no child was reported.',
+  elig_tx_parent_medicaid_very_low_standard: 'Texas covers parents and caretaker relatives only at an income far below the poverty line — one of the lowest limits in the country. Most working parents earn too much to qualify.',
+  elig_tx_parent_medicaid_no_published_percent: 'The limit is a dollar standard set by Texas, not a percentage of poverty, and we do not hold the current table. Only Texas Health and Human Services can tell you the exact figure.',
+  elig_tx_snap_within_gross_limit: 'Monthly household income of {monthlyIncome} is at or below the Texas SNAP gross income limit of {limitAmount} for a household of {householdSize}.',
+  elig_tx_snap_net_test_follows: 'A second test then applies to income after deductions, with a limit of {limitAmount} a month. Rent and utility costs reduce the income that counts.',
+  elig_tx_snap_expedited_possible: 'Monthly income is below {limitAmount}, so you may qualify for expedited service and receive benefits within {days} days.',
+  elig_tx_snap_within_categorical: 'Monthly household income of {monthlyIncome} is above the standard limit but within the {fplPercent} of poverty limit of {limitAmount}, under which Texas still grants eligibility.',
+  elig_tx_snap_net_income_depends: 'Whether you qualify depends on income after the rent, utility, and dependent-care deductions, which we did not ask about.',
+  elig_tx_snap_above_gross_limit: 'Monthly household income of {monthlyIncome} is above the Texas SNAP limit of {limitAmount} for a household of {householdSize}.',
+  elig_tx_tanf_no_dependent_child: 'Texas TANF is only for families caring for a child aged 18 or under. Low income on its own does not qualify an adult-only household.',
+  elig_tx_tanf_pregnancy_may_qualify: 'A pregnancy was reported. Texas can begin TANF late in a pregnancy even before the child is born.',
+  elig_tx_tanf_dependent_child_one: 'The household includes one child, which is the first requirement for Texas TANF.',
+  elig_tx_tanf_dependent_child_other: 'The household includes {children} children, which is the first requirement for Texas TANF.',
+  elig_tx_tanf_needs_tests: 'Texas then applies two dollar-based needs tests that we do not hold, so only Texas Health and Human Services can decide the outcome.',
+  elig_tx_tanf_grant_is_small: 'The grant is small — roughly {fplPercent} of the Federal Poverty Level — so it is worth applying mainly alongside SNAP and Medicaid rather than on its own.',
+  elig_travis_map_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} limit for the Travis County Medical Access Program.',
+  elig_travis_map_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} limit for the Travis County Medical Access Program.',
+  elig_travis_map_not_insurance: 'MAP is not health insurance. It pays for care from a set list of local clinics, specialists, and pharmacies in Travis County.',
+  elig_travis_map_status_independent: 'MAP is open to Travis County residents regardless of immigration status, which makes it the main option for adults who cannot get Texas Medicaid.',
+  elig_travis_map_income_lookback: 'Eligibility is based on the income you received in the last {days} days, not last year’s.',
+  missing_household_tax_filing_status: 'How the household files taxes, and who is claimed on the return',
+  missing_wic_appointment_documents: 'Proof of pregnancy or the child’s age, brought to a WIC appointment',
+  missing_published_income_standard: 'The agency’s current income standard, which we do not hold',
+  missing_medicare_enrollment: 'Whether anyone in the household is enrolled in Medicare',
+  missing_countable_resources: 'Cash, bank balances, and other countable resources',
+  missing_countable_resources_against_limit: 'Cash, bank balances, and other countable resources, measured against the {limitAmount} limit',
+  missing_child_ages: 'Each child’s age, which decides the limit that applies',
+  missing_htw_sex_and_age: 'Whether anyone in the household is a woman aged 15 to 44 — we do not ask this',
+  missing_travis_residency_proof: 'Proof that you live in Travis County',
+  missing_current_insurance_status: 'Whether anyone applying already has health insurance',
+  missing_austin_utility_account: 'Your City of Austin utility account number',
+  estimate_method_snap_allotment: 'Estimated from the published SNAP formula: the maximum benefit for your household size, minus 30% of income after the standard deduction. Rent and utility deductions, which we did not ask about, usually raise this.',
+  estimate_unknown_premium_varies: 'Not shown — the premium depends on the plan you pick and your exact age, so any single figure would be misleading.',
+  estimate_unknown_food_package: 'Not shown — WIC gives specific foods rather than a cash amount.',
+  estimate_unknown_coverage_not_cash: 'Not shown — this is health coverage, not a payment. Its worth depends on the care you actually use.',
+  estimate_unknown_over_income: 'Not shown — income appears to be above the limit for this program.',
+  estimate_unknown_not_eligible_category: 'Not shown — the household does not meet this program’s basic requirements.',
+  estimate_unknown_grant_after_disregards: 'Not shown — the grant is calculated from countable income after deductions the agency applies.',
+  estimate_unknown_state_determined: 'Not shown — only the agency can calculate this amount.',
+  estimate_unknown_discount_varies: 'Not shown — the discount depends on your usage and your utility’s current rates.',
+  estimate_unknown_payment_to_utility: 'Not shown — the payment is set per household from the funds available that year.',
+  estimate_unknown_no_cash_value: 'Not shown — this program has no cash value to estimate.',
+  cliff_approaching_fpl_limit: 'Income is within {headroomPercent} of this program’s {limitPercent} limit ({limitAmount} a year for your household size). A raise above that could end eligibility.',
+  report_jurisdiction_heading: 'Where these programs come from',
+  report_jurisdiction_federal: 'Federal',
+  report_jurisdiction_state: 'State',
+  report_jurisdiction_county: 'County',
+  report_jurisdiction_city: 'City and local',
+  report_application_heading: 'Your application',
+  report_coverage_gap_heading: 'The Medicaid coverage gap',
+  report_coverage_gap_body: 'Texas did not expand Medicaid, so adults who are not pregnant, not caring for a child, and not disabled usually cannot get Medicaid at any income. Below the poverty line they also cannot get marketplace subsidies. Local programs are the realistic route to care.',
+  report_estimate_disclaimer: 'Dollar figures are estimates from published formulas, not decisions. Only the agency can tell you the amount you will receive.',
+  docs_to_submit_heading: 'What you need to submit an application',
+  docs_to_submit_intro: 'You can submit with this alone. Do not wait until you have everything below it.',
+  docs_to_verify_heading: 'What you will likely be asked to verify',
+  docs_to_verify_intro: 'Send these when you have them. The agency will tell you the deadline, and filing sooner sets an earlier benefit start date.',
+  docs_maybe_heading: 'What may be requested, depending on your household',
+  docs_maybe_intro: 'Only some households are asked for these.',
+  docs_file_now_note: 'Filing today protects your benefit start date. Missing documents can follow.',
+
+
+  // ── Manual (non-generated) application view ──────────────────────────────
+  manual_open_official_link: 'Open the official application',
+  manual_programs_heading: 'Programs you may qualify for',
+  manual_steps_heading: 'What to do, in order',
+  manual_contact_heading: 'Your details, so you can copy them across',
+  manual_contact_intro: 'Optional. Anything you enter here is added to the list below so you are not answering the same questions twice at the office.',
+  report_manual_cta: 'See how to apply',
+
+  // ── Texas Form H1010 intake ──────────────────────────────────────────────
+  // Shared intake controls, used by any form's flow.
+  intake_continue: 'Continue',
+  report_review_application: 'Review your application',
+  intake_clear_answer: 'Clear',
+  intake_remove_row: 'Remove',
+  intake_row_number: 'No. {number}',
+  intake_overflow_row:
+    'The printed form has room for {rows}. Attach this one on a separate sheet.',
+  intake_overflow_total:
+    '{count} more than the {rows} the printed form holds. They are kept, and the review sheet tells you to attach them.',
+
+  // Screens.
+  tx_screen_where: 'Where you live and get your mail',
+  tx_screen_household: 'Who lives with you',
+  tx_screen_money: 'Money you get',
+  tx_screen_bills: 'Bills you pay',
+  tx_screen_own: 'Things you own',
+  tx_screen_urgent: 'If you need food benefits right away',
+  tx_screen_situation: 'Your situation',
+  tx_screen_helper: 'Someone helping you apply',
+  tx_progress: '{answered} of {asked} answered',
+  tx_generating: 'Preparing your form…',
+
+  // Where you get your mail.
+  tx_section_mailing: 'Where you get your mail',
+  tx_section_mailing_intro:
+    'Answer the first question. Give a mailing address only if you answered No.',
+  tx_q_mail_same: 'Do you get your mail at the address where you live?',
+
+  // Where you live.
+  tx_section_home: 'Where you live',
+  tx_section_home_intro:
+    'Texas can still take your application if you have nowhere to live. Say so here and the office will help.',
+  tx_q_homeless: 'Is anyone in your home homeless?',
+  tx_q_institutional:
+    'Does anyone live in a shelter, group home, or institution?',
+
+  // Who lives with you.
+  tx_section_household: 'About your household',
+  tx_section_household_intro:
+    'These decide who counts as your household and which programs you can be screened for.',
+  tx_q_food_together: 'Do you buy and prepare food together?',
+  tx_q_food_together_help:
+    'People who buy and cook together are one household for food benefits, even if they are not related.',
+  tx_q_pregnant: 'Is anyone in your home pregnant?',
+  tx_q_pregnant_help:
+    'Texas Medicaid covers pregnancy, so this can open a route to coverage that is otherwise closed.',
+  tx_q_students: 'Is anyone in your home a student?',
+  tx_roster_title: 'Everyone else in your home',
+  tx_roster_intro:
+    'Everyone who lives with you apart from yourself. Your own details are on the previous screen.',
+  tx_roster_add: 'Add a person',
+  tx_roster_empty: 'Nobody added yet. If you live alone, continue.',
+  tx_roster_citizen: 'Are they a U.S. citizen or U.S. national?',
+  tx_roster_age: 'Age {age}',
+
+  // Money you get.
+  tx_section_money: 'Money coming in',
+  tx_section_money_intro:
+    'Report income before taxes. Texas HHSC will ask for proof after you apply.',
+  tx_q_annual_income: 'Total yearly household income',
+  tx_q_annual_income_help:
+    'A rough figure is fine. The job and payment details below are what the office works from.',
+  tx_q_income_kind: 'Kind of income',
+  tx_q_has_job: 'Does anyone in your home have a job?',
+  tx_q_self_employed: 'Is anyone self-employed or running a business?',
+  tx_q_other_income: 'Does anyone get money from anywhere else?',
+  tx_q_other_income_help:
+    'Child support, unemployment, Social Security, retirement, veterans’ benefits.',
+  tx_q_income_varies: 'Does anyone’s income change during the year?',
+  tx_jobs_title: 'Jobs',
+  tx_jobs_intro: 'One row for each job anyone in your home has.',
+  tx_jobs_add: 'Add a job',
+  tx_jobs_empty: 'No jobs added yet.',
+  tx_job_employer: 'Employer',
+  tx_job_employer_address: 'Employer address',
+  tx_job_employer_address_help:
+    'HHSC verifies pay with the employer. Give the address if you know it.',
+  tx_job_gross_this_month: 'Gross pay received this month',
+  tx_job_gross_this_month_help:
+    'Everything received this month before deductions — not one paycheck.',
+  tx_job_pay_frequency: 'How often paid',
+  tx_job_hours: 'Hours a week',
+  tx_other_income_title: 'Other money you get',
+  tx_other_income_intro:
+    'One row for each source that is not from a job.',
+  tx_other_income_add: 'Add a source',
+  tx_other_income_empty: 'No other income added yet.',
+  tx_other_income_source: 'Where it comes from',
+  tx_other_income_source_help:
+    'For example: child support, unemployment, Social Security.',
+  tx_other_income_amount: 'How much',
+  tx_other_income_frequency: 'How often',
+
+  // Bills you pay.
+  tx_section_bills: 'What you pay',
+  tx_section_bills_intro:
+    'Rent, mortgage and utility costs can raise your food benefits, so report them even if you are behind on them.',
+  tx_q_has_bills: 'Do you pay rent, a mortgage, or utility bills?',
+  tx_q_has_bills_help:
+    'Report what you are billed, even if someone else helps you pay it.',
+  tx_q_dependent_care:
+    'Do you pay for child care or adult care so someone can work or go to school?',
+  tx_q_child_support:
+    'Does anyone pay child support to someone outside your home?',
+  tx_q_medical_costs:
+    'Does anyone 60 or older, or with a disability, have medical costs?',
+  tx_q_medical_costs_help:
+    'Medical costs for those household members are a food-benefit deduction.',
+  tx_bills_title: 'What you pay each month',
+  tx_bills_intro: 'One row for each housing or utility cost.',
+  tx_bills_add: 'Add a bill',
+  tx_bills_empty: 'No bills added yet.',
+  tx_bill_kind: 'Kind of bill',
+  tx_bill_amount: 'Cost each month',
+  tx_bill_description: 'Details',
+  tx_bill_description_help: 'Only needed when you choose “Other”.',
+
+  // Things you own.
+  tx_section_own: 'Things you own',
+  tx_section_own_intro:
+    'Texas does not count most savings for food benefits, but the state asks. HHSC will tell you if anything here needs proof.',
+  tx_q_accounts: 'Does anyone have a bank account, cash, or savings?',
+  tx_q_accounts_help:
+    'We never ask for an account number, and none is written on your form.',
+  tx_q_vehicles: 'Does anyone own a car or truck?',
+  tx_q_real_property: 'Does anyone own a home, land, or other property?',
+  tx_q_personal_property: 'Does anyone own anything else of value?',
+
+  // Expedited screening.
+  tx_section_urgent: 'If you need food benefits right away',
+  tx_section_urgent_intro:
+    'Texas screens every food-benefit application for expedited service, which can mean benefits within a few days. The first three questions are the federal test; the rest are urgent needs your caseworker should know about.',
+  tx_q_expedited_income:
+    'Is your monthly income under $150 and your cash on hand $100 or less?',
+  tx_q_expedited_housing:
+    'Are your income and cash together less than your rent and utilities this month?',
+  tx_q_expedited_farm: 'Is anyone a migrant or seasonal farm worker?',
+  tx_q_expedited_food: 'Will your food run out in the next three days?',
+  tx_q_expedited_eviction: 'Have you been given an eviction notice?',
+  tx_q_expedited_utilities:
+    'Have your utilities been shut off, or been threatened with shut-off?',
+  tx_q_expedited_clothing: 'Does anyone need essential clothing?',
+  tx_q_expedited_transport:
+    'Does anyone need transportation to meet an emergency need?',
+
+  // Your situation.
+  tx_section_situation: 'Your situation',
+  tx_section_situation_intro:
+    'These do not decide your application on their own. They tell the office which rules to check.',
+  tx_q_military: 'Has anyone in your home served in the military?',
+  tx_q_disability: 'Does a disability limit anyone’s daily activities?',
+  tx_q_foster_care: 'Was anyone in your home ever in foster care?',
+  tx_q_foster_care_help:
+    'Texas covers some young adults who were in foster care, up to age 26.',
+  tx_q_prior_assistance: 'Has anyone in your home received benefits before?',
+  tx_q_existing_benefits: 'Benefits anyone already gets',
+
+  // Someone helping you apply.
+  tx_section_helper: 'Someone helping you apply',
+  tx_section_helper_intro:
+    'An authorized representative can apply, be interviewed, and receive notices for you.',
+  tx_q_has_helper: 'Is someone applying on your behalf?',
+  tx_q_has_helper_help:
+    'They must sign the official form themselves. We never fill in a signature.',
+  tx_helper_details_title: 'Their details',
+  tx_helper_details_intro:
+    'Enough for the office to reach them. Only their name is required.',
+  tx_helper_add: 'Add their details',
+  tx_helper_empty: 'No details added yet.',
+  tx_helper_name: 'Their name',
+  tx_helper_organization: 'Organization',
+
+  // Review and generate.
+  tx_job_who: 'Whose job is it?',
+  tx_other_income_who: 'Who gets it?',
+  tx_person_you: 'You',
+  tx_review_heading: 'Review and prepare your form',
+  tx_review_intro:
+    'Check what you have told us, then prepare your Form H1010. You can go back and change any answer.',
+  tx_review_programs: 'Applying for',
+  tx_review_household_size: 'Household size',
+  tx_review_answered: 'Questions answered',
+  tx_review_worksheet_note:
+    'Texas HHSC publishes Form H1010 only through its own website, so what we prepare is a filled worksheet carrying your answers — not the agency’s own paper. Submit at YourTexasBenefits.com and copy your answers across.',
+  tx_draft_ready: 'Your Form H1010 worksheet is ready',
+  tx_draft_worksheet:
+    'This is not the official form. It carries your answers so you can submit them without starting from a blank page.',
+  tx_draft_download: 'Download your worksheet',
+  tx_draft_open_review: 'What we filled in, and what is left',
+  tx_draft_official_link: 'Go to YourTexasBenefits.com',
+  tx_draft_next_steps:
+    'Apply online, by phone at 2-1-1, or at a local HHSC benefits office. Take the worksheet with you.',
 
 } as const;
 

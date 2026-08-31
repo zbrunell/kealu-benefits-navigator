@@ -6,8 +6,8 @@
 "use client";
 
 import {
+  RELATIONSHIP_LABEL_KEYS,
   allowedRelationshipsForDateOfBirth,
-  type HouseholdRelationship,
 } from "@/lib/household-relationships";
 import { useState } from "react";
 import { ageOnDate, dateOfBirthBounds } from "@/lib/date-of-birth";
@@ -193,22 +193,6 @@ function ProgramCheckboxes({
     </fieldset>
   );
 }
-
-/** How each relationship is written on screen. */
-/**
- * Catalog keys, not prose: this map is rendered into a <select> the applicant
- * reads, so the words have to come from their language's catalog.
- */
-const RELATIONSHIP_LABEL_KEYS: Record<HouseholdRelationship, string> = {
-  spouse: "rel_spouse",
-  child: "rel_child",
-  parent: "rel_parent",
-  sibling: "rel_sibling",
-  grandparent: "rel_grandparent",
-  grandchild: "rel_grandchild",
-  unrelated: "rel_unrelated",
-  other: "rel_other",
-};
 
 export default function HouseholdStep({
   applicant,

@@ -77,6 +77,24 @@ function entry(
 }
 
 /**
+ * State that one row of an indexed collection exists.
+ *
+ * Emitted for every repeatable record — jobs, bills, accounts, vehicles — not
+ * only for household members, and for the same reason the member marker was
+ * added: a reader that discovers rows by probing for a non-empty value stops at
+ * the first gap and silently drops everything after it. A job whose employer
+ * name has not been typed yet is still a job.
+ *
+ * It is also what lets a printed table leave its unused rows blank *for a
+ * stated reason*. `formmap.repeat.RepeatingGroup` conditions each printed row
+ * on this marker, so rows five and six of a four-row household are reported as
+ * not applicable rather than as work the applicant still owes.
+ */
+function rowPresent(prefix: string): ApplicationFieldPlanEntry {
+  return entry(`${prefix}.present`, true);
+}
+
+/**
  * Map the primary applicant into reusable canonical fields.
  *
  * This includes both Page 1 applicant/contact information and the applicant's
@@ -844,6 +862,7 @@ function mapQuestionnaire(
       circumstances.disabilityDetails,
     ).entries()) {
       const prefix = `household.disability_detail.${index}`;
+      fields.push(rowPresent(prefix));
 
       text(`${prefix}.member_id`, detail?.memberId ?? "");
       text(`${prefix}.person_name`, personName(detail?.memberId ?? ""));
@@ -904,6 +923,7 @@ function mapQuestionnaire(
     circumstances.authorizedRepresentative,
   ).entries()) {
     const prefix = `household.authorized_representative.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.name`, representative.name);
     text(`${prefix}.organization`, representative.organization);
     text(`${prefix}.phone`, representative.phone);
@@ -950,6 +970,7 @@ function mapQuestionnaire(
 
   for (const [index, job] of activeEntries(income.earned).entries()) {
     const prefix = `income.earned.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.member_id`, job.memberId);
     text(`${prefix}.person_name`, personName(job.memberId));
     text(`${prefix}.employer_name`, job.employerName);
@@ -976,6 +997,7 @@ function mapQuestionnaire(
 
   for (const [index, business] of activeEntries(income.selfEmployment).entries()) {
     const prefix = `income.self_employment.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.member_id`, business.memberId);
     text(`${prefix}.person_name`, personName(business.memberId));
     text(`${prefix}.business_name`, business.businessName);
@@ -998,6 +1020,7 @@ function mapQuestionnaire(
   // Q7 Unearned Income — person, source and monthly amount.
   for (const [index, source] of activeEntries(income.unearned).entries()) {
     const prefix = `income.unearned.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.member_id`, source.memberId);
     text(`${prefix}.person_name`, personName(source.memberId));
     text(`${prefix}.source`, source.source);
@@ -1032,6 +1055,7 @@ function mapQuestionnaire(
   // exchange for work. The printed table has one fixed row per item type.
   for (const [index, support] of activeEntries(income.inKindSupport).entries()) {
     const prefix = `income.in_kind.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.member_id`, support.memberId);
     text(`${prefix}.person_name`, personName(support.memberId));
     text(`${prefix}.kind`, support.kind);
@@ -1045,6 +1069,7 @@ function mapQuestionnaire(
 
   for (const [index, change] of activeEntries(income.recentJobChange).entries()) {
     const prefix = `income.recent_job_change.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.member_id`, change.memberId);
     text(`${prefix}.person_name`, personName(change.memberId));
     text(`${prefix}.employer_name`, change.employerName);
@@ -1061,6 +1086,7 @@ function mapQuestionnaire(
 
   for (const [index, expense] of activeEntries(expenses.household).entries()) {
     const prefix = `expenses.household.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.kind`, expense.kind);
     text(`${prefix}.description`, expense.description);
     if (expense.amountMonthly !== undefined) {
@@ -1070,6 +1096,7 @@ function mapQuestionnaire(
 
   for (const [index, expense] of activeEntries(expenses.medical).entries()) {
     const prefix = `expenses.medical.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.member_id`, expense.memberId);
     text(`${prefix}.kind`, expense.kind);
     if (expense.amountMonthly !== undefined) {
@@ -1097,6 +1124,7 @@ function mapQuestionnaire(
       application.questionnaire.appendices?.vehicleDetails,
     ).entries()) {
       const prefix = `appendices.vehicle.${index}`;
+      fields.push(rowPresent(prefix));
 
       text(`${prefix}.owner_name`, personName(vehicle?.ownerMemberId ?? ""));
       text(`${prefix}.user_name`, personName(vehicle?.userMemberId ?? ""));
@@ -1160,6 +1188,7 @@ function mapQuestionnaire(
       resources.personalProperty,
     ).entries()) {
       const prefix = `resources.personal_property.${index}`;
+      fields.push(rowPresent(prefix));
 
       text(`${prefix}.member_id`, item?.memberId ?? "");
       text(`${prefix}.person_name`, personName(item?.memberId ?? ""));
@@ -1182,6 +1211,7 @@ function mapQuestionnaire(
   // Q24 Household's Resources.
   for (const [index, account] of activeEntries(resources.accounts).entries()) {
     const prefix = `resources.accounts.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.member_id`, account.memberId);
     text(`${prefix}.person_name`, personName(account.memberId));
     text(`${prefix}.kind`, account.kind);
@@ -1196,6 +1226,7 @@ function mapQuestionnaire(
     resources.transferredResources,
   ).entries()) {
     const prefix = `resources.transferred.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.member_id`, transferred.memberId);
     text(`${prefix}.description`, transferred.description);
     if (transferred.estimatedValue !== undefined) {
@@ -1205,6 +1236,7 @@ function mapQuestionnaire(
 
   for (const [index, vehicle] of activeEntries(resources.vehicles).entries()) {
     const prefix = `resources.vehicles.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.member_id`, vehicle.memberId);
     text(`${prefix}.year`, vehicle.year);
     text(`${prefix}.make`, vehicle.make);
@@ -1314,6 +1346,7 @@ function mapQuestionnaire(
    */
   for (const [index, employer] of activeEntries(health.employerCoverage).entries()) {
     const prefix = `appendices.employer_coverage.${index}`;
+    fields.push(rowPresent(prefix));
 
     text(`${prefix}.employee_name`, personName(employer?.memberId ?? ""));
     text(`${prefix}.employer_name`, employer?.employerName ?? "");
@@ -1391,6 +1424,7 @@ function mapQuestionnaire(
       application.questionnaire.appendices?.tribalMembership,
     ).entries()) {
       const prefix = `appendices.tribal.${index}`;
+      fields.push(rowPresent(prefix));
 
       text(`${prefix}.person_name`, personName(person?.memberId ?? ""));
       tri(`${prefix}.member_of_tribe`, person?.memberOfFederallyRecognizedTribe);
@@ -1517,6 +1551,7 @@ function mapQuestionnaire(
 
   for (const [index, coverage] of activeEntries(health.currentCoverage).entries()) {
     const prefix = `health.current_coverage.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.member_id`, coverage.memberId);
     text(`${prefix}.plan_name`, coverage.planName);
     text(`${prefix}.policy_holder_name`, coverage.policyHolderName);
@@ -1525,6 +1560,7 @@ function mapQuestionnaire(
 
   for (const [index, coverage] of activeEntries(health.employerCoverage).entries()) {
     const prefix = `health.employer_coverage.${index}`;
+    fields.push(rowPresent(prefix));
     text(`${prefix}.member_id`, coverage.memberId);
     text(`${prefix}.employer_name`, coverage.employerName);
     text(`${prefix}.employer_phone`, coverage.employerPhone);

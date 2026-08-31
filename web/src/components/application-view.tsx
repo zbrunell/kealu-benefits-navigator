@@ -567,6 +567,7 @@ export default function ApplicationView({
     case "applicant":
       return (
         <ApplicantStep
+          formCode="SAWS 2 PLUS"
           applicant={applicationData.applicant}
           onChange={updateApplicantField}
           onHomeAddressChange={updateHomeAddressField}
@@ -596,7 +597,14 @@ export default function ApplicationView({
         <HouseholdStep
           applicant={applicationData.applicant}
           members={applicationData.householdMembers}
-          selectedPrograms={applicationData.selectedPrograms}
+          /*
+           * The household step renders one checkbox per California programme
+           * per person. Narrowed here rather than in the model: the selection
+           * is state-neutral, this component is not.
+           */
+          selectedPrograms={applicationData.selectedPrograms.filter(
+            isSaws2PlusProgram,
+          )}
           onAdd={addHouseholdMember}
           onUpdate={updateHouseholdMember}
           onAdultDetailsChange={updateHouseholdAdultDetails}
@@ -649,6 +657,7 @@ export default function ApplicationView({
               <p className="text-sm text-blue-900">
                 Selected programs:{" "}
                 {applicationData.selectedPrograms
+                  .filter(isSaws2PlusProgram)
                   .map((program) => PROGRAM_LABELS[program])
                   .join(", ")}
               </p>
@@ -708,9 +717,21 @@ export default function ApplicationView({
     default:
       return (
         <ProgramSelectionStep
-          recommendation={recommendation}
-          selectedPrograms={selectedPrograms}
-          onToggleProgram={toggleProgram}
+          formCode="SAWS 2 PLUS"
+          /*
+           * California's three, and only those: the shared step renders
+           * whatever it is handed, so the narrowing belongs to the caller that
+           * knows this flow is the SAWS questionnaire.
+           */
+          programs={recommendation.programs.filter((program) =>
+            isSaws2PlusProgram(program.program),
+          )}
+          isSelected={(program) =>
+            isSaws2PlusProgram(program) && selectedPrograms[program]
+          }
+          onToggleProgram={(program) => {
+            if (isSaws2PlusProgram(program)) toggleProgram(program);
+          }}
           otherRequested={applicationData.otherProgramRequested === true}
           otherDescription={applicationData.otherProgramDescription}
           onToggleOther={toggleOtherProgram}
