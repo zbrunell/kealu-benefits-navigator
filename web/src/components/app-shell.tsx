@@ -10,12 +10,37 @@ import ChatInterface from "./chat-interface";
 import PhaseTracker from "./phase-tracker";
 import ReportView from "./report-view";
 import ApplicationView from "./application-view";
+import ManualApplicationView from "./manual-application-view";
+import TexasApplicationView, {
+  type ApplicationFlowProps,
+} from "./texas/texas-application-view";
+import type { SupportedApplicationForm } from "@/lib/state-applications";
 import type { ChatMessage } from "@/types/session";
 import type { IntakeField } from "@/lib/intake-flow";
 import type { ReportPayload } from "@/lib/report-assembler";
 import { useTranslation } from "@/hooks/use-translation";
 
 type View = "intake" | "progress" | "report" | "application";
+
+/**
+ * Which flow fills which form.
+ *
+ * The composition root is the one place allowed to know this, in the same way
+ * `formmap.registry` is on the Python side: everything below either serves one
+ * form or serves them all. Typed as a total map over
+ * `SupportedApplicationForm`, so adding a form is a compile error here until it
+ * has a flow — which is better than a household reaching an empty screen.
+ *
+ * The two flows share a props interface rather than being interchangeable by
+ * accident: a flow takes a run, the recommendation for its own form, and the
+ * intake prefill.
+ */
+const APPLICATION_FLOWS: Readonly<
+  Record<SupportedApplicationForm, React.ComponentType<ApplicationFlowProps>>
+> = {
+  CA_SAWS_2_PLUS: ApplicationView,
+  TX_H1010: TexasApplicationView,
+};
 
 interface AppShellProps {
   initialView: View;
@@ -44,9 +69,21 @@ export default function AppShell({
   const [runId, setRunId] = useState<string | undefined>(initialRunId);
   const [report, setReport] = useState<ReportPayload | undefined>(initialReport);
 
-  const sawsRecommendation = report?.application.recommendations.find(
-    (application) => application.formId === "CA_SAWS_2_PLUS",
+  /*
+   * The recommendation for whichever form this household's state uses, not
+   * California's. This looked up CA_SAWS_2_PLUS by name, so a Texas household
+   * reaching the application step always fell through to the "recommendation
+   * unavailable" panel however well the screening had done its job.
+   */
+  const applicationRecommendation = report?.application.recommendations.find(
+    (application) => application.formId === report?.application.formId,
   );
+
+  /*
+   * Which view to use is the registry's decision, not this component's:
+   * `generated` drives the prefilled-draft flow, `manual` drives the guide.
+   */
+  const delivery = report?.application.delivery ?? null;
 
   /** Called by ChatInterface when all intake fields are collected and a run is started. */
   function handleReady(newRunId: string) {
@@ -127,16 +164,35 @@ export default function AppShell({
         />
       )}
 
-      {view === "application" && sawsRecommendation && (
-        <ApplicationView
-          runId={runId ?? ""}
-          recommendation={sawsRecommendation}
-          prefill={report?.application.prefill ?? null}
-          onBack={handleReturnToReport}
-        />
-      )}
+      {view === "application" &&
+        applicationRecommendation &&
+        delivery === "generated" &&
+        (() => {
+          const Flow = APPLICATION_FLOWS[applicationRecommendation.formId];
 
-      {view === "application" && !sawsRecommendation && (
+          if (!Flow) return null;
+
+          return (
+            <Flow
+              runId={runId ?? ""}
+              recommendation={applicationRecommendation}
+              prefill={report?.application.prefill ?? null}
+              onBack={handleReturnToReport}
+            />
+          );
+        })()}
+
+      {view === "application" &&
+        applicationRecommendation &&
+        delivery === "manual" && (
+          <ManualApplicationView
+            recommendation={applicationRecommendation}
+            prefill={report?.application.prefill ?? null}
+            onBack={handleReturnToReport}
+          />
+        )}
+
+      {view === "application" && !applicationRecommendation && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-5">
           <h1 className="font-semibold text-red-900">
             {t("shell_rec_unavailable")}

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import math
 import re
 import urllib.request
 import textwrap
@@ -18,6 +17,23 @@ _FORMS_DIR = Path(__file__).parent / "forms"
 _SAWS2_PLUS_TEMPLATE = _FORMS_DIR / "CA-SAWS-2-PLUS.pdf"
 
 from .form_templates import FormTemplate, normalize_locale, template_for
+
+# The Helvetica metrics and the shrink-to-fit logic live in ``formmap.textfit``
+# now that the mapping layer needs them too: an overlay renderer that measured
+# differently from this one would disagree with it about whether a value fits,
+# on the same value, in the same size box. Re-bound to the private names this
+# module and its tests already use, so the move changed no behaviour here.
+from .formmap.textfit import (
+    FIELD_PADDING as _FIELD_PADDING,
+    FIELD_PADDING_Y as _FIELD_PADDING_Y,
+    HELVETICA_WIDTHS as _HELVETICA_WIDTHS,
+    LINE_HEIGHT as _LINE_HEIGHT,
+    MIN_FONT_SIZE as _MIN_FONT_SIZE,
+    fits as _fits,
+    helvetica_width as _helvetica_width,
+    largest_size_that_fits as _largest_size_that_fits,
+    wrap_to_width as _wrap_to_width,
+)
 
 _SAWS2_PLUS_URL = (
     "https://www.cdss.ca.gov/cdssweb/entres/forms/English/SAWS2_PLUS.pdf"
@@ -435,6 +451,12 @@ def _age_on_date(
             < (born.month, born.day)
         )
     )
+
+
+#: How many authorized representatives the canonical layer may emit. The
+#: printed form has one page-2 block and one Appendix C block, so more than a
+#: couple would have nowhere to go; this only bounds the search.
+_MAX_AUTHORIZED_REPRESENTATIVES = 4
 
 
 class Saws2PlusFieldAdapter:
@@ -2316,9 +2338,23 @@ class Saws2PlusFieldAdapter:
     # is left for them and reported as manual.
     #
     #: canonical suffix -> printed text destination
+    # Verified by widget coordinate against the printed item numbers on
+    # page 26: the label above each box shares its x position.
+    #
+    #   Text1  y654 x52   1. Name of authorized representative
+    #   Text2  y618 x52   2. Address
+    #   Text3  y639 x437  3. Apartment or Suite number
+    #   Text4  y582 x52   4. City
+    #   Text5  y582 x264  5. State
+    #   Text6  y582 x437  6. Zip code
+    #   Text9  y510 x50   8. Organization name (if applicable)
     APPENDIX_C_REPRESENTATIVE = {
         "name": "Text1 APPX B",
         "address": "Text2 APPX B",
+        "apartment": "Text3 APPX B",
+        "city": "Text4 APPX B",
+        "state": "Text5 APPX B",
+        "zip_code": "Text6 APPX B",
         "organization": "Text9 APPX B",
     }
 
@@ -2326,11 +2362,27 @@ class Saws2PlusFieldAdapter:
     APPENDIX_C_PHONE = ("Text7 APPX B", "Text8 APPX B")
 
     # Not written, and recorded so the search is not repeated:
-    #   Text3 (apartment), Text4-6 (city/state/zip) — the model holds one
-    #     address string and splitting it would be guessing which part is which.
-    #   Text10 (I.D. number) — not collected.
+    #   Text10 (I.D. number) — not collected. The printed box says "if
+    #     applicable"; an authorized representative's county-issued I.D. number
+    #     is not something intake can know, and inventing one would be worse
+    #     than the blank the applicant can fill in.
     #   Text11 — the date beside item 10's signature.
     #   Text12-15 — the counsellor/navigator block.
+
+    # -----------------------------------------------------------------------
+    # Page 2 — the CalFresh authorized representative
+    # -----------------------------------------------------------------------
+    #
+    # Section 2, "HOUSEHOLD'S AUTHORIZED REPRESENTATIVE", prints only a name
+    # and a phone number; the fuller address block belongs to Appendix C. Both
+    # labels sit at y=630.9 with the fields left and right of each other:
+    #
+    #   Text3 PG 2  x=33.9   AUTHORIZED REPRESENTATIVE NAME
+    #   Text4 PG 2  x=368.5  AUTHORIZED REPRESENTATIVE PHONE NUMBER
+    PAGE_2_REPRESENTATIVE = {
+        "name": "Text3 PG 2",
+        "phone": "Text4 PG 2",
+    }
 
     #: Q14's two printed free-text lines.
     PAGE_11_SPECIAL_NEED_TEXT = {
@@ -2430,6 +2482,7 @@ class Saws2PlusFieldAdapter:
             *APPENDIX_A_PHONE,
             *APPENDIX_C_REPRESENTATIVE.values(),
             *APPENDIX_C_PHONE,
+            *PAGE_2_REPRESENTATIVE.values(),
             *APPENDIX_A_OTHER_ELIGIBLE,
             *(f for pair in APPENDIX_A_YES_NO.values() for f in pair),
             *APPENDIX_A_PREMIUM_FREQUENCY.values(),
@@ -3052,6 +3105,41 @@ class Saws2PlusFieldAdapter:
         # answer and ticks the No box, while a question that was never answered
         # (or was skipped) leaves both boxes blank. Truthiness here would make a
         # No indistinguishable from silence.
+
+        # -------------------------------------------------------------------
+        # Page 2 — the CalFresh authorized representative
+        # -------------------------------------------------------------------
+        #
+        # Section 2 prints one name and one phone box, so the first
+        # representative the household named for CalFresh takes them. A
+        # representative appointed only for health coverage does not belong
+        # here: the printed question asks about the CalFresh case.
+        for rep_index in range(_MAX_AUTHORIZED_REPRESENTATIVES):
+            rep_prefix = f"household.authorized_representative.{rep_index}"
+
+            if canonical_values.get(f"{rep_prefix}.for_calfresh") is not True:
+                continue
+
+            set_field(
+                self.PAGE_2_REPRESENTATIVE["name"],
+                canonical_values.get(f"{rep_prefix}.name"),
+            )
+
+            digits = "".join(
+                character
+                for character in str(
+                    canonical_values.get(f"{rep_prefix}.phone") or ""
+                )
+                if character.isdigit()
+            )
+
+            if len(digits) == 10:
+                set_field(
+                    self.PAGE_2_REPRESENTATIVE["phone"],
+                    f"({digits[:3]}) {digits[3:6]}-{digits[6:]}",
+                )
+
+            break
 
         # -------------------------------------------------------------------
         # Appendix C — the health-insurance authorized representative
@@ -4555,145 +4643,6 @@ def generate_application_pdf(
 # ---------------------------------------------------------------------------
 # Making written values fit the boxes the form drew for them
 # ---------------------------------------------------------------------------
-
-#: Widths of the Helvetica glyphs, in 1/1000 em, for printable ASCII.
-#:
-#: From the Adobe Core 14 AFM metrics. Needed because the form declares a fixed
-#: point size per field and several of its boxes are too narrow for the value
-#: that belongs in them — the Q6 "DATE OF BIRTH" column is 47.9pt wide with
-#: "/Helv 10 Tf" set, and "01/01/1990" needs 50.0pt at that size, so the year
-#: was being cut in half on a form the applicant signs.
-_HELVETICA_WIDTHS: tuple[int, ...] = (
-    278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333,  # 32-45
-    278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278,  # 46-59
-    584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278,  # 60-73
-    500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944,  # 74-87
-    667, 667, 611, 278, 278, 278, 469, 556, 333, 556, 556, 500, 556, 556,  # 88-101
-    278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500,  # 102-115
-    278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584,                 # 116-126
-)
-
-#: Points of horizontal inset an AcroForm text field keeps inside its border.
-_FIELD_PADDING = 2.0
-
-#: Points of vertical inset, top and bottom.
-_FIELD_PADDING_Y = 1.5
-
-#: Line spacing as a multiple of the font size, for wrapped multiline fields.
-_LINE_HEIGHT = 1.15
-
-#: The smallest size still legible in print, and the floor for shrinking.
-#:
-#: A county worker reads this on paper, often photocopied. Below about six
-#: points that stops being reliable, so the fitter refuses to go further and
-#: reports the value as not fitting instead of rendering something unreadable
-#: and calling it filled.
-_MIN_FONT_SIZE = 6.0
-
-
-def _helvetica_width(text: str, size: float) -> float:
-    """Rendered width of `text` in Helvetica at `size` points."""
-    total = 0
-
-    for character in text:
-        code = ord(character)
-        # Anything outside printable ASCII falls back to the digit width, which
-        # is Helvetica's most common advance.
-        total += (
-            _HELVETICA_WIDTHS[code - 32]
-            if 32 <= code <= 126
-            else 556
-        )
-
-    return total / 1000 * size
-
-
-def _wrap_to_width(text: str, size: float, usable: float) -> list[str]:
-    """Break `text` into lines that each fit `usable` points at `size`.
-
-    Wraps on spaces like a PDF viewer does, and falls back to breaking inside a
-    word only when a single word is itself wider than the box — a 40-character
-    street name in a narrow column has to break somewhere, and breaking it is
-    better than letting it run past the border.
-    """
-    lines: list[str] = []
-
-    for paragraph in text.split("\n"):
-        current = ""
-
-        for word in paragraph.split():
-            candidate = f"{current} {word}".strip()
-
-            if _helvetica_width(candidate, size) <= usable:
-                current = candidate
-                continue
-
-            if current:
-                lines.append(current)
-                current = ""
-
-            # A word too wide for the box on its own.
-            while _helvetica_width(word, size) > usable and len(word) > 1:
-                cut = len(word)
-
-                while cut > 1 and _helvetica_width(word[:cut], size) > usable:
-                    cut -= 1
-
-                lines.append(word[:cut])
-                word = word[cut:]
-
-            current = word
-
-        lines.append(current)
-
-    return lines
-
-
-def _fits(text: str, size: float, width: float, height: float, multiline: bool) -> bool:
-    """Whether `text` renders inside a box of this size at this font size."""
-    usable_width = width - _FIELD_PADDING * 2
-    usable_height = height - _FIELD_PADDING_Y * 2
-
-    if usable_width <= 0 or usable_height <= 0:
-        return False
-
-    if not multiline:
-        return (
-            _helvetica_width(text, size) <= usable_width
-            and size <= usable_height
-        )
-
-    lines = _wrap_to_width(text, size, usable_width)
-
-    return len(lines) * size * _LINE_HEIGHT <= usable_height
-
-
-def _largest_size_that_fits(
-    text: str,
-    declared: float,
-    width: float,
-    height: float,
-    multiline: bool,
-) -> float | None:
-    """The biggest size up to `declared` at which the whole value fits.
-
-    Returns None when even `_MIN_FONT_SIZE` overflows, which is the caller's
-    signal to report the value rather than render it illegibly. Searched in
-    hundredth-point steps downward from the declared size so the result is the
-    largest that fits rather than merely one that does.
-    """
-    if _fits(text, declared, width, height, multiline):
-        return declared
-
-    size = declared
-
-    while size > _MIN_FONT_SIZE:
-        size = max(_MIN_FONT_SIZE, math.floor((size - 0.05) * 100) / 100)
-
-        if _fits(text, size, width, height, multiline):
-            return size
-
-    return None
 
 
 def _shrink_overflowing_text(writer: Any, written: set[str]) -> list[str]:

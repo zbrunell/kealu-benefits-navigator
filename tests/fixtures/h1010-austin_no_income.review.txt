@@ -1,0 +1,117 @@
+H1010 — Texas Works Application for Assistance
+
+THIS IS NOT THE OFFICIAL FORM.
+
+It is a prefilled worksheet carrying your answers. Submit the official application through the agency's own channel and copy these answers across.
+
+Why: HHSC does not publish Form H1010 as a retrievable PDF: its own forms page links to a YourTexasBenefits web application for both the English and the Spanish edition, and direct file requests to hhs.texas.gov are refused or return nothing. Rather than guess where the boxes sit on a document we have not inspected, this renders a Navigator-authored worksheet whose coordinates we own. Replace base_document and the boxes once the official PDF is obtained.
+
+Filled in for you:
+  What are you applying for?
+    Food benefits (SNAP): X
+    Healthcare (Medicaid): X
+  About you
+    First name: Marisol
+    Middle name: Elena
+    Last name: Ramirez
+    Date of birth (mm/dd/yyyy): 03/14/1991
+    Home phone: (512) 555-1234
+    Email address: marisol.ramirez@example.test
+    Language you prefer: Spanish
+    Marital status: Single
+    Sex: Female
+    Are you a U.S. citizen or U.S. national?: Yes
+    Do you have a disability?: No
+  Where you live
+    Street address: 2100 Nueces Street
+    Apt or unit: Apt 4B
+    City: Austin
+    County: Travis
+    State: TX
+    ZIP code: 78705
+    Is anyone in your home homeless?: No
+    Does anyone live in a shelter, group home, or institution?: No
+  Where you get your mail
+    Do you get your mail at the address above?: Yes
+  People who live with you
+    How many people live in your home?: 1
+    Adults: 1
+    Children: 0
+    Do you buy and prepare food together?: Yes
+    Is anyone in your home pregnant?: No
+  Money you get
+    Does anyone in your home have a job?: No
+    Is anyone self-employed or running a business?: No
+    Does anyone get money from anywhere else (child support, unemployment, Social Security, retirement)?: No
+    Does anyone's income change during the year?: No
+  Bills you pay
+    Do you pay rent, a mortgage, or utility bills?: No
+    Do you pay for child care or adult care so someone can work or go to school?: No
+    Does anyone pay child support to someone outside your home?: No
+    Does anyone 60 or older, or with a disability, have medical costs?: No
+  Things you own
+    Does anyone have a bank account, cash, or savings?: No
+    Does anyone own a car or truck?: No
+    Does anyone own a home, land, or other property?: No
+    Does anyone own anything else of value?: No
+  If you need food benefits right away
+    Is your monthly income under $150 and your cash on hand $100 or less?: No
+    Are your income and cash together less than your rent and utilities this month?: Yes
+    Is anyone a migrant or seasonal farm worker?: No
+  Someone helping you apply
+    Is someone applying on your behalf?: No
+
+Left blank on purpose:
+    Your signature and the date you sign. We never fill these in.
+    Social Security numbers and immigration document numbers. We do not ask for them and never write them onto a form.
+
+Still yours to fill in:
+  People who live with you
+    Is anyone in your home a student?
+  Money you get
+    Total yearly household income ($)
+    Kind of income
+  Your situation
+    Has anyone in your home served in the military?
+    Does a disability limit anyone's daily activities?
+    Was anyone in your home ever in foster care?
+    Has anyone in your home received benefits before?
+
+Only if it applies to you — blank is a complete answer:
+  What are you applying for?
+    Healthcare (CHIP)
+    Cash help for families (TANF)
+  About you
+    Other names you have used
+    Other phone
+  If you need food benefits right away
+    Will your food run out in the next three days?
+    Have you been given an eviction notice?
+    Have your utilities been shut off, or been threatened with shut-off?
+    Does anyone need essential clothing?
+    Does anyone need transportation to meet an emergency need?
+  Your situation
+    Benefits anyone already gets
+
+Not applicable to your household — leave these blank:
+  Because you get your mail at the address where you live:
+    Mailing street address
+    Apt or unit
+    City
+    County
+    State
+    ZIP code
+  Because you told us nobody else is applying on your behalf:
+    Their name
+    Organization
+    Phone
+    Street address
+    City
+    State
+    ZIP code
+  Person rows: you filled 0 of 6. Leave the other 6 blank — there is no person to put in them.
+  Job rows: you filled 0 of 3. Leave the other 3 blank — there is no job to put in them.
+  Other income rows: you filled 0 of 3. Leave the other 3 blank — there is no other income to put in them.
+  Bill rows: you filled 0 of 5. Leave the other 5 blank — there is no bill to put in them.
+
+Review every page before submitting.

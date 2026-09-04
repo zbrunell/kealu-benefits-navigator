@@ -11,6 +11,7 @@ import sanitizeHtml from "sanitize-html";
 import ErrorBanner from "./error-banner";
 import { useTranslation } from "@/hooks/use-translation";
 import type { ReportPayload } from "@/lib/report-assembler";
+import { applicationForForm } from "@/lib/state-applications";
 
 /**
  * Configure marked to open external links in a new tab.
@@ -90,11 +91,21 @@ function renderMarkdown(content: string): string {
   });
 }
 
-const PROGRAM_LABELS = {
+/*
+ * Programme names are proper nouns, so they are not translated — an applicant
+ * searching a county website for "CalFresh" will not find "Comida fresca".
+ * Both states' names live here because this section renders whichever
+ * application the household's state has.
+ */
+const PROGRAM_LABELS: Record<string, string> = {
   medi_cal: "Medi-Cal",
   calfresh: "CalFresh",
   calworks: "CalWORKs",
-} as const;
+  tx_medicaid: "Medicaid",
+  tx_chip: "CHIP",
+  tx_snap: "SNAP",
+  tx_tanf: "TANF",
+};
 
 /**
  * Catalog keys for the screening outcome — the same keys
@@ -136,17 +147,26 @@ export default function ReportView({
   onRetry,
   onStartApplication,
 }: ReportViewProps) {
-  const { t, tv, tn, tOr } = useTranslation();
+  const { t, tv, tn, tOr, tReasons } = useTranslation();
   const [retryError, setRetryError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
 
-  const sawsRecommendation = payload.application.recommendations.find(
-    (application) => application.formId === "CA_SAWS_2_PLUS",
+  /*
+   * The recommendation for this household's own form. Looking up
+   * CA_SAWS_2_PLUS by name meant the whole application section silently
+   * disappeared for any household outside California.
+   */
+  const applicationRecommendation = payload.application.recommendations.find(
+    (application) => application.formId === payload.application.formId,
   );
 
+  /** True when we hand over instructions rather than a prefilled draft. */
+  const isManual = payload.application.delivery === "manual";
+
   const recommendedProgramCount =
-    sawsRecommendation?.programs.filter((program) => program.recommendedToApply)
-      .length ?? 0;
+    applicationRecommendation?.programs.filter(
+      (program) => program.recommendedToApply,
+    ).length ?? 0;
 
   const renderedSections = useMemo(
     () =>
@@ -172,13 +192,19 @@ export default function ReportView({
         credentials: "include",
         body: JSON.stringify({}),
       });
-      const data = (await res.json()) as { runId?: string; error?: string };
+      const data = (await res.json()) as {
+        runId?: string;
+        error?: string;
+        errorKey?: string;
+      };
 
       if (data.runId) {
         onRetry(data.runId);
         return;
       }
-      setRetryError(data.error ?? t("report_start_failed"));
+      setRetryError(
+        tOr(data.errorKey ?? "", data.error ?? t("report_start_failed")),
+      );
     } catch {
       setRetryError(t("report_refresh_failed"));
     } finally {
@@ -242,17 +268,35 @@ export default function ReportView({
         </details>
       ))}
 
-      {/* ── SAWS 2 PLUS application recommendations ──────────────────────── */}
-      {payload.application.available && sawsRecommendation && (
-        <section className="rounded-xl border border-green-200 bg-green-50 p-5">
+      {/* ── The state's application, whichever one it is ─────────────────── */}
+      {payload.application.available && applicationRecommendation && (
+        <section
+          data-testid="saws-recommendation"
+          className="rounded-xl border border-green-200 bg-green-50 p-5"
+        >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
+              {/*
+                * The form's own name, for either delivery.
+                *
+                * This read "California benefits application / SAWS 2 PLUS
+                * application" for anything `generated`, which was true while
+                * California was the only state with a generated form and
+                * became a plain falsehood the moment Texas gained one: an
+                * Austin household saw a California heading over their Texas
+                * recommendations. The manual branch was already doing the
+                * right thing — asking the registry for the form's own name —
+                * so the branch is gone rather than duplicated.
+                */}
               <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
-                {t("report_ca_application")}
+                {t("report_state_application")}
               </p>
 
               <h2 className="mt-2 text-lg font-semibold text-green-950">
-                {t("report_saws_application")}
+                {t(
+                  applicationForForm(payload.application.formId ?? "")
+                    ?.formNameKey ?? "report_state_application",
+                )}
               </h2>
 
               <p className="mt-2 max-w-2xl text-sm text-green-900">
@@ -260,7 +304,7 @@ export default function ReportView({
               </p>
             </div>
 
-            {sawsRecommendation.recommended && (
+            {applicationRecommendation.recommended && (
               <span className="w-fit rounded-full border border-green-300 bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
                 {t("ui_recommended")}
               </span>
@@ -268,7 +312,7 @@ export default function ReportView({
           </div>
 
           <div className="mt-5 space-y-3">
-            {sawsRecommendation.programs.map((program) => (
+            {applicationRecommendation.programs.map((program) => (
               <article
                 key={program.program}
                 className="rounded-lg border border-green-200 bg-white p-4"
@@ -301,8 +345,8 @@ export default function ReportView({
                   </p>
 
                   <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                    {program.reasons.map((reason) => (
-                      <li key={reason}>{reason}</li>
+                    {tReasons(program.reasons).map((sentence) => (
+                      <li key={sentence}>{sentence}</li>
                     ))}
                   </ul>
                 </div>
@@ -314,8 +358,8 @@ export default function ReportView({
                     </p>
 
                     <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-amber-900">
-                      {program.missingInformation.map((item) => (
-                        <li key={item}>{item}</li>
+                      {tReasons(program.missingInformation).map((sentence) => (
+                        <li key={sentence}>{sentence}</li>
                       ))}
                     </ul>
                   </div>
@@ -340,9 +384,11 @@ export default function ReportView({
               onClick={onStartApplication}
               className="mt-4 rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
             >
-              {recommendedProgramCount > 0
-                ? tn("report_continue_programs", recommendedProgramCount)
-                : t("report_review_saws")}
+              {isManual
+                ? t("report_manual_cta")
+                : recommendedProgramCount > 0
+                  ? tn("report_continue_programs", recommendedProgramCount)
+                  : t("report_review_application")}
             </button>
           </div>
         </section>

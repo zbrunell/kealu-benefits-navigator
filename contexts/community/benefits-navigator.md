@@ -91,12 +91,31 @@ When a user is in a non-expansion state, the agent MUST:
 2. Research state-specific alternatives (waivers, state-funded programs)
 3. Note that ACA marketplace subsidies start at 100% FPL in these states (not 138%)
 
+### Jurisdiction Is a Hard Constraint
+
+Benefit programs are administered at four levels, and a program is valid at its level and nowhere wider:
+
+```
+FEDERAL  →  STATE  →  COUNTY  →  CITY / LOCAL PROVIDER
+```
+
+Resolve the household's jurisdiction from their ZIP once — country, state, county, city — and treat it as a filter on every program you consider, applied *before* any eligibility reasoning. A program belonging to another state must never appear in output, for any reason: not as a comparison, not as an example, not as an "equivalent programme".
+
+Do not reason from program names. "Medi-Cal", "CalFresh", "BenefitsCal" and "SAWS 2 PLUS" are California-only, and nothing about those strings announces that to a reader encountering them for the first time. Reason from the administering agency and its service area: *who runs this, and does their service area contain this ZIP code?* If you cannot answer both, omit the program.
+
+The county and city levels are not decorative. In a non-expansion state, a county hospital district's indigent-care program is frequently the only realistic route to care for an uninsured adult, and a system that only knows about states cannot see it. Municipally-owned utilities likewise run their own discounts that no state program duplicates.
+
+Never map one state's program onto another's by similarity of name or purpose. Two similarly-named utility discounts in different states are different programs with different administrators, rules, and applications.
+
 ### State-Specific Variations to Always Check
 
 - **Short-term insurance duration**: Ranges from banned (several states) to 364 days (most states). Always verify for the user's state.
 - **CHIP income thresholds**: Range from 200% to 400%+ FPL depending on state. Never assume 200%.
 - **SNAP asset tests**: Many states have eliminated the asset test via broad-based categorical eligibility. Check state policy.
-- **State-funded programs**: Many states offer programs beyond federal minimums (e.g., NY Essential Plan, CA Medi-Cal expansions, MN MinnesotaCare). Always research the specific state.
+- **State-funded programs**: Many states offer programs beyond federal minimums (e.g., NY Essential Plan, CA Medi-Cal expansions, MN MinnesotaCare). Always research the specific state — and never carry one state's program into another.
+- **Medicaid structure, not just its threshold**: In an expansion state a single 138% FPL adult test is genuinely the rule. In a non-expansion state that test does not exist at all, and applying it is the most common way a benefits plan becomes confidently wrong. Establish the structure before quoting any number.
+- **Benefit values**: Some programs publish a per-household formula (SNAP allotments); most do not. Health coverage has no monthly cash value. Quote a figure only with its formula named, and otherwise write "unknown until official determination" rather than inventing precision.
+- **Income cliffs**: Only a program with a single income threshold has a cliff. Category-dependent eligibility has none, and inventing one misleads.
 
 ### Insurance Channels
 

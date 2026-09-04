@@ -6,11 +6,16 @@
 "use client";
 
 import {
+  RELATIONSHIP_LABEL_KEYS,
   allowedRelationshipsForDateOfBirth,
-  type HouseholdRelationship,
 } from "@/lib/household-relationships";
+import { useState } from "react";
 import { ageOnDate, dateOfBirthBounds } from "@/lib/date-of-birth";
 import { useTranslation } from "@/hooks/use-translation";
+import {
+  RequiredMissingNotice,
+  continueButtonClass,
+} from "./required-marker";
 import type { Saws2PlusProgram } from "@/lib/report-assembler";
 
 import type {
@@ -189,22 +194,6 @@ function ProgramCheckboxes({
   );
 }
 
-/** How each relationship is written on screen. */
-/**
- * Catalog keys, not prose: this map is rendered into a <select> the applicant
- * reads, so the words have to come from their language's catalog.
- */
-const RELATIONSHIP_LABEL_KEYS: Record<HouseholdRelationship, string> = {
-  spouse: "rel_spouse",
-  child: "rel_child",
-  parent: "rel_parent",
-  sibling: "rel_sibling",
-  grandparent: "rel_grandparent",
-  grandchild: "rel_grandchild",
-  unrelated: "rel_unrelated",
-  other: "rel_other",
-};
-
 export default function HouseholdStep({
   applicant,
   members,
@@ -234,6 +223,19 @@ export default function HouseholdStep({
       Boolean(member.dateOfBirth) &&
       Boolean(member.relationshipToApplicant.trim()),
   );
+
+  const [showMissing, setShowMissing] = useState(false);
+
+  function handleContinue() {
+    if (!membersValid) {
+      // Nothing is cleared; the applicant is told why Continue did nothing.
+      setShowMissing(true);
+
+      return;
+    }
+
+    onContinue();
+  }
 
   return (
     <div className="space-y-4">
@@ -461,7 +463,7 @@ export default function HouseholdStep({
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="block">
                         <span className="text-sm font-medium text-slate-700">
-                          Sex
+                          {t("field_sex")}
                         </span>
 
                         <select
@@ -479,13 +481,13 @@ export default function HouseholdStep({
                           className={INPUT_CLASS}
                         >
                           <option value="">
-                            Select
+                            {t("opt_select")}
                           </option>
                           <option value="male">
-                            Male
+                            {t("opt_male")}
                           </option>
                           <option value="female">
-                            Female
+                            {t("opt_female")}
                           </option>
                         </select>
                       </label>
@@ -510,22 +512,22 @@ export default function HouseholdStep({
                           className={INPUT_CLASS}
                         >
                           <option value="">
-                            Select
+                            {t("opt_select")}
                           </option>
                           <option value="single">
-                            Single
+                            {t("opt_single")}
                           </option>
                           <option value="married">
-                            Married
+                            {t("opt_married")}
                           </option>
                           <option value="separated">
-                            Separated
+                            {t("opt_separated")}
                           </option>
                           <option value="divorced">
-                            Divorced
+                            {t("opt_divorced")}
                           </option>
                           <option value="widowed">
-                            Widowed
+                            {t("opt_widowed")}
                           </option>
                         </select>
                       </label>
@@ -593,7 +595,7 @@ export default function HouseholdStep({
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="block">
                         <span className="text-sm font-medium text-slate-700">
-                          Sex
+                          {t("field_sex")}
                         </span>
 
                         <select
@@ -611,13 +613,13 @@ export default function HouseholdStep({
                           className={INPUT_CLASS}
                         >
                           <option value="">
-                            Select
+                            {t("opt_select")}
                           </option>
                           <option value="male">
-                            Male
+                            {t("opt_male")}
                           </option>
                           <option value="female">
-                            Female
+                            {t("opt_female")}
                           </option>
                         </select>
                       </label>
@@ -786,13 +788,18 @@ export default function HouseholdStep({
 
           <button
             type="button"
-            onClick={onContinue}
-            disabled={!membersValid}
-            className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={handleContinue}
+            aria-disabled={!membersValid}
+            className={continueButtonClass(membersValid)}
           >
             {t("ui_continue")}
           </button>
         </div>
+
+        <RequiredMissingNotice
+          show={showMissing && !membersValid}
+          testId="household-required-missing"
+        />
       </div>
     </div>
   );

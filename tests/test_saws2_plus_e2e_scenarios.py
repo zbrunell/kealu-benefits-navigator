@@ -509,7 +509,42 @@ def test_appendix_c_carries_the_health_representative(written_by_scenario):
 
     assert written["Text1 APPX B"] == "Priya Raman"
     assert written["Text9 APPX B"] == "Valley Health Navigators"
-    assert "Dana Okafor" not in written.values()
+
+    # The address now arrives in parts, so the printed boxes each get their own
+    # value instead of city/state/zip being left blank.
+    assert written["Text2 APPX B"] == "44 Cedar Avenue"
+    assert written["Text3 APPX B"] == "Suite 3"
+    assert written["Text4 APPX B"] == "Fresno"
+    assert written["Text5 APPX B"] == "CA"
+    assert written["Text6 APPX B"] == "93702"
+
+    # The CalFresh-only representative must not appear on *Appendix C* — the
+    # printed page is for the health-insurance part of the application.
+    #
+    # Scoped to Appendix C rather than to every field on the form: Dana Okafor
+    # legitimately appears on page 2, which is the CalFresh representative
+    # block. Asserting their absence everywhere passed only while page 2 was
+    # unmapped, and would have made mapping it look like a regression.
+    appendix_c = {
+        field: value
+        for field, value in written.items()
+        if field.endswith("APPX B")
+    }
+
+    assert "Dana Okafor" not in appendix_c.values()
+
+
+def test_page_2_carries_the_calfresh_representative(written_by_scenario):
+    """Section 2 prints the representative named for the CalFresh case.
+
+    The reverse of the Appendix C rule: the health-coverage representative has
+    no business in the CalFresh block, and the CalFresh one does.
+    """
+    written = written_by_scenario["health_authorized_representative"]
+
+    assert written["Text3 PG 2"] == "Dana Okafor"
+    assert written["Text4 PG 2"] == "(559) 555-0188"
+    assert written["Text3 PG 2"] != "Priya Raman"
 
     # Item 7's phone splits like Appendix A's, into the printed "(   )".
     assert written["Text7 APPX B"] == "559"
@@ -532,11 +567,30 @@ def test_appendix_c_leaves_the_signature_and_assister_block_blank(
         assert field not in written, field
 
 
-def test_appendix_c_leaves_the_split_address_boxes_blank(written_by_scenario):
-    """One address string cannot be split into city/state/ZIP without guessing."""
+def test_appendix_c_fills_every_address_box_it_has_a_part_for(written_by_scenario):
+    """The address boxes are filled from parts, not split from one string.
+
+    This test previously asserted the opposite: that Text3-6 stay blank,
+    because the model held one address string and splitting it would have meant
+    guessing which part was the city. The model now holds the parts separately —
+    which is what the printed page asks for — so a blank here would be a
+    regression rather than the safe choice it used to be.
+    """
     written = written_by_scenario["health_authorized_representative"]
 
-    assert written["Text2 APPX B"] == "44 Cedar Avenue, Fresno CA 93702"
+    assert written["Text2 APPX B"] == "44 Cedar Avenue"
+    assert written["Text3 APPX B"] == "Suite 3"
+    assert written["Text4 APPX B"] == "Fresno"
+    assert written["Text5 APPX B"] == "CA"
+    assert written["Text6 APPX B"] == "93702"
 
-    for field in ("Text3 APPX B", "Text4 APPX B", "Text5 APPX B", "Text6 APPX B"):
-        assert field not in written, field
+
+def test_a_representative_with_no_apartment_leaves_that_box_blank(
+    written_by_scenario,
+):
+    """An empty part is still blank, not an empty-looking placeholder."""
+    written = written_by_scenario["health_authorized_representative"]
+
+    # Dana Okafor has no apartment; the CalFresh block prints no apartment box
+    # at all, so the only thing to check is that nothing invented one.
+    assert written.get("Text3 APPX B") != ""

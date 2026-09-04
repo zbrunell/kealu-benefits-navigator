@@ -7,6 +7,7 @@ import { readFile, stat } from 'fs/promises';
 import path from 'path';
 import { NextResponse } from 'next/server';
 import type { Saws2PlusApplicationData } from '@/types/application';
+import { applicationForState } from '@/lib/state-applications';
 
 /**
  * GET /api/workflow/[runId]/draft
@@ -86,12 +87,24 @@ export async function GET(
     );
   }
 
-  // Determine filename from form type
+  /*
+   * The filename names the form, not the state we happen to support best.
+   * "partially-prefilled-SAWS-2-PLUS-draft.pdf" was hardcoded, so a Texas
+   * household downloading their H1010 worksheet got a file named after
+   * California's form — or, for the worksheet branch, a name that said nothing
+   * at all. It still names no applicant: a file in a downloads folder should
+   * not announce whose benefits application it is.
+   */
   const formType = session.draftFormType ?? 'official';
+  const definition = applicationForState(session.vars.state);
+  const slug = definition
+    ? definition.formCode.trim().toLowerCase().replace(/\s+/g, '-')
+    : '';
 
-  const filename =
-  formType === 'official'
-    ? 'partially-prefilled-SAWS-2-PLUS-draft.pdf'
+  const filename = slug
+    ? formType === 'official'
+      ? `partially-prefilled-${slug}-draft.pdf`
+      : `${slug}-worksheet-draft.pdf`
     : 'benefits-preparation-worksheet-draft.pdf';
 
     return new Response(new Uint8Array(pdfBuffer), {
@@ -178,6 +191,13 @@ const fieldProblems = findApplicationFieldProblems(applicationData);
 if (fieldProblems.length > 0) {
   return NextResponse.json(
     {
+      /*
+       * Both an `errorKey` and an `error`. The key is what the UI renders, in
+       * the applicant's language; the English text stays for logs and for any
+       * client that does not know the key. The route itself has no locale — it
+       * is not the place to choose words.
+       */
+      errorKey: 'api_error_field_problems',
       error: 'The application contains values that cannot be written to the form.',
       fieldProblems,
     },
@@ -197,15 +217,26 @@ if (!session.reportContent) {
   );
 }
 
-const state = session.vars.state
-  ?.trim()
-  .toUpperCase();
+/*
+ * Whether we hold a machine-fillable form for this household's state.
+ *
+ * Asked of the registry rather than compared against 'CA'. The literal was
+ * correct — SAWS 2 PLUS is California's form — but it stated the fact in the
+ * one place that would not be updated when a second state gained a generated
+ * form, and it gave the same 422 for "we do not fill forms in your state" as
+ * for "you are not in California", which are different things to tell someone.
+ */
+const state = session.vars.state?.trim().toUpperCase();
+const definition = applicationForState(state);
 
-if (state !== 'CA') {
+if (!definition || definition.delivery !== 'generated') {
   return NextResponse.json(
     {
-      error:
-        'SAWS 2 PLUS draft generation is only available for California.',
+      error: definition
+        ? `We do not generate a filled application for ${definition.state}. Apply through ${definition.officialUrl}.`
+        : 'No supported application form for this location.',
+      // The client uses this to route to the manual guide instead of retrying.
+      delivery: definition?.delivery ?? null,
     },
     {
       status: 422,
@@ -258,6 +289,7 @@ sessionStore.update(
   {
     draftPath: result.path,
     draftFormType: result.formType,
+    draftReviewPath: result.reviewPath ?? null,
     draftApplicationData: applicationData,
     draftGeneratedAt: new Date().toISOString(),
     // Pin it, so the guide is written in the language the PDF was filled in

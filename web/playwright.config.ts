@@ -23,21 +23,29 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: /saws2-application\.spec\.ts/,
+      testIgnore: /(saws2-application|austin-demo|saws2-spanish-flow|tx-h1010-application)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3000' },
     },
     /*
-     * The SAWS 2 PLUS flow needs the other workflow fixture.
+     * The application flows need the in-process E2E_MODE fixture.
      *
-     * `mock-kvr` produces a Texas household, which the report specs assert on,
-     * and emits no CA_SAWS_2_PLUS recommendation — so the application is never
-     * offered. The in-process E2E_MODE fixture is California-oriented and does
-     * emit one. The two cannot run on the same server, so this project gets
-     * its own.
+     * `mock-kvr` on the default server produces static Texas phase documents
+     * with no structured application output, which the report specs assert on.
+     * The E2E_MODE fixture runs the real jurisdiction resolution, program
+     * registry and screening, so it is the only one that emits a form
+     * recommendation — for California *or* Texas, depending on the ZIP typed.
+     * The two fixtures cannot run on the same server, so this project gets its
+     * own, and every spec that needs an application recommendation lives here.
+     *
+     * `saws2-spanish-flow` was in the default project and could never pass
+     * there: it waits for the `saws-recommendation` section, which only renders
+     * when the report carries a form recommendation, and `mock-kvr` emits no
+     * structured output at all. The spec was silently red rather than
+     * protecting the Spanish eligibility analysis it was written for.
      */
     {
-      name: 'saws2',
-      testMatch: /saws2-application\.spec\.ts/,
+      name: 'applications',
+      testMatch: /(saws2-application|austin-demo|saws2-spanish-flow|tx-h1010-application)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3101' },
     },
   ],

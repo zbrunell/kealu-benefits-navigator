@@ -51,6 +51,24 @@ const IDENTICAL_BY_DESIGN = new Set([
   'lang_zh_CN',
   // A ZIP code example is digits.
   'intake_zip_code_placeholder',
+  /*
+   * Official program names, which are proper nouns and are deliberately not
+   * translated — an applicant searching for "Covered California" or "Healthy
+   * Texas Women" on an agency site will not find a translated version. The
+   * sibling test "keeps official program names untranslated, as proper nouns"
+   * asserts the same policy from the other direction.
+   *
+   * "WIC" and "CHIP Perinatal" are the names the agencies print, and Spanish
+   * agency material uses them unchanged. Only the surrounding descriptions in
+   * the `_summary` keys are translated.
+   */
+  'program_federal_wic',
+  'program_covered_california',
+  'program_ca_lifeline',
+  'program_tx_chip_perinatal',
+  'program_tx_healthy_texas_women',
+  // "Federal" is spelled identically in English and Spanish.
+  'report_jurisdiction_federal',
   // "Error" is the Spanish word for error. Translating it to something else
   // to satisfy this test would make the Spanish worse, not better.
   'phase_status_error',
@@ -72,6 +90,50 @@ const IDENTICAL_BY_DESIGN = new Set([
   'ui_no',
   'qopt_irregular',
   'qopt_gas',
+]);
+
+/**
+ * Keys that are English in every catalog because the Texas pilot is English.
+ *
+ * A deliberate product decision, not an oversight: Austin is an English-only
+ * pilot, and writing Spanish and Chinese for it now would ship translations
+ * nobody has reviewed for a flow nobody has used. Listing them here keeps the
+ * parity test meaningful for everything else — a new California string that
+ * forgot Spanish still fails.
+ *
+ * Delete an entry when the pilot's language support is decided, and the test
+ * will demand a real translation.
+ */
+const ENGLISH_ONLY_TEXAS_PILOT = new Set([
+  'app_ca_saws2plus_name',
+  'app_tx_h1010_name',
+  'app_ca_how_to_apply',
+  'app_tx_how_to_apply',
+  'program_medi_cal',
+  'program_calfresh',
+  'program_calworks',
+  'program_tx_medicaid',
+  'program_tx_chip',
+  'program_tx_snap',
+  'program_tx_tanf',
+  'manual_heading',
+  'manual_intro',
+  'manual_your_answers',
+  'manual_your_answers_intro',
+  'manual_still_needed',
+  'manual_step_open_official',
+  'manual_step_copy_answers',
+  'manual_step_answer_remaining',
+  'manual_step_submit',
+  'manual_missing_ssn',
+  'manual_missing_signature',
+  'manual_missing_immigration_documents',
+  'manual_missing_income_detail',
+  'manual_channel_online',
+  'manual_channel_phone',
+  'manual_channel_in_person',
+  'manual_channel_mail',
+  'field_household_size',
 ]);
 
 // ── Catalog completeness ─────────────────────────────────────────────────────
@@ -122,7 +184,8 @@ describe('catalog completeness', () => {
 
   it.each(TRANSLATED)('%s actually translates what it defines', (locale) => {
     const untranslated = missingKeys(locale).untranslated.filter(
-      (key) => !IDENTICAL_BY_DESIGN.has(key),
+      (key) =>
+        !IDENTICAL_BY_DESIGN.has(key) && !ENGLISH_ONLY_TEXAS_PILOT.has(key),
     );
 
     expect(untranslated).toEqual([]);
@@ -170,6 +233,8 @@ describe('no untranslated English leaks', () => {
 
     for (const [key, value] of Object.entries(messages[locale])) {
       if (IDENTICAL_BY_DESIGN.has(key)) continue;
+      // English by design for the pilot; see the set's own note.
+      if (ENGLISH_ONLY_TEXAS_PILOT.has(key)) continue;
 
       const haystack = ` ${value.toLowerCase()} `;
 

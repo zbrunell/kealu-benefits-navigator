@@ -87,17 +87,25 @@ test.describe('SAWS 2 PLUS draft (production gate)', () => {
     await expect(guide).toBeVisible();
 
     await expect(
-      guide.getByRole('link', { name: 'Open printable guide' }),
+      guide.getByRole('link', { name: en.dcg_open_guide }),
     ).toHaveAttribute('href', /\/api\/workflow\/.+\/guide/);
     await expect(
-      guide.getByRole('link', { name: 'Download guide' }),
+      guide.getByRole('link', { name: en.dcg_download_guide }),
     ).toHaveAttribute('href', /guide\?download=1/);
     await expect(
-      guide.getByRole('link', { name: 'Guide for someone helping you' }),
+      guide.getByRole('link', { name: en.dcg_helper_guide }),
     ).toHaveAttribute('href', /guide\?audience=associate/);
 
-    // The guide is laid out for paper, and the page says so.
-    await expect(guide).toContainText('US Letter');
+    /*
+     * The guide can be printed, and the page says so.
+     *
+     * This used to assert "US Letter", from a separate paragraph explaining the
+     * browser's Print command and the paper size. That paragraph was the
+     * clutter this pass removed: the actions are Open and Download, and the one
+     * thing an applicant cannot work out for themselves is that printing it and
+     * keeping it beside the application is what it is for.
+     */
+    await expect(guide).toContainText('print it and keep it beside');
 
     // ── Remaining-action messaging ──────────────────────────────────────
     const manual = page.getByTestId('manual-completion-guide');
@@ -126,7 +134,7 @@ test.describe('SAWS 2 PLUS draft (production gate)', () => {
     // The same reference is printed on the guide the links point at.
     const guideHref = await page
       .getByTestId('completion-guide-download')
-      .getByRole('link', { name: 'Open printable guide' })
+      .getByRole('link', { name: en.dcg_open_guide })
       .getAttribute('href');
 
     const guideHtml = await (await page.request.get(guideHref!)).text();
@@ -137,7 +145,7 @@ test.describe('SAWS 2 PLUS draft (production gate)', () => {
 
     const guideHref = await page
       .getByTestId('completion-guide-download')
-      .getByRole('link', { name: 'Open printable guide' })
+      .getByRole('link', { name: en.dcg_open_guide })
       .getAttribute('href');
 
     const response = await page.request.get(guideHref!);
@@ -166,7 +174,7 @@ test.describe('SAWS 2 PLUS draft (production gate)', () => {
 
     const href = await page
       .getByTestId('completion-guide-download')
-      .getByRole('link', { name: 'Guide for someone helping you' })
+      .getByRole('link', { name: en.dcg_helper_guide })
       .getAttribute('href');
 
     const html = await (await page.request.get(href!)).text();

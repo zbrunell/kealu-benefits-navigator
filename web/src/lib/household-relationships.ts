@@ -34,6 +34,27 @@ export const HOUSEHOLD_RELATIONSHIPS = [
 export type HouseholdRelationship = (typeof HOUSEHOLD_RELATIONSHIPS)[number];
 
 /**
+ * How each relationship is written on screen.
+ *
+ * Catalog keys, not prose: these are rendered into a <select> the applicant
+ * reads, so the words come from their language's catalog. Held here rather than
+ * in a component because two flows now offer the same list, and two copies of
+ * it would drift the moment one gained an option.
+ */
+export const RELATIONSHIP_LABEL_KEYS: Readonly<
+  Record<HouseholdRelationship, string>
+> = {
+  spouse: 'rel_spouse',
+  child: 'rel_child',
+  parent: 'rel_parent',
+  sibling: 'rel_sibling',
+  grandparent: 'rel_grandparent',
+  grandchild: 'rel_grandchild',
+  unrelated: 'rel_unrelated',
+  other: 'rel_other',
+};
+
+/**
  * Youngest age at which "spouse" is offered.
  *
  * California's Family Code sets no floor on the age at which a minor may marry

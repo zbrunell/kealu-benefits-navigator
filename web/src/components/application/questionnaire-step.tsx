@@ -8,8 +8,8 @@
 import { useMemo, useState } from "react";
 
 import {
-  REQUIREMENT_HINTS,
-  REQUIREMENT_LABELS,
+  REQUIREMENT_HINT_KEYS,
+  REQUIREMENT_LABEL_KEYS,
   getActiveAppendices,
   getRequiredApplicationQuestions,
   isPersonScoped,
@@ -57,7 +57,11 @@ const RECORD_FACTORIES: Record<string, (id: string, memberId: string) => Record<
     name: "",
     organization: "",
     phone: "",
-    address: "",
+    street: "",
+    apartment: "",
+    city: "",
+    state: "",
+    zipCode: "",
     forCalFresh: undefined,
     forHealthCoverage: undefined,
   }),
@@ -252,6 +256,12 @@ const RECORD_FACTORIES: Record<string, (id: string, memberId: string) => Record<
  * stored shape — while the words the applicant reads come from the catalog.
  */
 const FIELD_LABEL_KEYS: Record<string, string> = {
+  phone: "qfield_phone",
+  zipCode: "qfield_zipCode",
+  state: "qfield_state",
+  city: "qfield_city",
+  apartment: "qfield_apartment",
+  street: "qfield_street",
   memberId: "qfield_memberId",
   employerName: "qfield_employerName",
   startDate: "qfield_startDate",
@@ -922,7 +932,7 @@ export default function QuestionnaireStep({
                 }`}
                 data-testid="question-requirement"
               >
-                {REQUIREMENT_LABELS[question.requirement]}
+                {t(REQUIREMENT_LABEL_KEYS[question.requirement])}
               </span>
 
               {question.sawsQuestion && (
@@ -933,7 +943,7 @@ export default function QuestionnaireStep({
             </p>
 
             <p className="mt-1 text-xs text-slate-600">
-              {REQUIREMENT_HINTS[question.requirement]}
+              {t(REQUIREMENT_HINT_KEYS[question.requirement])}
             </p>
           </div>
         )}

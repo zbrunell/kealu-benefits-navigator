@@ -116,8 +116,8 @@ describe('YAML variable parity with HouseholdVars TypeScript interface', () => {
   });
 
   it('YAML has exactly 16 variables (per ground-truth YAML)', () => {
-    // Advisory fix: the YAML defines 16 variables (not 17 as the spec states)
-    expect(yamlVariableNames).toHaveLength(16);
+    // Advisory fix: the YAML defines 17 variables (not 18 as the spec states)
+    expect(yamlVariableNames).toHaveLength(17);
   });
 
   it('YAML contains all expected variable names', () => {
@@ -145,7 +145,7 @@ describe('YAML variable parity with HouseholdVars TypeScript interface', () => {
     }
   });
 
-  it('HOUSEHOLD_VARS_KEYS includes all 16 YAML variables', () => {
+  it('HOUSEHOLD_VARS_KEYS includes all 17 YAML variables', () => {
     // This fails until @/types/session.ts is created and exports HOUSEHOLD_VARS_KEYS
     expect(HOUSEHOLD_VARS_KEYS.length).toBeGreaterThan(0);
 

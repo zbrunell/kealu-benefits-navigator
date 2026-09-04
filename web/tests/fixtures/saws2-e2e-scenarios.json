@@ -145,6 +145,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0"
     ],
     "manualCounts": {
@@ -155,7 +156,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 66,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -452,6 +455,10 @@
         "value": true
       },
       {
+        "key": "income.earned.0.present",
+        "value": true
+      },
+      {
         "key": "income.earned.0.member_id",
         "value": "applicant"
       },
@@ -474,6 +481,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.child.0",
@@ -487,7 +495,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -1046,6 +1056,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.adult.2",
@@ -1065,7 +1076,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -1756,6 +1769,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.adult.2",
@@ -1778,7 +1792,9 @@
       "overflow": 3,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -1923,6 +1939,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0"
     ],
     "manualCounts": {
@@ -1933,7 +1950,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 67,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -2070,6 +2089,10 @@
         "value": true
       },
       {
+        "key": "income.earned.0.present",
+        "value": true
+      },
+      {
         "key": "income.earned.0.member_id",
         "value": "applicant"
       },
@@ -2090,6 +2113,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0"
     ],
     "manualCounts": {
@@ -2100,7 +2124,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -2237,6 +2263,10 @@
         "value": true
       },
       {
+        "key": "income.earned.0.present",
+        "value": true
+      },
+      {
         "key": "income.earned.0.member_id",
         "value": "applicant"
       },
@@ -2250,6 +2280,10 @@
       },
       {
         "key": "income.earned.0.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.1.present",
         "value": true
       },
       {
@@ -2269,6 +2303,10 @@
         "value": true
       },
       {
+        "key": "income.earned.2.present",
+        "value": true
+      },
+      {
         "key": "income.earned.2.member_id",
         "value": "applicant"
       },
@@ -2282,6 +2320,10 @@
       },
       {
         "key": "income.earned.2.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.3.present",
         "value": true
       },
       {
@@ -2305,6 +2347,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0"
     ],
     "manualCounts": {
@@ -2315,7 +2358,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -2452,6 +2497,10 @@
         "value": true
       },
       {
+        "key": "income.earned.0.present",
+        "value": true
+      },
+      {
         "key": "income.earned.0.member_id",
         "value": "applicant"
       },
@@ -2465,6 +2514,10 @@
       },
       {
         "key": "income.earned.0.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.1.present",
         "value": true
       },
       {
@@ -2484,6 +2537,10 @@
         "value": true
       },
       {
+        "key": "income.earned.2.present",
+        "value": true
+      },
+      {
         "key": "income.earned.2.member_id",
         "value": "applicant"
       },
@@ -2497,6 +2554,10 @@
       },
       {
         "key": "income.earned.2.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.3.present",
         "value": true
       },
       {
@@ -2516,6 +2577,10 @@
         "value": true
       },
       {
+        "key": "income.earned.4.present",
+        "value": true
+      },
+      {
         "key": "income.earned.4.member_id",
         "value": "applicant"
       },
@@ -2529,6 +2594,10 @@
       },
       {
         "key": "income.earned.4.expected_to_continue",
+        "value": true
+      },
+      {
+        "key": "income.earned.5.present",
         "value": true
       },
       {
@@ -2552,6 +2621,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "overflow.income.earned.5",
       "overflow.income.earned.6"
@@ -2564,7 +2634,9 @@
       "overflow": 2,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -2967,6 +3039,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "write_in.appendix_d.0.0",
@@ -2984,7 +3057,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -3355,6 +3430,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.adult.2",
@@ -3373,7 +3449,9 @@
       "overflow": 2,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -3550,6 +3628,10 @@
         "value": true
       },
       {
+        "key": "appendices.employer_coverage.0.present",
+        "value": true
+      },
+      {
         "key": "appendices.employer_coverage.0.employee_name",
         "value": "Maria Delgado"
       },
@@ -3576,6 +3658,10 @@
       {
         "key": "appendices.employer_coverage.0.plan_change",
         "value": "no_changes_expected"
+      },
+      {
+        "key": "health.employer_coverage.0.present",
+        "value": true
       },
       {
         "key": "health.employer_coverage.0.member_id",
@@ -3608,6 +3694,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.appendix_a_employee"
@@ -3620,7 +3707,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -3797,6 +3886,10 @@
         "value": true
       },
       {
+        "key": "appendices.tribal.0.present",
+        "value": true
+      },
+      {
         "key": "appendices.tribal.0.person_name",
         "value": "Maria Delgado"
       },
@@ -3835,6 +3928,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1"
     ],
@@ -3846,7 +3940,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -3991,6 +4087,10 @@
         "value": true
       },
       {
+        "key": "household.authorized_representative.0.present",
+        "value": true
+      },
+      {
         "key": "household.authorized_representative.0.name",
         "value": "Dana Okafor"
       },
@@ -4003,8 +4103,20 @@
         "value": "5595550188"
       },
       {
-        "key": "household.authorized_representative.0.address",
-        "value": "900 Elm Street, Fresno CA 93701"
+        "key": "household.authorized_representative.0.address.street",
+        "value": "900 Elm Street"
+      },
+      {
+        "key": "household.authorized_representative.0.address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "household.authorized_representative.0.address.state",
+        "value": "CA"
+      },
+      {
+        "key": "household.authorized_representative.0.address.zip_code",
+        "value": "93701"
       },
       {
         "key": "household.authorized_representative.0.for_calfresh",
@@ -4013,6 +4125,10 @@
       {
         "key": "household.authorized_representative.0.for_health_coverage",
         "value": false
+      },
+      {
+        "key": "household.authorized_representative.1.present",
+        "value": true
       },
       {
         "key": "household.authorized_representative.1.name",
@@ -4027,8 +4143,24 @@
         "value": "5595550199"
       },
       {
-        "key": "household.authorized_representative.1.address",
-        "value": "44 Cedar Avenue, Fresno CA 93702"
+        "key": "household.authorized_representative.1.address.street",
+        "value": "44 Cedar Avenue"
+      },
+      {
+        "key": "household.authorized_representative.1.address.apartment",
+        "value": "Suite 3"
+      },
+      {
+        "key": "household.authorized_representative.1.address.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "household.authorized_representative.1.address.state",
+        "value": "CA"
+      },
+      {
+        "key": "household.authorized_representative.1.address.zip_code",
+        "value": "93702"
       },
       {
         "key": "household.authorized_representative.1.for_calfresh",
@@ -4044,7 +4176,23 @@
       },
       {
         "key": "appendices.representative.address",
-        "value": "44 Cedar Avenue, Fresno CA 93702"
+        "value": "44 Cedar Avenue"
+      },
+      {
+        "key": "appendices.representative.apartment",
+        "value": "Suite 3"
+      },
+      {
+        "key": "appendices.representative.city",
+        "value": "Fresno"
+      },
+      {
+        "key": "appendices.representative.state",
+        "value": "CA"
+      },
+      {
+        "key": "appendices.representative.zip_code",
+        "value": "93702"
       },
       {
         "key": "appendices.representative.organization",
@@ -4059,6 +4207,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "signature.appendix_c",
       "signature.appendix_c_date",
@@ -4072,7 +4221,9 @@
       "overflow": 0,
       "unsupported": 1,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -4209,6 +4360,10 @@
         "value": true
       },
       {
+        "key": "appendices.vehicle.0.present",
+        "value": true
+      },
+      {
         "key": "appendices.vehicle.0.owner_name",
         "value": "Maria Delgado"
       },
@@ -4235,6 +4390,10 @@
       {
         "key": "appendices.vehicle.0.fair_market_value_source",
         "value": "kelly_blue_book"
+      },
+      {
+        "key": "appendices.vehicle.1.present",
+        "value": true
       },
       {
         "key": "appendices.vehicle.1.owner_name",
@@ -4265,6 +4424,10 @@
         "value": "kelly_blue_book"
       },
       {
+        "key": "appendices.vehicle.2.present",
+        "value": true
+      },
+      {
         "key": "appendices.vehicle.2.owner_name",
         "value": "Maria Delgado"
       },
@@ -4291,6 +4454,10 @@
       {
         "key": "appendices.vehicle.2.fair_market_value_source",
         "value": "kelly_blue_book"
+      },
+      {
+        "key": "appendices.vehicle.3.present",
+        "value": true
       },
       {
         "key": "appendices.vehicle.3.owner_name",
@@ -4321,6 +4488,10 @@
         "value": "kelly_blue_book"
       },
       {
+        "key": "resources.vehicles.0.present",
+        "value": true
+      },
+      {
         "key": "resources.vehicles.0.member_id",
         "value": "applicant"
       },
@@ -4339,6 +4510,10 @@
       {
         "key": "resources.vehicles.0.used_for",
         "value": "Getting to work"
+      },
+      {
+        "key": "resources.vehicles.1.present",
+        "value": true
       },
       {
         "key": "resources.vehicles.1.member_id",
@@ -4361,6 +4536,10 @@
         "value": "Getting to work"
       },
       {
+        "key": "resources.vehicles.2.present",
+        "value": true
+      },
+      {
         "key": "resources.vehicles.2.member_id",
         "value": "applicant"
       },
@@ -4379,6 +4558,10 @@
       {
         "key": "resources.vehicles.2.used_for",
         "value": "Getting to work"
+      },
+      {
+        "key": "resources.vehicles.3.present",
+        "value": true
       },
       {
         "key": "resources.vehicles.3.member_id",
@@ -4405,6 +4588,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "overflow.appendices.vehicle.4"
     ],
@@ -4416,7 +4600,9 @@
       "overflow": 1,
       "unsupported": 0,
       "missing_answer": 80,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -4553,12 +4739,20 @@
         "value": true
       },
       {
+        "key": "resources.personal_property.0.present",
+        "value": true
+      },
+      {
         "key": "resources.personal_property.0.member_id",
         "value": "applicant"
       },
       {
         "key": "resources.personal_property.0.person_name",
         "value": "Maria Delgado"
+      },
+      {
+        "key": "resources.personal_property.1.present",
+        "value": true
       },
       {
         "key": "resources.personal_property.1.member_id",
@@ -4569,12 +4763,20 @@
         "value": "Maria Delgado"
       },
       {
+        "key": "resources.personal_property.2.present",
+        "value": true
+      },
+      {
         "key": "resources.personal_property.2.member_id",
         "value": "applicant"
       },
       {
         "key": "resources.personal_property.2.person_name",
         "value": "Maria Delgado"
+      },
+      {
+        "key": "resources.personal_property.3.present",
+        "value": true
       },
       {
         "key": "resources.personal_property.3.member_id",
@@ -4589,6 +4791,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "overflow.resources.personal_property.4"
     ],
@@ -4600,7 +4803,9 @@
       "overflow": 1,
       "unsupported": 0,
       "missing_answer": 68,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -4801,6 +5006,7 @@
       "ssn.applicant",
       "signature.applicant",
       "signature.applicant_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0"
     ],
     "manualCounts": {
@@ -4811,7 +5017,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 56,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   },
   {
@@ -5048,6 +5256,10 @@
         "value": true
       },
       {
+        "key": "appendices.vehicle.0.present",
+        "value": true
+      },
+      {
         "key": "appendices.vehicle.0.owner_name",
         "value": "Maria Delgado"
       },
@@ -5076,6 +5288,10 @@
         "value": "kelly_blue_book"
       },
       {
+        "key": "resources.vehicles.0.present",
+        "value": true
+      },
+      {
         "key": "resources.vehicles.0.member_id",
         "value": "applicant"
       },
@@ -5100,6 +5316,10 @@
         "value": true
       },
       {
+        "key": "appendices.employer_coverage.0.present",
+        "value": true
+      },
+      {
         "key": "appendices.employer_coverage.0.employee_name",
         "value": "Luis Reyes"
       },
@@ -5117,6 +5337,10 @@
       },
       {
         "key": "health.american_indian_or_alaska_native",
+        "value": true
+      },
+      {
+        "key": "appendices.tribal.0.present",
         "value": true
       },
       {
@@ -5228,6 +5452,10 @@
         "value": "hourly"
       },
       {
+        "key": "health.employer_coverage.0.present",
+        "value": true
+      },
+      {
         "key": "health.employer_coverage.0.member_id",
         "value": "m1"
       },
@@ -5254,6 +5482,7 @@
       "signature.applicant_date",
       "signature.second_adult",
       "signature.second_adult_date",
+      "uncollected.race_ethnicity",
       "ssn.adult.0",
       "ssn.adult.1",
       "ssn.child.0",
@@ -5269,7 +5498,9 @@
       "overflow": 0,
       "unsupported": 0,
       "missing_answer": 69,
-      "deferred": 0
+      "deferred": 0,
+      "not_collected": 0,
+      "optional_not_collected": 1
     }
   }
 ]

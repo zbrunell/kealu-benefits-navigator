@@ -4,6 +4,7 @@
 //
 
 import type { Saws2PlusProgram } from "@/lib/report-assembler";
+import type { BenefitProgramId } from "@/lib/state-applications";
 import {
   emptyQuestionnaire,
   type Saws2PlusQuestionnaire,
@@ -237,7 +238,21 @@ export interface PersonalEmergencyInformation {
 }
 
 export interface Saws2PlusApplicationData {
-  selectedPrograms: Saws2PlusProgram[];
+  /**
+   * Which programmes this application is requesting.
+   *
+   * `BenefitProgramId`, not the California trio. "What am I applying for?" is
+   * the same question in every state, and typing the answer as California's
+   * three made a Texas household's answer unrepresentable: the canonical field
+   * plan emits `programs.<id>`, so `programs.tx_snap` — which Form H1010 maps —
+   * could never be produced no matter what the applicant ticked.
+   *
+   * The California *flow* is still California-only, and says so where it
+   * narrows: `isSaws2PlusProgram` guards every SAWS-shaped component and
+   * `evaluateApplicationReadiness` filters before reasoning. Narrowing at the
+   * point of use is honest; narrowing the shared model was not.
+   */
+  selectedPrograms: BenefitProgramId[];
 
   /**
    * Page 1 asks "What programs are you applying for?" with an "Other" option
@@ -280,11 +295,19 @@ export interface Saws2PlusApplicationData {
   questionnaire: Saws2PlusQuestionnaire;
 }
 
+/*
+ * An empty address, with an empty state.
+ *
+ * `state` defaulted to "CA", so every blank application began life asserting
+ * the applicant lives in California — including one for a household whose ZIP
+ * resolved elsewhere or not at all. The state is written from the resolved
+ * jurisdiction (see buildInitialApplicationData) or left for the applicant.
+ */
 export const EMPTY_ADDRESS: ApplicationAddress = {
   street: "",
   apartment: "",
   city: "",
-  state: "CA",
+  state: "",
   zipCode: "",
 };
 

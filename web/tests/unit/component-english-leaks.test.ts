@@ -37,6 +37,7 @@ const FLOW_COMPONENTS = [
   'components/application/program-selection-step.tsx',
   'components/application/questionnaire-step.tsx',
   'components/application/draft-completion-guide.tsx',
+  'components/application/required-marker.tsx',
 ];
 
 /**
@@ -73,6 +74,12 @@ const PROPER_NOUNS = [
   'Medi-Cal',
   'CalFresh',
   'CalWORKs',
+  // Texas programme names, equally untranslatable: an applicant searching
+  // yourtexasbenefits.com for "SNAP" will not find a translation of it.
+  'SNAP',
+  'CHIP',
+  'TANF',
+  'Medicaid',
   'BenefitsCal',
   'Covered California',
   'Kealu',
@@ -95,7 +102,12 @@ function isProperNounOnly(text: string): boolean {
  * a single word must be a known interface word.
  */
 export function looksLikeProse(raw: string, allowSingleWord = false): boolean {
-  const text = raw.trim();
+  /*
+   * Interpolations are dropped first. `${shared} bg-green-700 text-white` is a
+   * class list assembled from a constant, and leaving the `${...}` in front
+   * defeated the class-list check below, which anchors on a lowercase word.
+   */
+  const text = raw.replace(/\$\{[^}]*\}/g, ' ').trim();
 
   if (text.length < 2 || !/[A-Za-z]/.test(text)) return false;
   if (TAILWIND.test(text)) return false;
@@ -142,7 +154,19 @@ export function leaksIn(source: string): Leak[] {
   const blanked = source.replace(/\/\*[\s\S]*?\*\//g, (m) =>
     m.replace(/[^\n]/g, ' '),
   );
-  const lines = blanked.split('\n').map((l) => l.replace(/\/\/.*$/, ''));
+  const lines = blanked
+    .split('\n')
+    .map((l) => l.replace(/\/\/.*$/, ''))
+    /*
+     * Entities become a letter before any pattern runs.
+     *
+     * `&ldquo;` contains a semicolon, and the bare-prose pattern excludes
+     * semicolons to skip statements — so `an &ldquo;Other&rdquo; box on page 1.
+     * Tell us` never even reached the prose check. That is exactly how it
+     * reached production. Decoding here rather than inside looksLikeProse
+     * matters: by then the line has already been rejected.
+     */
+    .map((l) => l.replace(/&[a-z]+;/g, 'x'));
   const found: Leak[] = [];
 
   const push = (
@@ -178,9 +202,17 @@ export function leaksIn(source: string): Leak[] {
     // JSX text between tags on one line.
     for (const m of line.matchAll(/>([^<>{}]{2,})</g)) push(at, 'jsx text', m[1]);
 
-    // A bare line of JSX prose.
-    const bare = /^\s{4,}([A-Z][^<>{}=;:]*)$/.exec(line);
-    if (bare) push(at, 'jsx prose', bare[1]);
+    /*
+      A bare line of JSX prose.
+
+      Single words count here, not only the ones in SOLO: a lone capitalised
+      word on its own line inside JSX is text, because an identifier would
+      carry an operator, a call or a punctuation mark. `City` reached
+      production as a hard-coded label precisely because the single-token
+      filter treated it as code.
+    */
+    const bare = /^\s{4,}([A-Z][^<>{}=;:"'\[\]]*)$/.exec(line);
+    if (bare) push(at, 'jsx prose', bare[1], true);
 
     // A sentence chosen by a ternary.
     for (const m of line.matchAll(/[?:]\s*["'`]([^"'`]{12,})["'`]/g)) {
@@ -237,6 +269,11 @@ describe('the detector actually detects', () => {
     ['a ternary sentence', '  {count === 0 ? "No programs selected." : x}'],
     ['a template sentence', '  `Your ZIP code is in ${county} County, so it applies.`'],
     ['jsx text', '  <span>Health coverage only:</span>'],
+    ['a lone capitalised label', '              City'],
+    [
+      'prose containing an HTML entity',
+      '                The application has an &ldquo;Other&rdquo; box on page 1.',
+    ],
   ];
 
   for (const [what, sample] of REAL_LEAKS) {
@@ -256,6 +293,10 @@ describe('the detector actually detects', () => {
     ['a block comment', '/*\n  Household adults map to adult rows.\n*/'],
     ['a line comment', '  // Household adults map to adult rows.'],
     ['an HTTP method', '        method: "POST",'],
+    [
+      'an interpolated class list',
+      '    ? `${shared} bg-green-700 text-white hover:bg-green-800`',
+    ],
   ];
 
   for (const [what, sample] of NOT_LEAKS) {

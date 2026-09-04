@@ -5,8 +5,9 @@ description: "Discover government benefits and insurance options, validate eligi
 variables:
   # --- Core demographics ---
   household_profile: ""   # Free-text description: income, household size, ages, employment status, special circumstances (veteran, disability, etc.)
-  state: ""               # US state (e.g., "Texas")
-  county: ""              # County (e.g., "Harris County")
+  state: ""               # US state, two-letter code derived from the ZIP (e.g., "TX")
+  county: ""              # County, no suffix, derived from the ZIP (e.g., "Travis")
+  city: ""                # City derived from the ZIP (e.g., "Austin") — needed for city-level programs
   zip_code: ""            # Zip code for insurance marketplace lookup (required for plan matching)
   income_type: ""         # W-2 employee | self-employed | gig/1099 | mixed | unemployed — affects MAGI calculation
 
@@ -110,28 +111,84 @@ phases:
       - HHS/ACF: TANF, childcare assistance (CCDF), Head Start
       - DOE/HHS: LIHEAP (energy assistance), Weatherization
 
-      **Step 3:** Search state-specific programs for {{ state }}:
+      **Step 3:** Search state-specific programs for {{ state }} — and ONLY
+      for {{ state }}:
       - State Medicaid program (name varies by state)
       - State CHIP program
       - State utility assistance beyond LIHEAP
       - State housing programs
       - State workforce/training programs
 
-      **Step 4:** Search county/city programs for {{ county }}:
+      **Step 3a — Medicaid expansion status is not optional context.**
+      Before naming any Medicaid program, establish whether {{ state }} adopted
+      ACA Medicaid expansion, and say so explicitly in the output.
+
+      - In an **expansion** state, adults up to 138% FPL qualify on income alone.
+      - In a **non-expansion** state there is NO such rule. Medicaid is
+        categorical: children by age band, pregnancy, parents/caretaker
+        relatives, aged/blind/disabled, former foster youth. An adult who fits
+        no category is ineligible at ANY income, and below 100% FPL is also
+        below the marketplace subsidy floor. That is the coverage gap and you
+        must name it plainly rather than implying coverage exists.
+
+      Texas, Florida, Georgia, Tennessee, Alabama, Mississippi, South Carolina,
+      Kansas, Wisconsin and Wyoming had NOT expanded Medicaid as of this
+      writing. Verify the current status rather than trusting this list.
+
+      **Step 4:** Search county/city programs for {{ county }} County and the
+      city of {{ city }}:
       - Local community action agencies
-      - County health department programs
+      - County health department or hospital-district programs (these are often
+        the only realistic option for uninsured adults in a non-expansion
+        state — e.g. a county healthcare district's indigent care program)
+      - Municipal utility assistance, where the city owns its utility
       - Local housing authority programs
 
-      **Step 5:** For each program found, document:
+      **Step 5 — JURISDICTION IS A HARD CONSTRAINT.**
+
+      Every program you name must be administered by, or available to residents
+      of, one of exactly these four levels:
+
+      1. the United States federally,
+      2. the state of {{ state }},
+      3. {{ county }} County,
+      4. the city of {{ city }} or another local body serving this address.
+
+      A program belonging to any other state MUST NOT appear, in any section,
+      for any reason — not as a comparison, not as an example, not as an
+      "equivalent". Do not reason from a program's name; reason from its
+      administering agency and service area. If you are not certain a program
+      serves this address, omit it.
+
+      Do not map one state's program onto another's by similarity of name or
+      purpose. A utility discount in one state is not the same program, with the
+      same rules and the same application, as a similarly-named one elsewhere.
+
+      Before writing each row, ask: *which agency runs this, and does its
+      service area contain {{ zip_code }}?* If you cannot answer both, omit it.
+
+      **Step 6:** For each program found, document:
       - Program name and administering agency
+      - The jurisdiction level it is administered at (federal / state / county / city)
       - Specific income limits as dollar amounts for this household size
       - Application URL (must be .gov or official program site)
       - Enrollment window (open/closed/seasonal with dates)
       - Required documents
 
-      **Step 6:** Flag income cliff warnings and time-sensitive programs.
+      **Step 7:** Flag income cliff warnings and time-sensitive programs.
 
-      **Step 7:** Replace every `<!-- FILL: ... -->` placeholder in STATUS.md.
+      Only warn about a threshold that actually exists in {{ state }}. Where
+      eligibility is categorical, or depends on income after deductions, say
+      that instead of inventing a single cliff figure.
+
+      **Step 8:** Estimated values must be defensible.
+
+      Give a dollar figure only when the program publishes a formula you can
+      apply to this household, and say which formula. Otherwise write
+      "unknown until official determination". Do not assign a monthly dollar
+      value to health coverage — its worth depends on care actually used.
+
+      **Step 9:** Replace every `<!-- FILL: ... -->` placeholder in STATUS.md.
 
       ---
 
@@ -140,6 +197,7 @@ phases:
       **Household Profile:** {{ household_profile }}
       **State:** {{ state }}
       **County:** {{ county }}
+      **City:** {{ city }}
       **Zip Code:** {{ zip_code }}
       **Income Type:** {{ income_type }}
       **Health Needs:** {{ health_needs }}
@@ -677,18 +735,45 @@ phases:
       - the recommended actions;
       - any unresolved information identified by eligibility validation.
 
-      Currently supported form:
+      Currently supported forms, by state:
 
-      - California: `CA_SAWS_2_PLUS`
-        - Medi-Cal
-        - CalFresh
-        - CalWORKs
+      - California: `CA_SAWS_2_PLUS` — exactly these three programs:
+        - `medi_cal`
+        - `calfresh`
+        - `calworks`
 
-      For California households, include one application object for
-      `CA_SAWS_2_PLUS`.
+      - Texas: `TX_H1010` (Texas Works Application for Assistance) — exactly
+        these four programs:
+        - `tx_medicaid` — every Texas Medicaid category shares this one
+          destination on the form: children's Medicaid, Medicaid for Pregnant
+          Women, and Parents/Caretaker Relatives. Judge it on whichever
+          category the household comes closest to qualifying under, and say
+          which in the reasons.
+        - `tx_chip` — children's CHIP and CHIP Perinatal
+        - `tx_snap`
+        - `tx_tanf`
 
-      For households outside California, return an empty `applications` array.
-      Do not recommend SAWS 2 PLUS for a non-California household.
+      Include exactly one application object, for the form belonging to the
+      household's own state. Include no others.
+
+      For a household in a state with no form listed above, return an empty
+      `applications` array.
+
+      A form belonging to another state MUST NOT appear. Never recommend
+      SAWS 2 PLUS for a household outside California, and never recommend
+      H1010 for a household outside Texas.
+
+      Two Texas-specific requirements, because the default reasoning is wrong
+      here:
+
+      - **`tx_medicaid` must not be judged on a 138% FPL adult test.** Texas did
+        not expand Medicaid. If the household has no child, no pregnancy and no
+        disability, `tx_medicaid` is `unlikely_eligible` with
+        `recommendedToApply: false` however low the income is, and the reason
+        must say the household falls in the coverage gap.
+      - **`tx_tanf` requires a dependent child** (18 or under) or a late-stage
+        pregnancy. An adult-only household is `unlikely_eligible` regardless of
+        income. Do not recommend TANF because income is low.
 
       Use exactly this top-level schema:
 
@@ -744,16 +829,19 @@ phases:
       - Do not include JSON comments or trailing commas.
       - `schemaVersion` must be `1`.
       - `applications` must be an array.
-      - For a California household, include exactly one application object.
-      - For a non-California household, use:
+      - Include exactly one application object, for the household's own state.
+      - For a state with no supported form, use:
         `"applications": []`
-      - The California application object must use:
-        `"formId": "CA_SAWS_2_PLUS"`
-      - The California application must include exactly three program objects.
-      - Include each supported program exactly once:
-        - `medi_cal`
-        - `calfresh`
-        - `calworks`
+      - `formId` must be the form belonging to the household's state:
+        - California: `"CA_SAWS_2_PLUS"`
+        - Texas: `"TX_H1010"`
+      - The application must include one program object for every program that
+        form covers, each exactly once and no others:
+        - `CA_SAWS_2_PLUS`: `medi_cal`, `calfresh`, `calworks`
+        - `TX_H1010`: `tx_medicaid`, `tx_chip`, `tx_snap`, `tx_tanf`
+      - A program object from one state's form must never appear inside the
+        other's. A `calfresh` entry inside a `TX_H1010` application is rejected
+        by the consumer, and the whole application is discarded.
       - Allowed status values:
         - `likely_eligible`
         - `possibly_eligible`

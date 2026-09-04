@@ -1,0 +1,195 @@
+H1010 — Texas Works Application for Assistance
+
+THIS IS NOT THE OFFICIAL FORM.
+
+It is a prefilled worksheet carrying your answers. Submit the official application through the agency's own channel and copy these answers across.
+
+Why: HHSC does not publish Form H1010 as a retrievable PDF: its own forms page links to a YourTexasBenefits web application for both the English and the Spanish edition, and direct file requests to hhs.texas.gov are refused or return nothing. Rather than guess where the boxes sit on a document we have not inspected, this renders a Navigator-authored worksheet whose coordinates we own. Replace base_document and the boxes once the official PDF is obtained.
+
+Filled in for you:
+  What are you applying for?
+    Food benefits (SNAP): X
+    Healthcare (Medicaid): X
+  About you
+    First name: Marisol
+    Middle name: Elena
+    Last name: Ramirez de la Cruz Villanueva
+    Date of birth (mm/dd/yyyy): 03/14/1991
+    Home phone: (512) 555-1234
+    Email address: marisol.ramirez@example.test
+    Language you prefer: Spanish
+    Marital status: Single
+    Sex: Female
+    Are you a U.S. citizen or U.S. national?: Yes
+    Do you have a disability?: No
+  Where you live
+    Street address: 18200 Farm-to-Market Road 1826, Building C, Southwest Parkway
+    Apt or unit: Unit 1420
+    City: Austin
+    County: Travis
+    State: TX
+    ZIP code: 78737
+    Is anyone in your home homeless?: No
+    Does anyone live in a shelter, group home, or institution?: No
+  Where you get your mail
+    Do you get your mail at the address above?: Yes
+  People who live with you
+    How many people live in your home?: 9
+    Adults: 5
+    Children: 4
+    Do you buy and prepare food together?: Yes
+    Is anyone in your home pregnant?: No
+    Person 1 — First name: Adulto0
+    Person 1 — Last name: Ramirez
+    Person 1 — How they are related to you: Spouse
+    Person 1 — Date of birth: 07/19/1989
+    Person 1 — Sex: Male
+    Person 1 — U.S. citizen?: Yes
+    Person 2 — First name: Adulto1
+    Person 2 — Last name: Ramirez
+    Person 2 — How they are related to you: Spouse
+    Person 2 — Date of birth: 07/19/1989
+    Person 2 — Sex: Male
+    Person 2 — U.S. citizen?: Yes
+    Person 3 — First name: Adulto2
+    Person 3 — Last name: Ramirez
+    Person 3 — How they are related to you: Spouse
+    Person 3 — Date of birth: 07/19/1989
+    Person 3 — Sex: Male
+    Person 3 — U.S. citizen?: Yes
+    Person 4 — First name: Adulto3
+    Person 4 — Last name: Ramirez
+    Person 4 — How they are related to you: Spouse
+    Person 4 — Date of birth: 07/19/1989
+    Person 4 — Sex: Male
+    Person 4 — U.S. citizen?: Yes
+    Person 5 — First name: Ninez0
+    Person 5 — Last name: Ramirez
+    Person 5 — How they are related to you: Child
+    Person 5 — Date of birth: 09/08/2016
+    Person 5 — Sex: Female
+    Person 5 — U.S. citizen?: Yes
+    Person 6 — First name: Ninez1
+    Person 6 — Last name: Ramirez
+    Person 6 — How they are related to you: Child
+    Person 6 — Date of birth: 09/08/2016
+    Person 6 — Sex: Female
+    Person 6 — U.S. citizen?: Yes
+  Money you get
+    Does anyone in your home have a job?: Yes
+    Does anyone get money from anywhere else (child support, unemployment, Social Security, retirement)?: No
+  Jobs
+    Job 1 — Who works there: Marisol Ramirez de la Cruz Villanueva
+    Job 1 — Employer: Central Texas Regional Mobility Authority Maintenance Division
+    Job 1 — Employer address: 100 Congress Avenue, Austin TX
+    Job 1 — Gross pay this month ($): 1,600
+    Job 1 — How often paid: Every two weeks
+    Job 1 — Hours a week: 32
+    Job 2 — Who works there: Adulto0 Ramirez
+    Job 2 — Employer: H-E-B
+    Job 2 — Employer address: 101 Congress Avenue, Austin TX
+    Job 2 — Gross pay this month ($): 1,650
+    Job 2 — How often paid: Every two weeks
+    Job 2 — Hours a week: 32
+    Job 3 — Who works there: Adulto1 Ramirez
+    Job 3 — Employer: Whole Foods Market
+    Job 3 — Employer address: 102 Congress Avenue, Austin TX
+    Job 3 — Gross pay this month ($): 1,700
+    Job 3 — How often paid: Every two weeks
+    Job 3 — Hours a week: 32
+  Bills you pay
+    Do you pay rent, a mortgage, or utility bills?: Yes
+    Bill 1 — Kind of bill: Rent or mortgage
+    Bill 1 — Cost each month ($): 2,400
+    Bill 2 — Kind of bill: Electricity
+    Bill 2 — Cost each month ($): 310
+    Bill 3 — Kind of bill: Water
+    Bill 3 — Cost each month ($): 120
+    Bill 4 — Kind of bill: Gas
+    Bill 4 — Cost each month ($): 55
+    Bill 5 — Kind of bill: Telephone
+    Bill 5 — Cost each month ($): 90
+
+Left blank on purpose:
+    Your signature and the date you sign. We never fill these in.
+    Social Security numbers and immigration document numbers. We do not ask for them and never write them onto a form.
+
+Still yours to fill in:
+  People who live with you
+    Is anyone in your home a student?
+  Money you get
+    Total yearly household income ($)
+    Kind of income
+    Is anyone self-employed or running a business?
+    Does anyone's income change during the year?
+  Bills you pay
+    Do you pay for child care or adult care so someone can work or go to school?
+    Does anyone pay child support to someone outside your home?
+    Does anyone 60 or older, or with a disability, have medical costs?
+  Things you own
+    Does anyone have a bank account, cash, or savings?
+    Does anyone own a car or truck?
+    Does anyone own a home, land, or other property?
+    Does anyone own anything else of value?
+  If you need food benefits right away
+    Is your monthly income under $150 and your cash on hand $100 or less?
+    Are your income and cash together less than your rent and utilities this month?
+    Is anyone a migrant or seasonal farm worker?
+  Your situation
+    Has anyone in your home served in the military?
+    Does a disability limit anyone's daily activities?
+    Was anyone in your home ever in foster care?
+    Has anyone in your home received benefits before?
+  Someone helping you apply
+    Is someone applying on your behalf?
+
+Only if it applies to you — blank is a complete answer:
+  What are you applying for?
+    Healthcare (CHIP)
+    Cash help for families (TANF)
+  About you
+    Other names you have used
+    Other phone
+  Bills you pay
+    Bill 1 — Details
+    Bill 2 — Details
+    Bill 3 — Details
+    Bill 4 — Details
+    Bill 5 — Details
+  If you need food benefits right away
+    Will your food run out in the next three days?
+    Have you been given an eviction notice?
+    Have your utilities been shut off, or been threatened with shut-off?
+    Does anyone need essential clothing?
+    Does anyone need transportation to meet an emergency need?
+  Your situation
+    Benefits anyone already gets
+
+Not applicable to your household — leave these blank:
+  Because you get your mail at the address where you live:
+    Mailing street address
+    Apt or unit
+    City
+    County
+    State
+    ZIP code
+  Because you told us nobody else is applying on your behalf:
+    Their name
+    Organization
+    Phone
+    Street address
+    City
+    State
+    ZIP code
+  Other income rows: you filled 0 of 3. Leave the other 3 blank — there is no other income to put in them.
+
+More than this form has room for — attach a separate sheet with the rest:
+    Person: 2 more than the 6 printed rows.
+    Job: 1 more than the 3 printed rows.
+    Bill: 1 more than the 5 printed rows.
+
+Too long for the printed box — write "see attached" and attach the full answer:
+    Job 1 — Employer
+    Job 1 — Who works there
+
+Review every page before submitting.

@@ -76,7 +76,9 @@ export type ValueTypeKey =
   | 'vt_checkbox_property'
   | 'vt_assister'
   | 'vt_deferred'
-  | 'vt_missing';
+  | 'vt_missing'
+  | 'vt_race_checkboxes'
+  | 'vt_contact_blocks';
 
 /** Every instruction sentence, as a catalog key. Same reason as above. */
 export type InstructionKey =
@@ -99,7 +101,9 @@ export type InstructionKey =
   | 'instr_unsupported_assister'
   | 'instr_deferred_with_page'
   | 'instr_deferred_no_page'
-  | 'instr_missing_answer';
+  | 'instr_missing_answer'
+  | 'instr_uncollected_race_ethnicity'
+  | 'instr_uncollected_member_contact';
 
 export type ManualReason =
   | 'ssn'
@@ -109,7 +113,20 @@ export type ManualReason =
   | 'overflow'
   | 'unsupported'
   | 'missing_answer'
-  | 'deferred';
+  | 'deferred'
+  /*
+   * Information we do not collect, split by what the printed form wants:
+   *
+   * - `not_collected` — the form asks for it and we cannot supply it, so it is
+   *   real work the applicant must do by hand.
+   * - `optional_not_collected` — the form itself says answering is optional,
+   *   so a blank is a complete answer and this must not count against a draft.
+   *
+   * One reason for both would force a choice between overstating the race
+   * block as outstanding work and understating the Q6a blocks as optional.
+   */
+  | 'not_collected'
+  | 'optional_not_collected';
 
 /**
  * Reasons that leave a draft short of "review and sign only".
@@ -130,6 +147,7 @@ const BLOCKS_REVIEW_AND_SIGN: readonly ManualReason[] = [
   'unsupported',
   'missing_answer',
   'deferred',
+  'not_collected',
 ];
 
 /**
@@ -848,6 +866,94 @@ function missingAnswerItems(
 }
 
 // ---------------------------------------------------------------------------
+// Known information we deliberately never collect
+// ---------------------------------------------------------------------------
+
+/**
+ * Page 2's race and ethnicity block.
+ *
+ * Always listed, because we never ask: the printed form states in so many words
+ * that "Race and ethnicity information is optional" and that answers do not
+ * affect eligibility or benefit amount, so there is nothing for our eligibility
+ * logic to do with it and no reason to make an applicant answer it to us.
+ *
+ * Saying nothing would be worse than either asking or omitting it, though. The
+ * boxes are on the page in the applicant's hands, and an applicant who wants to
+ * answer them should know they are there and that leaving them blank costs
+ * nothing.
+ */
+function uncollectedRaceEthnicityItem(): ManualItem {
+  return {
+    id: 'uncollected.race_ethnicity',
+    reason: 'optional_not_collected',
+    page: 8,
+    printedPage: printedPageLabel(8),
+    saws: 'Q3',
+    printedSection: 'RACE/ETHNICITY',
+    printedSectionKey: 'race_ethnicity',
+    printedLabel: 'RACE/ETHNIC ORIGIN',
+    printedLabelKey: 'race_ethnic_origin',
+    valueType: 'Optional checkboxes',
+    valueTypeKey: 'vt_race_checkboxes',
+    instruction:
+      'We do not ask about race or ethnicity, so this block is blank. The ' +
+      'form says answering is optional and that it does not affect your ' +
+      'eligibility or benefit amount — you may fill it in or leave it blank.',
+    instructionKey: 'instr_uncollected_race_ethnicity',
+  };
+}
+
+/**
+ * Q6a's per-person contact blocks.
+ *
+ * Only when the household said their contact details differ. Answering Yes
+ * means the printed blocks are meant to stay empty, so a guide entry would be
+ * telling the applicant to fill in something the form does not want.
+ */
+function uncollectedMemberContactItems(
+  application: Saws2PlusApplicationData,
+): ManualItem[] {
+  const sameContact =
+    application.questionnaire.circumstances.everyoneHasSameContactInformation;
+
+  // Explicitly No, not merely falsy: unanswered means the county has not been
+  // told either way, and the blocks are not yet known to be needed.
+  if (sameContact !== false) return [];
+
+  // If we ever start collecting these details, the blocks fill themselves and
+  // this entry must stop appearing.
+  const alreadyCollected = application.householdMembers.some(
+    (member) => member.contact !== undefined,
+  );
+
+  if (alreadyCollected) return [];
+
+  return [
+    {
+      id: 'uncollected.member_contact',
+      reason: 'not_collected',
+      page: 9,
+      printedPage: printedPageLabel(9),
+      saws: 'Q6a',
+      printedSection: 'Household’s information: adults',
+      printedSectionKey: 'household_adults',
+      printedLabel:
+        '6a. Does everyone listed in question 6 have the same contact information?',
+      printedLabelKey: 'same_contact_information',
+      valueType: 'Name, address and phone for each person',
+      valueTypeKey: 'vt_contact_blocks',
+      instruction:
+        'You told us not everyone has the same contact information. The ' +
+        'printed form asks for the name, home and mailing address, phone ' +
+        'numbers and email of each person whose details differ, and we do ' +
+        'not collect those, so write them into the two blocks under this ' +
+        'question.',
+      instructionKey: 'instr_uncollected_member_contact',
+    },
+  ];
+}
+
+// ---------------------------------------------------------------------------
 // Conditional sections this household correctly skips
 // ---------------------------------------------------------------------------
 
@@ -968,6 +1074,8 @@ export function assessDraftCompletion(
     ...unsupportedItems(application),
     ...deferredItems(application),
     ...missingAnswerItems(application),
+    uncollectedRaceEthnicityItem(),
+    ...uncollectedMemberContactItems(application),
   ]);
 
   const byReason = {
@@ -979,6 +1087,8 @@ export function assessDraftCompletion(
     unsupported: [],
     missing_answer: [],
     deferred: [],
+    not_collected: [],
+    optional_not_collected: [],
   } as Record<ManualReason, ManualItem[]>;
 
   for (const item of manualItems) byReason[item.reason].push(item);

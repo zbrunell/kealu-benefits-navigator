@@ -105,17 +105,24 @@ export function buildInitialApplicationData(
         prefill?.preferredLanguage ||
         EMPTY_APPLICATION_DATA.applicant.preferredLanguage,
 
+      /*
+       * The state comes from the ZIP resolution or stays blank. It used to
+       * default to 'CA', which wrote California into the address block of an
+       * application for a household that lives somewhere else — and did it
+       * silently, so nothing downstream could tell a resolved California
+       * household from an unresolved one.
+       */
       homeAddress: {
         ...EMPTY_APPLICATION_DATA.applicant.homeAddress,
         city: prefill?.city ?? '',
-        state: prefill?.state || 'CA',
+        state: prefill?.state ?? '',
         zipCode: prefill?.zipCode ?? '',
       },
 
       mailingAddress: {
         ...EMPTY_APPLICATION_DATA.applicant.mailingAddress,
         city: prefill?.city ?? '',
-        state: prefill?.state || 'CA',
+        state: prefill?.state ?? '',
         zipCode: prefill?.zipCode ?? '',
       },
     },
