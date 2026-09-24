@@ -1248,15 +1248,93 @@ const en = {
   tx_review_household_size: 'Household size',
   tx_review_answered: 'Questions answered',
   tx_review_worksheet_note:
-    'Texas HHSC publishes Form H1010 only through its own website, so what we prepare is a filled worksheet carrying your answers — not the agency’s own paper. Submit at YourTexasBenefits.com and copy your answers across.',
-  tx_draft_ready: 'Your Form H1010 worksheet is ready',
+    'We fill in Texas HHSC’s own Form H1010 — the agency’s paper, with your answers already on it. A few boxes are yours to complete by hand; the checklist we prepare beside it names every one and says what to write.',
+  tx_draft_ready: 'Your Form H1010 is ready',
   tx_draft_worksheet:
-    'This is not the official form. It carries your answers so you can submit them without starting from a blank page.',
-  tx_draft_download: 'Download your worksheet',
+    'This is the official Texas application with your answers on it. Read every page before you sign — you sign it yourself, and we never fill in a signature.',
+  tx_draft_download: 'Download your application',
   tx_draft_open_review: 'What we filled in, and what is left',
   tx_draft_official_link: 'Go to YourTexasBenefits.com',
   tx_draft_next_steps:
-    'Apply online, by phone at 2-1-1, or at a local HHSC benefits office. Take the worksheet with you.',
+    'Apply online, by phone at 2-1-1, or at a local HHSC benefits office. Take the printed form with you.',
+
+  // ── Form delivery: what document the applicant is getting ────────────────
+  //
+  // The card that names each form in a household's packet. Every string here
+  // is read by someone who should never have to know that "BI" means bilingual
+  // or that the file is called TX-H1049-BI-2001-12.pdf. The form's own number
+  // (H1010) is shown because a county office recognises it; nothing else
+  // internal is.
+  //
+  // The three language keys are named in the *reader's* language, so a Spanish
+  // reader sees "Español" for a Spanish document and "Inglés" for an English
+  // one. `form_card_language_en_es` is its own label rather than a list built
+  // at render: a document printing both is not "English", and labelling it so
+  // would tell a Spanish reader they had been given the English one.
+
+  form_card_language_en: 'English',
+  form_card_language_es: 'Spanish',
+  form_card_language_zh_cn: 'Chinese',
+  form_card_language_en_es: 'English & Spanish',
+
+  form_document_officially_bilingual: 'Official bilingual form',
+  form_document_language_fallback:
+    'The agency does not publish this form in your language, so the form itself is in English. Everything we explain about it is in your language.',
+  form_document_bilingual_scope_signature_page_only:
+    'The part you sign is printed in English and Spanish. The page your doctor or nurse completes is in English only.',
+
+  form_card_requirement_required: 'Required',
+  form_card_requirement_needs_confirmation: 'You may be asked for this',
+  form_card_requirement_optional: 'Optional',
+
+  form_card_purpose_label: 'What it is for',
+  form_card_program_label: 'For',
+  form_card_language_label: 'Language',
+
+  form_purpose_tx_h1010:
+    'The application itself. One form covers food benefits, cash help and health coverage.',
+  form_purpose_tx_h1049:
+    'Reports income from your own business or self-employment, when you do not have tax or business records to send instead.',
+  form_purpose_tx_h3037:
+    'Confirms a pregnancy for health coverage. A doctor or nurse completes the medical part; you sign the permission to share it.',
+  form_purpose_tx_h1028_mbic:
+    'Your employer confirms your job, pay and any health insurance offered at work. Only for Medicaid Buy-In for Children.',
+  form_purpose_ca_saws2plus:
+    'The application itself. One form covers CalFresh, cash aid and Medi-Cal.',
+  form_purpose_unknown: 'A supporting document for your application.',
+
+  form_card_prefill_done: 'Your information has been added where possible.',
+  form_card_prefill_worksheet:
+    'Your answers are on this worksheet, ready to copy onto the official form.',
+  form_card_prefill_blank:
+    'This is the official blank form. We have not filled anything in.',
+  form_card_prefill_counts: 'Filled in {filled} of {mapped} boxes.',
+
+  form_card_open: 'Open application',
+  form_card_download: 'Download application',
+  form_card_open_form: 'Open form',
+  form_card_download_form: 'Download form',
+  form_card_get_official: 'Get the official form',
+  form_card_official_source: 'See the agency’s page',
+
+  form_card_unavailable: 'We cannot prepare this one yet',
+  tx_h1028_mbic_superseded_revision:
+    'The copy we hold is out of date, so we will not prepare it. Ask your caseworker for the current version.',
+
+  tx_h1010_required_for_selected_programs:
+    'This is the application for the benefits you chose.',
+  tx_h1049_self_employment_reported:
+    'You told us someone works for themselves. You may be asked to report that income on this form — or you may be able to send your latest tax return instead.',
+  tx_h3037_pregnancy_reported_for_health_coverage:
+    'You told us someone is pregnant, and you are applying for health coverage.',
+  tx_h1028_mbic_employment_reported_for_buy_in:
+    'You are applying for Medicaid Buy-In for Children and someone in the household has a job.',
+
+  packet_heading: 'Your paperwork',
+  packet_intro:
+    'The forms your application needs, and what each one is for. We have prepared what we can.',
+  packet_main_heading: 'Your application',
+  packet_supporting_heading: 'Forms that may go with it',
 
 } as const;
 

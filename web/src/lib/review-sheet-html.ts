@@ -17,6 +17,13 @@
  * escaped and rendered as written. No text is added, removed, reordered or
  * translated — the sheet is already written in the language the document was
  * filled in, and rewriting it here would let the page and the PDF disagree.
+ *
+ * `lang` is the one thing this has to be told, because it cannot be read off
+ * the text. It sets the document language for screen readers and for the
+ * browser's own hyphenation and spell-checking, and it was hardcoded to "en" —
+ * so a Spanish sheet was announced to a screen reader as English and read out
+ * with English pronunciation. The sheet's language is the language the document
+ * was filled in, which the session already knows.
  */
 
 const ESCAPES: Readonly<Record<string, string>> = {
@@ -49,6 +56,7 @@ function depthOf(line: string): number {
 export function renderReviewSheetHtml(
   sheet: string,
   reference: string,
+  lang: string = 'en',
 ): string {
   const lines = sheet.replace(/\r\n/g, '\n').split('\n');
   const body: string[] = [];
@@ -103,7 +111,7 @@ export function renderReviewSheetHtml(
   closeList();
 
   return `<!doctype html>
-<html lang="en">
+<html lang="${escapeHtml(lang)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

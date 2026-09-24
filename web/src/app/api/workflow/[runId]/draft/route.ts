@@ -97,15 +97,13 @@ export async function GET(
    */
   const formType = session.draftFormType ?? 'official';
   const definition = applicationForState(session.vars.state);
-  const slug = definition
-    ? definition.formCode.trim().toLowerCase().replace(/\s+/g, '-')
-    : '';
+  const { draftDownloadName } = await import('@/lib/document-labels');
 
-  const filename = slug
-    ? formType === 'official'
-      ? `partially-prefilled-${slug}-draft.pdf`
-      : `${slug}-worksheet-draft.pdf`
-    : 'benefits-preparation-worksheet-draft.pdf';
+  const filename = draftDownloadName({
+    definition,
+    formType,
+    packet: session.draftPacket ?? [],
+  });
 
     return new Response(new Uint8Array(pdfBuffer), {
     status: 200,
@@ -292,6 +290,11 @@ sessionStore.update(
     draftReviewPath: result.reviewPath ?? null,
     draftApplicationData: applicationData,
     draftGeneratedAt: new Date().toISOString(),
+    // The packet as it was resolved for *this* locale, stored beside the
+    // document it describes. Recomputing it when the cards are drawn would let
+    // them show a Spanish H1010 next to a PDF filled in English, if the
+    // applicant switched language after generating.
+    draftPacket: result.packet,
     // Pin it, so the guide is written in the language the PDF was filled in
     // even if the applicant switches afterwards.
     locale,
@@ -305,6 +308,9 @@ return NextResponse.json(
     success: true,
     runId,
     formType: result.formType,
+    // The cards the interface renders: one per form, each naming the official
+    // document it resolves to in this applicant's language.
+    packet: result.packet,
     draftUrl:
       `/api/workflow/${runId}/draft`,
     // The guide for this draft, and the reference printed on both.

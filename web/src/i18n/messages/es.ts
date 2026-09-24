@@ -1247,15 +1247,93 @@ const es: Messages = {
   tx_review_household_size: 'Tamaño del hogar',
   tx_review_answered: 'Preguntas respondidas',
   tx_review_worksheet_note:
-    'HHSC de Texas publica el Formulario H1010 solo a través de su propio sitio web, así que lo que preparamos es una hoja de trabajo llena con sus respuestas, no el papel oficial de la agencia. Solicite en YourTexasBenefits.com y copie sus respuestas.',
-  tx_draft_ready: 'Su hoja de trabajo del Formulario H1010 está lista',
+    'Llenamos el propio Formulario H1010 de HHSC de Texas: el papel oficial de la agencia, ya con sus respuestas. Unos pocos espacios le toca llenarlos a mano; la lista que preparamos junto al formulario nombra cada uno y le dice qué escribir.',
+  tx_draft_ready: 'Su Formulario H1010 está listo',
   tx_draft_worksheet:
-    'Este no es el formulario oficial. Lleva sus respuestas para que pueda presentarlas sin empezar de una página en blanco.',
-  tx_draft_download: 'Descargar su hoja de trabajo',
+    'Esta es la solicitud oficial de Texas con sus respuestas. Lea cada página antes de firmar: usted firma, y nosotros nunca llenamos una firma.',
+  tx_draft_download: 'Descargar su solicitud',
   tx_draft_open_review: 'Lo que llenamos y lo que falta',
   tx_draft_official_link: 'Ir a YourTexasBenefits.com',
   tx_draft_next_steps:
-    'Solicite en línea, por teléfono al 2-1-1, o en una oficina local de beneficios de HHSC. Lleve la hoja de trabajo con usted.',
+    'Solicite en línea, por teléfono al 2-1-1, o en una oficina local de beneficios de HHSC. Lleve el formulario impreso con usted.',
+
+  // ── Form delivery: what document the applicant is getting ────────────────
+  //
+  // The card that names each form in a household's packet. Every string here
+  // is read by someone who should never have to know that "BI" means bilingual
+  // or that the file is called TX-H1049-BI-2001-12.pdf. The form's own number
+  // (H1010) is shown because a county office recognises it; nothing else
+  // internal is.
+  //
+  // The three language keys are named in the *reader's* language, so a Spanish
+  // reader sees "Español" for a Spanish document and "Inglés" for an English
+  // one. `form_card_language_en_es` is its own label rather than a list built
+  // at render: a document printing both is not "English", and labelling it so
+  // would tell a Spanish reader they had been given the English one.
+
+  form_card_language_en: 'Inglés',
+  form_card_language_es: 'Español',
+  form_card_language_zh_cn: 'Chino',
+  form_card_language_en_es: 'Inglés y español',
+
+  form_document_officially_bilingual: 'Formulario oficial bilingüe',
+  form_document_language_fallback:
+    'La agencia no publica este formulario en su idioma, así que el formulario está en inglés. Todo lo que le explicamos sobre él está en su idioma.',
+  form_document_bilingual_scope_signature_page_only:
+    'La parte que usted firma está impresa en inglés y español. La página que completa su médico o enfermera está solo en inglés.',
+
+  form_card_requirement_required: 'Obligatorio',
+  form_card_requirement_needs_confirmation: 'Se lo podrían pedir',
+  form_card_requirement_optional: 'Opcional',
+
+  form_card_purpose_label: 'Para qué sirve',
+  form_card_program_label: 'Para',
+  form_card_language_label: 'Idioma',
+
+  form_purpose_tx_h1010:
+    'La solicitud en sí. Un solo formulario cubre los beneficios de alimentos, la ayuda en efectivo y la cobertura de salud.',
+  form_purpose_tx_h1049:
+    'Reporta los ingresos de su propio negocio o trabajo por cuenta propia, cuando no tiene registros de impuestos o del negocio para enviar en su lugar.',
+  form_purpose_tx_h3037:
+    'Confirma un embarazo para la cobertura de salud. Un médico o enfermera completa la parte médica; usted firma el permiso para compartirla.',
+  form_purpose_tx_h1028_mbic:
+    'Su empleador confirma su trabajo, su pago y cualquier seguro de salud que le ofrezcan en el trabajo. Solo para Medicaid Buy-In for Children.',
+  form_purpose_ca_saws2plus:
+    'La solicitud en sí. Un solo formulario cubre CalFresh, la ayuda en efectivo y Medi-Cal.',
+  form_purpose_unknown: 'Un documento de apoyo para su solicitud.',
+
+  form_card_prefill_done: 'Agregamos su información donde fue posible.',
+  form_card_prefill_worksheet:
+    'Sus respuestas están en esta hoja de trabajo, listas para copiarlas al formulario oficial.',
+  form_card_prefill_blank:
+    'Este es el formulario oficial en blanco. No llenamos nada.',
+  form_card_prefill_counts: 'Llenamos {filled} de {mapped} espacios.',
+
+  form_card_open: 'Abrir solicitud',
+  form_card_download: 'Descargar solicitud',
+  form_card_open_form: 'Abrir formulario',
+  form_card_download_form: 'Descargar formulario',
+  form_card_get_official: 'Obtener el formulario oficial',
+  form_card_official_source: 'Ver la página de la agencia',
+
+  form_card_unavailable: 'Todavía no podemos preparar este',
+  tx_h1028_mbic_superseded_revision:
+    'La copia que tenemos está desactualizada, así que no la vamos a preparar. Pídale la versión actual a su trabajador del caso.',
+
+  tx_h1010_required_for_selected_programs:
+    'Esta es la solicitud para los beneficios que eligió.',
+  tx_h1049_self_employment_reported:
+    'Nos dijo que alguien trabaja por cuenta propia. Le podrían pedir que reporte esos ingresos en este formulario, o quizás pueda enviar su declaración de impuestos más reciente en su lugar.',
+  tx_h3037_pregnancy_reported_for_health_coverage:
+    'Nos dijo que alguien está embarazada y usted está solicitando cobertura de salud.',
+  tx_h1028_mbic_employment_reported_for_buy_in:
+    'Está solicitando Medicaid Buy-In for Children y alguien en el hogar tiene trabajo.',
+
+  packet_heading: 'Sus documentos',
+  packet_intro:
+    'Los formularios que necesita su solicitud y para qué sirve cada uno. Preparamos lo que pudimos.',
+  packet_main_heading: 'Su solicitud',
+  packet_supporting_heading: 'Formularios que pueden acompañarla',
 
 } as const;
 

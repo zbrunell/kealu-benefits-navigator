@@ -105,7 +105,15 @@ export async function GET(
 
     const reference = draftReferenceFrom(runId);
 
-    return new Response(renderReviewSheetHtml(review, reference), {
+    /*
+     * The sheet's own language, which the generator wrote it in. Pinned on the
+     * session at generation time, so switching language afterwards does not
+     * relabel a page whose text did not change. `lang` was hardcoded to "en",
+     * which announced a Spanish sheet to a screen reader as English.
+     */
+    const sheetLang = session.locale ?? 'en';
+
+    return new Response(renderReviewSheetHtml(review, reference, sheetLang), {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',

@@ -1216,15 +1216,90 @@ const zhCN: Messages = {
   tx_review_household_size: '家庭人数',
   tx_review_answered: '已回答的问题',
   tx_review_worksheet_note:
-    '德州 HHSC 仅通过其官方网站提供 H1010 表格，因此我们准备的是一份填好您答案的工作表，而不是官方表格本身。请在 YourTexasBenefits.com 提交申请，并把答案抄录过去。',
-  tx_draft_ready: '您的 H1010 表格工作表已准备好',
+    '我们填写的是德州 HHSC 自己的 H1010 表格，即该机构的正式表格，上面已有您的答案。少数栏位需要您亲手填写；我们随表格准备的清单会逐项列出，并说明该写什么。',
+  tx_draft_ready: '您的 H1010 表格已准备好',
   tx_draft_worksheet:
-    '这不是官方表格。它载有您的答案，让您无需从空白页开始填写。',
-  tx_draft_download: '下载您的工作表',
+    '这是德州的正式申请表，上面已有您的答案。签名前请阅读每一页——签名须由您本人完成，我们从不代签。',
+  tx_draft_download: '下载您的申请表',
   tx_draft_open_review: '我们填写的内容与尚待完成的部分',
   tx_draft_official_link: '前往 YourTexasBenefits.com',
   tx_draft_next_steps:
-    '您可以在线申请、拨打 2-1-1，或前往当地 HHSC 福利办事处。请携带这份工作表。',
+    '您可以在线申请、拨打 2-1-1，或前往当地 HHSC 福利办事处。请携带打印好的表格。',
+
+  // ── Form delivery: what document the applicant is getting ────────────────
+  //
+  // The card that names each form in a household's packet. Every string here
+  // is read by someone who should never have to know that "BI" means bilingual
+  // or that the file is called TX-H1049-BI-2001-12.pdf. The form's own number
+  // (H1010) is shown because a county office recognises it; nothing else
+  // internal is.
+  //
+  // The three language keys are named in the *reader's* language, so a Spanish
+  // reader sees "Español" for a Spanish document and "Inglés" for an English
+  // one. `form_card_language_en_es` is its own label rather than a list built
+  // at render: a document printing both is not "English", and labelling it so
+  // would tell a Spanish reader they had been given the English one.
+
+  form_card_language_en: '英语',
+  form_card_language_es: '西班牙语',
+  form_card_language_zh_cn: '中文',
+  form_card_language_en_es: '英语和西班牙语',
+
+  form_document_officially_bilingual: '官方双语表格',
+  form_document_language_fallback:
+    '该机构没有发布您所用语言的这份表格，因此表格本身是英文的。我们对它的所有说明都使用您的语言。',
+  form_document_bilingual_scope_signature_page_only:
+    '需要您签名的部分同时印有英文和西班牙文。由您的医生或护士填写的那一页只有英文。',
+
+  form_card_requirement_required: '必需',
+  form_card_requirement_needs_confirmation: '可能会要求您提供',
+  form_card_requirement_optional: '可选',
+
+  form_card_purpose_label: '用途',
+  form_card_program_label: '适用于',
+  form_card_language_label: '语言',
+
+  form_purpose_tx_h1010:
+    '申请表本身。一份表格即可涵盖食品补助、现金帮助和医疗保障。',
+  form_purpose_tx_h1049:
+    '在您没有税务或经营记录可以提交时，用这份表格报告自营业务或自雇收入。',
+  form_purpose_tx_h3037:
+    '为医疗保障确认怀孕情况。医疗部分由医生或护士填写；您签署共享信息的许可。',
+  form_purpose_tx_h1028_mbic:
+    '由您的雇主确认您的工作、薪酬以及工作单位提供的任何医疗保险。仅用于 Medicaid Buy-In for Children。',
+  form_purpose_ca_saws2plus:
+    '申请表本身。一份表格即可涵盖 CalFresh、现金援助和 Medi-Cal。',
+  form_purpose_unknown: '申请所需的一份辅助文件。',
+
+  form_card_prefill_done: '我们已在可能的地方填入您的信息。',
+  form_card_prefill_worksheet:
+    '您的答案已填在这份工作表上，可以直接抄到正式表格中。',
+  form_card_prefill_blank: '这是官方空白表格。我们没有填写任何内容。',
+  form_card_prefill_counts: '已填写 {mapped} 个栏位中的 {filled} 个。',
+
+  form_card_open: '打开申请表',
+  form_card_download: '下载申请表',
+  form_card_open_form: '打开表格',
+  form_card_download_form: '下载表格',
+  form_card_get_official: '获取官方表格',
+  form_card_official_source: '查看该机构的页面',
+
+  form_card_unavailable: '我们暂时无法准备这一份',
+  tx_h1028_mbic_superseded_revision:
+    '我们持有的副本已过期，因此不会为您准备。请向您的个案工作人员索取当前版本。',
+
+  tx_h1010_required_for_selected_programs: '这是您所选福利的申请表。',
+  tx_h1049_self_employment_reported:
+    '您告诉我们有人自雇。您可能需要在这份表格上报告该收入，也可能改为提交最近一年的报税表。',
+  tx_h3037_pregnancy_reported_for_health_coverage:
+    '您告诉我们有人怀孕，并且您正在申请医疗保障。',
+  tx_h1028_mbic_employment_reported_for_buy_in:
+    '您正在申请 Medicaid Buy-In for Children，且家庭中有人有工作。',
+
+  packet_heading: '您的文件',
+  packet_intro: '您的申请需要的表格，以及每份表格的用途。我们已尽可能为您准备好。',
+  packet_main_heading: '您的申请',
+  packet_supporting_heading: '可能需要一并提交的表格',
 
 } as const;
 

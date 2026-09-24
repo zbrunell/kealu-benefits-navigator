@@ -38,6 +38,7 @@ const FLOW_COMPONENTS = [
   'components/application/questionnaire-step.tsx',
   'components/application/draft-completion-guide.tsx',
   'components/application/required-marker.tsx',
+  'components/application/form-card.tsx',
 ];
 
 /**

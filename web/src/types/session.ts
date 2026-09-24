@@ -15,6 +15,7 @@
  */
 
 import type { Saws2PlusApplicationData } from '@/types/application';
+import type { FormManifestEntry } from '@/types/form-manifest';
 
 /**
  * HouseholdVars — maps 1:1 to the `variables:` block in benefits-navigator.yaml,
@@ -233,4 +234,18 @@ export interface Session {
    * readiness model instead.
    */
   draftReviewPath?: string | null;
+  /**
+   * The forms this household needs, and the official document each resolves to.
+   *
+   * Produced by the Python mapping layer during generation — see
+   * `benefits_navigator.formmap.manifest` — and stored so the interface can
+   * render a card per form without asking a second time.
+   *
+   * It is stored rather than recomputed for the same reason `draftPath` is: it
+   * describes the packet the applicant was actually handed. Recomputing it when
+   * the cards are drawn would let the interface show a Spanish H1010 beside a
+   * document that was filled in English, if the applicant switched language in
+   * between.
+   */
+  draftPacket?: FormManifestEntry[] | null;
 }
