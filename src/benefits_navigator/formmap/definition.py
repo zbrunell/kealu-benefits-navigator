@@ -32,6 +32,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, TYPE_CHECKING
 
 from benefits_navigator.formmap.targets import (
@@ -86,6 +87,91 @@ def is_sensitive_key(key: str) -> bool:
     normalized = key.strip().lower()
 
     return any(marker in normalized for marker in SENSITIVE_KEY_MARKERS)
+
+
+class Responsibility(str, Enum):
+    """Who completes a printed field.
+
+    A packet is only useful if it tells someone what is left to do, and "what
+    is left" is not one thing. Six boxes on H3037 are the clinician's, one is
+    the applicant's signature, and two are the agency's own — telling an
+    applicant they have "nine remaining items" is worse than saying nothing,
+    because they will try to answer all nine.
+
+    Every value except :attr:`NAVIGATOR` describes a field we deliberately
+    leave blank. They are declared as :class:`DeclaredBlank`, which carries no
+    canonical key at all — so the refusal is structural. There is nothing to
+    fill a signature line *from*, which is a stronger guarantee than a filter
+    that decides not to.
+    """
+
+    #: Navigator fills it from canonical data. The only value a
+    #: :class:`FieldMapping` can have.
+    NAVIGATOR = "navigator"
+
+    #: The applicant must write it. Either we do not collect it yet, or it is
+    #: something only they can decide in the moment.
+    APPLICANT = "applicant"
+
+    #: Someone else must complete it — an employer, a clinician.
+    THIRD_PARTY = "third_party"
+
+    #: A signature or dated attestation. Never rendered, by anyone, ever.
+    SIGNATURE = "signature"
+
+    #: We refuse to collect it. SSNs, immigration numbers, account numbers.
+    SENSITIVE_REFUSED = "sensitive_refused"
+
+    #: The agency's own box — "Agency Use Only" blocks and caseworker fields.
+    AGENCY = "agency"
+
+    @property
+    def is_navigator(self) -> bool:
+        return self is Responsibility.NAVIGATOR
+
+
+@dataclass(frozen=True)
+class DeclaredBlank:
+    """A printed field this form deliberately does not fill, and who must.
+
+    The counterpart to :class:`FieldMapping`. A mapping says "this canonical
+    answer goes here"; a declared blank says "this box exists, we are not
+    filling it, and here is who does".
+
+    Deliberately carries **no canonical key and no target**. A signature has
+    nothing to render from and no box we would ever draw in, and giving it
+    either would create a path — however unused — from data to a forged
+    signature. The absence is the safety property.
+    """
+
+    #: The printed question, in the form's own language.
+    printed_label: str
+
+    #: The form's own section, for grouping the checklist.
+    section: str
+
+    responsibility: Responsibility
+
+    #: Who must complete it, as an applicant-facing message key.
+    #:
+    #: ``"completed_by_employer"``, ``"completed_by_medical_provider"``. A key
+    #: because the applicant reads it in their own language even when the
+    #: document is not in that language.
+    completed_by_key: str = ""
+
+    #: Why it is blank, as a message key, when that is not obvious.
+    reason_key: str = ""
+
+    #: Page it is printed on, so a checklist can point at it.
+    page: int = 0
+
+    def __post_init__(self) -> None:
+        if self.responsibility.is_navigator:
+            raise FormDefinitionError(
+                f"{self.printed_label!r}: a declared blank cannot be the "
+                f"Navigator's responsibility — if we fill it, it is a "
+                f"FieldMapping."
+            )
 
 
 #: Sentinel for "this canonical key was not supplied at all".
@@ -311,6 +397,287 @@ class ResolvedField:
         return target.box
 
 
+# ---------------------------------------------------------------------------
+# Derived values: re-projecting answers the applicant already gave
+# ---------------------------------------------------------------------------
+#
+# A form sometimes asks for the *same facts* in a different shape than the one
+# the intake collects them in. Texas H1010's Section P is the clearest case: it
+# prints one labelled amount box per kind of housing cost — "Rent or home
+# payment $", "Electricity $" — where the intake collects an indexed list of
+# bills, each with a kind and an amount. The facts are identical; the shape is
+# not, and no key-to-box mapping can bridge that on its own, because which box
+# a bill's amount belongs in is decided by a *different* key's value.
+#
+# ── The line these must not cross ──────────────────────────────────────────
+# A derivation may only **re-project or logically entail** what the applicant
+# actually said. It may not estimate, average, annualize, or fill a gap.
+#
+# That line is what separates this from the thing this codebase refuses to do.
+# Re-projecting "bill 0 is rent, and its amount is $900" into "the rent box
+# holds $900" adds nothing and loses nothing. Dividing a monthly total by 4.33
+# to guess a weekly pay rate would invent a number the applicant never gave and
+# print it on a government form, and no derivation here is allowed to do it.
+#
+# Both derivations below are total functions of values already present, and
+# both preserve the three-state rule: unanswered stays unanswered.
+
+
+class Derivation:
+    """Re-project canonical values into the shape one form asks for.
+
+    Subclasses implement :meth:`apply`, which returns *new* keys only. A
+    derivation never overwrites an answer the applicant gave: ``resolve_mappings``
+    applies derived values under the originals, so a real answer always wins.
+    """
+
+    def apply(self, values: dict[str, Any]) -> dict[str, Any]:
+        raise NotImplementedError
+
+    def produces(self) -> tuple[str, ...]:
+        """The keys this derivation can create. For registry-wide checks."""
+        raise NotImplementedError
+
+    def reads(self) -> tuple[str, ...]:
+        """The keys this derivation consults, so they count as consumed."""
+        raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class AnyYes(Derivation):
+    """A gateway that is Yes when any of several answers is Yes.
+
+    H1010 asks broader questions than the intake does. Section N page 12 asks
+    "Does anyone own or is anyone paying for these types of items?" over cash,
+    bank accounts, property, insurance and stocks at once, where the intake
+    asks three narrower questions. Section O asks about money from working for
+    someone else *or* for yourself in one question.
+
+    The truth table is the three-state one, and getting it right is the whole
+    point:
+
+    * **any source Yes → Yes.** Entailed: owning property means owning one of
+      the listed items.
+    * **every source answered and all No → No.** Also entailed.
+    * **otherwise → absent.** Some No and the rest unanswered cannot make a No:
+      the unanswered one might have been the Yes. Leaving it blank asks the
+      applicant, which is correct; printing No would answer for them.
+    """
+
+    into: str
+    sources: tuple[str, ...]
+
+    def apply(self, values: dict[str, Any]) -> dict[str, Any]:
+        answers = [_tri(values.get(key)) for key in self.sources]
+
+        if any(answer is True for answer in answers):
+            return {self.into: True}
+
+        if answers and all(answer is False for answer in answers):
+            return {self.into: False}
+
+        return {}
+
+    def produces(self) -> tuple[str, ...]:
+        return (self.into,)
+
+    def reads(self) -> tuple[str, ...]:
+        return self.sources
+
+
+@dataclass(frozen=True)
+class PivotByKind(Derivation):
+    """An indexed collection re-keyed by the value of one of its fields.
+
+    ``expenses.household.0.kind = "electricity"`` with
+    ``expenses.household.0.amount_monthly = "120"`` becomes
+    ``expenses.household.by_kind.electricity = "120"``, which is the shape
+    Section P's labelled amount boxes need.
+
+    Two behaviours worth stating, because both are decisions rather than
+    conveniences:
+
+    * **A kind not in** :attr:`allowed` **is dropped**, not folded into a
+      neighbouring box. The form has no box for it, and putting a trash bill in
+      the phone box would be a false statement about a household's expenses.
+      The row stays in ``deferred``/the review sheet, so the applicant is told.
+    * **Two rows of the same kind are summed** only when :attr:`sum_repeats` is
+      set, and it is not set by default. Two electricity bills in one month is
+      more likely a data-entry repeat than a household with two meters, and
+      silently adding them would overstate an expense. Left unset, the second
+      row is reported as unplaced rather than merged.
+    """
+
+    prefix: str
+    rows: int
+    kind_field: str
+    value_field: str
+    into: str
+    allowed: tuple[str, ...]
+    sum_repeats: bool = False
+
+    #: Also emit ``<mark_into>.<kind> = True`` for each kind that got a value.
+    #:
+    #: Section P's instruction is "mark the costs they have and list the
+    #: amount", so each amount box has a circle beside it and an amount next to
+    #: an unmarked circle answers half the question. The mark is emitted here
+    #: rather than by a second derivation reading this one's output, because
+    #: derivations deliberately do not chain: each sees the applicant's answers
+    #: and nothing another derivation invented, so no declaration order can
+    #: change what a form prints.
+    mark_into: str | None = None
+
+    def apply(self, values: dict[str, Any]) -> dict[str, Any]:
+        derived: dict[str, Any] = {}
+
+        for row in range(self.rows):
+            kind = values.get(f"{self.prefix}.{row}.{self.kind_field}")
+            amount = values.get(f"{self.prefix}.{row}.{self.value_field}")
+
+            if not isinstance(kind, str) or kind not in self.allowed:
+                continue
+
+            if amount is None or (isinstance(amount, str) and not amount.strip()):
+                continue
+
+            target = f"{self.into}.{kind}"
+
+            if target not in derived:
+                derived[target] = amount
+                continue
+
+            if not self.sum_repeats:
+                continue
+
+            try:
+                derived[target] = str(
+                    float(str(derived[target]).replace(",", ""))
+                    + float(str(amount).replace(",", ""))
+                )
+            except ValueError:
+                # Not a number after all. Keep the first, and let the review
+                # sheet report the row rather than guessing at arithmetic.
+                continue
+
+        if self.mark_into is not None:
+            for target in list(derived):
+                kind = target.rsplit(".", 1)[-1]
+                derived[f"{self.mark_into}.{kind}"] = True
+
+        return derived
+
+    def produces(self) -> tuple[str, ...]:
+        placed = tuple(f"{self.into}.{kind}" for kind in self.allowed)
+
+        if self.mark_into is None:
+            return placed
+
+        return placed + tuple(
+            f"{self.mark_into}.{kind}" for kind in self.allowed
+        )
+
+    def reads(self) -> tuple[str, ...]:
+        return tuple(
+            f"{self.prefix}.{row}.{field}"
+            for row in range(self.rows)
+            for field in (self.kind_field, self.value_field)
+        )
+
+
+@dataclass(frozen=True)
+class JoinValues(Derivation):
+    """Several answers written onto one printed line, in printed order.
+
+    H1010 gives one box for "Home address" where the intake collects a street
+    and an apartment number separately, and one line for "the person or place
+    that paid the money" where the intake collects an employer's name and
+    address. The form asks for both on one line; the intake asks for them
+    apart. Joining them is the same re-projection as a pivot, in one dimension.
+
+    Only non-empty sources are joined, in declared order, so a household with
+    no apartment number gets ``"2100 Nueces Street"`` and not
+    ``"2100 Nueces Street, "``. Absent when every source is empty.
+
+    A joined value that will not fit its printed box is reported as *unfitted*
+    by the renderer and left blank with a note, which is the same treatment any
+    over-long value gets — never truncated onto a government form.
+    """
+
+    into: str
+    sources: tuple[str, ...]
+    separator: str = ", "
+
+    def apply(self, values: dict[str, Any]) -> dict[str, Any]:
+        parts: list[str] = []
+
+        for key in self.sources:
+            value = values.get(key)
+
+            if value is None or isinstance(value, bool):
+                continue
+
+            text = str(value).strip()
+
+            if text:
+                parts.append(text)
+
+        if not parts:
+            return {}
+
+        return {self.into: self.separator.join(parts)}
+
+    def produces(self) -> tuple[str, ...]:
+        return (self.into,)
+
+    def reads(self) -> tuple[str, ...]:
+        return self.sources
+
+
+def _tri(value: Any) -> bool | None:
+    """A canonical yes/no answer as a tri-state. Absent and blank are None."""
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, str):
+        folded = value.strip().casefold()
+
+        if folded in {"yes", "true", "y"}:
+            return True
+
+        if folded in {"no", "false", "n"}:
+            return False
+
+    return None
+
+
+def apply_derivations(
+    definition: "FormDefinition", values: dict[str, Any]
+) -> dict[str, Any]:
+    """`values` plus whatever this form derives from them.
+
+    A real answer always wins over a derived one: derived keys are written
+    underneath, so a form that both derives ``X`` and receives ``X`` from the
+    intake uses the intake's.
+
+    Every derivation sees the *original* values, never another derivation's
+    output. That is deliberate: chaining would make the declaration order of
+    ``definition.derived`` change what a government form prints, and a reader
+    checking one derivation would have to know which others ran first. A
+    derivation that needs a second output emits both itself — see
+    :attr:`PivotByKind.mark_into`.
+    """
+    if not definition.derived:
+        return values
+
+    merged = dict(values)
+
+    for derivation in definition.derived:
+        for key, derived_value in derivation.apply(values).items():
+            merged.setdefault(key, derived_value)
+
+    return merged
+
+
 @dataclass(frozen=True)
 class FormDefinition:
     """Everything needed to map canonical data onto one specific form."""
@@ -346,8 +713,28 @@ class FormDefinition:
     #: form. See :attr:`base_document_note`.
     base_document: str | None = None
 
-    #: Why :attr:`base_document` is None, stated for the applicant's benefit.
+    #: Why :attr:`base_document` is None. **For a reader of this code.**
+    #:
+    #: Engineering prose: it may name modules, filenames and the condition that
+    #: would end the situation. It is not shown to an applicant — see
+    #: :attr:`base_document_note_key`, which is.
     base_document_note: str = ""
+
+    #: Message key for the applicant-facing version of the same explanation.
+    #:
+    #: Two fields rather than one because they have different readers and the
+    #: single field was serving neither. It was printed verbatim on the review
+    #: sheet, so an applicant read a sentence naming ``h1010_official`` and
+    #: ``TX-H1010-ES-2026-08.pdf`` — internal vocabulary on the one page meant
+    #: to make their paperwork comprehensible — and read it in English no matter
+    #: what language they had chosen, because prose on a definition cannot be
+    #: translated.
+    #:
+    #: A key can be. The sentence lives in
+    #: :mod:`benefits_navigator.formmap.review_words` beside the rest of the
+    #: sheet's wording. Empty falls back to :attr:`base_document_note`, which is
+    #: better than nothing for a form that has not been given a key yet.
+    base_document_note_key: str = ""
 
     #: Where the form and its rules were read from, for audit.
     source_url: str = ""
@@ -373,6 +760,53 @@ class FormDefinition:
     #: without knowing what a household or a bill is — see
     #: :mod:`benefits_navigator.formmap.repeat`.
     repeating_groups: tuple["RepeatingGroup", ...] = ()
+
+    #: Printed fields deliberately left blank, and who must complete them.
+    #:
+    #: The other half of the packet's answer to "what is left to do". A form is
+    #: not finished because every :attr:`fields` mapping resolved — H3037 is
+    #: mostly a clinician's page, and a form reported as complete because our
+    #: three boxes filled would be a lie told confidently. See
+    #: :class:`DeclaredBlank`.
+    blanks: tuple[DeclaredBlank, ...] = ()
+
+    #: The official language editions of this form, when it has more than one
+    #: layout.
+    #:
+    #: Empty means this definition describes a single document, and
+    #: :attr:`base_document` plus each mapping's own target is the whole story —
+    #: which is where California and the pre-official Texas worksheet sit.
+    #:
+    #: When present, each variant carries its own complete target map, and the
+    #: document resolver picks one from the applicant's locale. Loosely typed to
+    #: avoid a circular import with :mod:`documents`; the registry validates
+    #: them at build time.
+    variants: tuple[Any, ...] = ()
+
+    #: Re-projections of the applicant's answers into the shape this form asks
+    #: for. See :class:`Derivation` — and the line it may not cross.
+    derived: tuple[Derivation, ...] = ()
+
+    #: Answers this form has no printed box for, each with a reason.
+    #:
+    #: The review sheet lists the ones a given household actually answered, so
+    #: they learn which of their answers are not on the paper and what to do
+    #: instead. Loosely typed to keep this module free of any one state's
+    #: catalogue; the renderer reads ``.key``, ``.answer_label`` and
+    #: ``.action_key`` off each item. See
+    #: ``benefits_navigator.formmap.forms.h1010_coverage``.
+    #:
+    #: A form that declares none simply gets no such section — which is the
+    #: right default, because "this form asks nothing we cannot place" and "we
+    #: have not audited this form" should not produce the same output, and the
+    #: second is caught by a registry-wide test rather than by a blank list.
+    no_box_notes: tuple[Any, ...] = ()
+
+    def blanks_for(self, responsibility: "Responsibility") -> tuple[DeclaredBlank, ...]:
+        """Every deliberately-blank field someone in particular must complete."""
+        return tuple(
+            blank for blank in self.blanks if blank.responsibility is responsibility
+        )
 
     def __post_init__(self) -> None:
         seen: set[str] = set()
@@ -439,6 +873,14 @@ class FormDefinition:
 
             if mapping.applies_when is not None:
                 keys.add(mapping.applies_when.key)
+
+        # A key a derivation reads is consumed by this form even though no box
+        # names it: `expenses.household.0.kind` is what decides which printed
+        # amount box row 0 lands in. Reporting it as unmapped would say the
+        # form has no place for an answer it is in fact using.
+        for derivation in self.derived:
+            keys.update(derivation.reads())
+            keys.update(derivation.produces())
 
         return frozenset(keys)
 
@@ -546,6 +988,10 @@ def resolve_mappings(
             raise SensitiveFieldRefused(
                 f"sensitive canonical key reached form mapping: {key}"
             )
+
+    # Re-project into the shape this form asks its questions in, before
+    # anything reads a value. Nothing is invented here — see `Derivation`.
+    canonical_values = apply_derivations(definition, canonical_values)
 
     for group in definition.repeating_groups:
         beyond = group.overflow_beyond(canonical_values)

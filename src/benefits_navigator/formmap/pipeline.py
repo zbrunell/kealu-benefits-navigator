@@ -49,6 +49,7 @@ from benefits_navigator.formmap.definition import (
     resolve_mappings,
 )
 from benefits_navigator.formmap.registry import definition_for_form
+from benefits_navigator.formmap.review_words import ReviewWords, words_for
 from benefits_navigator.formmap.render import (
     DrawnText,
     RenderPlan,
@@ -103,6 +104,19 @@ class GeneratedForm:
     #: Human-readable review text, for a sibling ``.review.txt``.
     review_text: str
 
+    #: The locale generation was asked for. The applicant's UI language.
+    requested_locale: str = "en"
+
+    #: Which official asset was chosen and why, for a form with editions.
+    #:
+    #: ``None`` for a form describing exactly one document — California, and
+    #: the Texas worksheet. Present for anything with variants, and it is the
+    #: *only* thing a caller should read to describe the document's language:
+    #: it distinguishes "the Spanish edition" from "the bilingual document that
+    #: includes Spanish" from "English, because your language is not
+    #: published", which no locale string can.
+    document: Any | None = None
+
     @property
     def filled_keys(self) -> tuple[str, ...]:
         return tuple(sorted(resolved.key for resolved in self.resolution.fields))
@@ -110,6 +124,20 @@ class GeneratedForm:
     @property
     def page_count(self) -> int:
         return max(self.render_plan.pages_used(), default=0)
+
+    @property
+    def source_filename(self) -> str | None:
+        """The canonical asset drawn on, for logs and developer surfaces.
+
+        Deliberately named ``source_filename`` rather than anything an
+        applicant-facing template would reach for by accident:
+        ``TX-H1049-BI-2001-12.pdf`` is a storage detail and never appears in
+        the interface. :func:`download_name` is what a person sees.
+        """
+        if self.document is not None:
+            return self.document.document.filename
+
+        return None
 
     def write(self, path: Path) -> Path:
         """Write the PDF and its review sheet. Returns the PDF path."""
@@ -140,7 +168,26 @@ def _build_review_text(
     definition: FormDefinition,
     resolution: ResolutionReport,
     plan: RenderPlan,
+    chosen: Any | None = None,
+    locale: str = "en",
 ) -> str:
+    """The review sheet, in the applicant's language.
+
+    The sheet's own sentences come from
+    :mod:`benefits_navigator.formmap.review_words`; the printed labels and the
+    applicant's answers do not, and that module says why.
+
+    ``chosen`` lets the sheet open by naming *which* official document is in the
+    reader's hands and in what language — which is the difference between "the
+    Spanish edition", "the agency's own bilingual form" and "English, because
+    your language is not published". Saying nothing was the previous behaviour
+    and left a Spanish reader of a bilingual form unable to tell whether they
+    had been quietly given the English one.
+    """
+    from benefits_navigator.formmap.documents import LanguageMatch
+
+    words = words_for(locale)
+
     lines: list[str] = [
         f"{definition.form_code} — {definition.title}",
         "",
@@ -148,17 +195,28 @@ def _build_review_text(
 
     if not definition.has_official_base_document:
         lines += [
-            "THIS IS NOT THE OFFICIAL FORM.",
+            words.not_official_heading,
             "",
-            "It is a prefilled worksheet carrying your answers. Submit the "
-            "official application through the agency's own channel and copy "
-            "these answers across.",
+            words.not_official_body,
             "",
-            f"Why: {definition.base_document_note}",
+            f"{words.not_official_why}: {_worksheet_reason(definition, words)}",
             "",
         ]
+    elif chosen is not None:
+        banner = {
+            LanguageMatch.EXACT: words.official_language_exact,
+            LanguageMatch.BILINGUAL: words.official_language_bilingual,
+            LanguageMatch.FALLBACK: words.official_language_fallback,
+        }[chosen.match]
 
-    lines.append("Filled in for you:")
+        lines += [banner, ""]
+
+        scope = _bilingual_scope_note(chosen, locale)
+
+        if scope:
+            lines += [scope, ""]
+
+    lines.append(words.filled_in)
 
     if resolution.fields:
         by_section: dict[str, list[str]] = {}
@@ -175,14 +233,13 @@ def _build_review_text(
                 lines.append(f"  {section}")
                 lines.extend(by_section[section])
     else:
-        lines.append("    (nothing — no answers were supplied)")
+        lines.append(f"    {words.nothing_supplied}")
 
     lines += [
         "",
-        "Left blank on purpose:",
-        "    Your signature and the date you sign. We never fill these in.",
-        "    Social Security numbers and immigration document numbers. We do "
-        "not ask for them and never write them onto a form.",
+        words.left_blank_heading,
+        f"    {words.left_blank_signature}",
+        f"    {words.left_blank_sensitive}",
     ]
 
     # Two lists, not one. "Still yours to fill in" and "only if it applies to
@@ -211,24 +268,22 @@ def _build_review_text(
         lines,
         definition,
         required_blank,
-        heading="Still yours to fill in:",
+        heading=words.still_yours,
     )
 
     _append_by_section(
         lines,
         definition,
         optional_blank,
-        heading="Only if it applies to you — blank is a complete answer:",
+        heading=words.only_if_applies,
     )
 
-    _append_not_applicable(lines, definition, resolution)
+    _append_not_applicable(lines, definition, resolution, words)
+    _append_declared_blanks(lines, definition, words)
+    _append_no_box(lines, definition, resolution, words)
 
     if plan.unfitted:
-        lines += [
-            "",
-            "Too long for the printed box — write \"see attached\" and attach "
-            "the full answer:",
-        ]
+        lines += ["", words.too_long]
 
         for key in sorted(plan.unfitted):
             mapping = definition.mapping_for(key)
@@ -236,17 +291,120 @@ def _build_review_text(
             lines.append(f"    {label}")
 
     if plan.unplaced:
-        lines += [
-            "",
-            "Mapped but with nowhere to render (a definition defect — please "
-            "report):",
-        ]
+        lines += ["", words.unplaced]
         lines.extend(f"    {key}" for key in sorted(plan.unplaced))
 
     lines.append("")
-    lines.append("Review every page before submitting.")
+    lines.append(words.review_before_submitting)
 
     return "\n".join(lines) + "\n"
+
+
+def _append_declared_blanks(
+    lines: list[str],
+    definition: FormDefinition,
+    words: ReviewWords,
+) -> None:
+    """Printed fields somebody other than the applicant completes.
+
+    Declared on the definition as :class:`DeclaredBlank` and, until now,
+    rendered nowhere — so an applicant holding a form with a clinician's page
+    and an "Agency Use Only" block had no way to learn that those blanks were
+    not theirs. "Nine remaining items" that includes two the office fills and
+    one the doctor fills is worse than saying nothing, because they will try to
+    answer all nine.
+
+    The applicant's own blanks are omitted here: they are already listed under
+    "still yours to fill in", and repeating them under a heading about other
+    people would move work off their list that is on it.
+    """
+    from benefits_navigator.formmap.definition import Responsibility
+
+    groups = (
+        (Responsibility.AGENCY, words.declared_blank_agency),
+        (Responsibility.THIRD_PARTY, words.declared_blank_third_party),
+        (Responsibility.SIGNATURE, words.declared_blank_signature),
+    )
+
+    shown = [
+        (blanks, note)
+        for responsibility, note in groups
+        if (blanks := definition.blanks_for(responsibility))
+    ]
+
+    if not shown:
+        return
+
+    lines += ["", words.declared_blank_heading]
+
+    for blanks, note in shown:
+        lines.append(f"  {note}")
+        # The agency's own wording for the box, so it can be found on the page.
+        lines.extend(f"    {blank.printed_label}" for blank in blanks)
+
+
+def _append_no_box(
+    lines: list[str],
+    definition: FormDefinition,
+    resolution: ResolutionReport,
+    words: ReviewWords,
+) -> None:
+    """Answers the applicant gave that this form has no box for.
+
+    The section the review sheet was missing, and the one requirement it could
+    not meet without: an applicant who answered every question and receives a
+    form with some of those answers nowhere on it needs to be told which, and
+    what to do instead.
+
+    Driven by ``resolution.unmapped`` intersected with the form's own recorded
+    classification, so it lists only answers this household actually gave and
+    only ones whose absence is explained. An unmapped key with no recorded
+    reason is a gap in the classification rather than something to show an
+    applicant, and the registry-wide test is what catches those.
+    """
+    notes = definition.no_box_notes
+
+    if not notes:
+        return
+
+    answered = frozenset(resolution.unmapped)
+    applicable = [note for note in notes if note.key in answered]
+
+    if not applicable:
+        return
+
+    lines += ["", words.no_box_heading, f"  {words.no_box_intro}"]
+
+    for note in applicable:
+        lines.append(f"    {note.answer_label}")
+
+        action = (
+            words.no_box_actions.get(note.action_key)
+            if note.action_key
+            else None
+        )
+
+        if action:
+            lines.append(f"      {action}")
+
+
+def _worksheet_reason(definition: FormDefinition, words: ReviewWords) -> str:
+    """Why this is a worksheet, in the applicant's language.
+
+    Prefers the definition's message key so the sentence is translated and free
+    of internal vocabulary. Falls back to the engineering note, which is
+    English and may name a module — worse, but better than an empty "Why:" on
+    a form whose definition has not been given a key yet.
+    """
+    key = definition.base_document_note_key
+
+    if key:
+        translated = words.worksheet_reasons.get(key)
+
+        if translated:
+            return translated
+
+    return definition.base_document_note
 
 
 def _shown(resolved: ResolvedField) -> str:
@@ -302,6 +460,7 @@ def _append_not_applicable(
     lines: list[str],
     definition: FormDefinition,
     resolution: ResolutionReport,
+    words: ReviewWords,
 ) -> None:
     """Say which boxes the applicant's own answers make inapplicable.
 
@@ -338,7 +497,7 @@ def _append_not_applicable(
     if not plain and not blank_rows and not resolution.overflow:
         return
 
-    lines += ["", "Not applicable to your household — leave these blank:"]
+    lines += ["", words.not_applicable]
 
     by_reason: dict[str, list[str]] = {}
 
@@ -346,7 +505,7 @@ def _append_not_applicable(
         by_reason.setdefault(item.reason, []).append(item.printed_label)
 
     for reason, labels in by_reason.items():
-        lines.append(f"  Because {reason}:")
+        lines.append(f"  {words.because} {reason}:")
         lines.extend(f"    {label}" for label in labels)
 
     for group in definition.repeating_groups:
@@ -359,17 +518,14 @@ def _append_not_applicable(
         noun = group.row_noun.lower()
 
         lines.append(
-            f"  {group.row_noun} rows: you filled {used} of "
-            f"{group.rows}. Leave the other {len(empty)} blank — "
-            f"there is no {noun} to put in them."
+            f"  {group.row_noun} "
+            + words.rows_summary.format(
+                filled=used, rows=group.rows, blank=len(empty), noun=noun
+            )
         )
 
     if resolution.overflow:
-        lines += [
-            "",
-            "More than this form has room for — attach a separate sheet with "
-            "the rest:",
-        ]
+        lines += ["", words.overflow]
 
         for group in definition.repeating_groups:
             beyond = resolution.overflow.get(group.prefix)
@@ -378,8 +534,10 @@ def _append_not_applicable(
                 continue
 
             lines.append(
-                f"    {group.row_noun}: {beyond} more than the "
-                f"{group.rows} printed rows."
+                "    "
+                + words.overflow_row.format(
+                    noun=group.row_noun, beyond=beyond, rows=group.rows
+                )
             )
 
 
@@ -407,6 +565,7 @@ def _render_authored_pages(
 def _render_over_template(
     definition: FormDefinition,
     plan: RenderPlan,
+    chosen: Any | None = None,
 ) -> bytes:
     """Merge the drawing onto the bundled official template.
 
@@ -414,12 +573,24 @@ def _render_over_template(
     overlay fields. SAWS 2 PLUS holds a base document but has no overlay
     fields, so it never arrives here — its values go into native fields via the
     existing generator.
+
+    When ``chosen`` is present the file is opened through
+    :func:`~benefits_navigator.formmap.provenance.load_document`, which refuses
+    it unless the bytes are the ones its coordinates were measured against.
+    That check belongs on this path rather than in a test: the risk is a file
+    that changes *after* CI ran, and this is the line that reads it for
+    rendering.
     """
     import io
 
     from pypdf import PdfReader, PdfWriter
 
-    template = _FORMS_DIR / str(definition.base_document)
+    if chosen is not None:
+        from benefits_navigator.formmap.provenance import load_document
+
+        template = load_document(chosen.variant.document)
+    else:
+        template = _FORMS_DIR / str(definition.base_document)
 
     if not template.exists():
         raise FileNotFoundError(
@@ -504,14 +675,34 @@ def canonical_values_from_field_plan(
 def generate_form(
     form_id: str,
     canonical_values: dict[str, Any],
+    *,
+    locale: str = "en",
 ) -> GeneratedForm:
-    """Map canonical values onto `form_id` and render the document.
+    """Map canonical values onto `form_id` in `locale` and render the document.
 
     Pure with respect to the filesystem unless the form has a bundled template:
     nothing is written until :meth:`GeneratedForm.write` is called, so a test
     can assert on the result without a temp directory.
+
+    ``locale`` is the applicant's own choice and decides **which official
+    edition is drawn on**, through
+    :func:`benefits_navigator.formmap.documents.resolve_for_definition`. It was
+    previously not a parameter at all, which is the defect this signature
+    fixes: the resolver, its ``LanguageMatch`` values and its tests all existed,
+    and nothing on the generation path called any of them, so a Spanish
+    applicant got whichever file ``base_document`` happened to name — the
+    English H1010.
+
+    It does **not** decide the language of the document's own printed wording.
+    That is the agency's, and a locale with no edition is told so rather than
+    served a translation nobody published. See :attr:`GeneratedForm.document`.
     """
-    definition = definition_for_form(form_id)
+    from benefits_navigator.formmap.documents import resolve_for_definition
+
+    declared = definition_for_form(form_id)
+
+    # The locale becomes an asset here and nowhere else downstream.
+    definition, chosen = resolve_for_definition(declared, locale)
 
     resolution = resolve_mappings(definition, canonical_values)
     plan = plan_render(resolution.fields)
@@ -526,7 +717,7 @@ def generate_form(
         )
 
     if definition.has_official_base_document:
-        pdf_bytes = _render_over_template(definition, plan)
+        pdf_bytes = _render_over_template(definition, plan, chosen)
     else:
         pdf_bytes = _render_authored_pages(definition, plan, static)
 
@@ -538,7 +729,11 @@ def generate_form(
         document_language=definition.document_language,
         resolution=resolution,
         render_plan=plan,
-        review_text=_build_review_text(definition, resolution, plan),
+        review_text=_build_review_text(
+            definition, resolution, plan, chosen, locale
+        ),
+        requested_locale=locale,
+        document=chosen,
     )
 
 
@@ -561,3 +756,130 @@ def output_filename(
     code = definition.form_code.lower().replace(" ", "-")
 
     return f"{prefix}-{definition.state.lower()}-{code}-{place}-{stamp}.pdf"
+
+
+# ---------------------------------------------------------------------------
+# What the applicant's downloads folder shows them
+# ---------------------------------------------------------------------------
+
+#: Human-readable language names for a download filename, by base tag.
+#:
+#: English words, and deliberately so: this is a filename, and a file called
+#: ``Texas-H1010-Solicitud-Español.pdf`` travels badly — non-ASCII characters in
+#: a ``Content-Disposition`` header need RFC 5987 encoding that not every client
+#: gets right, and the name has to survive being emailed to a caseworker,
+#: attached to a portal upload and read down a phone line. What the applicant
+#: reads *in the interface* is fully translated; see the ``form_card_*`` keys.
+_LANGUAGE_WORDS: dict[str, str] = {
+    "en": "English",
+    "es": "Spanish",
+    "zh-CN": "Chinese",
+    "zh": "Chinese",
+    "vi": "Vietnamese",
+}
+
+#: What a single asset serving several languages is called.
+_BILINGUAL_WORD = "Bilingual"
+
+
+def language_word(language: str) -> str:
+    """A filename-safe English name for a language tag."""
+    tag = (language or "").strip()
+
+    if tag in _LANGUAGE_WORDS:
+        return _LANGUAGE_WORDS[tag]
+
+    base = tag.replace("_", "-").split("-")[0].lower()
+
+    return _LANGUAGE_WORDS.get(base, base.upper() or "English")
+
+
+def language_suffix(languages: tuple[str, ...]) -> str:
+    """The language part of a download name, for the asset's own languages.
+
+    One language gives its name; several give ``Bilingual``. That word is the
+    point of this function: a document answering English and Spanish from one
+    file is not "English", and naming the download ``…-English.pdf`` would tell
+    a Spanish applicant, in their downloads folder, that they had been handed
+    the English one.
+    """
+    if not languages:
+        return _LANGUAGE_WORDS["en"]
+
+    if len(languages) > 1:
+        return _BILINGUAL_WORD
+
+    return language_word(languages[0])
+
+
+def download_name(
+    *,
+    state: str,
+    form_code: str,
+    languages: tuple[str, ...],
+    kind: str = "",
+) -> str:
+    """The filename an applicant sees when they save the document.
+
+    Built from the state, the form's own designation, what the document is, and
+    the language it is printed in — never from the canonical storage name.
+    ``TX-H1049-BI-2001-12.pdf`` tells the applicant nothing and leaks a naming
+    scheme that is ours; ``Texas-H1049-Bilingual.pdf`` tells them exactly what
+    is in the file.
+
+    The form code is kept verbatim because it is the one string a county office
+    recognises, and the language word is derived from the asset rather than
+    from the applicant's locale — see :func:`language_suffix`.
+
+    ``kind`` is empty by default and the caller opts in. Defaulting it to
+    "Application" was wrong in the direction that matters: it would have named
+    a two-page self-employment ledger ``Texas-H1049-Application-Bilingual.pdf``,
+    telling the applicant the supporting form was the application.
+    """
+    parts = [
+        _STATE_NAMES.get(state.strip().upper(), state.strip().upper()),
+        form_code.strip().replace(" ", "-"),
+        kind.strip().replace(" ", "-"),
+        language_suffix(languages),
+    ]
+
+    return "-".join(part for part in parts if part) + ".pdf"
+
+
+#: State names for a download filename. "TX" is a code; "Texas" is a word.
+_STATE_NAMES: dict[str, str] = {
+    "TX": "Texas",
+    "CA": "California",
+    "IL": "Illinois",
+    "NY": "NewYork",
+    "PA": "Pennsylvania",
+}
+
+
+def _bilingual_scope_note(chosen: Any, locale: str = "en") -> str:
+    """Where a bilingual document's coverage stops, if it does.
+
+    Empty for a document printed in both languages throughout. H3037 is the
+    reason this exists: only page 2 is bilingual, and telling a Spanish reader
+    "English & Spanish" without that qualification overstates what they can
+    read.
+
+    The document names the qualification with a message key
+    (``OfficialDocument.language_scope_key``) and this looks the sentence up in
+    the applicant's language. Reading the key off the document rather than a
+    per-state table is what keeps this module jurisdiction-agnostic — a shared
+    module importing ``formmap.forms.tx_documents`` is the coupling
+    ``test_formmap_jurisdiction_isolation`` exists to reject, and it was right
+    to.
+    """
+    from benefits_navigator.formmap.documents import LanguageMatch
+
+    if chosen.match is not LanguageMatch.BILINGUAL:
+        return ""
+
+    key = getattr(chosen.document, "language_scope_key", "")
+
+    if not key:
+        return ""
+
+    return words_for(locale).scope_notes.get(key, "")
