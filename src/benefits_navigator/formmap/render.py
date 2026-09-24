@@ -135,8 +135,13 @@ def plan_render(resolved_fields: list[ResolvedField]) -> RenderPlan:
             _plan_mark(plan, resolved, box, target)
             continue
 
-        if resolved.kind in TEXTUAL_KINDS:
+        if target.segments:
+            _plan_segments(plan, resolved, target)
+        elif resolved.kind in TEXTUAL_KINDS:
             _plan_text(plan, resolved, box, target)
+
+        for repeat in target.also_draw_at:
+            _plan_text(plan, resolved, repeat, target)
 
     return plan
 
@@ -200,6 +205,69 @@ def _plan_mark(
             size=size,
             text=mark,
         )
+    )
+
+
+def _plan_segments(
+    plan: RenderPlan,
+    resolved: ResolvedField,
+    target: OverlayTarget,
+) -> None:
+    """Draw one value into the several printed slots the form gives it.
+
+    A slot that would overflow is reported against the field as a whole rather
+    than drawn small: a date whose year does not fit its four printed cells is
+    not a date, and shrinking it to make it fit hides that something is wrong
+    with the value rather than with the box.
+    """
+    text = resolved.rendered
+
+    if not text:
+        return
+
+    pieces = [
+        (segment, segment.slice_of(text)) for segment in target.segments
+    ]
+    pieces = [(segment, piece) for segment, piece in pieces if piece]
+
+    if not pieces:
+        return
+
+    # One size for every cell, chosen as the largest that fits the tightest of
+    # them. Shrinking each cell independently is what a first version does, and
+    # it prints a phone number as "512 555 0143" in three visibly different
+    # sizes — the area-code cell is half the width of the line-number cell, so
+    # it shrinks twice as far. A value split across cells is still one value and
+    # should read as one.
+    size = target.font_size
+
+    for segment, piece in pieces:
+        box = segment.box
+
+        if fits(piece, size, box.width, box.height, False):
+            continue
+
+        if not target.shrink_to_fit:
+            plan.unfitted.append(resolved.key)
+            return
+
+        shrunk = largest_size_that_fits(piece, size, box.width, box.height, False)
+
+        if shrunk is None:
+            plan.unfitted.append(resolved.key)
+            return
+
+        size = shrunk
+
+    plan.draws.extend(
+        DrawnText(
+            page=segment.box.page,
+            x=_aligned_x(segment.box, piece, size, target.alignment),
+            y=segment.box.baseline(size),
+            size=size,
+            text=piece,
+        )
+        for segment, piece in pieces
     )
 
 

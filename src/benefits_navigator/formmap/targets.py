@@ -197,6 +197,49 @@ class AcroFormTarget:
 
 
 @dataclass(frozen=True)
+class Segment:
+    """One printed slot of a value the form breaks into pieces.
+
+    Government forms rarely give a date or a phone number a single line. They
+    print ``(   )    -`` and expect an area code between the parentheses, or
+    ``__ / __ / ____`` with the month, day and year in their own cells. Writing
+    ``(512) 555-0143`` across that template prints two sets of parentheses.
+
+    So a value can be declared as several slots, each taking a slice of the
+    rendered string. The slice is expressed over the *rendered* value — after
+    the field's transform has run — because that is the string the form's
+    template was designed around: ``09/14/1991`` has its month at ``[0:2]``
+    whatever the canonical value looked like.
+    """
+
+    #: Where this piece is drawn.
+    box: Box
+
+    #: Start index into the rendered value, inclusive.
+    start: int
+
+    #: End index, exclusive. ``None`` means "to the end".
+    end: int | None = None
+
+    #: Characters to drop before slicing, e.g. the separators the form prints.
+    #:
+    #: A date renders as ``09/14/1991``; the form prints its own slashes. With
+    #: ``strip="/"`` the value becomes ``09141991`` and the slots are ``[0:2]``,
+    #: ``[2:4]``, ``[4:8]`` — indices into the digits, which is how someone
+    #: reading the definition thinks about a character grid.
+    strip: str = ""
+
+    def slice_of(self, rendered: str) -> str:
+        """The piece of `rendered` this slot prints."""
+        value = rendered
+
+        for character in self.strip:
+            value = value.replace(character, "")
+
+        return value[self.start : self.end]
+
+
+@dataclass(frozen=True)
 class OverlayTarget:
     """A value drawn onto the page at coordinates we hold.
 
@@ -207,6 +250,27 @@ class OverlayTarget:
 
     #: The box to render inside. For CHOICE, see `option_boxes`.
     box: Box | None = None
+
+    #: Printed slots this value is split across, when the form provides them.
+    #:
+    #: When set, `box` is still required and still bounds the whole field — it
+    #: is what the review sheet reports and what overlap checks measure against
+    #: — but the value is drawn into these slots rather than across it.
+    segments: tuple[Segment, ...] = ()
+
+    #: Further boxes that receive the **same** value, unsliced.
+    #:
+    #: Government forms repeat themselves. H1010 asks for Person 1's name in
+    #: Section A and again in Section F; H3037 asks for the patient's name on
+    #: page 1 and again on page 2. That is one canonical fact and one question
+    #: the applicant answers once.
+    #:
+    #: The alternatives are both worse. A second mapping needs a second
+    #: canonical key, and a suffixed key like ``…first_name.section_f`` is a key
+    #: nothing ever populates — the box stays blank while the definition claims
+    #: to fill it. Listing the extra boxes here keeps one mapping, one printed
+    #: question on the review sheet, and one place for an applicant to answer.
+    also_draw_at: tuple[Box, ...] = ()
 
     #: Per-option boxes for a CHOICE field, keyed by the canonical option value.
     #:
@@ -242,7 +306,12 @@ class OverlayTarget:
         if self.option_boxes:
             return tuple(self.option_boxes.values())
 
-        return (self.box,) if self.box is not None else ()
+        if self.segments:
+            return tuple(segment.box for segment in self.segments) + self.also_draw_at
+
+        primary = (self.box,) if self.box is not None else ()
+
+        return primary + self.also_draw_at
 
     @property
     def kind_hint(self) -> str:
