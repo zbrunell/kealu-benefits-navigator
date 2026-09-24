@@ -1,10 +1,18 @@
-# Progress — Texas H1010, end to end
+# Progress — Texas official forms and packet planning
 
-**Checkpoint date:** 2026-09-03
+**Checkpoint date:** 2026-09-04
 **Branch:** `feat/saws2-required-fields-and-guide`
-**HEAD:** `fd619d8 feat: add end-to-end Texas H1010 application flow`
-**Working tree:** clean
-**Status:** milestone complete, all suites green, **nothing in flight**
+**HEAD:** `17a5a98 docs: add project progress handoff` + uncommitted work
+**Working tree:** the Texas official-forms milestone, uncommitted
+**Status:** architecture landed and tested; H1010 cutover deliberately not done
+
+> **The 2026-09-03 handoff below is superseded in one important respect.** It
+> recorded that HHSC's H1010 PDF could not be obtained and recommended
+> continuing to try. **It has been obtained** — both official editions, by hand,
+> through the Your Texas Benefits paper-form catalog, on 4 September 2026. §11
+> at the end of this file records what was built on top of it, what the
+> documents turned out to be, and what remains. Read `docs/texas-forms.md`
+> first; it is the design document for all of it.
 
 An Austin household can now start at a Texas report, work through Texas-specific
 screens, and download a filled Form H1010 worksheet carrying their own answers.
@@ -413,3 +421,177 @@ Paste into a fresh Claude Code session:
 > Do not begin a third form. Do not rename `household.california_resident` — §6
 > explains why. Run the full Python, Vitest, Playwright, `tsc --noEmit` and
 > ESLint suites before you stop, and report before/after test counts.
+
+---
+
+## 11. Texas official forms and packet planning (2026-09-04)
+
+This section supersedes §8's recommendation and corrects §2.1 and §7.1.
+
+### 11.1 The premise that changed
+
+§8 said "acquisition is the hard part" and recommended requesting the form from
+HHSC or scanning a county-office copy. That was solving a harder problem than
+the one in front of it. Your Texas Benefits publishes a **"Get a paper form"
+catalog**, and a person can click through it and download the real documents.
+Five were obtained that way on 4 September 2026.
+
+Every retrieval attempt §8 recorded still fails, with one correction worth
+passing on: `fhb.hhs.texas.gov/sites/default/files/...` answers **200 with an
+Akamai "Access Denied" HTML body**. A script checking the status code alone will
+write 199 KB of HTML into `forms/`. Check the magic bytes.
+
+The catalog still cannot be *enumerated* programmatically — it is an AngularJS
+app that fetches its list client-side — so adding a form remains a manual
+download plus a provenance record.
+
+### 11.2 What the documents actually are
+
+The starting brief supplied a language-availability table. Verifying it against
+the files changed three things:
+
+| Expected | Actually |
+|---|---|
+| H1049 has English and Spanish editions | **One bilingual document.** The catalog's Spanish download is byte-identical to its English one (`c36e0710…`), and the content is English/Spanish throughout |
+| H3037 has English and Spanish editions | **One bilingual document** (`8b9c6704…`), same evidence |
+| "H1028 — employment verification" | The file is **H1028-MBIC**, a different form: employer verification for *Medicaid Buy-In for Children* only. The general H1028 is an HHSC-internal fallback used "when TIERS is down", with staff completing page 1 — not an applicant deliverable |
+| H1010 has English and Spanish editions | **True.** Two real files, two layouts. HHSC designates the Spanish one **H1010-S** |
+
+Two assets also disagree with HHSC's current effective dates:
+
+- **H1028-MBIC prints 12/2015; HHSC's index says 9/2024.** Treated as
+  **superseded** — registered in the catalog so a packet can be honest the form
+  exists, barred from being a production base document (`fillable=False`).
+- **H1049 prints 12/2001; HHSC's index says 12/2015.** Recorded as
+  **unresolved**: HHSC pages routinely carry an effective date for the
+  *procedure* while the printed form keeps its footer, and retrieving HHSC's
+  copy to compare was blocked.
+
+And the discovery that decided the whole rendering approach: **all three
+fillable PDFs are XFA forms whose AcroForm layer is nearly empty.** H1010
+English has three usable text fields across 34 pages; H1010 Spanish has **none**.
+The application pages say "Please use dark ink. Please print. Fill in the
+circles." `AcroFormTarget` is not a route for any Texas form; everything is
+overlaid.
+
+### 11.3 What was built
+
+All jurisdiction-neutral except the three `forms/tx_*` modules.
+
+| Module | What it owns |
+|---|---|
+| `formmap/provenance.py` | `OfficialDocument` — hash, both revisions, languages, fillability, source, retrieval date. Refuses to open a file whose bytes changed |
+| `formmap/documents.py` | `DocumentVariant`, `resolve_document` — which official *edition* an applicant is handed, and why |
+| `formmap/packet.py` | `PacketContext`, `CatalogEntry`, `plan_packet` — which *forms* belong in a household's packet, with reasons |
+| `formmap/measure.py` | Anchors and placements: boxes derived from text the document prints |
+| `formmap/measurements.py` | Committed measurements, refused if their digest does not match the document |
+| `tools/measure_texas_forms.py` | Resolves anchors offline; `--check` fails if committed output is stale |
+| `formmap/forms/tx_documents.py` | The five official documents, with provenance |
+| `formmap/forms/tx_catalog.py` | Applicability rules, each citing HHSC guidance |
+| `formmap/forms/h1010_official.py` | H1010 on both official editions |
+| `formmap/forms/h3037.py` | H3037, complete |
+
+Extended in place: `Responsibility` and `DeclaredBlank` (definition.py),
+`Segment` and `also_draw_at` (targets.py), segment rendering (render.py),
+per-state application lookup and build-time variant validation (registry.py).
+
+**The formmap layer still branches on nothing** — the AST test that forbids a
+form id or state code in the shared modules passes unchanged.
+
+### 11.4 Coordinates are anchored, not pasted
+
+`Above(Anchor("First name", page=5))` reads as "the writing line above the words
+*First name*". The form's own labels also define its column widths. Anchors
+resolve offline into committed JSON keyed by the document's SHA-256.
+
+That closes the brief's requirement 12 with **two** independent checks: a new
+PDF fails the provenance digest; updating that digest without re-measuring fails
+the measurement digest. Neither can be skipped quietly.
+
+It also caught a real bug during development: two `/` separators on the Spanish
+birth-date template differ in y by 0.06 points, so ordering strictly by y put
+the *right-hand* slash first and the date's cells came out reversed. Reading
+order is now quantised to a 3-point row tolerance, and a test asserts both
+editions produce the same box count per field.
+
+### 11.5 Why H1010 was *not* cut over
+
+> **Superseded.** H1010 has since been cut over: `TX_H1010` now builds
+> `h1010_official` (115 fields on each edition), the worksheet is registered as
+> `TX_H1010_WORKSHEET` as a supplement, and `h1010_worksheet_keys` is gone,
+> replaced by `h1010_coverage`. See `docs/texas-forms.md` §9. The text below is
+> kept as the record of the 2026-09-04 checkpoint.
+
+The official H1010 is registered as **`TX_H1010_OFFICIAL`**. `TX_H1010` — the
+worksheet — is **still what a Texas household is served**, deliberately.
+
+The official definition places 29 of the 154 canonical answers: printed pages
+1–3 (PDF pages 5–7), verified page by page in both languages. Pages 4–21 are not
+anchored. A government form with three pages filled and eighteen blank is worse
+for an applicant than a worksheet carrying every answer they gave, so the
+cutover waits until `h1010_worksheet_keys.WORKSHEET_ONLY_KEYS` is empty. That
+list — 127 keys — is the remaining work, and each variant carries it as
+`deferred_keys` so the review sheet can name the answers still to be copied.
+
+§2.1 stays true meanwhile: the served document is a worksheet,
+`is_official_document` is `False`, and everything says so.
+
+### 11.6 Canonical schema changes
+
+Two added, one identified. Neither added field is named after a form.
+
+- **`household.pregnancy.person_name`** — H1010 Section C asks "If yes, who?"
+  and H3037 asks it twice. One intake answer, three printed boxes, two forms.
+- **`household.pregnancy.due_date`** — asked by H1010 Section C. Deliberately
+  *not* printed on H3037, where the same fact sits above a clinician's signature
+  attesting to it. Responsibility is per printed field, not per fact.
+- **`income.self_employment.*`** — identified, not added. H1049 needs the person,
+  months covered, work description and an expense/income ledger; today
+  self-employment is a gateway boolean with no detail rows (§7 blocker 5).
+
+**Neither pregnancy field is reachable from the Texas intake yet.** Adding those
+two questions is a prerequisite for the cutover, because every mapped key must
+be reachable from an intake path.
+
+### 11.7 Test counts
+
+| Suite | Before | After |
+|---|---|---|
+| Python | 1016 passed | **1077 passed**, 3 deselected |
+| Vitest | 1937 passed (80 files) | **1937 passed** (unchanged — no `web/` source changed) |
+| Playwright | 81 passed | **79 passed, 2 failed** — see below |
+| `tsc --noEmit` | clean | clean |
+| ESLint | clean | clean |
+
+The two Playwright failures — `intake-to-report.spec.ts:331` and
+`report-rendering.spec.ts:131` — **reproduce identically on a clean worktree at
+HEAD** and are unrelated to this work, which touched no file under `web/`. They
+regressed between the 2026-09-03 checkpoint and now.
+
+### 11.8 Recommended next task
+
+> **Partly superseded** by the cutover noted in §11.5: steps 2 and 3 are done.
+> Steps 1 (the two pregnancy questions) and 4 (`income.self_employment.*` and
+> H1049) remain.
+
+**Finish H1010's official mapping, then cut over.** In order:
+
+1. Add the two pregnancy questions to the Texas intake (`form-intake/tx-h1010.ts`)
+   so the new canonical keys are reachable.
+2. Anchor printed pages 4–21, section by section, rendering and *looking at*
+   every page as you go. Shrink `WORKSHEET_ONLY_KEYS` to empty.
+3. Cut `TX_H1010` over to the official definition, retire the worksheet, regenerate
+   the four golden review sheets, and update the scenario tests that assert
+   worksheet geometry.
+4. Then `income.self_employment.*` and H1049.
+
+Do not skip step 1: without it the cross-runtime reachability test cannot hold.
+
+### 11.9 Files to read first
+
+- `docs/texas-forms.md` — the design document for all of the above.
+- `formmap/forms/h3037.py` — the field-audit format every new form should follow.
+- `formmap/documents.py` — why forms and language are decided separately.
+- `formmap/packet.py` — why applicability is not requirement.
+- `tests/test_formmap_texas_packet.py` — 60 tests, each pinning a failure mode
+  that produces a form which *looks* right.

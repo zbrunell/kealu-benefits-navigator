@@ -8,22 +8,63 @@ The authority for what is mapped is the definition itself
 (`src/benefits_navigator/formmap/forms/h1010.py`), not this file. What this file
 holds is the part a definition cannot: the *reasons*.
 
-## The document we do not have
+## The document we do not have — corrected 4 September 2026
 
-HHSC does not publish H1010 as a retrievable PDF. Re-verified 30 August 2026:
+**We have it.** Both official editions of H1010 were obtained by hand on
+4 September 2026 through the Your Texas Benefits "Get a paper form" catalog, and
+are in the repository. The definition that renders onto them is
+`formmap/forms/h1010_official.py`; `docs/texas-forms.md` is its documentation.
+
+The rest of this section is kept because the retrieval attempts it records did
+fail, and still fail. What was wrong was the conclusion drawn from them.
+
+### What was tried, and what it returned
+
+Originally verified 30 August 2026, re-verified 4 September 2026 with one
+correction:
 
 | What was tried | Result |
 |---|---|
 | `fhb.hhs.texas.gov` form page for H1010 (effective 6/2026) | 200. Its "Form H1010" and "Form H1010-S" links both point at `yourtexasbenefits.com/Learn/GetPaperForm` |
-| `yourtexasbenefits.com/Learn/GetPaperForm?lang=en_US` | 200, and it is an Angular application — no document behind it |
+| `yourtexasbenefits.com/Learn/GetPaperForm?lang=en_US` | 200, and it is an Angular application — the form list is fetched client-side |
 | `www.hhs.texas.gov/regulations/forms/...` | 403, with browser headers included |
-| `www.hhs.texas.gov/sites/default/files/...` | Reachable, but 404 for every H1010 path tried |
+| `www.hhs.texas.gov/sites/default/files/...` | 403 |
+| `fhb.hhs.texas.gov/sites/default/files/...` | **200 — with an Akamai "Access Denied" HTML body.** Corrected on 4 Sep; a status-code check alone concludes it downloaded a PDF |
 
-So the generated document is a **Navigator-authored worksheet**, not the
-government's paper with our answers on it. Every coordinate in the definition is
-one we own and can verify by opening the output; none is a guess about where a
-box sits on a page nobody here has seen. `GeneratedForm.is_official_document` is
-`False`, the first page says so, and the review sheet leads with it.
+### Where the reasoning went wrong
+
+Every row above still holds. The catalog page genuinely cannot be *fetched* —
+but it can be *used*. A person clicking through it downloads the real files,
+which is how the five official Texas documents now in `src/benefits_navigator/forms/`
+arrived. "No programmatic route exists" was reported as "no route exists", and
+the recommendation that followed — request the form from HHSC, or scan a printed
+copy from a county office — was solving a harder problem than the one in front
+of it.
+
+The catalog still cannot be *enumerated* programmatically, so adding a form is
+still a manual download plus a record in `formmap/forms/tx_documents.py`.
+
+### What the worksheet is now
+
+This module's own generated document is a **Navigator-authored worksheet**, and
+it is no longer what a Texas household is served. The cutover happened: the
+official definition (`h1010_official`) now places every answer H1010 has a box
+for — 115 fields, 217 boxes on each published edition — so `TX_H1010` builds
+HHSC's own document and a household downloads the government form with their
+answers on it.
+
+The worksheet is registered as `TX_H1010_WORKSHEET` and kept as a **supplement**,
+for two reasons that are not "in case the official one breaks":
+
+- it carries answers the official form has no box for, listed in
+  `h1010_coverage.NOT_ON_THIS_FORM`, which makes it worth bringing to an
+  interview where HHSC asks about several of them;
+- it is the fixture the mapping suite's scenario tests read, because every
+  coordinate in it is one we own and can verify by opening the output.
+
+`GeneratedForm.is_official_document` is `False` for it, its first page says so,
+and its review sheet leads with it — so it can never be mistaken for the filing.
+See `docs/texas-forms.md` §9.
 
 The *scope* is not guesswork either. HHSC's own published purpose for H1010 says
 the form is used to apply for SNAP, TANF and health care (children, adults
