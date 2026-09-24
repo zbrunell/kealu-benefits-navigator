@@ -382,8 +382,20 @@ function mapHousehold(
           adult.citizenOrNational ?? null,
         ),
         entry(
+          `${prefix}.adult.attends_school`,
+          adult.attendsSchool ?? null,
+        ),
+        entry(
           `${prefix}.adult.full_time_student`,
           adult.fullTimeStudent ?? null,
+        ),
+        entry(
+          `${prefix}.adult.lives_in_texas`,
+          adult.livesInTexas ?? null,
+        ),
+        entry(
+          `${prefix}.adult.plans_to_stay_in_texas`,
+          adult.plansToStayInTexas ?? null,
         ),
         entry(
           `${prefix}.adult.disabled`,
@@ -399,6 +411,27 @@ function mapHousehold(
           ),
         );
       }
+    }
+
+    /*
+     * Which benefits *this person* is applying for.
+     *
+     * Emitted at member level rather than under `adult.`/`child.` because
+     * H1010 asks it once per printed person block regardless of age — the
+     * adult/child split exists because California prints two tables.
+     *
+     * Only the programmes actually chosen are emitted, and each as an explicit
+     * `true`. A person nobody selected a programme for produces no entries at
+     * all, so their circles stay blank rather than being answered "no" on
+     * their behalf.
+     */
+    const personPrograms =
+      member.adultDetails?.texasPrograms ??
+      member.childDetails?.texasPrograms ??
+      [];
+
+    for (const program of personPrograms) {
+      fields.push(entry(`${prefix}.programs.${program}`, true));
     }
 
     /**
@@ -425,8 +458,20 @@ function mapHousehold(
           child.citizenOrNational ?? null,
         ),
         entry(
+          `${prefix}.child.attends_school`,
+          child.attendsSchool ?? null,
+        ),
+        entry(
           `${prefix}.child.full_time_student`,
           child.fullTimeStudent ?? null,
+        ),
+        entry(
+          `${prefix}.child.lives_in_texas`,
+          child.livesInTexas ?? null,
+        ),
+        entry(
+          `${prefix}.child.plans_to_stay_in_texas`,
+          child.plansToStayInTexas ?? null,
         ),
         entry(
           `${prefix}.child.disabled`,
@@ -591,6 +636,42 @@ function mapPrograms(
 /**
  * Map Page 1 applicant/application preferences.
  */
+/**
+ * Person 1's own answers to the per-person questions.
+ *
+ * The applicant has a person block on the printed form like everyone else, and
+ * it asks which benefits *they* are applying for. That is not the same
+ * question as `selectedPrograms`, which Section A asks about the case as a
+ * whole — so it gets its own answer rather than being filled from the
+ * household's.
+ */
+function mapApplicantPersonAnswers(
+  application: Saws2PlusApplicationData,
+): ApplicationFieldPlanEntry[] {
+  const details = application.applicant.householdDetails;
+
+  if (!details) return [];
+
+  const fields: ApplicationFieldPlanEntry[] = [
+    entry("applicant.household.attends_school", details.attendsSchool ?? null),
+    entry(
+      "applicant.household.full_time_student",
+      details.fullTimeStudent ?? null,
+    ),
+    entry("applicant.household.lives_in_texas", details.livesInTexas ?? null),
+    entry(
+      "applicant.household.plans_to_stay_in_texas",
+      details.plansToStayInTexas ?? null,
+    ),
+  ];
+
+  for (const program of details.texasPrograms ?? []) {
+    fields.push(entry(`applicant.programs.${program}`, true));
+  }
+
+  return fields;
+}
+
 function mapApplicationPreferences(
   application: Saws2PlusApplicationData,
 ): ApplicationFieldPlanEntry[] {
@@ -1608,6 +1689,9 @@ export function buildApplicationFieldPlan(
       application,
     ),
     ...mapPrograms(
+      application,
+    ),
+    ...mapApplicantPersonAnswers(
       application,
     ),
     ...mapQuestionnaire(

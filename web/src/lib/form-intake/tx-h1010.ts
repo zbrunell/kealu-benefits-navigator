@@ -53,6 +53,7 @@ import {
 import { readPath, writePath } from '@/lib/saws2-question-planner';
 import { tableForMember } from '@/lib/household-rows';
 import { RELATIONSHIP_LABEL_KEYS } from '@/lib/household-relationships';
+import type { BenefitProgramId } from '@/lib/state-applications';
 import type {
   AnswerValue,
   IntakeForm,
@@ -707,26 +708,132 @@ export const TX_HOUSEHOLD_ROSTER = {
   introKey: 'tx_roster_intro',
   addLabelKey: 'tx_roster_add',
   emptyKey: 'tx_roster_empty',
-  printedRows: 6,
+  /*
+   * Four, because that is what HHSC's form prints: Person 2 through Person 5,
+   * two per page on printed pages 4 and 5.
+   *
+   * This said six, which was the intake's own capacity rather than the form's.
+   * The overflow warning therefore appeared one person too late — a household
+   * of six was told everything fitted, and two people would have gone missing
+   * from the printed table with nothing to say so. Kept in step with
+   * `h1010_official.OFFICIAL_PERSON_ROWS`, which is what reports the overflow
+   * on the review sheet.
+   */
+  printedRows: 4,
 } as const;
+
+/**
+ * The per-person answers H1010 asks in every printed person block.
+ *
+ * Stored on the adult or the child record according to the person's age,
+ * because the canonical model splits a person's details that way for
+ * California — which prints two household tables. H1010 prints one, so the
+ * official mapping reads either through `alternate_keys`.
+ *
+ * `maritalStatus` is adult-only: it exists on `AdultApplicationDetails` and
+ * the intake asks it from 16, so a child's record has nowhere to put it and
+ * nothing to put there.
+ */
+export type MemberDetailKey =
+  | 'sex'
+  | 'citizenOrNational'
+  | 'maritalStatus'
+  | 'attendsSchool'
+  | 'fullTimeStudent'
+  | 'livesInTexas'
+  | 'plansToStayInTexas';
+
+/** Details stored as a three-state answer rather than a value. */
+const TRI_STATE_DETAILS: ReadonlySet<string> = new Set([
+  'citizenOrNational',
+  'attendsSchool',
+  'fullTimeStudent',
+  'livesInTexas',
+  'plansToStayInTexas',
+]);
 
 /** Read a per-person detail from whichever record the person's age puts it in. */
 export function memberDetail(
   member: HouseholdMember,
-  key: 'sex' | 'citizenOrNational',
+  key: MemberDetailKey,
 ): AnswerValue {
+  // Adult-only, so read it there whatever the age says. A person whose date of
+  // birth was corrected downward keeps the answer rather than losing it, and
+  // the intake stops asking.
+  if (key === 'maritalStatus') {
+    return member.adultDetails?.maritalStatus;
+  }
+
   const record =
     tableForMember(member) === 'child' ? member.childDetails : member.adultDetails;
 
   return record?.[key];
 }
 
+/**
+ * Which Texas benefits this person is applying for.
+ *
+ * Its own reader rather than a `memberDetail` key, because `AnswerValue` is
+ * the intake model's type for *one* answer — a string, a number, a yes/no —
+ * and widening it to hold a list would let any question return an array.
+ */
+export function memberPrograms(
+  member: HouseholdMember,
+): readonly BenefitProgramId[] {
+  const record =
+    tableForMember(member) === 'child'
+      ? member.childDetails
+      : member.adultDetails;
+
+  return record?.texasPrograms ?? [];
+}
+
+/** Replace this person's programme selection. */
+export function writeMemberPrograms(
+  member: HouseholdMember,
+  programs: readonly BenefitProgramId[],
+): HouseholdMember {
+  const next = [...programs];
+
+  if (tableForMember(member) === 'child') {
+    return {
+      ...member,
+      childDetails: {
+        ...(member.childDetails ?? {
+          applyingFor: [],
+          placeOfBirth: '',
+          parentStatus: {},
+        }),
+        texasPrograms: next,
+      },
+    };
+  }
+
+  return {
+    ...member,
+    adultDetails: {
+      ...(member.adultDetails ?? { applyingFor: [] }),
+      texasPrograms: next,
+    },
+  };
+}
+
 /** Write a per-person detail into the record the person's age selects. */
 export function writeMemberDetail(
   member: HouseholdMember,
-  key: 'sex' | 'citizenOrNational',
+  key: MemberDetailKey,
   value: AnswerValue,
 ): HouseholdMember {
+  if (key === 'maritalStatus') {
+    return {
+      ...member,
+      adultDetails: {
+        ...(member.adultDetails ?? { applyingFor: [] }),
+        maritalStatus: value as never,
+      },
+    };
+  }
+
   const isChild = tableForMember(member) === 'child';
 
   if (isChild) {
@@ -740,7 +847,7 @@ export function writeMemberDetail(
       ...member,
       childDetails: {
         ...childDetails,
-        [key]: key === 'citizenOrNational' ? tri(value) : (value as never),
+        [key]: TRI_STATE_DETAILS.has(key) ? tri(value) : (value as never),
       },
     };
   }
@@ -751,10 +858,49 @@ export function writeMemberDetail(
     ...member,
     adultDetails: {
       ...adultDetails,
-      [key]: key === 'citizenOrNational' ? tri(value) : (value as never),
+      [key]: TRI_STATE_DETAILS.has(key) ? tri(value) : (value as never),
     },
   };
 }
+
+/**
+ * The benefits one person can be applying for, in the form's own order.
+ *
+ * Exactly the four programmes H1010 covers and this product supports. Each
+ * carries a one-line description because "CHIP" means nothing to someone who
+ * has not applied before, and a person choosing for their child needs to know
+ * which of two health programmes to pick.
+ *
+ * The descriptions say what a programme *helps with*, never who qualifies:
+ * eligibility is HHSC's to decide, and a description that reads as a promise
+ * is worse than none.
+ */
+export const PERSON_PROGRAM_CHOICES: readonly {
+  program: BenefitProgramId;
+  nameKey: string;
+  summaryKey: string;
+}[] = [
+  {
+    program: 'tx_snap',
+    nameKey: 'tx_program_snap_name',
+    summaryKey: 'tx_program_snap_summary',
+  },
+  {
+    program: 'tx_medicaid',
+    nameKey: 'tx_program_medicaid_name',
+    summaryKey: 'tx_program_medicaid_summary',
+  },
+  {
+    program: 'tx_chip',
+    nameKey: 'tx_program_chip_name',
+    summaryKey: 'tx_program_chip_summary',
+  },
+  {
+    program: 'tx_tanf',
+    nameKey: 'tx_program_tanf_name',
+    summaryKey: 'tx_program_tanf_summary',
+  },
+];
 
 /** The relationship options a Texas roster row offers. */
 export { RELATIONSHIP_LABEL_KEYS };

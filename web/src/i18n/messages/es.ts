@@ -1257,6 +1257,45 @@ const es: Messages = {
   tx_draft_next_steps:
     'Solicite en línea, por teléfono al 2-1-1, o en una oficina local de beneficios de HHSC. Lleve el formulario impreso con usted.',
 
+
+  // ── Una persona a la vez ─────────────────────────────────────────────────
+  //
+  // Español para alguien que solicita beneficios, no una traducción literal
+  // del inglés: frases cortas, palabras de todos los días, y el nombre de la
+  // persona en cuanto lo sabemos.
+  tx_person_heading: 'Sobre {name}',
+  tx_person_unnamed: 'esta persona',
+  tx_person_relationship: '¿Qué parentesco tiene {name} con usted?',
+
+  tx_person_programs: '¿Qué beneficios solicita {name}?',
+  tx_person_programs_help:
+    'Marque todos los que correspondan. Cada persona de su casa puede solicitar beneficios distintos, y algunas quizá no soliciten ninguno.',
+
+  tx_person_sex_help:
+    'El formulario lo pide. Contéstelo como aparece en los documentos de {name}.',
+  tx_person_lives_in_texas: '¿Vive {name} en Texas?',
+  tx_person_stays_in_texas: '¿Piensa {name} seguir viviendo en Texas?',
+  tx_person_citizen: '¿Es {name} ciudadano(a) o nacional de EE. UU.?',
+  tx_person_citizen_help:
+    'Puede solicitar aunque la respuesta sea no. Contéstelo solo por {name}.',
+  tx_person_school: '¿Estudia {name}?',
+  tx_person_full_time_student: '¿Estudia {name} tiempo completo?',
+
+  tx_program_snap_name: 'Beneficios de comida (SNAP)',
+  tx_program_snap_summary: 'Ayuda a pagar el mandado.',
+  tx_program_medicaid_name: 'Medicaid',
+  tx_program_medicaid_summary:
+    'Cobertura médica para quienes cumplen las reglas de Texas.',
+  tx_program_chip_name: 'CHIP',
+  tx_program_chip_summary:
+    'Cobertura médica de bajo costo para niños cuyas familias ganan demasiado para Medicaid.',
+  tx_program_tanf_name: 'Ayuda en efectivo (TANF)',
+  tx_program_tanf_summary:
+    'Dinero cada mes para algunas familias con hijos.',
+
+  intake_progress_label: 'Avance',
+  intake_progress_percent: '{percent}%',
+
   // ── Form delivery: what document the applicant is getting ────────────────
   //
   // The card that names each form in a household's packet. Every string here

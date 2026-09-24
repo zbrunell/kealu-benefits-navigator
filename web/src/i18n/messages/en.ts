@@ -1258,6 +1258,48 @@ const en = {
   tx_draft_next_steps:
     'Apply online, by phone at 2-1-1, or at a local HHSC benefits office. Take the printed form with you.',
 
+
+  // ── One person at a time ─────────────────────────────────────────────────
+  //
+  // Written to be read by someone who has not filled in a benefits form
+  // before. Short sentences, ordinary words, and the person's own name once we
+  // know it — "Is María in school?" rather than "Household Member 2: student
+  // status". Each question says what it needs and stops; the form's reasons
+  // for asking are HHSC's, and repeating "this helps us determine your
+  // eligibility" under every question teaches people to skip the text.
+  tx_person_heading: 'About {name}',
+  tx_person_unnamed: 'this person',
+  tx_person_relationship: 'How is {name} related to you?',
+
+  tx_person_programs: 'Which benefits is {name} applying for?',
+  tx_person_programs_help:
+    'Choose all that apply. Different people in your home can apply for different benefits, and some people may not be applying at all.',
+
+  tx_person_sex_help: 'The form asks for this. Answer as it appears on {name}’s records.',
+  tx_person_lives_in_texas: 'Does {name} live in Texas?',
+  tx_person_stays_in_texas: 'Does {name} plan to keep living in Texas?',
+  tx_person_citizen: 'Is {name} a U.S. citizen or U.S. national?',
+  tx_person_citizen_help:
+    'You can still apply if the answer is no. Answer for {name} only.',
+  tx_person_school: 'Is {name} in school?',
+  tx_person_full_time_student: 'Is {name} going full time?',
+
+  // Program names and what each one helps with. Short enough to scan, and
+  // careful never to read as a promise: who qualifies is HHSC's decision.
+  tx_program_snap_name: 'Food benefits (SNAP)',
+  tx_program_snap_summary: 'Helps pay for groceries.',
+  tx_program_medicaid_name: 'Medicaid',
+  tx_program_medicaid_summary:
+    'Health coverage for people who meet Texas rules.',
+  tx_program_chip_name: 'CHIP',
+  tx_program_chip_summary:
+    'Low-cost health coverage for children whose families earn too much for Medicaid.',
+  tx_program_tanf_name: 'Cash help (TANF)',
+  tx_program_tanf_summary: 'Monthly cash for some families with children.',
+
+  intake_progress_label: 'Progress',
+  intake_progress_percent: '{percent}%',
+
   // ── Form delivery: what document the applicant is getting ────────────────
   //
   // The card that names each form in a household's packet. Every string here

@@ -90,6 +90,17 @@ const IDENTICAL_BY_DESIGN = new Set([
   'ui_no',
   'qopt_irregular',
   'qopt_gas',
+  /*
+   * "Medicaid" and "CHIP" are what the agency calls them in every language,
+   * including in HHSC's own Spanish material. The surrounding descriptions in
+   * the `_summary` keys are translated; the names are not, for the same reason
+   * as the program names above — someone searching for "CHIP" on a county site
+   * will not find a translated version.
+   */
+  'tx_program_medicaid_name',
+  'tx_program_chip_name',
+  // A percentage is digits and a percent sign.
+  'intake_progress_percent',
 ]);
 
 /**

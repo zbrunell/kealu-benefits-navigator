@@ -91,7 +91,7 @@ test.describe('Texas H1010 — the application production gate', () => {
   test('a single adult applying for food benefits reaches the review screen', async () => {
     await page.getByRole('button', { name: en.programs_continue }).click();
 
-    await completeApplicantStep(page);
+    await completeApplicantStep(page, en);
 
     /*
      * `roster: 'clear'` makes this a household of one. Intake counted two
@@ -112,19 +112,28 @@ test.describe('Texas H1010 — the application production gate', () => {
     await expect(page.getByTestId('tx-review-household-size')).toHaveText('1');
   });
 
-  test('the review screen says the document is a worksheet, not the agency’s form', async () => {
+  test('the review screen says the document is HHSC’s own form', async () => {
     /*
-     * The single most important sentence in the Texas flow. HHSC publishes
-     * H1010 only through its own website, so a document presented as the
-     * official form is one an applicant could post to a county office and hear
-     * nothing about.
+     * The single most important sentence in the Texas flow, and it has
+     * changed. It used to say the document was a worksheet and not the
+     * agency's paper, which was true while we could only fill 29 of the
+     * intake's answers onto the official form.
+     *
+     * We now fill every answer H1010 has a box for, so the document *is* the
+     * agency's paper — and the sentence that matters is the one about the
+     * boxes still left to complete by hand. Claiming otherwise in either
+     * direction is the failure this test exists for: a worksheet presented as
+     * the official form gets posted to a county office and heard nothing
+     * about, and the official form presented as a worksheet gets retyped for
+     * no reason.
      */
-    await expect(page.getByTestId('tx-application')).toContainText(
-      'YourTexasBenefits.com',
-    );
-    await expect(page.getByTestId('tx-application')).toContainText(
-      'not the agency’s own paper',
-    );
+    const step = page.getByTestId('tx-application');
+
+    await expect(step).toContainText('Texas HHSC’s own Form H1010');
+    await expect(step).toContainText('yours to complete by hand');
+
+    // And not the claim it replaced.
+    await expect(step).not.toContainText('not the agency’s own paper');
   });
 
   test('the applicant reaches a generated H1010 and its review sheet', async () => {
@@ -144,8 +153,20 @@ test.describe('Texas H1010 — the application production gate', () => {
 
     expect(pdf.status()).toBe(200);
     expect(pdf.headers()['content-type']).toContain('application/pdf');
+    /*
+     * The download name is language-aware and built from the document the
+     * packet resolved, not from the form code alone: an English applicant gets
+     * "-English", a Spanish one "-Spanish", and a bilingual form "-Bilingual".
+     * See tx-form-language.spec.ts, and lib/document-labels.ts for why the
+     * language word comes from the asset rather than the locale.
+     *
+     * "Prefilled", not "Worksheet". It said Worksheet while the document was
+     * ours rather than HHSC's paper; the official H1010 now carries every
+     * answer it has a box for, so the filename should not be the one surface
+     * still calling it a worksheet.
+     */
     expect(pdf.headers()['content-disposition']).toContain(
-      'h1010-worksheet-draft.pdf',
+      'Texas-H1010-Application-English-Prefilled-Draft.pdf',
     );
     expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
 
@@ -163,11 +184,40 @@ test.describe('Texas H1010 — the application production gate', () => {
     // What it filled in, from answers given in this browser.
     expect(sheet).toContain('Marisol');
     expect(sheet).toContain('2100 Nueces Street');
-    expect(sheet).toContain('THIS IS NOT THE OFFICIAL FORM.');
 
-    // What the household's own answers make inapplicable, and why.
-    expect(sheet).toContain('Not applicable to your household');
-    expect(sheet).toContain('you get your mail at the address where you live');
+    /*
+     * And it no longer warns that this is not the official form, because it
+     * is. The sheet's opening line now names the document the applicant is
+     * holding and the language it is printed in.
+     */
+    expect(sheet).not.toContain('THIS IS NOT THE OFFICIAL FORM.');
+    // Apostrophes are HTML-escaped in the rendered sheet, so this asserts on
+    // the part of the sentence that has none.
+    expect(sheet).toContain('own form, published in your language');
+
+    /*
+     * What the applicant must still do by hand, named rather than implied.
+     *
+     * This asserted "Not applicable to your household" — a section the
+     * worksheet produced because its mailing-address fields sat behind a
+     * gateway. HHSC's form prints both address blocks unconditionally, so
+     * there is no gateway and no such section, and the guarantee worth
+     * asserting instead is the one the sheet gained: every answer the form has
+     * no box for, with what to do about it. See h1010_coverage.
+     */
+    expect(sheet).toContain('the form has no box for it');
+
+    /*
+     * One note this household certainly produces: the walkthrough answers
+     * "do you buy and prepare food together", SNAP turns on it, and H1010
+     * prints no box for it — HHSC establishes it at the interview.
+     */
+    expect(sheet).toContain('You buy and prepare food together');
+    expect(sheet).toContain('ask you this at your interview');
+
+    // What somebody other than the applicant completes.
+    expect(sheet).toContain('Left for someone else to complete');
+    expect(sheet).toContain('You sign this yourself');
 
     // And nothing we refuse to place.
     expect(sheet).toContain('We never fill these in.');

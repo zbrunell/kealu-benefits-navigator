@@ -267,40 +267,85 @@ export async function nameEveryHouseholdMember(page: Page): Promise<void> {
 }
 
 /** Fill the applicant step's required fields and continue. */
-export async function completeApplicantStep(page: Page): Promise<void> {
+/**
+ * The applicant step's labels, in one locale.
+ *
+ * Read from the message catalogue rather than written out, because this step is
+ * a hand-written component addressed by accessible name — so a driver holding
+ * its own copy of "First name" would pass while the interface said something
+ * else, and could not drive the step in Spanish at all.
+ *
+ * That was the blocker for a genuine end-to-end Spanish flow: the driver was
+ * English-only, so a Spanish spec had to switch language *after* this screen
+ * and could never prove the whole journey.
+ */
+export interface ApplicantLabels {
+  field_first_name: string;
+  field_last_name: string;
+  field_date_of_birth: string;
+  field_street_address: string;
+  field_city: string;
+  field_zip_code: string;
+  field_marital_status: string;
+  applicant_citizen_question: string;
+  ui_yes: string;
+  /*
+   * The Texas flow overrides the applicant step's continue label to
+   * `intake_continue`, so this is the key the button actually renders — not
+   * `applicant_continue`, which is California's. Naming the wrong one waits
+   * forever for a button that says something else.
+   */
+  intake_continue: string;
+}
+
+/** Escape a catalogue string for use inside a regular expression. */
+function literal(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export async function completeApplicantStep(
+  page: Page,
+  labels: ApplicantLabels,
+): Promise<void> {
   const values: Array<[string, string]> = [
-    ['First name', 'Marisol'],
-    ['Last name', 'Ramirez'],
-    ['Date of birth', '1991-03-14'],
-    ['Street address', '2100 Nueces Street'],
-    ['City', 'Austin'],
-    ['ZIP code', '78705'],
+    [labels.field_first_name, 'Marisol'],
+    [labels.field_last_name, 'Ramirez'],
+    [labels.field_date_of_birth, '1991-03-14'],
+    [labels.field_street_address, '2100 Nueces Street'],
+    [labels.field_city, 'Austin'],
+    [labels.field_zip_code, '78705'],
   ];
 
   for (const [label, value] of values) {
     // The asterisk is part of the rendered label text; see support/app.ts.
-    const field = page.getByLabel(new RegExp(`^${label}\\s*\\*?$`)).first();
+    const field = page
+      .getByLabel(new RegExp(`^${literal(label)}\\s*\\*?$`))
+      .first();
 
     await field.fill(value);
   }
 
   /*
    * Addressed by role and accessible name. The asterisk beside a required
-   * label is `aria-hidden`, so the accessible name is the bare "Marital
-   * status" — which is what a screen reader announces and what a test should
-   * therefore look for.
+   * label is `aria-hidden`, so the accessible name is the bare label — which
+   * is what a screen reader announces and what a test should therefore look
+   * for.
    */
   await page
-    .getByRole('combobox', { name: 'Marital status', exact: true })
+    .getByRole('combobox', { name: labels.field_marital_status, exact: true })
     .selectOption('single');
 
   // Citizenship is a tri-state, so it is a button rather than a field.
   await page
-    .getByRole('group', { name: /U\.S\. citizen or national/ })
-    .getByRole('button', { name: 'Yes', exact: true })
+    .getByRole('group', {
+      name: new RegExp(literal(labels.applicant_citizen_question)),
+    })
+    .getByRole('button', { name: labels.ui_yes, exact: true })
     .click();
 
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page
+    .getByRole('button', { name: labels.intake_continue, exact: true })
+    .click();
 
   await expect(page.getByTestId('tx-application')).toBeVisible({
     timeout: 20_000,

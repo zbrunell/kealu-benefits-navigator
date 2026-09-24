@@ -1226,6 +1226,37 @@ const zhCN: Messages = {
   tx_draft_next_steps:
     '您可以在线申请、拨打 2-1-1，或前往当地 HHSC 福利办事处。请携带打印好的表格。',
 
+
+  // ── 逐一填写每位家庭成员 ─────────────────────────────────────────────
+  tx_person_heading: '关于{name}',
+  tx_person_unnamed: '这位家庭成员',
+  tx_person_relationship: '{name}与您是什么关系？',
+
+  tx_person_programs: '{name}要申请哪些福利？',
+  tx_person_programs_help:
+    '可多选。家里的每个人可以申请不同的福利，也可能有人不申请。',
+
+  tx_person_sex_help: '表格需要填写这一项。请按{name}证件上的信息填写。',
+  tx_person_lives_in_texas: '{name}住在德州吗？',
+  tx_person_stays_in_texas: '{name}打算继续住在德州吗？',
+  tx_person_citizen: '{name}是美国公民或美国国民吗？',
+  tx_person_citizen_help: '答“否”也可以申请。这一项只填{name}的情况。',
+  tx_person_school: '{name}在上学吗？',
+  tx_person_full_time_student: '{name}是全日制在读吗？',
+
+  tx_program_snap_name: '食品补助（SNAP）',
+  tx_program_snap_summary: '帮助支付日常食品开销。',
+  tx_program_medicaid_name: 'Medicaid',
+  tx_program_medicaid_summary: '为符合德州规定的人提供医疗保障。',
+  tx_program_chip_name: 'CHIP',
+  tx_program_chip_summary:
+    '为家庭收入超过 Medicaid 标准的儿童提供低价医疗保障。',
+  tx_program_tanf_name: '现金补助（TANF）',
+  tx_program_tanf_summary: '为部分有子女的家庭提供每月现金补助。',
+
+  intake_progress_label: '进度',
+  intake_progress_percent: '{percent}%',
+
   // ── Form delivery: what document the applicant is getting ────────────────
   //
   // The card that names each form in a household's packet. Every string here

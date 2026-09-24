@@ -40,6 +40,9 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "@/hooks/use-translation";
 import ApplicantStep from "@/components/application/applicant-step";
 import ProgramSelectionStep from "@/components/application/program-selection-step";
+import IntakeProgress, {
+  progressPercent,
+} from "@/components/application/intake-progress";
 import {
   RequiredMissingNotice,
   continueButtonClass,
@@ -77,6 +80,10 @@ import type {
   HouseholdMember,
   Saws2PlusApplicationData,
 } from "@/types/application";
+import {
+  parseFormManifest,
+  type FormManifestEntry,
+} from "@/types/form-manifest";
 
 type Data = Saws2PlusApplicationData;
 
@@ -185,6 +192,105 @@ function screenApplies(screen: Screen, data: Data): boolean {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Chrome
+// ---------------------------------------------------------------------------
+//
+// Declared at module scope, and that is the whole point rather than a style
+// preference.
+//
+// These two were originally nested inside `TexasApplicationView`. A component
+// declared inside another is a *new function on every render*, so React sees a
+// different element type, unmounts the previous subtree and mounts a fresh one
+// — every input inside it becomes a new DOM node. The browser has nothing left
+// to keep focus on, so a household member's name field accepted exactly one
+// character before focus was lost.
+//
+// State was never wrong; identity was. That is why `fill()`-style tests passed
+// throughout and only continuous typing in a real browser reproduced it. See
+// tests/e2e/tx-household-members.spec.ts.
+
+interface FrameProps {
+  answered: number;
+  asked: number;
+  progressFloor: number;
+  children: React.ReactNode;
+}
+
+function Frame({ answered, asked, progressFloor, children }: FrameProps) {
+  return (
+    <div className="space-y-4" data-testid="tx-application">
+      <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
+            H1010
+          </p>
+        </div>
+
+        <div className="mt-3">
+          <IntakeProgress
+            answered={answered}
+            asked={asked}
+            highWaterMark={progressFloor}
+            testId="tx-progress"
+          />
+        </div>
+
+        {children}
+      </div>
+    </div>
+  );
+}
+
+interface NavigationProps {
+  onBack: () => void;
+  onContinue: () => void;
+  complete: boolean;
+  showMissing: boolean;
+  missing: readonly string[];
+}
+
+function Navigation({
+  onBack,
+  onContinue,
+  complete,
+  showMissing,
+  missing,
+}: NavigationProps) {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+        <button
+          type="button"
+          data-testid="tx-back"
+          onClick={onBack}
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          {t("programs_back")}
+        </button>
+
+        <button
+          type="button"
+          data-testid="tx-continue"
+          onClick={onContinue}
+          className={continueButtonClass(complete)}
+        >
+          {t("programs_continue")}
+        </button>
+      </div>
+
+      <RequiredMissingNotice
+        show={showMissing}
+        testId="tx-missing"
+        fields={[...missing]}
+      />
+    </>
+  );
+}
+
+
 export default function TexasApplicationView({
   runId,
   recommendation,
@@ -219,6 +325,14 @@ export default function TexasApplicationView({
   const [guideUrl, setGuideUrl] = useState<string>("");
   const [generationError, setGenerationError] = useState<string | null>(null);
 
+  /*
+   * The forms this household needs, as the mapping layer resolved them for
+   * this applicant's language. Held rather than recomputed: it describes the
+   * packet the document was generated from, and re-deriving it here is how the
+   * cards and the PDF get to disagree.
+   */
+  const [packet, setPacket] = useState<FormManifestEntry[]>([]);
+
   /** Screens this household actually sees, in order. */
   const screens = useMemo(
     () => SCREENS.filter((screen) => screenApplies(screen, data)),
@@ -227,6 +341,26 @@ export default function TexasApplicationView({
 
   const screen = screens[Math.min(screenIndex, screens.length - 1)];
   const overall = progress(TX_H1010_INTAKE, data);
+
+  /*
+   * The highest progress shown so far, so the bar cannot retreat.
+   *
+   * Shutting a gate removes its questions from both the numerator and the
+   * denominator, and the ratio can fall — answer three of four questions
+   * behind a gate, close it, and 75% becomes 50%. Nothing the applicant did
+   * was undone, so a smaller number reads as lost work.
+   *
+   * A ref rather than state: this must not itself cause a render, and it is
+   * read during one. See IntakeProgress for why the floor is the caller's.
+   */
+  const progressFloorRef = useRef(0);
+  const currentPercent = progressPercent(overall.answered, overall.asked);
+
+  if (currentPercent > progressFloorRef.current) {
+    progressFloorRef.current = currentPercent;
+  }
+
+  const progressFloor = progressFloorRef.current;
 
   // -- completeness ---------------------------------------------------------
 
@@ -304,6 +438,7 @@ export default function TexasApplicationView({
     setIsGenerating(true);
     setGenerationError(null);
     setDraftUrl(null);
+    setPacket([]);
 
     try {
       const response = await fetch(`/api/workflow/${runId}/draft`, {
@@ -315,6 +450,7 @@ export default function TexasApplicationView({
       const result = (await response.json()) as {
         draftUrl?: string;
         guideUrl?: string;
+        packet?: unknown;
         error?: string;
         errorKey?: string;
         fieldProblems?: Array<{ field: string; messageKey: string }>;
@@ -334,6 +470,9 @@ export default function TexasApplicationView({
 
       setDraftUrl(result.draftUrl);
       setGuideUrl(result.guideUrl ?? `/api/workflow/${runId}/guide`);
+      // Parsed rather than trusted: it crossed a process boundary before it
+      // crossed the network, and a malformed card must not blank the panel.
+      setPacket(parseFormManifest(result.packet));
     } catch (error) {
       setGenerationError(
         error instanceof Error ? error.message : t("av_draft_failed"),
@@ -342,66 +481,6 @@ export default function TexasApplicationView({
       generationInFlight.current = false;
       setIsGenerating(false);
     }
-  }
-
-  // -- chrome ---------------------------------------------------------------
-
-  function Frame({ children }: { children: React.ReactNode }) {
-    return (
-      <div className="space-y-4" data-testid="tx-application">
-        <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-widest text-green-700">
-              H1010
-            </p>
-
-            <p
-              data-testid="tx-progress"
-              className="text-xs font-medium text-slate-500"
-            >
-              {tv("tx_progress", {
-                answered: String(overall.answered),
-                asked: String(overall.asked),
-              })}
-            </p>
-          </div>
-
-          {children}
-        </div>
-      </div>
-    );
-  }
-
-  function Navigation() {
-    return (
-      <>
-        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-          <button
-            type="button"
-            data-testid="tx-back"
-            onClick={goBack}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            {t("programs_back")}
-          </button>
-
-          <button
-            type="button"
-            data-testid="tx-continue"
-            onClick={goForward}
-            className={continueButtonClass(screenComplete)}
-          >
-            {t("programs_continue")}
-          </button>
-        </div>
-
-        <RequiredMissingNotice
-          show={showErrors && !screenComplete}
-          testId="tx-missing"
-          fields={[...screenMissing]}
-        />
-      </>
-    );
   }
 
   // -- screens --------------------------------------------------------------
@@ -463,7 +542,11 @@ export default function TexasApplicationView({
     );
 
     return (
-      <Frame>
+      <Frame
+        answered={overall.answered}
+        asked={overall.asked}
+        progressFloor={progressFloor}
+      >
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">
           {t("tx_review_heading")}
         </h1>
@@ -534,13 +617,32 @@ export default function TexasApplicationView({
           </p>
         )}
 
-        {draftUrl && <TexasDraftPanel draftUrl={draftUrl} guideUrl={guideUrl} />}
+        {draftUrl && (
+          <TexasDraftPanel
+            draftUrl={draftUrl}
+            guideUrl={guideUrl}
+            packet={packet}
+            /*
+             * Where the blank official document for a form is served. Built
+             * from the form id and nothing else — deliberately not from the
+             * locale or a filename, because the route reads the session's own
+             * packet to decide which asset that id resolves to. See the route.
+             */
+            formUrlFor={(formId) =>
+              `/api/workflow/${runId}/form/${encodeURIComponent(formId)}`
+            }
+          />
+        )}
       </Frame>
     );
   }
 
   return (
-    <Frame>
+    <Frame
+      answered={overall.answered}
+      asked={overall.asked}
+      progressFloor={progressFloor}
+    >
       <h1 className="mt-2 text-2xl font-semibold text-slate-900">
         {screen.titleKey ? t(screen.titleKey) : ""}
       </h1>
@@ -608,7 +710,13 @@ export default function TexasApplicationView({
           ))}
       </div>
 
-      <Navigation />
+      <Navigation
+        onBack={goBack}
+        onContinue={goForward}
+        complete={screenComplete}
+        showMissing={showErrors && !screenComplete}
+        missing={screenMissing}
+      />
     </Frame>
   );
 }

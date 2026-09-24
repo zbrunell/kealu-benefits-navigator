@@ -24,28 +24,14 @@
  */
 
 import { useTranslation } from "@/hooks/use-translation";
-import { TriStateAnswer } from "@/components/intake/question-fields";
+import PersonFields from "@/components/texas/person-fields";
 import {
   RequiredMissingNotice,
   continueButtonClass,
 } from "@/components/application/required-marker";
-import { ageOnDate, dateOfBirthBounds } from "@/lib/date-of-birth";
-import { dateOfBirthErrorKey } from "@/lib/date-of-birth";
-import {
-  RELATIONSHIP_LABEL_KEYS,
-  allowedRelationshipsForDateOfBirth,
-  relationshipAfterAgeChange,
-} from "@/lib/household-relationships";
-import { normalizeWhitespace } from "@/lib/field-validation";
-import {
-  TX_HOUSEHOLD_ROSTER,
-  memberDetail,
-  writeMemberDetail,
-} from "@/lib/form-intake/tx-h1010";
-import type { HouseholdMember, PersonSex } from "@/types/application";
-
-const INPUT_CLASS =
-  "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-200";
+import { relationshipAfterAgeChange } from "@/lib/household-relationships";
+import { TX_HOUSEHOLD_ROSTER } from "@/lib/form-intake/tx-h1010";
+import type { HouseholdMember } from "@/types/application";
 
 /** A blank row. Ids are stable for the life of the row, never re-derived. */
 function blankMember(index: number): HouseholdMember {
@@ -113,6 +99,26 @@ export function missingRosterAnswers(
   return missing;
 }
 
+/**
+ * What to call a person in their own questions.
+ *
+ * Their first name once they have typed one, and "this person" until then.
+ * Not "Household Member 2": the applicant knows who lives with them, and a
+ * form that calls their daughter a member number reads like a database.
+ *
+ * Falls back on the row number for the *heading* only, where an unnamed row
+ * still has to be told apart from the one below it.
+ */
+function displayNameFor(
+  member: HouseholdMember,
+  index: number,
+  tv: (key: string, vars: Record<string, string | number>) => string,
+): string {
+  const named = member.firstName.trim();
+
+  return named || tv("tx_person_unnamed", { number: String(index + 1) });
+}
+
 interface RosterStepProps {
   members: readonly HouseholdMember[];
   onChange: (members: readonly HouseholdMember[]) => void;
@@ -125,7 +131,6 @@ export default function RosterStep({
   showErrors,
 }: RosterStepProps) {
   const { t, tv } = useTranslation();
-  const bounds = dateOfBirthBounds();
 
   function update(index: number, next: HouseholdMember) {
     onChange(members.map((member, position) => (position === index ? next : member)));
@@ -177,21 +182,18 @@ export default function RosterStep({
 
       <ol className="mt-3 space-y-4">
         {members.map((member, index) => {
-          const age = ageOnDate(member.dateOfBirth);
-          const dateError = showErrors
-            ? dateOfBirthErrorKey(member.dateOfBirth)
-            : null;
-
           return (
             <li
               key={member.id}
               data-testid={`tx-member-${index}`}
               className="rounded-lg border border-slate-200 bg-slate-50 p-4"
             >
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {tv("intake_row_number", { number: String(index + 1) })}
-                </p>
+              <div className="flex items-start justify-between gap-3">
+                <h4 className="text-base font-semibold text-slate-900">
+                  {tv("tx_person_heading", {
+                    name: displayNameFor(member, index, tv),
+                  })}
+                </h4>
 
                 <button
                   type="button"
@@ -205,172 +207,24 @@ export default function RosterStep({
                 </button>
               </div>
 
-              <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                <label className="block">
-                  <span className="text-sm font-medium text-slate-700">
-                    {t("field_first_name")}
-                  </span>
-
-                  <input
-                    type="text"
-                    value={member.firstName}
-                    data-testid={`tx-member-${index}-first-name`}
-                    onChange={(event) =>
-                      update(index, {
-                        ...member,
-                        firstName: event.target.value,
-                      })
-                    }
-                    onBlur={(event) =>
-                      update(index, {
-                        ...member,
-                        firstName: normalizeWhitespace(event.target.value),
-                      })
-                    }
-                    className={INPUT_CLASS}
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-sm font-medium text-slate-700">
-                    {t("field_last_name")}
-                  </span>
-
-                  <input
-                    type="text"
-                    value={member.lastName}
-                    data-testid={`tx-member-${index}-last-name`}
-                    onChange={(event) =>
-                      update(index, { ...member, lastName: event.target.value })
-                    }
-                    onBlur={(event) =>
-                      update(index, {
-                        ...member,
-                        lastName: normalizeWhitespace(event.target.value),
-                      })
-                    }
-                    className={INPUT_CLASS}
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-sm font-medium text-slate-700">
-                    {t("field_date_of_birth")}
-                  </span>
-
-                  <input
-                    type="date"
-                    value={member.dateOfBirth}
-                    min={bounds.min}
-                    max={bounds.max}
-                    data-testid={`tx-member-${index}-dob`}
-                    aria-describedby={
-                      dateError ? `tx-member-${index}-dob-error` : undefined
-                    }
-                    onChange={(event) =>
-                      updateDateOfBirth(index, event.target.value)
-                    }
-                    className={INPUT_CLASS}
-                  />
-
-                  {dateError && (
-                    <p
-                      id={`tx-member-${index}-dob-error`}
-                      role="alert"
-                      className="mt-1 text-xs text-red-700"
-                    >
-                      {t(dateError)}
-                    </p>
-                  )}
-                </label>
-
-                <label className="block">
-                  <span className="text-sm font-medium text-slate-700">
-                    {t("field_relationship_to_applicant")}
-                  </span>
-
-                  <select
-                    value={member.relationshipToApplicant}
-                    data-testid={`tx-member-${index}-relationship`}
-                    onChange={(event) =>
-                      update(index, {
-                        ...member,
-                        relationshipToApplicant: event.target.value,
-                      })
-                    }
-                    className={INPUT_CLASS}
-                  >
-                    <option value="">{t("opt_select_relationship")}</option>
-
-                    {allowedRelationshipsForDateOfBirth(
-                      member.dateOfBirth,
-                    ).map((relationship) => (
-                      <option key={relationship} value={relationship}>
-                        {t(RELATIONSHIP_LABEL_KEYS[relationship])}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="text-sm font-medium text-slate-700">
-                    {t("field_sex")}
-                  </span>
-
-                  <select
-                    value={String(memberDetail(member, "sex") ?? "")}
-                    data-testid={`tx-member-${index}-sex`}
-                    onChange={(event) =>
-                      update(
-                        index,
-                        writeMemberDetail(
-                          member,
-                          "sex",
-                          (event.target.value || undefined) as
-                            | PersonSex
-                            | undefined,
-                        ),
-                      )
-                    }
-                    className={INPUT_CLASS}
-                  >
-                    <option value="">{t("opt_select")}</option>
-                    <option value="male">{t("opt_male")}</option>
-                    <option value="female">{t("opt_female")}</option>
-                  </select>
-                </label>
-
-                <fieldset className="rounded-lg border border-slate-200 bg-white p-3">
-                  <legend
-                    id={`tx-member-${index}-citizen-label`}
-                    className="px-1 text-sm font-medium text-slate-800"
-                  >
-                    {t("tx_roster_citizen")}
-                  </legend>
-
-                  <TriStateAnswer
-                    id={`tx-member-${index}-citizen`}
-                    value={
-                      memberDetail(member, "citizenOrNational") as
-                        | boolean
-                        | undefined
-                    }
-                    labelledBy={`tx-member-${index}-citizen-label`}
-                    onChange={(next) =>
-                      update(
-                        index,
-                        writeMemberDetail(member, "citizenOrNational", next),
-                      )
-                    }
-                  />
-                </fieldset>
+              <div className="mt-4">
+                <PersonFields
+                  member={member}
+                  /*
+                   * Keyed on the row's position, which is what a test and a
+                   * label refer to. The React key above is the person's own
+                   * id — the two are deliberately different: position moves
+                   * when someone is removed, identity does not.
+                   */
+                  idPrefix={`tx-member-${index}`}
+                  displayName={displayNameFor(member, index, tv)}
+                  onChange={(next) => update(index, next)}
+                  onDateOfBirthChange={(value) =>
+                    updateDateOfBirth(index, value)
+                  }
+                  showErrors={showErrors}
+                />
               </div>
-
-              {age !== null && (
-                <p className="mt-3 text-xs text-slate-500">
-                  {tv("tx_roster_age", { age: String(age) })}
-                </p>
-              )}
 
               {index >= TX_HOUSEHOLD_ROSTER.printedRows && (
                 <p
