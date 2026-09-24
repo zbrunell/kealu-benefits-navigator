@@ -24,11 +24,12 @@ import {
   type HouseholdMember,
   type Saws2PlusApplicationData,
 } from '@/types/application';
+import { createClientId } from './client-id';
 
 /** Generate a stable row id. Injectable so tests are deterministic. */
 export type IdFactory = () => string;
 
-const defaultIdFactory: IdFactory = () => crypto.randomUUID();
+const defaultIdFactory: IdFactory = createClientId;
 
 /**
  * Convert one prefilled household member into an application row.

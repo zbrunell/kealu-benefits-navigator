@@ -23,7 +23,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: /(saws2-application|austin-demo|saws2-spanish-flow|tx-h1010-application|tx-form-language|tx-household-members)\.spec\.ts/,
+      testIgnore: /(saws2-application|austin-demo|saws2-spanish-flow|tx-h1010-application|tx-form-language|tx-household-members|insecure-context)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3000' },
     },
     /*
@@ -45,7 +45,7 @@ export default defineConfig({
      */
     {
       name: 'applications',
-      testMatch: /(saws2-application|austin-demo|saws2-spanish-flow|tx-h1010-application|tx-form-language|tx-household-members)\.spec\.ts/,
+      testMatch: /(saws2-application|austin-demo|saws2-spanish-flow|tx-h1010-application|tx-form-language|tx-household-members|insecure-context)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3101' },
     },
   ],

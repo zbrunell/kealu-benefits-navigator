@@ -18,6 +18,7 @@ import { evaluateApplicationReadiness } from "@/lib/saws2-readiness";
 
 import DraftCompletionGuide from "./application/draft-completion-guide";
 import EligibilityStep from "./application/eligibility-step";
+import { createClientId } from "@/lib/client-id";
 import { relationshipAfterAgeChange } from "@/lib/household-relationships";
 import HouseholdStep from "./application/household-step";
 import ProgramSelectionStep from "./application/program-selection-step";
@@ -296,7 +297,7 @@ export default function ApplicationView({
    */
   function addHouseholdMember() {
     const member: HouseholdMember = {
-      id: crypto.randomUUID(),
+      id: createClientId(),
       firstName: "",
       middleName: "",
       lastName: "",
