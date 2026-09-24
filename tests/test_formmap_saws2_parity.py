@@ -226,7 +226,7 @@ class TestCrossFormIsolation:
         assert report.fields == []
 
     def test_a_california_canonical_key_has_nowhere_to_go_on_h1010(self):
-        h1010 = definition_for_form("TX_H1010")
+        h1010 = definition_for_form("TX_H1010_WORKSHEET")
         report = resolve_mappings(h1010, {"programs.calfresh": True})
 
         assert "programs.calfresh" in report.unmapped
@@ -241,7 +241,7 @@ class TestCrossFormIsolation:
         keys the TypeScript field plan already emits reach a second state's form
         with no new plumbing.
         """
-        h1010 = definition_for_form("TX_H1010")
+        h1010 = definition_for_form("TX_H1010_WORKSHEET")
         shared = set(saws.keys()) & set(h1010.keys())
 
         for key in (
@@ -256,7 +256,7 @@ class TestCrossFormIsolation:
     def test_the_same_canonical_data_maps_to_different_targets_per_form(
         self, saws
     ):
-        h1010 = definition_for_form("TX_H1010")
+        h1010 = definition_for_form("TX_H1010_WORKSHEET")
         values = {"applicant.home_address.city": "Austin"}
 
         ca_target = resolve_mappings(saws, values).fields[0].target

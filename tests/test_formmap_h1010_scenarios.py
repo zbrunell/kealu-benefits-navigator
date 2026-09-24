@@ -85,13 +85,13 @@ def canonical_values(scenario_id: str) -> dict[str, Any]:
 
 @pytest.fixture(scope="module")
 def h1010():
-    return definition_for_form("TX_H1010")
+    return definition_for_form("TX_H1010_WORKSHEET")
 
 
 @pytest.fixture(scope="module")
 def generated() -> dict[str, Any]:
     return {
-        scenario_id: generate_form("TX_H1010", canonical_values(scenario_id))
+        scenario_id: generate_form("TX_H1010_WORKSHEET", canonical_values(scenario_id))
         for scenario_id in SCENARIO_IDS
     }
 
@@ -159,7 +159,7 @@ class TestEveryScenario:
 
         reader = pypdf.PdfReader(io.BytesIO(document.pdf_bytes))
 
-        assert len(reader.pages) == definition_for_form("TX_H1010").page_count
+        assert len(reader.pages) == definition_for_form("TX_H1010_WORKSHEET").page_count
 
     def test_is_never_presented_as_the_official_form(self, scenario_id, generated):
         document = generated[scenario_id]
@@ -296,7 +296,7 @@ class TestEveryScenario:
         document = generated[scenario_id]
 
         for key in document.render_plan.unfitted:
-            mapping = definition_for_form("TX_H1010").mapping_for(key)
+            mapping = definition_for_form("TX_H1010_WORKSHEET").mapping_for(key)
 
             assert mapping is not None
             assert mapping.printed_label in document.review_text

@@ -48,7 +48,7 @@ pypdf = pytest.importorskip("pypdf")
 
 @pytest.fixture(scope="module")
 def generated():
-    return generate_form("TX_H1010", AUSTIN_CANONICAL)
+    return generate_form("TX_H1010_WORKSHEET", AUSTIN_CANONICAL)
 
 
 @pytest.fixture(scope="module")
@@ -75,7 +75,7 @@ class TestGeneratedDocument:
 
         reader = pypdf.PdfReader(io.BytesIO(generated.pdf_bytes))
 
-        definition = definition_for_form("TX_H1010")
+        definition = definition_for_form("TX_H1010_WORKSHEET")
 
         # The page count the definition declares, not a literal. The form grew
         # from two pages to five when the household, income and expense tables
@@ -86,7 +86,7 @@ class TestGeneratedDocument:
     def test_pages_are_the_declared_size(self, generated):
         import io
 
-        definition = definition_for_form("TX_H1010")
+        definition = definition_for_form("TX_H1010_WORKSHEET")
         reader = pypdf.PdfReader(io.BytesIO(generated.pdf_bytes))
 
         for page in reader.pages:
@@ -205,7 +205,7 @@ class TestRenderedValues:
 class TestPlacement:
     def test_every_draw_sits_inside_its_own_box(self, generated):
         """The assertion a visual check would be making, made mechanically."""
-        definition = definition_for_form("TX_H1010")
+        definition = definition_for_form("TX_H1010_WORKSHEET")
         report = resolve_mappings(definition, AUSTIN_CANONICAL)
 
         for resolved in report.fields:
@@ -229,7 +229,7 @@ class TestPlacement:
             assert drawn.size >= MIN_FONT_SIZE, drawn.text
 
     def test_marks_are_centred_in_their_boxes(self, generated):
-        definition = definition_for_form("TX_H1010")
+        definition = definition_for_form("TX_H1010_WORKSHEET")
         report = resolve_mappings(definition, AUSTIN_CANONICAL)
 
         for resolved in report.fields:
@@ -272,7 +272,7 @@ class TestSafety:
 
         with pytest.raises(SensitiveFieldRefused):
             generate_form(
-                "TX_H1010",
+                "TX_H1010_WORKSHEET",
                 {**AUSTIN_CANONICAL, "applicant.ssn": "123-45-6789"},
             )
 
@@ -323,7 +323,7 @@ class TestReviewSheet:
         }
         partial["applicant.mailing_address_same_as_home"] = False
 
-        review = generate_form("TX_H1010", partial).review_text
+        review = generate_form("TX_H1010_WORKSHEET", partial).review_text
         remaining = review.split("Still yours to fill in:")[1]
 
         assert "  Where you live" in remaining
@@ -341,11 +341,28 @@ class TestReviewSheet:
         assert "THIS IS NOT THE OFFICIAL FORM." in generated.review_text
 
     def test_explains_why_there_is_no_official_document(self, generated):
-        """Not "unavailable" — the actual reason, in the applicant's copy."""
+        """Not "unavailable" — the actual reason, in the applicant's copy.
+
+        The reason has changed, and so has where it comes from. It used to be
+        that HHSC published no retrievable PDF, and the sentence was read
+        straight off ``base_document_note``. We now hold both editions, and the
+        worksheet is served because the official definition covers only part of
+        the form — a sentence that is now a message key, so it reaches a
+        Spanish applicant in Spanish and names no module or filename.
+        """
+        from benefits_navigator.formmap.review_words import ENGLISH
+
         review = generated.review_text
 
-        assert "YourTexasBenefits" in review
-        assert "does not publish Form H1010 as a retrievable PDF" in review
+        assert (
+            ENGLISH.worksheet_reasons[
+                "worksheet_reason_tx_h1010_partial_coverage"
+            ]
+            in review
+        )
+        # And the old claim is gone: HHSC's H1010 *is* retrievable now, and a
+        # test still asserting otherwise would certify a stale sentence.
+        assert "does not publish Form H1010 as a retrievable PDF" not in review
 
     def test_groups_by_the_forms_own_sections(self, generated):
         review = generated.review_text
@@ -376,7 +393,7 @@ class TestWriting:
         from datetime import datetime, timezone
 
         name = output_filename(
-            "TX_H1010",
+            "TX_H1010_WORKSHEET",
             zip_code="78705",
             now=datetime(2026, 8, 28, 12, 0, 0, tzinfo=timezone.utc),
         )
@@ -410,7 +427,7 @@ class TestRenderingRegressions:
         a checkbox; it did not fit, so all three yes/no questions were reported
         as unfitted and silently left blank.
         """
-        definition = definition_for_form("TX_H1010")
+        definition = definition_for_form("TX_H1010_WORKSHEET")
         report = resolve_mappings(definition, {"household.homeless": True})
         plan = plan_render(report.fields)
 
@@ -442,7 +459,7 @@ class TestRenderingRegressions:
         A section reserved room for its heading only, so the heading could sit
         at the bottom of a page and its first field break to the next.
         """
-        definition = definition_for_form("TX_H1010")
+        definition = definition_for_form("TX_H1010_WORKSHEET")
 
         pages_of: dict[str, set[int]] = {}
 
@@ -471,7 +488,7 @@ class TestRenderingRegressions:
         Subtracting it from a fixed 30pt pitch moved the cursor *up*, so the
         next label printed on top of the box just placed.
         """
-        definition = definition_for_form("TX_H1010")
+        definition = definition_for_form("TX_H1010_WORKSHEET")
 
         multiline = definition.mapping_for("household.existing_benefits")
         military = definition.mapping_for("household.military_service")

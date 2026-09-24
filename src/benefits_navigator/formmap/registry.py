@@ -34,7 +34,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache
 
-from benefits_navigator.formmap.definition import FormDefinition
+from benefits_navigator.formmap.definition import (
+    FormDefinition,
+    FormDefinitionError,
+)
 
 
 @dataclass(frozen=True)
@@ -68,13 +71,90 @@ def _load_saws2_plus() -> FormDefinition:
     return SAWS2_PLUS_DEFINITION
 
 
+def _load_h1010_official() -> FormDefinition:
+    from benefits_navigator.formmap.forms.h1010_official import build
+
+    return _validated(build())
+
+
+def _load_h3037() -> FormDefinition:
+    from benefits_navigator.formmap.forms.h3037 import build
+
+    return _validated(build())
+
+
+def _validated(definition: FormDefinition) -> FormDefinition:
+    """Refuse a definition whose document variants are not sound.
+
+    Checked at build time rather than in a test, because the failure it catches
+    — a variant missing a target, so a value silently falls back to another
+    language edition's coordinates — produces a wrong government form rather
+    than a crash. A test proves it was right when CI ran; this proves it is
+    right for the document about to be rendered.
+    """
+    from benefits_navigator.formmap.documents import validate_variant
+
+    problems: list[str] = []
+
+    for variant in definition.variants:
+        problems.extend(
+            validate_variant(
+                variant,
+                form_id=definition.form_id,
+                mapped_keys=definition.keys(),
+                page_count=definition.page_count,
+            )
+        )
+
+    if problems:
+        raise FormDefinitionError(
+            f"{definition.form_id} has unsound document variants:\n  "
+            + "\n  ".join(problems)
+        )
+
+    return definition
+
+
 #: Every form this layer can map, by id.
 #:
 #: Adding a form is adding an entry here and a module under ``forms/``. Nothing
 #: else in the codebase needs to change for the mapping and rendering pipeline
 #: to accept it.
+#: Which form a state's households file, when asked by state alone.
+#:
+#: One per state. Several Texas forms are registered below, but only one is the
+#: application; the rest join a packet through
+#: :func:`benefits_navigator.formmap.packet.plan_packet`, which knows about
+#: circumstances this lookup does not see.
+_APPLICATION_FOR_STATE: dict[str, str] = {
+    "TX": "TX_H1010",
+    "CA": "CA_SAWS_2_PLUS",
+}
+
 _FORMS: dict[str, _Entry] = {
-    "TX_H1010": _Entry(state="TX", load=_load_h1010),
+    # The Texas application: HHSC's own document, in both published editions,
+    # with the applicant's answers on it.
+    #
+    # This used to be the worksheet below, because the official definition
+    # placed 29 of the intake's answers and a government form with three pages
+    # filled and eighteen blank helps nobody. It now places every answer H1010
+    # has a box for, so the government form is the better document by the same
+    # measure that once made it the worse one.
+    "TX_H1010": _Entry(state="TX", load=_load_h1010_official),
+    # The Navigator-authored worksheet, kept as a supplement rather than a
+    # substitute.
+    #
+    # It carries answers the official form has no box for — see
+    # `h1010_coverage.NOT_ON_THIS_FORM` — which makes it useful to bring to an
+    # interview, and it is the fixture the mapping suite's scenario tests read.
+    # It is no longer what a household files: it is not HHSC's paper, and
+    # `is_official_document` says so on every surface that shows it.
+    "TX_H1010_WORKSHEET": _Entry(state="TX", load=_load_h1010),
+    # The previous id for the official definition, kept resolvable so a stored
+    # session or a saved link from before the cutover still finds the form it
+    # named. Both ids build the same definition.
+    "TX_H1010_OFFICIAL": _Entry(state="TX", load=_load_h1010_official),
+    "TX_H3037": _Entry(state="TX", load=_load_h3037),
     "CA_SAWS_2_PLUS": _Entry(state="CA", load=_load_saws2_plus),
 }
 
@@ -119,11 +199,7 @@ def form_id_for_state(state: str) -> str | None:
     if not wanted:
         return None
 
-    for form_id, entry in sorted(_FORMS.items()):
-        if entry.state == wanted:
-            return form_id
-
-    return None
+    return _APPLICATION_FOR_STATE.get(wanted)
 
 
 def declared_state_for(form_id: str) -> str:

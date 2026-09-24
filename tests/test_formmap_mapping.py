@@ -80,7 +80,14 @@ AUSTIN_CANONICAL: dict[str, object] = {
 
 @pytest.fixture
 def h1010():
-    return definition_for_form("TX_H1010")
+    """The Navigator worksheet.
+
+    Not ``TX_H1010``, which is now HHSC's own document — the tests in this
+    class are about the worksheet's own authored geometry and printed labels.
+    The official form's placements are asserted against the real PDFs in
+    ``test_formmap_texas_packet``.
+    """
+    return definition_for_form("TX_H1010_WORKSHEET")
 
 
 @pytest.fixture
@@ -94,14 +101,35 @@ def resolved(h1010):
 
 
 class TestRegistry:
-    def test_knows_both_supported_forms(self):
-        assert known_form_ids() == ("CA_SAWS_2_PLUS", "TX_H1010")
+    def test_knows_every_registered_form(self):
+        """Listed explicitly so adding a form is a decision someone reads.
 
-    def test_form_ids_match_the_typescript_form_ids(self):
-        """The two layers must agree on the id, or selection silently fails."""
+        Growing this list is the point of the registry; growing it *by
+        accident* is how a household ends up handed a document nobody reviewed.
+        """
+        assert known_form_ids() == (
+            "CA_SAWS_2_PLUS",
+            "TX_H1010",
+            "TX_H1010_OFFICIAL",
+            "TX_H1010_WORKSHEET",
+            "TX_H3037",
+        )
+
+    def test_every_application_form_id_is_known_to_typescript(self):
+        """The two layers must agree on the id, or selection silently fails.
+
+        Only the *application* ids have to match. The TypeScript side chooses
+        which application a household files; the supporting forms in a packet —
+        H3037 and the rest — are chosen by the Python packet planner from
+        circumstances the browser flow does not model, so they have no
+        TypeScript counterpart to agree with.
+        """
+        from benefits_navigator.formmap.registry import _APPLICATION_FOR_STATE
+
         typescript_ids = {"CA_SAWS_2_PLUS", "TX_H1010"}
 
-        assert set(known_form_ids()) == typescript_ids
+        assert set(_APPLICATION_FOR_STATE.values()) == typescript_ids
+        assert typescript_ids <= set(known_form_ids())
 
     def test_unknown_form_raises_rather_than_returning_none(self):
         with pytest.raises(UnknownForm, match="ND_SOMETHING"):
@@ -127,20 +155,38 @@ class TestRegistry:
 
 
 class TestH1010Definition:
-    def test_identifies_itself_as_the_texas_form(self, h1010):
-        assert h1010.form_id == "TX_H1010"
+    def test_identifies_itself_as_the_texas_worksheet(self, h1010):
+        assert h1010.form_id == "TX_H1010_WORKSHEET"
         assert h1010.form_code == "H1010"
         assert h1010.state == "TX"
 
     def test_is_letter_sized(self, h1010):
         assert (h1010.page_width, h1010.page_height) == (612.0, 792.0)
 
-    def test_uses_coordinate_overlay_because_we_hold_no_official_pdf(self, h1010):
+    def test_uses_coordinate_overlay_and_records_why(self, h1010):
+        """The worksheet records why it exists, and the reason is current.
+
+        The reason has changed twice. First we did not hold HHSC's PDF at all;
+        then we held it but the official definition placed only part of the
+        form. Now ``TX_H1010`` is the official document and this worksheet is a
+        supplement carrying the answers H1010 has no box for.
+
+        Each earlier assertion looked for the reason of its day, and would have
+        gone on passing after that reason stopped being true, quietly
+        certifying a note that had become untrue. So this asserts the stale
+        reasons are absent as well as the current one present.
+        """
         assert h1010.is_overlay is True
         assert h1010.has_official_base_document is False
-        # The reason must be recorded, not left as tribal knowledge: HHSC's own
-        # forms page links to a web application rather than to a document.
-        assert "YourTexasBenefits" in h1010.base_document_note
+
+        # The current reason: a supplement to the official definition.
+        assert "h1010_official" in h1010.base_document_note
+        assert "h1010_coverage" in h1010.base_document_note
+        assert "supplement" in h1010.base_document_note
+
+        # And the earlier reasons are gone, because neither is true any more.
+        assert "does not publish" not in h1010.base_document_note
+        assert "WORKSHEET_ONLY_KEYS" not in h1010.base_document_note
 
     def test_every_field_is_an_overlay_target_with_a_real_box(self, h1010):
         for mapping in h1010.fields:

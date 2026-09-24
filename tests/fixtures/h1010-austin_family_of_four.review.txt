@@ -4,7 +4,7 @@ THIS IS NOT THE OFFICIAL FORM.
 
 It is a prefilled worksheet carrying your answers. Submit the official application through the agency's own channel and copy these answers across.
 
-Why: HHSC does not publish Form H1010 as a retrievable PDF: its own forms page links to a YourTexasBenefits web application for both the English and the Spanish edition, and direct file requests to hhs.texas.gov are refused or return nothing. Rather than guess where the boxes sit on a document we have not inspected, this renders a Navigator-authored worksheet whose coordinates we own. Replace base_document and the boxes once the official PDF is obtained.
+Why: Texas HHSC's own H1010 is designed to be completed by hand, and we can currently fill only its first few pages. This worksheet carries every answer you gave instead. The official form, in your language, is here too -- copy your answers onto it.
 
 Filled in for you:
   What are you applying for?

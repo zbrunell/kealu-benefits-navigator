@@ -66,10 +66,34 @@ class TestFormSelection:
         """None, not a default. A default here files the wrong application."""
         assert form_id_for_state(state) is None
 
-    def test_no_two_forms_claim_the_same_state(self):
-        states = [definition.state for definition in definitions()]
+    def test_each_state_has_exactly_one_application_form(self):
+        """A state files one application, and may need several other forms.
 
-        assert len(set(states)) == len(states)
+        This replaced an earlier rule that no two forms could name the same
+        state. That rule held only while a state meant a single form, and it
+        stopped being true the moment Texas gained a pregnancy verification
+        alongside its application — but as written it would have gone on
+        passing if two *applications* were ever registered for one state, which
+        is the failure worth catching. The invariant is about the
+        state-to-application lookup being unambiguous, not about how many forms
+        a state has.
+        """
+        from benefits_navigator.formmap.registry import _APPLICATION_FOR_STATE
+
+        for state, form_id in _APPLICATION_FOR_STATE.items():
+            assert form_id_for_state(state) == form_id
+            assert definition_for_form(form_id).state == state
+
+        assert len(set(_APPLICATION_FOR_STATE.values())) == len(
+            _APPLICATION_FOR_STATE
+        )
+
+    def test_every_state_with_a_form_has_an_application(self):
+        """No form may serve a state that has no application to attach it to."""
+        from benefits_navigator.formmap.registry import _APPLICATION_FOR_STATE
+
+        for definition in definitions():
+            assert definition.state in _APPLICATION_FOR_STATE, definition.form_id
 
     def test_every_known_form_declares_the_state_it_serves(self):
         for form_id in known_form_ids():
@@ -142,7 +166,7 @@ _TEXAS_ONLY = (
 
 @pytest.fixture(scope="module")
 def h1010():
-    return definition_for_form("TX_H1010")
+    return definition_for_form("TX_H1010_WORKSHEET")
 
 
 @pytest.fixture(scope="module")
@@ -232,9 +256,18 @@ class TestGenerationRoutes:
         with pytest.raises(NativeFieldFormNotRenderable, match="CA_SAWS_2_PLUS"):
             generate_form("CA_SAWS_2_PLUS", {"applicant.phone": "5125551234"})
 
-    def test_texas_goes_through_the_mapping_layer_and_says_it_is_a_worksheet(
+    def test_texas_goes_through_the_mapping_layer_onto_hhscs_own_paper(
         self, tmp_path
     ):
+        """Texas households now file the government form, not our worksheet.
+
+        This asserted ``"worksheet"`` while the official definition placed 29
+        of the intake's answers and a form with three pages filled was worse
+        for an applicant than a worksheet with all of them. It places every
+        answer H1010 has a box for now, so the reported kind flipped — and
+        ``"official"`` is a claim about whose paper it is, which is why it is
+        worth asserting rather than inferring from a filename.
+        """
         import json
 
         from benefits_navigator.form_filler import generate_application
@@ -252,11 +285,15 @@ class TestGenerationRoutes:
             {"state": "TX", "application_field_plan": plan}, "", tmp_path
         )
 
-        assert kind == "worksheet"
-        assert path.name.startswith("worksheet-tx-h1010-")
-        assert path.read_bytes().startswith(b"%PDF-")
-        # The promise the review sheet keeps, kept here too.
-        assert path.with_suffix(".review.txt").exists()
+        assert kind == "official"
+        assert path.exists()
+        assert path.read_bytes()[:5] == b"%PDF-"
+
+        # And it really is HHSC's document underneath, not a page we drew: the
+        # official H1010 is 34 pages.
+        from pypdf import PdfReader
+
+        assert len(PdfReader(str(path)).pages) == 34
 
     def test_the_filename_never_names_the_applicant(self, tmp_path):
         import json

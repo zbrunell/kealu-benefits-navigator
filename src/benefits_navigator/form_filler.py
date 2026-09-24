@@ -353,7 +353,9 @@ def generate_application_with_review(
         return path, "official", None
 
     if has_plan:
-        result = _generate_mapped_form(state, field_plan, output_dir)
+        result = _generate_mapped_form(
+            state, field_plan, output_dir, _locale_of(args)
+        )
 
         if result is not None:
             return result
@@ -368,10 +370,22 @@ def generate_application_with_review(
     return path, "worksheet", None
 
 
+def _locale_of(args: dict[str, Any]) -> str:
+    """The applicant's chosen locale, as the web layer sent it.
+
+    Defaults to English when absent rather than guessing from anything else.
+    There is nothing else here worth guessing from — no request, no headers —
+    and inventing a locale is how a Spanish applicant gets an English document
+    from a code path that looked like it was being careful.
+    """
+    return str(args.get("locale") or "en")
+
+
 def _generate_mapped_form(
     state: str,
     field_plan: list[dict[str, Any]],
     output_dir: Path | None,
+    locale: str = "en",
 ) -> tuple[Path, str, Path | None] | None:
     """Render this state's form through the mapping layer, if it can.
 
@@ -379,6 +393,11 @@ def _generate_mapped_form(
     definition, or has one whose fields are all native. Never returns a
     document for a form it could not actually draw values onto: a blank PDF
     presented as a prefilled application is worse than no PDF at all.
+
+    ``locale`` decides which official edition is drawn on, for a form that has
+    more than one. It used not to be a parameter, which meant the whole
+    language-resolution layer was unreachable from the only path that renders a
+    document in production.
     """
     from benefits_navigator.formmap import (
         canonical_values_from_field_plan,
@@ -394,7 +413,7 @@ def _generate_mapped_form(
         return None
 
     canonical_values = canonical_values_from_field_plan(field_plan)
-    generated = generate_form(form_id, canonical_values)
+    generated = generate_form(form_id, canonical_values, locale=locale)
 
     if output_dir is None:
         output_dir = Path.home() / "Documents" / "benefits-applications"
@@ -413,3 +432,80 @@ def _generate_mapped_form(
     # `write` always puts the review sheet beside the document, so this is a
     # statement rather than a search.
     return path, kind, path.with_suffix(".review.txt")
+
+
+# ---------------------------------------------------------------------------
+# The packet manifest — what the interface renders as form cards
+# ---------------------------------------------------------------------------
+
+#: State code → the catalog describing that state's forms.
+#:
+#: A table rather than an ``if``, for the same reason the registry keeps one:
+#: a second state is an entry here, not another branch. Absent means we have no
+#: packet catalog for that state and the manifest is empty, which is honest —
+#: California's supporting forms have not been catalogued.
+def _catalog_for(state: str):
+    if state.strip().upper() == "TX":
+        from benefits_navigator.formmap.forms.tx_catalog import TX_CATALOG
+
+        return TX_CATALOG
+
+    return ()
+
+
+def packet_manifest_for(
+    args: dict[str, Any],
+    field_plan: list[dict[str, Any]] | None,
+) -> list[dict[str, Any]]:
+    """Every form this household needs, with the document each resolves to.
+
+    The adapter between the web layer's ``args`` payload and the mapping
+    layer's own vocabulary. Kept here rather than in
+    :mod:`benefits_navigator.formmap.manifest` because this module is already
+    the place that knows the shape of ``args``; the manifest module should not
+    have to.
+
+    The selected programs are read from the **field plan** rather than from
+    ``application_data.selectedPrograms``. Both describe the same choice, and
+    the field plan is the one the document is actually rendered from — so a
+    packet planned from it cannot disagree with the form the applicant is
+    holding.
+
+    Returns ``[]`` rather than raising for a state with no catalog, or when
+    anything about the household is unreadable: a missing card is a smaller
+    failure than a draft that does not generate, and generation is the caller's
+    real job.
+    """
+    from benefits_navigator.formmap import canonical_values_from_field_plan
+    from benefits_navigator.formmap.manifest import (
+        build_manifest,
+        manifest_as_json,
+    )
+    from benefits_navigator.formmap.packet import PacketContext
+
+    state = str(args.get("state") or "").strip().upper()
+    catalog = _catalog_for(state)
+
+    if not catalog:
+        return []
+
+    plan = field_plan if isinstance(field_plan, list) else []
+    values = canonical_values_from_field_plan(plan)
+
+    selected = frozenset(
+        key.split(".", 1)[1]
+        for key, value in values.items()
+        if key.startswith("programs.") and value is True
+    )
+
+    context = PacketContext(
+        state=state, selected_programs=selected, values=values
+    )
+
+    entries = build_manifest(
+        catalog=catalog,
+        context=context,
+        locale=_locale_of(args),
+    )
+
+    return manifest_as_json(entries)

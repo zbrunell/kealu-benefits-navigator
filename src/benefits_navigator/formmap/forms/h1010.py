@@ -8,10 +8,38 @@
 The first overlay-based form in this project, and the reason the overlay
 mechanism exists.
 
-── What we hold, and what we do not ───────────────────────────────────────
-We do **not** hold the official H1010 PDF, and this was re-verified against
-HHSC's own systems on 30 August 2026 rather than taken on trust from the last
-person who tried:
+── SUPERSEDED: this is no longer the Texas application ────────────────────
+**Read this before trusting the rest of the module.** On **4 September 2026**
+the official H1010 was obtained by hand, in both published editions, through the
+Your Texas Benefits "Get a paper form" catalog. They are in the repository as
+``TX-H1010-EN-2026-08.pdf`` and ``TX-H1010-ES-2026-08.pdf``, and the definition
+that renders onto them is :mod:`benefits_navigator.formmap.forms.h1010_official`,
+registered as ``TX_H1010``. See ``docs/texas-forms.md``.
+
+A Texas household now files **HHSC's own document**. That definition places
+every answer H1010 has a box for — 115 fields, 217 boxes on each edition — so
+the argument that once favoured this worksheet has reversed: it favoured the
+worksheet only while the official form would have gone out with three pages
+filled and eighteen blank.
+
+This module is registered as ``TX_H1010_WORKSHEET`` and kept as a
+**supplement**, for two reasons that are not "in case the official one breaks":
+
+* it carries answers the official form has no box for — see
+  :mod:`benefits_navigator.formmap.forms.h1010_coverage` — several of which
+  HHSC asks about at the interview, so it is worth bringing along;
+* every coordinate in it is one we own and can verify by opening the output,
+  which is what makes it the fixture the mapping suite's scenario tests read.
+
+``GeneratedForm.is_official_document`` is False for it, its first page says so,
+and its review sheet leads with it, so it cannot be mistaken for the filing.
+
+The history below is kept rather than deleted, because the retrieval attempts it
+records genuinely failed and the same routes still fail today.
+
+── What we held, and what we did not (as of 30 August 2026) ───────────────
+At the time this module was written we did **not** hold the official H1010 PDF,
+re-verified against HHSC's own systems rather than taken on trust:
 
 * ``fhb.hhs.texas.gov``'s form page for H1010 (effective 6/2026) links to
   ``yourtexasbenefits.com/Learn/GetPaperForm?lang=en_US`` for both the English
@@ -22,7 +50,16 @@ person who tried:
 * ``www.hhs.texas.gov/sites/default/files/...`` is reachable but holds no H1010
   under any path we could find; it answers 404.
 
-That constraint decides the honest design, and it is worth being explicit about
+**What was wrong about the conclusion drawn from that.** Every one of those
+observations still holds — re-verified 4 September 2026, with one correction
+worth passing on: ``fhb.hhs.texas.gov/sites/default/files/...`` answers **200
+with an Akamai "Access Denied" HTML body**, so a script checking the status code
+alone will happily write 199 KB of HTML into the forms directory. What did not
+follow was that the document was unobtainable. The catalog page cannot be
+*fetched*, but it can be *used*: a person clicking through it downloads the real
+files. "No programmatic route" was reported as "no route".
+
+That constraint decided the honest design, and it is worth being explicit about
 what was *not* done: no coordinate in this file is a guess at where a box sits
 on the government form. Inventing coordinates for a document nobody here has
 opened would produce a PDF that looks authoritative and prints values across the
@@ -53,17 +90,27 @@ form. Where the published purpose names something we do not collect (voter
 registration, race and ethnicity), no box is printed at all rather than an empty
 one implying we asked. ``docs/h1010-mapping-audit.md`` lists those and why.
 
-── The upgrade path this buys ─────────────────────────────────────────────
-When the official PDF is obtained and its boxes measured, the change is:
+── How that upgrade path actually went ────────────────────────────────────
+The prediction was that obtaining the asset would be a data change rather than a
+rewrite. That held for the parts it claimed — the canonical keys, transforms,
+field kinds, fitting behaviour and review sheet all carried over untouched, and
+the overlay-onto-a-template code path already existed and worked first time.
 
-1. drop the file into ``forms/TX-H1010.pdf``,
-2. set ``base_document="TX-H1010.pdf"`` and ``page_count`` to its real count,
-3. replace the ``Box`` in each mapping with the measured one.
+Three things it did not anticipate, all discovered by opening the real document:
 
-The canonical keys, the transforms, the field kinds, the fitting behaviour, the
-review sheet and every test keep working untouched. That is the whole point of
-separating canonical data from PDF representation: obtaining the asset becomes a
-data change, not a rewrite.
+1. **The official H1010 is a print-by-hand form.** It is an XFA document whose
+   AcroForm layer is almost empty: three usable text fields across 34 pages in
+   English, and **none** in Spanish. Swapping ``OverlayTarget`` for
+   ``AcroFormTarget`` "per field where the PDF has a real field" was not
+   available. Everything is overlaid.
+2. **The two language editions are two layouts.** Coordinates measured against
+   one are wrong on the other, so a variant carries a complete target map rather
+   than overriding a shared one.
+3. **Replacing each ``Box`` with a measured one was the wrong shape.** A pasted
+   coordinate is unreviewable and does not notice when HHSC moves a question. The
+   official definition anchors each box to text the document prints, and resolves
+   those anchors offline into a committed measurement file keyed by the
+   document's hash.
 
 ── Layout ────────────────────────────────────────────────────────────────
 Coordinates are not written by hand. :class:`_Layout` computes them from a
@@ -823,7 +870,10 @@ def _build() -> tuple[FormDefinition, tuple[StaticText, ...]]:
     layout.signature_block(_S_SIGNATURE)
 
     definition = FormDefinition(
-        form_id="TX_H1010",
+        # The worksheet's own id. ``TX_H1010`` names the official document
+        # this worksheet supplements — see registry._FORMS — and the two must
+        # not share an id now that they are two different deliverables.
+        form_id="TX_H1010_WORKSHEET",
         form_code="H1010",
         title="Texas Works Application for Assistance",
         state="TX",
@@ -832,15 +882,16 @@ def _build() -> tuple[FormDefinition, tuple[StaticText, ...]]:
         page_height=PAGE_HEIGHT,
         page_count=layout.page_count,
         base_document=None,
+        base_document_note_key="worksheet_reason_tx_h1010_partial_coverage",
         base_document_note=(
-            "HHSC does not publish Form H1010 as a retrievable PDF: its own "
-            "forms page links to a YourTexasBenefits web application for both "
-            "the English and the Spanish edition, and direct file requests to "
-            "hhs.texas.gov are refused or return nothing. Rather than guess "
-            "where the boxes sit on a document we have not inspected, this "
-            "renders a Navigator-authored worksheet whose coordinates we own. "
-            "Replace base_document and the boxes once the official PDF is "
-            "obtained."
+            "HHSC's official H1010 is held in both published editions, "
+            "TX-H1010-EN-2026-08.pdf and TX-H1010-ES-2026-08.pdf, and "
+            "h1010_official renders onto them as TX_H1010 -- the document a "
+            "household files. This worksheet is a supplement, not a "
+            "substitute: it carries the answers the official form has no box "
+            "for (classified in h1010_coverage), several of which HHSC asks "
+            "about at the interview, and every coordinate on it is one we "
+            "own. See docs/texas-forms.md."
         ),
         source_url=(
             "https://fhb.hhs.texas.gov/forms/1000-1999/"
