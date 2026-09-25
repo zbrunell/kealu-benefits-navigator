@@ -1,10 +1,12 @@
 # Progress — Texas official forms and packet planning
 
-**Checkpoint date:** 2026-09-04
+**Checkpoint date:** 2026-09-24 (§12); earlier checkpoints 2026-09-03 and 2026-09-04
 **Branch:** `feat/saws2-required-fields-and-guide`
-**HEAD:** `17a5a98 docs: add project progress handoff` + uncommitted work
-**Working tree:** the Texas official-forms milestone, uncommitted
-**Status:** architecture landed and tested; H1010 cutover deliberately not done
+**HEAD:** `6d28514 fix(web): show a readable message when the draft request cannot reach the server`
+**Working tree:** clean apart from this file and `CLAUDE.md`; nothing pushed
+**Status:** Texas official-forms milestone committed, H1010 cut over to HHSC's
+own document, two browser bugs fixed. **Start at §12**; §1–§11 are the record
+of earlier checkpoints, and the RESUME prompt in the middle is out of date.
 
 > **The 2026-09-03 handoff below is superseded in one important respect.** It
 > recorded that HHSC's H1010 PDF could not be obtained and recommended
@@ -595,3 +597,149 @@ Do not skip step 1: without it the cross-runtime reachability test cannot hold.
 - `formmap/packet.py` — why applicability is not requirement.
 - `tests/test_formmap_texas_packet.py` — 60 tests, each pinning a failure mode
   that produces a form which *looks* right.
+
+---
+
+## 12. Browser fixes, grouped commits and cleanup (2026-09-24)
+
+The Texas official-forms milestone (§11) and the web work built on it were
+sitting uncommitted. They are now eight commits, and two errors reported from
+the browser are fixed. The operational rules these taught are in `CLAUDE.md`
+("Working notes"); this section records what happened and why.
+
+### 12.1 `TypeError: crypto.randomUUID is not a function`
+
+**Why it failed.** Browsers expose `crypto.randomUUID()` only in a secure
+context: HTTPS or `localhost`. The app was being opened over plain HTTP on a LAN
+address, where the function is undefined. Two client call sites used it:
+
+- `web/src/lib/application-data.ts`, which builds household row ids when the
+  application view first opens. The error was thrown while rendering, so React
+  unmounted the whole tree and the page went blank.
+- `web/src/components/application-view.tsx`, "Add household member".
+
+No test caught it because every e2e run is on `localhost`, which is secure.
+Server routes were never affected: they import Node's `randomUUID`, which always
+exists.
+
+**Fix** (`d223bcc`). `createClientId()` in `web/src/lib/client-id.ts` uses
+`randomUUID` when present and otherwise builds an RFC 4122 v4 id from
+`crypto.getRandomValues()`. Both call sites use it.
+
+**Proof.** `web/tests/e2e/insecure-context.spec.ts` deletes `randomUUID` before
+the page loads and walks the California and Texas flows to the household step.
+Against the old code it fails in about two seconds with the original message.
+The SAWS 2 PLUS and Texas household specs were also run from
+`http://192.168.0.81`, where the browser reported `isSecureContext: false`, and
+passed.
+
+### 12.2 "Failed to fetch" when generating the PDF
+
+**Why it failed.** "Failed to fetch" means the browser received no response at
+all. The `npm run dev:demo` server on :3000 had stopped, so the page (still open
+from before) posted the draft request to nothing. Why it stopped was not
+established: a second `next dev` with its own build directory was tested and
+does not stop the first. With a server running, both states generate a draft in
+about a second, including over the LAN address.
+
+The code made this worse: both application views called `fetch` and
+`response.json()` directly, so the browser's own text reached the applicant.
+An HTML error page would likewise have shown `Unexpected token '<'`.
+
+**Fix** (`6d28514`). `requestDraft()` in `web/src/lib/draft-request.ts` wraps
+the request. A rejected fetch becomes `DraftRequestError('av_draft_unreachable')`,
+which says the server could not be reached and that the answers are kept. An
+unreadable body becomes `av_draft_failed`. The route's own error responses pass
+through unchanged. The new message is in all three catalogs.
+
+**Proof.** `web/tests/e2e/draft-unreachable.spec.ts` aborts the draft request in
+the Texas flow, expects the translated message, then retries and gets the PDF.
+Against the old code it fails with `Received: "Failed to fetch"`.
+
+### 12.3 Two e2e failures that were not regressions
+
+`intake-to-report.spec.ts:331` and `report-rendering.spec.ts:131` (also noted in
+§11.7) fail whenever `dev:demo` is running on :3000. `playwright.config.ts` sets
+`reuseExistingServer: !process.env.CI`, so the `chromium` project tested against
+the demo server, whose report does not contain the mock-kvr fixture's `18,240`
+or `tdhca.state.tx.us`. On fresh servers all specs pass. No code changed for
+this.
+
+### 12.4 The commits
+
+| Commit | What it contains |
+|---|---|
+| `b07269d` feat(formmap): add official Texas documents with provenance and box measurement | The five HHSC PDFs; `provenance.py` (source, revision, SHA-256; a swapped file is refused); `measure.py` / `measurements.py` and committed JSON (boxes anchored to printed text); `tools/measure_texas_forms.py` (`--check` for CI); `segments` and `also_draw_at` on overlay targets |
+| `063d201` feat(formmap): resolve official language editions and plan Texas packets | `documents.py` (edition per locale), `packet.py` + `forms/tx_catalog.py` (which forms and why), `manifest.py` (the packet as JSON for the web), `review_words.py` (review sheet in English and Spanish), declared blanks and derivations in `definition.py`, locale-aware `pipeline.py` |
+| `e156e42` feat(formmap): fill Texas H1010 and H3037 on HHSC's own documents | `h1010_official.py` (115 fields, 217 boxes per edition), `h1010_coverage.py`, `h3037.py`; the worksheet renamed `TX_H1010_WORKSHEET`; the registry cutover of `TX_H1010`; the form filler returns the packet; Python tests and golden review sheets |
+| `87d7a47` docs: document the Texas official forms, packet and H1010 cutover | `docs/texas-forms.md`, corrected `docs/h1010-mapping-audit.md`, §11 of this file |
+| `454443b` feat(web): describe each form in the packet as a card in the reader's language | Form cards, `document-labels.ts`, `form-manifest.ts`, the blank-form route, the packet stored with the draft, the review sheet's `lang`, card strings and the "worksheet" to "official form" copy |
+| `27b9bd8` feat(web): ask Texas per-person questions and show intake progress | `person-fields.tsx`, `intake-progress.tsx`, the Texas view (including the one-keystroke focus fix), per-person answers in the mapper, strings, unit and e2e specs |
+| `d223bcc` fix(web): stop crashing where crypto.randomUUID is unavailable | §12.1 |
+| `6d28514` fix(web): show a readable message when the draft request cannot reach the server | §12.2 |
+
+The message catalogs, `component-english-leaks.test.ts` and
+`playwright.config.ts` were split by content between `454443b` and `27b9bd8`, so
+each commit carries only its own lines. `texas-application-view.tsx` mixes both
+themes line by line and went whole into `27b9bd8`.
+
+Each commit was checked out alone in a worktree and passes pytest, `tsc` and
+Vitest. The one failure first seen there (`TestMeasurementToolIsInStep`) was the
+worktree lacking `.venv`, not the code.
+
+`h1010_worksheet_keys.py` was staged once and deleted before any commit, so it
+never entered history.
+
+### 12.5 Stale comments corrected
+
+- `forms/h1010.py`: the worksheet's `base_document_note` still said the
+  worksheet was what a household files, and pointed at the deleted
+  `WORKSHEET_ONLY_KEYS`. It now says the worksheet is a supplement to
+  `h1010_official`. `tests/test_formmap_mapping.py` asserts the current reason is
+  present and both earlier reasons are absent.
+- §11.5 and §11.8 above are marked superseded, with the steps that remain.
+- `docs/texas-forms.md` called the pregnancy questions "a prerequisite for the
+  H1010 cutover", which has since happened. It now says those boxes stay blank
+  until the questions are asked.
+- A scan of every added line found no leftover debug output or TODOs. The
+  `print` calls in `tools/measure_texas_forms.py` are its command-line output.
+
+### 12.6 Test counts
+
+| Suite | §11.7 | Now |
+|---|---|---|
+| Python | 1077 passed, 3 deselected | **1176 passed**, 3 deselected |
+| Vitest | 1937 passed (80 files) | **2013 passed** (85 files) |
+| Playwright | 79 passed, 2 failed | **121 passed** (on fresh servers) |
+| `tsc --noEmit` | clean | clean |
+| ESLint | clean | clean |
+| `next build` | — | succeeds |
+
+### 12.7 Open items
+
+1. **Stale applicant-facing text.** `worksheet_reason_tx_h1010_partial_coverage`
+   in `formmap/review_words.py` (English and Spanish) and the four
+   `tests/fixtures/h1010-*.review.txt` golden files still tell the applicant we
+   "can currently fill only its first few pages" of H1010. Untrue since the
+   cutover. It needs new wording from product, then regenerated goldens.
+2. **Pregnancy questions.** `household.pregnancy.person_name` and
+   `household.pregnancy.due_date` are mapped on H1010 and H3037 but not asked by
+   `web/src/lib/form-intake/tx-h1010.ts`, so those boxes stay blank.
+3. **Self-employment and H1049.** `income.self_employment.*` is identified but
+   not added; H1049 has nothing to fill from until it is.
+4. **Why the dev server stopped** (§12.2) is unknown. If "Failed to fetch"
+   recurs with a server running, capture the server terminal output at that
+   moment.
+
+### 12.8 Resume
+
+> Continue the Kealu Benefits Navigator. Read `PROGRESS.md` §12 and the
+> "Working notes" in `CLAUDE.md` first.
+>
+> State: branch `feat/saws2-required-fields-and-guide`, HEAD `6d28514`, nothing
+> pushed. Python 1176, Vitest 2013 and Playwright 121 passed on 2026-09-24;
+> verify with the commands in `CLAUDE.md` before starting, with nothing running
+> on :3000 or :3101.
+>
+> Next: agree the new worksheet reason wording (§12.7.1), then add the two
+> pregnancy questions to the Texas intake (§12.7.2).
