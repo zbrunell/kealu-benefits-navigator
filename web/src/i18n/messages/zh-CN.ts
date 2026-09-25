@@ -751,6 +751,7 @@ const zhCN: Messages = {
   av_generate_application: '生成申请',
   av_answers_need_correcting: '有些回答需要更正。',
   av_draft_failed: '无法生成申请草稿。',
+  av_draft_unreachable: '无法连接服务器来准备您的申请。请检查网络连接后重试——您的回答仍然保留。',
 
   // ── 保险市场计划 ─────────────────────────────────────────────────────────
   mkt_not_provided: '未提供',

@@ -53,6 +53,7 @@ import RosterStep, {
   missingRosterAnswers,
 } from "@/components/texas/roster-step";
 import TexasDraftPanel from "@/components/texas/draft-panel";
+import { DraftRequestError, requestDraft } from "@/lib/draft-request";
 import { buildInitialApplicationData } from "@/lib/application-data";
 import { householdSizeFromMembers } from "@/lib/household";
 import {
@@ -441,20 +442,7 @@ export default function TexasApplicationView({
     setPacket([]);
 
     try {
-      const response = await fetch(`/api/workflow/${runId}/draft`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ applicationData: data }),
-      });
-
-      const result = (await response.json()) as {
-        draftUrl?: string;
-        guideUrl?: string;
-        packet?: unknown;
-        error?: string;
-        errorKey?: string;
-        fieldProblems?: Array<{ field: string; messageKey: string }>;
-      };
+      const { response, result } = await requestDraft(runId, data);
 
       if (!response.ok || !result.draftUrl) {
         if (result.fieldProblems?.length) {
@@ -475,7 +463,11 @@ export default function TexasApplicationView({
       setPacket(parseFormManifest(result.packet));
     } catch (error) {
       setGenerationError(
-        error instanceof Error ? error.message : t("av_draft_failed"),
+        error instanceof DraftRequestError
+          ? t(error.messageKey)
+          : error instanceof Error
+            ? error.message
+            : t("av_draft_failed"),
       );
     } finally {
       generationInFlight.current = false;

@@ -771,6 +771,8 @@ const es: Messages = {
   av_generate_application: 'Generar la solicitud',
   av_answers_need_correcting: 'Algunas respuestas necesitan corrección.',
   av_draft_failed: 'No se pudo generar el borrador de la solicitud.',
+  av_draft_unreachable:
+    'No pudimos conectar con el servidor para preparar su solicitud. Revise su conexión e intente de nuevo; sus respuestas siguen aquí.',
 
   // ── Planes del mercado de seguros ───────────────────────────────────────
   mkt_not_provided: 'No se proporcionó',

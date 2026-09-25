@@ -19,6 +19,7 @@ import { evaluateApplicationReadiness } from "@/lib/saws2-readiness";
 import DraftCompletionGuide from "./application/draft-completion-guide";
 import EligibilityStep from "./application/eligibility-step";
 import { createClientId } from "@/lib/client-id";
+import { DraftRequestError, requestDraft } from "@/lib/draft-request";
 import { relationshipAfterAgeChange } from "@/lib/household-relationships";
 import HouseholdStep from "./application/household-step";
 import ProgramSelectionStep from "./application/program-selection-step";
@@ -512,24 +513,7 @@ export default function ApplicationView({
     setDraftUrl(null);
 
     try {
-      const response = await fetch(`/api/workflow/${runId}/draft`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          applicationData,
-        }),
-      });
-
-      const result = (await response.json()) as {
-        draftUrl?: string;
-        guideUrl?: string;
-        draftReference?: string;
-        error?: string;
-        errorKey?: string;
-        fieldProblems?: Array<{ field: string; messageKey: string }>;
-      };
+      const { response, result } = await requestDraft(runId, applicationData);
 
       if (!response.ok || !result.draftUrl) {
         /*
@@ -554,9 +538,11 @@ export default function ApplicationView({
       setDraftReference(result.draftReference ?? "");
     } catch (error) {
       setGenerationError(
-        error instanceof Error
-          ? error.message
-          : t("av_draft_failed"),
+        error instanceof DraftRequestError
+          ? t(error.messageKey)
+          : error instanceof Error
+            ? error.message
+            : t("av_draft_failed"),
       );
     } finally {
       generationInFlight.current = false;

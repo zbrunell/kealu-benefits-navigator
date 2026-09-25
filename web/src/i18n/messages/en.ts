@@ -776,6 +776,8 @@ const en = {
   av_generate_application: 'Generate application',
   av_answers_need_correcting: 'Some answers need correcting.',
   av_draft_failed: 'Failed to generate application draft.',
+  av_draft_unreachable:
+    'We could not reach the server to prepare your application. Check your connection and try again — your answers are still here.',
 
   // ── Marketplace plans ───────────────────────────────────────────────────
   mkt_not_provided: 'Not provided',
