@@ -48,6 +48,40 @@ minutes later with no cause. To fail fast, also treat a `console` error whose
 argument is an `Error` as a crash — see `onInsecurePage()` in
 `insecure-context.spec.ts`.
 
+### Missing Tailwind classes are a stale dev cache, not a layout bug
+
+On 2026-09-25, classes used only in newer files (`gap-5` in the Texas person
+card, `bg-slate-300` on a disabled Continue) were absent from the served CSS:
+fields touched, and Continue rendered as bare text. Automatic source detection
+reports scanned files but no directories, so webpack's persistent cache
+(`.next*/cache/webpack`) never noticed new files. `globals.css` now has an
+explicit `@source ".."`, which is reported as a directory dependency. A dev
+server that is already running still does not rebuild `layout.css` when a
+class is added to an existing file, or after a `globals.css` edit (seen again
+2026-10-01: an unsized pencil SVG filled its button). If a class seems to do
+nothing, check the served stylesheet before changing markup, then restart the
+server with `rm -rf .next/cache` (or `.next-e2e/cache`). A one-off
+`NEXT_DIST_DIR` that `.gitignore` does not list is also scanned by Tailwind.
+
+## KVR runs
+
+### Look up a failure by its code, then read the server log
+
+A run that fails shows the applicant only the generic message, an
+`Error code` (`BN-xxxx`) and an `Error ID` (the KVR run ID). What each code
+means is in `PUBLIC_ERROR_DESCRIPTIONS` in `web/src/lib/kvr-runner.ts`; the
+cause is in the server's `workflow_runner_failed` log line (`failureCode`,
+`description`, `diagnosticTail`). Never put the cause in the SSE event.
+
+On 2026-09-24 an expired OAuth login for the `claude/kealu.com` KVR account
+failed every run in 0.0s ("Empty OAuth token for account ..."). The classifier
+did not know that wording, and it checked rate limits before auth, so the
+failure was reported as `UPSTREAM_RATE_LIMIT`. Auth is now checked first and
+matches KVR's real messages (`BN-1003`). KVR's own advice for this error ("Wait
+a few minutes and retry") is wrong: run `kvr check`, then
+`kvr accounts login claude/kealu.com`. Guarded by the
+`classifyRunnerFailure()` tests in `web/tests/unit/kvr-runner.test.ts`.
+
 ## Running the tests
 
 ### Playwright reuses whatever is already on port 3000
