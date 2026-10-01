@@ -104,7 +104,7 @@ export default function PhaseTracker({ runId, onComplete, onRestart, onEdit }: P
     Object.fromEntries(PHASES.map((p) => [p.key, 'idle'])) as Record<PhaseKey, PhaseStatus>;
 
   const [phaseStatus, setPhaseStatus] = useState<Record<PhaseKey, PhaseStatus>>(initialStatus);
-  const [error, setError] = useState<{ message: string } | null>(null);
+  const [error, setError] = useState<{ message: string; errorCode?: string } | null>(null);
   const [stopping, setStopping] = useState(false);
   /**
    * True once the EventSource HTTP connection is open (es.onopen fired).
@@ -143,6 +143,7 @@ export default function PhaseTracker({ runId, onComplete, onRestart, onEdit }: P
           event_type: string;
           phase?: string;
           message?: string;
+          error_code?: unknown;
         };
 
         switch (event.event_type) {
@@ -182,7 +183,11 @@ export default function PhaseTracker({ runId, onComplete, onRestart, onEdit }: P
           }
 
           case 'error': {
-            setError({ message: event.message ?? t('phase_workflow_failed') });
+            setError({
+              message: event.message ?? t('phase_workflow_failed'),
+              errorCode:
+                typeof event.error_code === 'string' ? event.error_code : undefined,
+            });
             es.close();
             break;
           }
@@ -401,6 +406,7 @@ export default function PhaseTracker({ runId, onComplete, onRestart, onEdit }: P
       {error && (
         <ErrorBanner
           message={error.message}
+          errorCode={error.errorCode}
           correlationId={runId}
           onRetry={() => void handleRetry()}
           onSecondary={onEdit}
