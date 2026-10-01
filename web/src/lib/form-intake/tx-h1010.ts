@@ -395,6 +395,7 @@ const moneySection: IntakeSection<Data> = {
     {
       id: Q.incomeType,
       promptKey: 'tx_q_income_kind',
+      helpKey: 'tx_q_income_kind_help',
       kind: 'text',
       normalize: normalizeWhitespace,
       read: (data) => data.incomeType,

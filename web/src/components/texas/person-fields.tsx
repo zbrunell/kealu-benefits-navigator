@@ -356,7 +356,17 @@ export default function PersonFields({
         </div>
       </div>
 
-      <Field label={t('field_sex')} htmlFor={`${idPrefix}-sex`} help={t('tx_person_sex_help')}>
+      {/*
+        Sex and marital status each get a full row. Side by side, the help text
+        under Sex pushed its select below Marital status's, and each select had
+        half the card when the options ("Separated", "Divorced") need more.
+      */}
+      <Field
+        label={t('field_sex')}
+        htmlFor={`${idPrefix}-sex`}
+        help={tv('tx_person_sex_help', { name: displayName })}
+        wide
+      >
         <select
           id={`${idPrefix}-sex`}
           value={String(memberDetail(member, 'sex') ?? '')}
@@ -370,7 +380,7 @@ export default function PersonFields({
               ),
             )
           }
-          className={FIELD}
+          className={`${FIELD} sm:max-w-sm`}
         >
           <option value="">{t('opt_select')}</option>
           <option value="male">{t('opt_male')}</option>
@@ -382,6 +392,7 @@ export default function PersonFields({
         <Field
           label={t('field_marital_status')}
           htmlFor={`${idPrefix}-marital-status`}
+          wide
         >
           <select
             id={`${idPrefix}-marital-status`}
@@ -398,7 +409,7 @@ export default function PersonFields({
                 ),
               )
             }
-            className={FIELD}
+            className={`${FIELD} sm:max-w-sm`}
           >
             <option value="">{t('opt_select')}</option>
 
@@ -434,7 +445,7 @@ export default function PersonFields({
       <YesNoField
         id={`${idPrefix}-citizen`}
         label={tv('tx_person_citizen', { name: displayName })}
-        help={t('tx_person_citizen_help')}
+        help={tv('tx_person_citizen_help', { name: displayName })}
         value={memberDetail(member, 'citizenOrNational') as boolean | undefined}
         onChange={(next) =>
           onChange(writeMemberDetail(member, 'citizenOrNational', next))

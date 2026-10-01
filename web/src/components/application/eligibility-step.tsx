@@ -62,7 +62,7 @@ function YesNoQuestion({
 
   return (
     <fieldset className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <legend className="px-1 text-sm font-medium text-slate-900">
+      <legend className="boxed-legend text-sm font-medium text-slate-900">
         {label}
       </legend>
 
@@ -329,7 +329,7 @@ export default function EligibilityStep({
 
             {personalEmergency.hasEmergency === true && (
               <fieldset className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                <legend className="px-1 text-sm font-medium text-amber-950">
+                <legend className="boxed-legend text-sm font-medium text-amber-950">
                   {t("elig_emergency_types")}
                 </legend>
 

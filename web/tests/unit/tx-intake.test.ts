@@ -486,3 +486,29 @@ describe('the Texas screens ask everything the section declares', () => {
     expect(asked).toContain(Q.hasHelper);
   });
 });
+
+describe('the "kind of income" question explains itself', () => {
+  /*
+   * Testers could not tell what "Kind of income" was asking for. The prompt is
+   * now a question, and help text under it gives examples of sources.
+   */
+  const question = TX_H1010_INTAKE.sections
+    .flatMap((section) => section.questions)
+    .find((candidate) => candidate.id === Q.incomeType);
+
+  it('has help text in every language', () => {
+    expect(question?.helpKey).toBe('tx_q_income_kind_help');
+
+    for (const [locale, catalog] of Object.entries(messages)) {
+      const help = (catalog as Record<string, string>).tx_q_income_kind_help;
+
+      expect(help, locale).toBeTruthy();
+    }
+  });
+
+  it('asks a question and gives example sources in English', () => {
+    expect(messages.en.tx_q_income_kind).toMatch(/\?$/);
+    expect(messages.en.tx_q_income_kind_help).toMatch(/job/);
+    expect(messages.en.tx_q_income_kind_help).toMatch(/Social Security/);
+  });
+});

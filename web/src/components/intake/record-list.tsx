@@ -26,6 +26,7 @@
  */
 
 import { useTranslation } from "@/hooks/use-translation";
+import { ADDED_ROW_ATTRIBUTE, useFocusAddedRow } from "@/hooks/use-focus-added-row";
 import { QuestionField } from "@/components/intake/question-fields";
 import type { IntakeQuestion } from "@/lib/form-intake/model";
 
@@ -78,6 +79,9 @@ export function RecordListEditor<TRecord>({
   people,
 }: RecordListEditorProps<TRecord>) {
   const { t, tv } = useTranslation();
+  const { containerRef, markAdded } = useFocusAddedRow<HTMLOListElement>(
+    records.length,
+  );
 
   /**
    * The field list as rendered, with the people options filled in.
@@ -137,11 +141,12 @@ export function RecordListEditor<TRecord>({
         </p>
       )}
 
-      <ol className="mt-3 space-y-4">
+      <ol ref={containerRef} className="mt-3 space-y-4">
         {records.map((record, index) => (
           <li
             key={index}
             data-testid={`record-${list.id}-${index}`}
+            {...{ [ADDED_ROW_ATTRIBUTE]: "" }}
             className="rounded-lg border border-slate-200 bg-slate-50 p-4"
           >
             <div className="flex items-center justify-between">
@@ -194,7 +199,10 @@ export function RecordListEditor<TRecord>({
         <button
           type="button"
           data-testid={`record-list-${list.id}-add`}
-          onClick={() => onChange([...records, blank(records.length)])}
+          onClick={() => {
+            markAdded();
+            onChange([...records, blank(records.length)]);
+          }}
           className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
           {t(list.addLabelKey)}

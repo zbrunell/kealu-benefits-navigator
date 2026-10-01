@@ -584,7 +584,9 @@ export default function ApplicantStep({
             {t("applicant_household_details_help")}
           </p>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {/* One above the other, not side by side: next to Sex, Marital
+              status was squeezed into half a row. */}
+          <div className="mt-4 grid max-w-sm gap-4">
             <label className="block">
               <span className="text-sm font-medium text-slate-700">
                 {t("field_sex")}
@@ -649,7 +651,7 @@ export default function ApplicantStep({
               className="rounded-lg border border-slate-200 bg-slate-50 p-4"
               aria-required={isRequired("citizenOrNational")}
             >
-              <legend className="px-1 text-sm font-medium text-slate-800">
+              <legend className="boxed-legend text-sm font-medium text-slate-800">
                 <FieldLabelText
                   labelKey="applicant_citizen_question"
                   isRequired={isRequired("citizenOrNational")}
@@ -696,7 +698,7 @@ export default function ApplicantStep({
             </fieldset>
 
             <fieldset className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <legend className="px-1 text-sm font-medium text-slate-800">
+              <legend className="boxed-legend text-sm font-medium text-slate-800">
                 {t("applicant_student_question")}
               </legend>
 
@@ -740,7 +742,7 @@ export default function ApplicantStep({
             </fieldset>
 
             <fieldset className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <legend className="px-1 text-sm font-medium text-slate-800">
+              <legend className="boxed-legend text-sm font-medium text-slate-800">
                 {t("hh_q_disabled")}
               </legend>
 

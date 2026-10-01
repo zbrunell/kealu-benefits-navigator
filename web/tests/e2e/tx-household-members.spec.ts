@@ -83,6 +83,74 @@ test.describe('adding people to the household', () => {
     await page?.close();
   });
 
+  test('adding a person puts the cursor in their first name', async () => {
+    /*
+     * Testers had to click into the new card before they could type. The
+     * cursor now goes to the first box, so typing straight after the click
+     * lands there — no click on the field in this test, on purpose.
+     */
+    await page.getByTestId('tx-roster-add').click();
+
+    const firstName = page.getByTestId('tx-member-0-first-name');
+
+    await expect(firstName).toBeFocused();
+    await page.keyboard.type('Ana');
+    await expect(firstName).toHaveValue('Ana');
+
+    await page.getByTestId('tx-member-0-remove').click();
+  });
+
+  test('the person card lays out Sex and Marital status on rows of their own', async () => {
+    await page.getByTestId('tx-roster-add').click();
+    await page.getByTestId('tx-member-0-first-name').fill('Ana');
+    await page.getByTestId('tx-member-0-dob').fill('1985-02-11');
+
+    const sex = page.getByTestId('tx-member-0-sex');
+    const marital = page.getByTestId('tx-member-0-marital-status');
+
+    await expect(marital).toBeVisible();
+
+    // One above the other, never side by side.
+    const sexBox = (await sex.boundingBox())!;
+    const maritalBox = (await marital.boundingBox())!;
+
+    expect(maritalBox.y).toBeGreaterThanOrEqual(sexBox.y + sexBox.height);
+
+    // The help text names the person instead of printing a placeholder.
+    const card = page.getByTestId('tx-member-0');
+
+    await expect(card).toContainText('Answer as it appears on Ana’s records.');
+    await expect(card).not.toContainText('{name}');
+
+    await page.getByTestId('tx-member-0-remove').click();
+  });
+
+  test('a question that wraps stays inside its box', async () => {
+    /*
+     * A fieldset legend sits on the box's top border, so a prompt that wrapped
+     * straddled it. Every boxed prompt on this screen must start inside its
+     * box. A narrow window forces the wrap.
+     */
+    await page.setViewportSize({ width: 700, height: 900 });
+
+    const boxes = page.locator('fieldset:has(> legend.boxed-legend)');
+    const count = await boxes.count();
+
+    expect(count).toBeGreaterThan(0);
+
+    for (let index = 0; index < count; index += 1) {
+      const box = (await boxes.nth(index).boundingBox())!;
+      const legend = (await boxes
+        .nth(index)
+        .locator('> legend')
+        .boundingBox())!;
+
+      expect(legend.y, `legend ${index} starts above its box`).toBeGreaterThanOrEqual(box.y);
+    }
+
+    await page.setViewportSize({ width: 1280, height: 720 });
+  });
+
   test('a name can be typed continuously, one keystroke after another', async () => {
     /*
      * The regression test for the one-character bug.

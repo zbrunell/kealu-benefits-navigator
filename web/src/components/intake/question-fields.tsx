@@ -166,7 +166,7 @@ export function QuestionField<TState>({
         className="rounded-lg border border-slate-200 bg-slate-50 p-4"
         aria-required={question.required}
       >
-        <legend id={promptId} className="px-1 text-sm font-medium text-slate-800">
+        <legend id={promptId} className="boxed-legend text-sm font-medium text-slate-800">
           {t(question.promptKey)}
           {question.required && <RequiredMark />}
         </legend>

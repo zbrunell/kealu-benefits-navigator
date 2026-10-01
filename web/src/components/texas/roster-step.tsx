@@ -24,6 +24,7 @@
  */
 
 import { useTranslation } from "@/hooks/use-translation";
+import { ADDED_ROW_ATTRIBUTE, useFocusAddedRow } from "@/hooks/use-focus-added-row";
 import PersonFields from "@/components/texas/person-fields";
 import {
   RequiredMissingNotice,
@@ -131,6 +132,9 @@ export default function RosterStep({
   showErrors,
 }: RosterStepProps) {
   const { t, tv } = useTranslation();
+  const { containerRef, markAdded } = useFocusAddedRow<HTMLOListElement>(
+    members.length,
+  );
 
   function update(index: number, next: HouseholdMember) {
     onChange(members.map((member, position) => (position === index ? next : member)));
@@ -180,12 +184,13 @@ export default function RosterStep({
         </p>
       )}
 
-      <ol className="mt-3 space-y-4">
+      <ol ref={containerRef} className="mt-3 space-y-4">
         {members.map((member, index) => {
           return (
             <li
               key={member.id}
               data-testid={`tx-member-${index}`}
+              {...{ [ADDED_ROW_ATTRIBUTE]: "" }}
               className="rounded-lg border border-slate-200 bg-slate-50 p-4"
             >
               <div className="flex items-start justify-between gap-3">
@@ -244,7 +249,10 @@ export default function RosterStep({
       <button
         type="button"
         data-testid="tx-roster-add"
-        onClick={() => onChange([...members, blankMember(members.length)])}
+        onClick={() => {
+          markAdded();
+          onChange([...members, blankMember(members.length)]);
+        }}
         className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
       >
         {t(TX_HOUSEHOLD_ROSTER.addLabelKey)}

@@ -64,7 +64,7 @@ export default function ChatInterface({
   initialNextQuestion,
   onReady,
 }: ChatInterfaceProps) {
-  const { t, locale } = useTranslation();
+  const { t, tv, locale } = useTranslation();
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [input, setInput] = useState('');
   const [isPending, setIsPending] = useState(false);
@@ -76,8 +76,35 @@ export default function ChatInterface({
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  // The answer just saved, highlighted in the panel for a few seconds so the
+  // applicant can see the change went through.
+  const [savedKey, setSavedKey] = useState<string | null>(null);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const logRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  /*
+   * Focus the answer being edited, with the caret after its text, so typing
+   * starts straight away. `autoFocus` alone leaves the caret wherever the
+   * browser puts it (before the text, in some), and applies only on mount.
+   */
+  useEffect(() => {
+    const input = editInputRef.current;
+
+    if (!editingKey || !input) return;
+
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }, [editingKey]);
+
+  useEffect(
+    () => () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    },
+    [],
+  );
 
   // Populate initial message list once on mount
   useEffect(() => {
@@ -129,9 +156,12 @@ export default function ChatInterface({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages. The list scrolls itself rather than
+  // using scrollIntoView, which also scrolls the window and would pull the
+  // progress header and the answers panel off screen.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const log = logRef.current;
+    if (log) log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
   async function sendMessage(text: string) {
@@ -254,8 +284,10 @@ export default function ChatInterface({
 
   /** Save an inline edit of a previously-answered field. */
   async function saveEdit(key: string) {
+    if (savingKey) return;
     const value = editValue.trim();
     setEditError(null);
+    setSavingKey(key);
     try {
       const res = await fetch('/api/intake', {
         method: 'POST',
@@ -273,12 +305,36 @@ export default function ChatInterface({
       setEditValue('');
       setEditError(null);
       if (data.answers) setAnswers(data.answers);
+
+      // Confirm in two places: the row itself, and the conversation (whose
+      // live region also announces it to a screen reader).
+      const saved = data.answers?.find((answer) => answer.key === key);
+      const labelKey =
+        saved?.labelKey ?? ALL_FIELDS.find((field) => field.key === key)?.labelKey;
+      if (labelKey) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: uid(),
+            role: 'assistant',
+            content: tv('chat_answer_updated', {
+              field: t(labelKey),
+              value: saved?.value ?? value,
+            }),
+          },
+        ]);
+      }
+      setSavedKey(key);
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setSavedKey(null), 4000);
       // Keep the progress indicator in sync with the recomputed next question.
       if (data.type === 'ready') setCurrentField(null);
       else if (data.field) setCurrentField(data.field);
     } catch {
       setEditError(t('chat_error_generic'));
       /* leave panel as-is on failure */
+    } finally {
+      setSavingKey(null);
     }
   }
 
@@ -289,7 +345,7 @@ export default function ChatInterface({
       {/* Progress indicator + editable answers panel */}
       {(currentField || answers.length > 0) && (
         <div className="px-4 pt-3 pb-2.5 border-b border-slate-800">
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-1.5">
             <span className="text-xs font-medium text-slate-300">
               {currentField && step ? (
                 <>
@@ -300,12 +356,21 @@ export default function ChatInterface({
                 t('chat_all_set')
               )}
             </span>
+            {/*
+              A real button, not a text link in the corner: testers did not
+              notice that earlier answers could be changed. The pencil and the
+              border say "this does something"; `aria-expanded` tells a screen
+              reader whether the answers below are showing.
+            */}
             {answers.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowPanel((v) => !v)}
-                className="text-xs font-medium text-blue-400 hover:text-blue-300 focus:outline-none"
+                aria-expanded={showPanel}
+                aria-controls="chat-answers-panel"
+                className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-blue-400/50 bg-blue-500/10 px-2 py-1 text-xs font-medium text-slate-500 hover:bg-blue-500/20 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors"
               >
+                <PencilIcon size={12} className="text-white" />
                 {showPanel ? t('chat_hide_answers') : t('chat_edit_answers')}
               </button>
             )}
@@ -319,77 +384,117 @@ export default function ChatInterface({
             />
           </div>
 
-          {/* Editable answers — stop and correct anything entered so far */}
+          {answers.length > 0 && !showPanel && (
+            <p className="mt-2 text-xs text-slate-400">{t('chat_edit_answers_hint')}</p>
+          )}
+
+          {/*
+            Editable answers — stop and correct anything entered so far.
+            Height-capped and scrollable so that opening it never squeezes the
+            conversation below down to a sliver. The cap is sized for the
+            580px chat box: about three rows on a desktop, and on a phone,
+            where each row stacks, it still leaves the conversation ~180px.
+          */}
           {showPanel && answers.length > 0 && (
-            <div className="mt-3 space-y-1.5">
-              {answers.map((a) => (
-                <div key={a.key} className="flex items-start gap-2 text-xs">
-                  <span className="w-28 shrink-0 pt-1 text-slate-400">{t(a.labelKey)}</span>
-                  {editingKey === a.key ? (
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') void saveEdit(a.key);
-                            if (e.key === 'Escape') {
+            <div
+              id="chat-answers-panel"
+              className="mt-3 max-h-44 overflow-y-auto divide-y divide-slate-800 rounded-lg border border-slate-800 bg-slate-950/40"
+            >
+              {answers.map((a) => {
+                const isSaved = savedKey === a.key;
+                const isSaving = savingKey === a.key;
+
+                return (
+                  <div
+                    key={a.key}
+                    data-testid={`chat-answer-${a.key}`}
+                    className={`flex flex-col gap-1 px-3 py-2.5 text-sm sm:flex-row sm:items-start sm:gap-3 transition-colors duration-500 ${
+                      isSaved ? 'bg-green-500/10' : ''
+                    }`}
+                  >
+                    <span className="shrink-0 text-slate-400 sm:w-44 sm:pt-1.5">{t(a.labelKey)}</span>
+                    {editingKey === a.key ? (
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            ref={editInputRef}
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') void saveEdit(a.key);
+                              if (e.key === 'Escape') {
+                                setEditingKey(null);
+                                setEditError(null);
+                              }
+                            }}
+                            disabled={isSaving}
+                            className="min-w-0 flex-1 basis-48 rounded-md border border-slate-600 bg-slate-800 text-slate-100 px-2.5 py-1.5 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60"
+                            aria-label={tv('chat_edit_field_aria', { field: t(a.labelKey) })}
+                            aria-invalid={editError ? true : undefined}
+                            inputMode={ALL_FIELDS.find((field) => field.key === a.key)?.inputMode}
+                            placeholder={(() => {
+                              const key = ALL_FIELDS.find(
+                                (field) => field.key === a.key,
+                              )?.placeholderKey;
+
+                              return key ? t(key) : undefined;
+                            })()}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => void saveEdit(a.key)}
+                            disabled={isSaving}
+                            className="rounded-md bg-blue-600 px-3 py-1.5 font-medium text-white hover:bg-blue-500 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                          >
+                            {isSaving ? t('chat_saving') : t('chat_save')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
                               setEditingKey(null);
                               setEditError(null);
-                            }
-                          }}
-                          autoFocus
-                          className="flex-1 rounded border border-slate-600 bg-slate-800 text-slate-100 px-2 py-1 focus:border-blue-400 focus:outline-none"
-                          aria-label={`${t('chat_edit_answers')}: ${t(a.labelKey)}`}
-                          inputMode={ALL_FIELDS.find((field) => field.key === a.key)?.inputMode}
-                          placeholder={(() => {
-                            const key = ALL_FIELDS.find(
-                              (field) => field.key === a.key,
-                            )?.placeholderKey;
-
-                            return key ? t(key) : undefined;
-                          })()}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => void saveEdit(a.key)}
-                          className="font-medium text-blue-400 hover:text-blue-300 focus:outline-none"
-                        >
-                          {t('chat_save')}
-                        </button>
+                            }}
+                            disabled={isSaving}
+                            className="rounded-md px-2 py-1.5 text-slate-400 hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                          >
+                            {t('chat_cancel')}
+                          </button>
+                        </div>
+                        {editError && (
+                          <p className="mt-1.5 text-xs text-red-400" role="alert">{editError}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex min-w-0 flex-1 items-start gap-3">
+                        <span className="min-w-0 flex-1 pt-1.5 text-slate-100 break-words">{a.value}</span>
+                        {isSaved && (
+                          <span
+                            role="status"
+                            className="mt-1 inline-flex shrink-0 items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-medium text-green-300"
+                          >
+                            <span aria-hidden="true">✓</span>
+                            {t('chat_saved')}
+                          </span>
+                        )}
                         <button
                           type="button"
                           onClick={() => {
-                            setEditingKey(null);
+                            setEditingKey(a.key);
+                            setEditValue(a.value);
                             setEditError(null);
+                            setSavedKey(null);
                           }}
-                          className="text-slate-500 hover:text-slate-300 focus:outline-none"
+                          aria-label={tv('chat_edit_field_button_aria', { field: t(a.labelKey) })}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-700 px-2.5 py-1 font-medium text-white hover:border-blue-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                         >
-                          {t('chat_cancel')}
+                          <PencilIcon />
+                          {t('chat_edit')}
                         </button>
                       </div>
-                      {editError && (
-                        <p className="mt-1 text-xs text-red-400" role="alert">{editError}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      <span className="flex-1 pt-1 text-slate-200 break-words">{a.value}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingKey(a.key);
-                          setEditValue(a.value);
-                          setEditError(null);
-                        }}
-                        className="pt-1 font-medium text-blue-400 hover:text-blue-300 focus:outline-none"
-                      >
-                        {t('chat_edit')}
-                      </button>
-                    </>
-                  )}
-                </div>
-              ))}
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -405,6 +510,7 @@ export default function ChatInterface({
         so this is the smallest set of ids that does the job.
       */}
       <div
+        ref={logRef}
         data-testid="chat-messages"
         role="log"
         aria-live="polite"
@@ -439,7 +545,6 @@ export default function ChatInterface({
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* Skip button */}
@@ -504,5 +609,26 @@ export default function ChatInterface({
         </button>
       </form>
     </div>
+  );
+}
+
+/** A small pencil, marking a control that changes an answer. Decorative. */
+/*
+ * Sized with width/height attributes as well as classes: when a dev server
+ * serves a stylesheet without the size classes, an unsized SVG fills its
+ * button.
+ */
+function PencilIcon({ size = 14, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      width={size}
+      height={size}
+      fill="currentColor"
+      className={`shrink-0 ${className}`}
+    >
+      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+    </svg>
   );
 }
