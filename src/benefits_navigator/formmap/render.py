@@ -51,6 +51,7 @@ from benefits_navigator.formmap.targets import (
 from benefits_navigator.formmap.textfit import (
     FIELD_PADDING,
     MIN_FONT_SIZE,
+    SEGMENT_PADDING,
     fits,
     helvetica_width,
     largest_size_that_fits,
@@ -98,17 +99,23 @@ class RenderPlan:
         return " ".join(drawn.text for drawn in self.for_page(page))
 
 
-def _aligned_x(box: Box, text: str, size: float, alignment: Alignment) -> float:
-    usable = box.width - FIELD_PADDING * 2
+def _aligned_x(
+    box: Box,
+    text: str,
+    size: float,
+    alignment: Alignment,
+    padding: float = FIELD_PADDING,
+) -> float:
+    usable = box.width - padding * 2
     width = helvetica_width(text, size)
 
     if alignment is Alignment.CENTER:
-        return box.x + FIELD_PADDING + max(0.0, (usable - width) / 2)
+        return box.x + padding + max(0.0, (usable - width) / 2)
 
     if alignment is Alignment.RIGHT:
-        return box.x + FIELD_PADDING + max(0.0, usable - width)
+        return box.x + padding + max(0.0, usable - width)
 
-    return box.x + FIELD_PADDING
+    return box.x + padding
 
 
 def plan_render(resolved_fields: list[ResolvedField]) -> RenderPlan:
@@ -244,14 +251,16 @@ def _plan_segments(
     for segment, piece in pieces:
         box = segment.box
 
-        if fits(piece, size, box.width, box.height, False):
+        if fits(piece, size, box.width, box.height, False, SEGMENT_PADDING):
             continue
 
         if not target.shrink_to_fit:
             plan.unfitted.append(resolved.key)
             return
 
-        shrunk = largest_size_that_fits(piece, size, box.width, box.height, False)
+        shrunk = largest_size_that_fits(
+            piece, size, box.width, box.height, False, SEGMENT_PADDING
+        )
 
         if shrunk is None:
             plan.unfitted.append(resolved.key)
@@ -262,7 +271,9 @@ def _plan_segments(
     plan.draws.extend(
         DrawnText(
             page=segment.box.page,
-            x=_aligned_x(segment.box, piece, size, target.alignment),
+            x=_aligned_x(
+                segment.box, piece, size, target.alignment, SEGMENT_PADDING
+            ),
             y=segment.box.baseline(size),
             size=size,
             text=piece,

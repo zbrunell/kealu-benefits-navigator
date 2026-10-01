@@ -263,6 +263,14 @@ def fill_official_form(
     for page in writer.pages:
         writer.update_page_form_field_values(page, field_values, auto_regenerate=False)
 
+    # Size each value to its box and redraw its appearance at that size. These
+    # templates declare fixed sizes too large for some boxes (Illinois' date)
+    # and auto-size others (New York's language), and without this the stored
+    # appearance clipped the first and printed the second at 13pt.
+    from benefits_navigator.formmap.acroform import fit_text_widgets
+
+    fit_text_widgets(writer, field_values, template_path)
+
     # Fill checkboxes by directly setting /V and /AS on annotation objects
     checkbox_states = _determine_checkboxes(args, workflow_output)
     checkbox_mapping = info.get("checkboxes", {})

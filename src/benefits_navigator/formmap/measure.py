@@ -654,12 +654,15 @@ class Above:
                 text, label, row_right=self.row_right, column_gap=self.column_gap
             ) - self.dx
 
-        return Box(
-            page=label.page,
-            x=x,
-            y=label.top + self.gap,
-            width=max(width, 1.0),
-            height=self.height,
+        return _fit_to_writing_space(
+            Box(
+                page=label.page,
+                x=x,
+                y=label.top + self.gap,
+                width=max(width, 1.0),
+                height=self.height,
+            ),
+            text,
         )
 
 
@@ -684,12 +687,15 @@ class RightOf:
     def resolve(self, text: DocumentText) -> Box:
         printed = self.anchor.resolve(text)
 
-        return Box(
-            page=printed.page,
-            x=printed.right + self.gap,
-            y=printed.y + self.dy,
-            width=self.width,
-            height=self.height,
+        return _fit_to_writing_space(
+            Box(
+                page=printed.page,
+                x=printed.right + self.gap,
+                y=printed.y + self.dy,
+                width=self.width,
+                height=self.height,
+            ),
+            text,
         )
 
 
@@ -789,12 +795,15 @@ class AfterMarker:
         candidates.sort(key=lambda word: word.x)
         marker = candidates[0]
 
-        return Box(
-            page=line.page,
-            x=marker.right + self.gap,
-            y=marker.y + self.dy,
-            width=self.width,
-            height=self.height,
+        return _fit_to_writing_space(
+            Box(
+                page=line.page,
+                x=marker.right + self.gap,
+                y=marker.y + self.dy,
+                width=self.width,
+                height=self.height,
+            ),
+            text,
         )
 
 
@@ -991,6 +1000,33 @@ class PageInk:
         self._pages[page] = rendered
 
         return rendered
+
+    def ink_columns(
+        self, page: int, left: float, right: float, bottom: float, top: float
+    ) -> list[bool]:
+        """For each pixel column across ``left..right``, whether it has ink.
+
+        Only the rows between ``bottom`` and ``top`` (user space) are looked
+        at, so a caller can ask about the band text will occupy and ignore the
+        rule below it.
+        """
+        rows, width, height = self._render(page)
+        scale = _INK_DPI / 72.0
+        page_height = height / scale
+
+        x0 = max(0, int(left * scale))
+        x1 = min(width, int(right * scale))
+        y0 = max(0, int((page_height - top) * scale))
+        y1 = min(height, int((page_height - bottom) * scale))
+
+        if x1 <= x0 or y1 <= y0:
+            return []
+
+        band = rows[y0:y1]
+
+        return [
+            any(row[x] <= _INK_THRESHOLD for row in band) for x in range(x0, x1)
+        ]
 
     def circle_near(
         self,
@@ -1387,6 +1423,107 @@ def _width_to_next_column(
     return max(boundary - label.x - column_gap, 1.0)
 
 
+#: Cells narrower or shorter than this are rules or character cells, not the
+#: white writing space a line of text is written into.
+_WRITING_CELL_MIN_WIDTH = 15.0
+_WRITING_CELL_HEIGHTS = (8.0, 45.0)
+
+#: Points kept between a value and printed ink it would otherwise run into.
+_INK_CLEARANCE = 1.0
+
+#: The size the ink scan assumes a value is set at, at most.
+_NOMINAL_VALUE_SIZE = 10.0
+
+
+def _fit_to_writing_space(box: Box, text: DocumentText) -> Box:
+    """Trim a text box to the writing space the page actually leaves it.
+
+    A box derived from labels knows where the question is, not where the
+    printed field ends. ``Above`` sizes a column from the gap between two
+    labels, so on H1010 the home-address box ran 5 points past the white field
+    it belongs in and into the county column's border, and Section O's payer
+    line ran through the printed arrow that points into it. Nothing about the
+    labels says so; the drawing does.
+
+    Two corrections, both only ever *shrinking* the box, horizontally:
+
+    1. **The white cell.** When the box starts inside a drawn writing cell, its
+       left and right edges are kept within that cell.
+    2. **Ink.** Within the band a value's capitals occupy — not the descender
+       band, where the underline a value sits on is printed — any ink the box
+       starts on is stepped past, and the box ends before the first ink to its
+       right: a border, an arrow, a printed word.
+
+    The vertical extent is left alone: it is what the baseline is measured
+    from, and moving it would move every value on the form.
+    """
+    left, right = box.x, box.right
+
+    # 1. The drawn cell the box starts in.
+    probe_x = box.x + min(4.0, box.width / 4)
+    probe_y = box.y + box.height / 2
+    low, high = _WRITING_CELL_HEIGHTS
+
+    cells = [
+        rect
+        for rect in text.rects
+        if rect.page == box.page
+        and rect.width >= _WRITING_CELL_MIN_WIDTH
+        and low <= rect.height <= high
+        and rect.x <= probe_x <= rect.right
+        and rect.y <= probe_y <= rect.top
+    ]
+
+    if cells:
+        cell = min(cells, key=lambda rect: rect.width * rect.height)
+        left = max(left, cell.x)
+        right = min(right, cell.right)
+
+    # 2. Printed ink inside the band the value's capitals will occupy.
+    if text.ink is not None and right - left > 2 * _INK_CLEARANCE:
+        size = max(1.0, min(_NOMINAL_VALUE_SIZE, box.height - 3.0))
+        baseline = box.top - 1.5 - 0.78 * size
+        columns = text.ink.ink_columns(
+            box.page, left, right, baseline + 0.3, baseline + 0.72 * size
+        )
+
+        if columns:
+            step = (right - left) / len(columns)
+
+            # Ink the box starts on: a "$" or "(" printed at the left end.
+            start = 0
+
+            while start < len(columns) and columns[start]:
+                start += 1
+
+            if 0 < start and start * step <= (right - left) * 0.3:
+                left = left + start * step + _INK_CLEARANCE
+                columns = columns[start:]
+
+            # The first ink to the right, past the value's own first letters.
+            skip = int(8.0 / step) if step else 0
+
+            for index in range(skip, len(columns)):
+                if columns[index]:
+                    candidate = left + index * step - _INK_CLEARANCE
+
+                    if candidate - left >= (box.right - box.x) * 0.6:
+                        right = candidate
+
+                    break
+
+    if (left, right) == (box.x, box.right) or right - left < 1.0:
+        return box
+
+    return Box(
+        page=box.page,
+        x=round(left, 1),
+        y=box.y,
+        width=round(right - left, 1),
+        height=box.height,
+    )
+
+
 def resolve_placement(placement: Placement, text: DocumentText) -> Box:
     """The measured box a placement describes."""
     return placement.resolve(text)
@@ -1569,12 +1706,15 @@ class Below:
                 text, label, row_right=self.row_right, column_gap=self.column_gap
             ) - self.dx
 
-        return Box(
-            page=label.page,
-            x=x,
-            y=label.y - self.gap - self.height,
-            width=max(width, 1.0),
-            height=self.height,
+        return _fit_to_writing_space(
+            Box(
+                page=label.page,
+                x=x,
+                y=label.y - self.gap - self.height,
+                width=max(width, 1.0),
+                height=self.height,
+            ),
+            text,
         )
 
 
@@ -1631,8 +1771,11 @@ class PhoneSlots:
     #:
     #: Capped rather than running to :attr:`ends_at`, because the printed rule
     #: continues to the edge of the column and a centred four-digit group in a
-    #: 150-point cell floats a long way from the dash it belongs to.
-    tail_width: float = 62.0
+    #: wide cell floats a long way from the dash it belongs to. 62 points was
+    #: the first cap and still did that — "1234" sat 20 points right of its
+    #: dash. Four digits at the form's 9.5-point value size are 21 points, so
+    #: this is that plus the renderer's padding.
+    tail_width: float = 26.0
 
     def resolve(self, text: DocumentText) -> tuple[Box, ...]:
         bottom, top = self.within
@@ -1660,7 +1803,33 @@ class PhoneSlots:
 
         if merged:
             token = merged[0]
-            area = (token.x + self.paren_inset + 1.0, token.right - self.paren_inset)
+            # One run holds both parentheses, so its box spans them. The cell is
+            # the space *between* them: this used to run from just inside the
+            # "(" to the outer edge of the ")", which set the area code's last
+            # digit on top of the closing parenthesis. The extracted *words*
+            # still carry each parenthesis separately, so measure from those.
+            inside = [
+                word
+                for word in text.words
+                if word.page == self.page
+                and word.x >= token.x - 0.5
+                and word.right <= token.right + 0.5
+                and abs(word.y - token.y) <= _SAME_LINE_TOLERANCE
+            ]
+            open_word = next((w for w in inside if w.text.strip() == "("), None)
+            close_word = next((w for w in inside if w.text.strip() == ")"), None)
+
+            if open_word is not None and close_word is not None:
+                area = (
+                    open_word.right + self.paren_inset,
+                    close_word.x - self.paren_inset,
+                )
+            else:
+                area = (
+                    token.x + self.paren_inset + 1.0,
+                    token.right - self.paren_inset,
+                )
+
             after_parens = token.right
         elif opens and closes:
             open_paren = min(opens, key=lambda line: line.x)

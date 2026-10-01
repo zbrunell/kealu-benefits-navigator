@@ -50,6 +50,16 @@ FIELD_PADDING = 2.0
 #: Points of vertical inset, top and bottom.
 FIELD_PADDING_Y = 1.5
 
+#: Horizontal inset inside one printed character cell or slot.
+#:
+#: The cells a form prints for a date or a phone number are measured already
+#: inset from their borders (see ``measure.CellGrid`` and ``PhoneSlots``), so
+#: taking :data:`FIELD_PADDING` off each side again counted the clearance
+#: twice. On H1010 that left the phone exchange's slot 10 points for three
+#: digits, and — because a split value keeps one size across its slots — every
+#: phone number printed at 6 points beside 9.5-point answers.
+SEGMENT_PADDING = 0.25
+
 #: Line spacing as a multiple of the font size, for wrapped multiline fields.
 LINE_HEIGHT = 1.15
 
@@ -120,9 +130,21 @@ def wrap_to_width(text: str, size: float, usable: float) -> list[str]:
     return lines
 
 
-def fits(text: str, size: float, width: float, height: float, multiline: bool) -> bool:
-    """Whether `text` renders inside a box of this size at this font size."""
-    usable_width = width - FIELD_PADDING * 2
+def fits(
+    text: str,
+    size: float,
+    width: float,
+    height: float,
+    multiline: bool,
+    padding: float = FIELD_PADDING,
+) -> bool:
+    """Whether `text` renders inside a box of this size at this font size.
+
+    `padding` is the horizontal inset kept on each side. A printed character
+    cell measured from the form is already inset from its borders, so a value
+    drawn into one passes a smaller padding than a free-standing field does.
+    """
+    usable_width = width - padding * 2
     usable_height = height - FIELD_PADDING_Y * 2
 
     if usable_width <= 0 or usable_height <= 0:
@@ -145,6 +167,7 @@ def largest_size_that_fits(
     width: float,
     height: float,
     multiline: bool,
+    padding: float = FIELD_PADDING,
 ) -> float | None:
     """The biggest size up to `declared` at which the whole value fits.
 
@@ -153,7 +176,7 @@ def largest_size_that_fits(
     hundredth-point steps downward from the declared size so the result is the
     largest that fits rather than merely one that does.
     """
-    if fits(text, declared, width, height, multiline):
+    if fits(text, declared, width, height, multiline, padding):
         return declared
 
     size = declared
@@ -161,7 +184,7 @@ def largest_size_that_fits(
     while size > MIN_FONT_SIZE:
         size = max(MIN_FONT_SIZE, math.floor((size - 0.05) * 100) / 100)
 
-        if fits(text, size, width, height, multiline):
+        if fits(text, size, width, height, multiline, padding):
             return size
 
     return None

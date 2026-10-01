@@ -4645,8 +4645,10 @@ def generate_application_pdf(
 # ---------------------------------------------------------------------------
 
 
-def _shrink_overflowing_text(writer: Any, written: set[str]) -> list[str]:
-    """Reduce the declared font size of any value too wide for its box.
+def _shrink_overflowing_text(
+    writer: Any, written: Any, template: Path | None = None
+) -> list[str]:
+    """Fit every written value to the box the form drew for it.
 
     The form specifies an explicit point size per field, and some of its boxes
     are narrower than the value that belongs in them. Leaving that alone clips
@@ -4658,12 +4660,30 @@ def _shrink_overflowing_text(writer: Any, written: set[str]) -> list[str]:
     column renders three times the size of its neighbours.
 
     So the size is reduced explicitly, only for the fields this run wrote, only
-    when the value genuinely does not fit, and never below `_MIN_FONT_SIZE`.
-    Multi-line fields are left alone: their text wraps rather than clipping.
-    """
-    from pypdf.generic import NameObject, TextStringObject
+    when the value genuinely does not fit, and never below `_MIN_FONT_SIZE` —
+    and the appearance stream is then **rebuilt at that size**, with multiline
+    values wrapped. Editing ``/DA`` alone, which this used to do, left the
+    stored appearance at the old size: viewers that draw the stored appearance
+    (Preview, print pipelines) still showed the clipped value. See
+    :mod:`benefits_navigator.formmap.acroform`.
 
-    unfitted: list[str] = []
+    ``written`` is the name → value mapping that was written. A bare set of
+    names is still accepted, in which case each value is read back from the
+    field. ``template`` is the file the writer was cloned from; with it, a value
+    whose widget the form drew over part of its printed label is kept clear of
+    the label.
+    """
+    from .formmap.acroform import fit_text_widgets
+
+    if not isinstance(written, dict):
+        written = _written_values(writer, set(written))
+
+    return fit_text_widgets(writer, written, template)
+
+
+def _written_values(writer: Any, names: set[str]) -> dict[str, str]:
+    """The current value of each named field, read back from the document."""
+    values: dict[str, str] = {}
 
     for page in writer.pages:
         for annotation in page.get("/Annots") or []:
@@ -4675,70 +4695,17 @@ def _shrink_overflowing_text(writer: Any, written: set[str]) -> list[str]:
             if name is None and parent_object is not None:
                 name = parent_object.get("/T")
 
-            if str(name) not in written:
+            if str(name) not in names:
                 continue
 
             value = field.get("/V")
             if value is None and parent_object is not None:
                 value = parent_object.get("/V")
 
-            text = str(value or "")
-            if not text:
-                continue
+            if isinstance(value, str) and value:
+                values[str(name)] = str(value)
 
-            flags = int(
-                field.get("/Ff")
-                or (parent_object.get("/Ff") if parent_object else 0)
-                or 0
-            )
-
-            # Bit 13 is Multiline: those wrap, so height is what constrains
-            # them rather than width alone.
-            multiline = bool(flags & 4096)
-
-            appearance = field.get("/DA") or (
-                parent_object.get("/DA") if parent_object else None
-            )
-
-            if appearance is None:
-                continue
-
-            parts = str(appearance).split()
-
-            try:
-                size_index = parts.index("Tf") - 1
-                size = float(parts[size_index])
-            except (ValueError, IndexError):
-                continue
-
-            # 0 means "auto size", which is the viewer's decision, not ours.
-            if size <= 0:
-                continue
-
-            rectangle = [float(value) for value in field["/Rect"]]
-            width = abs(rectangle[2] - rectangle[0])
-            height = abs(rectangle[3] - rectangle[1])
-
-            fitted = _largest_size_that_fits(
-                text, size, width, height, multiline
-            )
-
-            if fitted is None:
-                # Legible rendering is impossible in this box. The value is
-                # left at its declared size and reported, so the applicant is
-                # told to attach it rather than being handed a form with
-                # something unreadable — or invisible — in the box.
-                unfitted.append(str(name))
-                continue
-
-            if fitted >= size:
-                continue
-
-            parts[size_index] = f"{fitted:.2f}"
-            target = parent_object if field.get("/DA") is None else field
-            target[NameObject("/DA")] = TextStringObject(" ".join(parts))
-
-    return unfitted
+    return values
 
 
 def generate_saws2_plus_pdf(
@@ -4907,7 +4874,7 @@ def generate_saws2_plus_pdf(
         )
 
     unfitted_fields = _shrink_overflowing_text(
-        writer, set(requested_fields)
+        writer, requested_fields, template_path
     )
 
     with output_path.open(
