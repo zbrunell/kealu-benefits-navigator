@@ -14,6 +14,8 @@ interface LocalMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  /** "✓ Answer updated" confirmation after an edit; shown in white. */
+  answerUpdated?: boolean;
 }
 
 /** Shape of /api/intake responses (POST and GET share these fields). */
@@ -98,6 +100,31 @@ export default function ChatInterface({
     input.focus();
     input.setSelectionRange(input.value.length, input.value.length);
   }, [editingKey]);
+
+  /*
+   * Put the cursor in the message box whenever a question is waiting for an
+   * answer, so the applicant can type without clicking it first. This runs
+   * after the render that re-enables the box: focusing it from the request's
+   * `finally` happened while it was still disabled, which the browser ignores.
+   * Focus is moved only from nowhere (the page body, which is where it lands
+   * when the box or the Send/Skip button it was on is disabled or removed),
+   * never away from another control the applicant is using.
+   */
+  useEffect(() => {
+    const textarea = textareaRef.current;
+
+    // No current field with answers given means everything is answered and
+    // the next step is Run Analysis; a fresh session has neither.
+    const allAnswered = !currentField && answers.length > 0;
+
+    if (isPending || allAnswered || editingKey || !textarea) return;
+
+    const active = document.activeElement;
+
+    if (active && active !== document.body) return;
+
+    textarea.focus({ preventScroll: true });
+  }, [isPending, currentField, answers.length, editingKey]);
 
   useEffect(
     () => () => {
@@ -217,7 +244,6 @@ export default function ChatInterface({
       ]);
     } finally {
       setIsPending(false);
-      textareaRef.current?.focus();
     }
   }
 
@@ -321,6 +347,7 @@ export default function ChatInterface({
               field: t(labelKey),
               value: saved?.value ?? value,
             }),
+            answerUpdated: true,
           },
         ]);
       }
@@ -470,7 +497,7 @@ export default function ChatInterface({
                         {isSaved && (
                           <span
                             role="status"
-                            className="mt-1 inline-flex shrink-0 items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-medium text-green-300"
+                            className="mt-1 inline-flex shrink-0 items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-medium text-white"
                           >
                             <span aria-hidden="true">✓</span>
                             {t('chat_saved')}
@@ -527,7 +554,9 @@ export default function ChatInterface({
               className={`max-w-[80%] rounded-3xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                 msg.role === 'user'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 text-slate-200'
+                  : msg.answerUpdated
+                    ? 'bg-slate-800 text-white'
+                    : 'bg-slate-800 text-slate-200'
               }`}
             >
               {msg.content}

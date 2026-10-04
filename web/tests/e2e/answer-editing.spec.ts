@@ -57,8 +57,13 @@ test('an earlier answer can be found, changed, and confirmed as saved', async ({
 
   await expect(row).toContainText('77002');
   await expect(row.getByRole('status')).toHaveText(`✓${en.chat_saved}`);
+  await expect(row.getByRole('status')).toHaveCSS('color', 'rgb(255, 255, 255)');
   await expect(assistantMessages(page).nth(before)).toHaveText(
     '✓ Answer updated. ZIP Code is now: 77002',
+  );
+  await expect(assistantMessages(page).nth(before).locator('div')).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
   );
 
   // And the conversation can carry on from where it was.
