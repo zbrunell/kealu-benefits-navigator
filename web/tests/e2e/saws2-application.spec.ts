@@ -212,6 +212,46 @@ test.describe('SAWS 2 PLUS draft (production gate)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Texas behaviour stays in Texas
+// ---------------------------------------------------------------------------
+
+test.describe('a California applicant gets no Texas HHSC guidance', () => {
+  test('the draft screen offers no HHSC office or Texas submission steps', async () => {
+    // The shared page is already on the generated SAWS 2 PLUS draft.
+    await expect(page.getByTestId('draft-download')).toBeVisible();
+
+    await expect(page.getByTestId('tx-submit')).toHaveCount(0);
+    await expect(page.getByTestId('tx-hhsc-office')).toHaveCount(0);
+    await expect(page.locator('body')).not.toContainText('HHSC');
+    await expect(page.locator('body')).not.toContainText(
+      en.tx_submit_office_name,
+    );
+  });
+
+  test('the report shows the general disclaimer, not the HHSC one', async ({
+    browser,
+  }) => {
+    const own = await browser.newPage();
+
+    try {
+      await own.goto('/');
+      await completeIntakeAndAwaitReport(own, CALIFORNIA_TIER_1_ANSWERS);
+
+      const disclaimer = own
+        .getByTestId('saws-recommendation')
+        .getByTestId('eligibility-disclaimer');
+
+      await expect(disclaimer).toHaveText(en.report_disclaimer);
+      await expect(own.getByTestId('report-view')).not.toContainText(
+        en.report_disclaimer_tx,
+      );
+    } finally {
+      await own.close();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Interview progress
 // ---------------------------------------------------------------------------
 

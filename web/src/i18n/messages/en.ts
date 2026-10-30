@@ -556,8 +556,12 @@ const en = {
   programs_back: 'Back to report',
   programs_continue: 'Continue with selected programs',
   report_state_application: 'Your state’s benefits application',
-  report_action_plan_intro: 'Your action plan identified the following application recommendations using the completed eligibility and evidence-verification phases.',
+  report_action_plan_intro: 'Based on the information you provided, you may qualify for the following benefits.',
   report_screening_note: 'These are screening recommendations, not official eligibility determinations.',
+  report_disclaimer_tx:
+    'This tool provides preliminary guidance based on the information you provide and does not make an official eligibility determination. It may not account for every eligibility rule, exception, verification requirement, or individual circumstance. The Texas Health and Human Services Commission (HHSC) will make the final determination of your eligibility after reviewing your application and any required supporting information.',
+  report_disclaimer:
+    'This tool provides preliminary guidance based on the information you provide and does not make an official eligibility determination. It may not account for every eligibility rule, exception, verification requirement, or individual circumstance. The agency that runs each program will make the final determination of your eligibility after reviewing your application and any required supporting information.',
   shell_rec_unavailable: 'Application recommendation unavailable',
   shell_rec_missing: 'The structured SAWS 2 PLUS recommendation could not be found.',
   shell_back_to_report: 'Back to report',
@@ -1253,7 +1257,7 @@ const en = {
   tx_person_you: 'You',
   tx_review_heading: 'Review and prepare your form',
   tx_review_intro:
-    'Check what you have told us, then prepare your Form H1010. You can go back and change any answer.',
+    'Check what you have told us, then prepare your Form H1010. You can go back and change any answer. Answering every question that applies to you makes your application more complete, which can help HHSC process it.',
   tx_review_programs: 'Applying for',
   tx_review_household_size: 'Household size',
   tx_review_answered: 'Questions answered',
@@ -1264,9 +1268,22 @@ const en = {
     'This is the official Texas application with your answers on it. Read every page before you sign — you sign it yourself, and we never fill in a signature.',
   tx_draft_download: 'Download your application',
   tx_draft_open_review: 'What we filled in, and what is left',
-  tx_draft_official_link: 'Go to YourTexasBenefits.com',
-  tx_draft_next_steps:
-    'Apply online, by phone at 2-1-1, or at a local HHSC benefits office. Take the printed form with you.',
+  // How to send the prepared H1010. Fax, mail, or in person only: the PDF
+  // cannot be filed through YourTexasBenefits.com, and 2-1-1 is not a way to
+  // file it.
+  tx_submit_heading: 'How to submit your application',
+  tx_submit_intro:
+    'Your application still needs to be submitted to HHSC. Sign it, then send it one of these ways:',
+  tx_submit_fax: 'Fax',
+  tx_submit_fax_note: 'If your form is 2-sided, fax both sides.',
+  tx_submit_mail: 'Mail',
+  tx_submit_in_person: 'In person',
+  tx_submit_office_name: 'Texas HHSC benefits office',
+  tx_submit_office_for_address: 'The benefits office for the home address you gave us.',
+  tx_submit_office_unknown:
+    'At a Texas HHSC benefits office. We could not match your home address to one, so call 2-1-1 (pick a language, then press 1) to find the nearest office.',
+  tx_submit_after:
+    'HHSC makes the official decision about your eligibility. After you submit, HHSC may ask for more information or proof, such as pay stubs. Sending those is a separate step from submitting your application — follow the instructions HHSC sends you.',
 
 
   // ── One person at a time ─────────────────────────────────────────────────

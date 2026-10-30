@@ -163,6 +163,17 @@ export default function ReportView({
   /** True when we hand over instructions rather than a prefilled draft. */
   const isManual = payload.application.delivery === "manual";
 
+  /*
+   * Whose decision the disclaimer names. The registry's state for the form
+   * this report is about — set from the household's jurisdiction by the
+   * report route — so only a Texas report names HHSC.
+   */
+  const reportState = applicationForForm(
+    payload.application.formId ??
+      payload.application.recommendations[0]?.formId ??
+      "",
+  )?.state;
+
   const recommendedProgramCount =
     applicationRecommendation?.programs.filter(
       (program) => program.recommendedToApply,
@@ -310,6 +321,17 @@ export default function ReportView({
               </span>
             )}
           </div>
+
+          {/*
+            Read immediately before acting on the recommendations below: after
+            the preliminary summary, before the programs and Continue.
+          */}
+          <p
+            data-testid="eligibility-disclaimer"
+            className="mt-4 text-sm font-bold text-slate-500"
+          >
+            {t(reportState === "TX" ? "report_disclaimer_tx" : "report_disclaimer")}
+          </p>
 
           <div className="mt-5 space-y-3">
             {applicationRecommendation.programs.map((program) => (

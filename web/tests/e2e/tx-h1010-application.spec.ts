@@ -66,6 +66,31 @@ test.afterAll(async () => {
 });
 
 test.describe('Texas H1010 — the application production gate', () => {
+  test('the report says the result is preliminary and HHSC decides', async () => {
+    await expect(page.getByTestId('saws-recommendation')).toContainText(
+      en.report_action_plan_intro,
+    );
+
+    // Inside the card the applicant acts on, before the program cards.
+    const card = page.getByTestId('saws-recommendation');
+    const disclaimer = card.getByTestId('eligibility-disclaimer');
+
+    await expect(disclaimer).toHaveText(en.report_disclaimer_tx);
+    await expect(page.getByTestId('eligibility-disclaimer')).toHaveCount(1);
+
+    const precedesPrograms = await disclaimer.evaluate((node) => {
+      const firstProgram = node.parentElement?.querySelector('article');
+
+      return (
+        !!firstProgram &&
+        !!(node.compareDocumentPosition(firstProgram) &
+          Node.DOCUMENT_POSITION_FOLLOWING)
+      );
+    });
+
+    expect(precedesPrograms).toBe(true);
+  });
+
   test('the report leads to a Texas application, not a California one', async () => {
     await openApplication();
 
@@ -221,6 +246,43 @@ test.describe('Texas H1010 — the application production gate', () => {
 
     // And nothing we refuse to place.
     expect(sheet).toContain('We never fill these in.');
+  });
+
+  test('the ready panel says to submit by fax, mail, or at the Austin HHSC office', async () => {
+    /*
+     * Demo mode (this project runs with E2E_MODE=1) uses the same lookup as
+     * production: the applicant's home ZIP, 78705, through HHSC's own office
+     * answer. Nothing here is a demo-only office.
+     */
+    const ready = page.getByTestId('tx-draft-ready');
+
+    await expect(ready.getByTestId('tx-submit-fax')).toContainText(
+      '1-877-447-2839',
+    );
+    await expect(ready.getByTestId('tx-submit-mail')).toContainText(
+      'PO Box 149024',
+    );
+    await expect(ready.getByTestId('tx-submit-mail')).toContainText(
+      'Austin, TX 78714-9968',
+    );
+
+    const office = ready.getByTestId('tx-hhsc-office');
+
+    await expect(office).toContainText(en.tx_submit_office_name);
+    await expect(office).toContainText('5451 North IH 35, Suite D');
+    await expect(office).toContainText('Austin, TX 78723');
+
+    await expect(ready).toContainText(en.tx_submit_intro);
+    await expect(ready).toContainText(en.tx_submit_after);
+
+    // Not online, not an upload, not by phone.
+    await expect(page.getByTestId('tx-official-link')).toHaveCount(0);
+
+    const text = await ready.innerText();
+
+    expect(text).not.toMatch(/yourtexasbenefits/i);
+    expect(text).not.toMatch(/upload/i);
+    expect(text).not.toContain('2-1-1');
   });
 
   test('an incomplete required answer blocks Continue and names what is missing', async () => {

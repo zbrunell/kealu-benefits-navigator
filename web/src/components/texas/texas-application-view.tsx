@@ -74,7 +74,8 @@ import {
   householdOptions,
   type RecordList,
 } from "@/lib/form-intake/tx-h1010";
-import { programNameKey } from "@/lib/state-applications";
+import { applicationForForm, programNameKey } from "@/lib/state-applications";
+import { texasHhscOfficeFor } from "@/lib/tx-hhsc-office";
 import type { ApplicationRecommendation } from "@/lib/report-assembler";
 import type {
   ApplicationPrefill,
@@ -623,6 +624,14 @@ export default function TexasApplicationView({
             formUrlFor={(formId) =>
               `/api/workflow/${runId}/form/${encodeURIComponent(formId)}`
             }
+            /*
+             * The state is the registry's answer for this form, not a fresh
+             * Texas test, and the address is the one on the application.
+             */
+            office={texasHhscOfficeFor(
+              applicationForForm(recommendation.formId)?.state,
+              data.applicant.homeAddress,
+            )}
           />
         )}
       </Frame>

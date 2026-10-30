@@ -664,7 +664,7 @@ function actionPlanDoc(ctx: FixtureContext): string {
 
   const bottomLine =
     recommended.length > 0
-      ? `Your household should apply for ${listNames(recommended.map(programName))}. ${
+      ? `Based on the information you provided, your household may qualify for ${listNames(recommended.map(programName))}. ${
           bundle.definition && bundle.formPrograms.length > 0
             ? `${
                 bundle.formPrograms.length === 1
@@ -691,7 +691,13 @@ function actionPlanDoc(ctx: FixtureContext): string {
           .map((id) => programById(id))
           .filter((p): p is ProgramDefinition => p !== null)
           .map((p) => label(p.nameKey)),
-      )}** — one ${formName} application at ${bundle.definition.officialUrl}. You can submit with the information you already have.`,
+      )}** — ${
+        bundle.definition.state === 'TX'
+          ? // HHSC takes the prepared H1010 on paper only: not through
+            // YourTexasBenefits.com, and not by phone.
+            `one ${formName} application. Sign it and submit it to HHSC by fax, by mail, or in person at an HHSC benefits office. Send any proof HHSC asks for later — that is a separate step.`
+          : `one ${formName} application at ${bundle.definition.officialUrl}. You can submit with the information you already have.`
+      }`,
     );
   }
 

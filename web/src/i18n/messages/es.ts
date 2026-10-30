@@ -560,8 +560,12 @@ const es: Messages = {
   programs_back: 'Volver al informe',
   programs_continue: 'Continuar con los programas seleccionados',
   report_state_application: 'La solicitud de beneficios de su estado',
-  report_action_plan_intro: 'Su plan de acción identificó las siguientes recomendaciones de solicitud a partir de las fases completadas de elegibilidad y de verificación de comprobantes.',
+  report_action_plan_intro: 'Según la información que nos dio, usted podría calificar para los siguientes beneficios.',
   report_screening_note: 'Estas son recomendaciones de evaluación preliminar, no determinaciones oficiales de elegibilidad.',
+  report_disclaimer_tx:
+    'Esta herramienta ofrece una orientación preliminar basada en la información que usted proporciona y no toma una determinación oficial de elegibilidad. Es posible que no tenga en cuenta todas las reglas de elegibilidad, excepciones, requisitos de verificación o circunstancias individuales. La Comisión de Salud y Servicios Humanos de Texas (HHSC) tomará la determinación final de su elegibilidad después de revisar su solicitud y cualquier información de apoyo requerida.',
+  report_disclaimer:
+    'Esta herramienta ofrece una orientación preliminar basada en la información que usted proporciona y no toma una determinación oficial de elegibilidad. Es posible que no tenga en cuenta todas las reglas de elegibilidad, excepciones, requisitos de verificación o circunstancias individuales. La agencia que administra cada programa tomará la determinación final de su elegibilidad después de revisar su solicitud y cualquier información de apoyo requerida.',
   shell_rec_unavailable: 'Recomendación de solicitud no disponible',
   shell_rec_missing: 'No se pudo encontrar la recomendación estructurada del SAWS 2 PLUS.',
   shell_back_to_report: 'Volver al informe',
@@ -1252,7 +1256,7 @@ const es: Messages = {
   tx_person_you: 'Usted',
   tx_review_heading: 'Revise y prepare su formulario',
   tx_review_intro:
-    'Revise lo que nos ha dicho y luego prepare su Formulario H1010. Puede regresar y cambiar cualquier respuesta.',
+    'Revise lo que nos ha dicho y luego prepare su Formulario H1010. Puede regresar y cambiar cualquier respuesta. Contestar todas las preguntas que le correspondan hace que su solicitud esté más completa, lo que puede ayudar a HHSC a tramitarla.',
   tx_review_programs: 'Solicita',
   tx_review_household_size: 'Tamaño del hogar',
   tx_review_answered: 'Preguntas respondidas',
@@ -1263,9 +1267,19 @@ const es: Messages = {
     'Esta es la solicitud oficial de Texas con sus respuestas. Lea cada página antes de firmar: usted firma, y nosotros nunca llenamos una firma.',
   tx_draft_download: 'Descargar su solicitud',
   tx_draft_open_review: 'Lo que llenamos y lo que falta',
-  tx_draft_official_link: 'Ir a YourTexasBenefits.com',
-  tx_draft_next_steps:
-    'Solicite en línea, por teléfono al 2-1-1, o en una oficina local de beneficios de HHSC. Lleve el formulario impreso con usted.',
+  tx_submit_heading: 'Cómo presentar su solicitud',
+  tx_submit_intro:
+    'Todavía tiene que presentar su solicitud a HHSC. Fírmela y luego envíela de una de estas formas:',
+  tx_submit_fax: 'Fax',
+  tx_submit_fax_note: 'Si su formulario está impreso por ambos lados, envíe por fax los dos lados.',
+  tx_submit_mail: 'Correo',
+  tx_submit_in_person: 'En persona',
+  tx_submit_office_name: 'Oficina de beneficios de HHSC de Texas',
+  tx_submit_office_for_address: 'La oficina de beneficios que corresponde a la dirección de su casa.',
+  tx_submit_office_unknown:
+    'En una oficina de beneficios de HHSC de Texas. No pudimos relacionar la dirección de su casa con una oficina, así que llame al 2-1-1 (elija un idioma y luego oprima 1) para encontrar la más cercana.',
+  tx_submit_after:
+    'HHSC toma la decisión oficial sobre su elegibilidad. Después de presentar su solicitud, HHSC puede pedirle más información o comprobantes, como talones de pago. Enviarlos es un paso aparte de presentar su solicitud: siga las instrucciones que le envíe HHSC.',
 
 
   // ── Una persona a la vez ─────────────────────────────────────────────────

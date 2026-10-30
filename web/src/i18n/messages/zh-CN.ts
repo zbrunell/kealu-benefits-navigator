@@ -540,7 +540,11 @@ const zhCN: Messages = {
   programs_back: '返回报告',
   programs_continue: '以所选项目继续',
   report_state_application: '您所在州的福利申请',
-  report_action_plan_intro: '您的行动计划依据已完成的资格评估与证明材料核查阶段，得出了以下申请建议。',
+  report_action_plan_intro: '根据您提供的信息，您可能符合以下福利的资格。',
+  report_disclaimer_tx:
+    '本工具根据您提供的信息给出初步指导，并不作出正式的资格认定。它可能未考虑所有资格规则、例外情况、核实要求或个人情况。德州卫生与公众服务委员会（HHSC）会在审核您的申请及所需的证明材料后，对您的资格作出最终认定。',
+  report_disclaimer:
+    '本工具根据您提供的信息给出初步指导，并不作出正式的资格认定。它可能未考虑所有资格规则、例外情况、核实要求或个人情况。负责各项计划的机构会在审核您的申请及所需的证明材料后，对您的资格作出最终认定。',
   report_screening_note: '以上为初步筛查建议，并非正式的资格认定结果。',
   shell_rec_unavailable: '暂无申请建议',
   shell_rec_missing: '未能找到结构化的 SAWS 2 PLUS 建议。',
@@ -1220,7 +1224,7 @@ const zhCN: Messages = {
   tx_person_you: '您本人',
   tx_review_heading: '核对并准备您的表格',
   tx_review_intro:
-    '请核对您提供的信息，然后准备 H1010 表格。您可以返回修改任何答案。',
+    '请核对您提供的信息，然后准备 H1010 表格。您可以返回修改任何答案。回答所有适用于您的问题可以使申请更完整，有助于 HHSC 处理您的申请。',
   tx_review_programs: '申请项目',
   tx_review_household_size: '家庭人数',
   tx_review_answered: '已回答的问题',
@@ -1231,9 +1235,18 @@ const zhCN: Messages = {
     '这是德州的正式申请表，上面已有您的答案。签名前请阅读每一页——签名须由您本人完成，我们从不代签。',
   tx_draft_download: '下载您的申请表',
   tx_draft_open_review: '我们填写的内容与尚待完成的部分',
-  tx_draft_official_link: '前往 YourTexasBenefits.com',
-  tx_draft_next_steps:
-    '您可以在线申请、拨打 2-1-1，或前往当地 HHSC 福利办事处。请携带打印好的表格。',
+  tx_submit_heading: '如何递交申请',
+  tx_submit_intro: '您的申请仍需递交给 HHSC。请先签名，然后通过以下任一方式递交：',
+  tx_submit_fax: '传真',
+  tx_submit_fax_note: '如果表格是双面的，请传真两面。',
+  tx_submit_mail: '邮寄',
+  tx_submit_in_person: '亲自递交',
+  tx_submit_office_name: '德州 HHSC 福利办事处',
+  tx_submit_office_for_address: '与您提供的住址对应的福利办事处。',
+  tx_submit_office_unknown:
+    '前往德州 HHSC 福利办事处。我们无法根据您的住址匹配到办事处，请拨打 2-1-1（选择语言后按 1）查找最近的办事处。',
+  tx_submit_after:
+    'HHSC 会对您的资格作出正式决定。递交申请后，HHSC 可能会要求您提供更多信息或证明材料，例如工资单。提供这些材料与递交申请是两个不同的步骤——请按照 HHSC 发给您的说明办理。',
 
 
   // ── 逐一填写每位家庭成员 ─────────────────────────────────────────────

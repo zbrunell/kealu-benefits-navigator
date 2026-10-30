@@ -43,6 +43,7 @@
 import FormCard from '@/components/application/form-card';
 import { useTranslation } from '@/hooks/use-translation';
 import { mainApplicationOf, supportingFormsOf } from '@/lib/document-labels';
+import { TX_HHSC_SUBMISSION, type TexasHhscOffice } from '@/lib/tx-hhsc-office';
 import type { FormManifestEntry } from '@/types/form-manifest';
 
 export default function TexasDraftPanel({
@@ -50,9 +51,16 @@ export default function TexasDraftPanel({
   guideUrl,
   packet = [],
   formUrlFor,
+  office,
 }: {
   draftUrl: string;
   guideUrl: string;
+
+  /**
+   * The HHSC benefits office for the applicant's home address, or null when
+   * it could not be matched. See `texasHhscOfficeFor`.
+   */
+  office: TexasHhscOffice | null;
 
   /** The forms this household needs, as the mapping layer resolved them. */
   packet?: readonly FormManifestEntry[];
@@ -93,19 +101,54 @@ export default function TexasDraftPanel({
         >
           {t('tx_draft_open_review')}
         </a>
-
-        <a
-          href="https://www.yourtexasbenefits.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="tx-official-link"
-          className="rounded-lg border border-green-300 bg-white px-4 py-2 text-sm font-medium text-green-800 hover:bg-green-100"
-        >
-          {t('tx_draft_official_link')}
-        </a>
       </div>
 
-      <p className="mt-3 text-xs text-green-900">{t('tx_draft_next_steps')}</p>
+      {/*
+        * Fax, mail, or in person — the three ways HHSC takes a paper H1010.
+        * Not YourTexasBenefits.com, which takes its own online application
+        * rather than this PDF, and not 2-1-1, which is a help line.
+        */}
+      <div className="mt-4 text-sm text-green-900" data-testid="tx-submit">
+        <h3 className="font-semibold">{t('tx_submit_heading')}</h3>
+
+        <p className="mt-1">{t('tx_submit_intro')}</p>
+
+        <dl className="mt-2 space-y-2">
+          <div data-testid="tx-submit-fax">
+            <dt className="font-medium">{t('tx_submit_fax')}</dt>
+            <dd>
+              {TX_HHSC_SUBMISSION.fax}. {t('tx_submit_fax_note')}
+            </dd>
+          </div>
+
+          <div data-testid="tx-submit-mail">
+            <dt className="font-medium">{t('tx_submit_mail')}</dt>
+            {TX_HHSC_SUBMISSION.mailLines.map((line) => (
+              <dd key={line}>{line}</dd>
+            ))}
+          </div>
+
+          <div data-testid="tx-submit-in-person">
+            <dt className="font-medium">{t('tx_submit_in_person')}</dt>
+            {office ? (
+              <>
+                <dd data-testid="tx-hhsc-office">
+                  {t('tx_submit_office_name')}
+                  <br />
+                  {office.street}
+                  <br />
+                  {office.city}, {office.state} {office.zipCode}
+                </dd>
+                <dd className="text-xs">{t('tx_submit_office_for_address')}</dd>
+              </>
+            ) : (
+              <dd>{t('tx_submit_office_unknown')}</dd>
+            )}
+          </div>
+        </dl>
+
+        <p className="mt-3 text-xs">{t('tx_submit_after')}</p>
+      </div>
 
       {packet.length > 0 && (
         <div className="mt-6 rounded-lg bg-white p-4" data-testid="tx-packet">

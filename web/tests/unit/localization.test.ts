@@ -101,6 +101,8 @@ const IDENTICAL_BY_DESIGN = new Set([
   'tx_program_chip_name',
   // A percentage is digits and a percent sign.
   'intake_progress_percent',
+  // "Fax" is the Spanish word as well.
+  'tx_submit_fax',
 ]);
 
 /**

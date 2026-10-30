@@ -643,7 +643,7 @@ phases:
       ## SUMMARY: <!-- FILL: e.g., "5 enrollment actions, 2 deadlines within 30 days, total value $18,240/year" -->
 
       ## Bottom Line
-      <!-- FILL: 2-3 sentence plain-language summary. Lead with total annual value: "Your household qualifies for an estimated $XX,XXX/year in benefits and savings." Then the single most important finding (e.g., coverage gap, critical deadline, or high-value program). Then the #1 action to take this week. -->
+      <!-- FILL: 2-3 sentence plain-language summary. Lead with total annual value: "Based on the information you provided, your household may qualify for an estimated $XX,XXX/year in benefits and savings." Then the single most important finding (e.g., coverage gap, critical deadline, or high-value program). Then the #1 action to take this week. -->
 
       ## Coverage Map
       ### Per-Member Coverage
@@ -693,6 +693,12 @@ phases:
 
       **Step 1:** Review the eligibility matrix. Work ONLY with ELIGIBLE and MARGINAL programs.
 
+      This plan is a preliminary screening, not an official determination. In
+      every sentence the household reads, say they "may qualify" or "may be
+      eligible" based on the information they provided. Never write "you
+      qualify", "you are eligible", or "you will receive": only the agency
+      that runs a program decides eligibility.
+
       **Step 2:** Build the coverage map:
       - For each household member, identify the optimal coverage source for each need
       - Where multiple programs cover the same need, choose the most cost-effective
@@ -709,6 +715,15 @@ phases:
       - For each application, list every required document
       - Be specific: "last 30 days of pay stubs" not "proof of income"
       - Note how to obtain documents the user may not have (e.g., "request W-2 from employer" or "download from IRS.gov")
+
+      **Texas households only:** this product prepares HHSC Form H1010 for
+      them. Tell them to submit that completed, signed H1010 to HHSC by fax
+      (1-877-447-2839), by mail (HHSC, PO Box 149024, Austin, TX 78714-9968),
+      or in person at an HHSC benefits office. Do not tell them to submit it
+      through YourTexasBenefits.com, to upload it as a supporting document,
+      or to submit it by phone or 2-1-1. Proof HHSC asks for later is a
+      separate step from submitting the application. Do not apply this rule
+      to any other state.
 
       **Step 5:** Build the application directory:
       - Online application URL (verified)

@@ -156,7 +156,7 @@ export default function FormCard({
       {/* Why this form is in *their* packet, from their own answers. */}
       <p className="mt-2 text-sm text-slate-600">{t(entry.reason_key)}</p>
 
-      <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+      <dl className="mt-4 flex flex-wrap gap-x-12 gap-y-2 text-sm sm:gap-x-24">
         {programs.length > 0 && (
           <div>
             <dt className="text-xs uppercase tracking-wide text-slate-500">
