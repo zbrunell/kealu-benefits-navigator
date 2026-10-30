@@ -40,6 +40,8 @@ export interface RecordListView<TRecord> {
   fields: readonly IntakeQuestion<TRecord>[];
   /** Field whose options are the people in this household, if any. */
   peopleField?: string;
+  /** Further fields that also choose a person from the household. */
+  peopleFields?: readonly string[];
 }
 
 /** One selectable person, named as they were typed rather than by a key. */
@@ -67,6 +69,11 @@ interface RecordListEditorProps<TRecord> {
    * would only work for the one application model it happened to know.
    */
   people?: readonly PersonOption[];
+  /**
+   * Whether a field is asked for this row, for a follow-up that depends on an
+   * earlier answer in the same row. Absent means every field is asked.
+   */
+  fieldIsAsked?: (fieldId: string, record: TRecord) => boolean;
 }
 
 export function RecordListEditor<TRecord>({
@@ -77,6 +84,7 @@ export function RecordListEditor<TRecord>({
   showErrors,
   maxRows,
   people,
+  fieldIsAsked,
 }: RecordListEditorProps<TRecord>) {
   const { t, tv } = useTranslation();
   const { containerRef, markAdded } = useFocusAddedRow<HTMLOListElement>(
@@ -91,7 +99,10 @@ export function RecordListEditor<TRecord>({
    * label beside their name.
    */
   const fields = list.fields.map((field) => {
-    if (!list.peopleField || field.id !== list.peopleField) return field;
+    const choosesPerson =
+      field.id === list.peopleField || list.peopleFields?.includes(field.id);
+
+    if (!choosesPerson) return field;
 
     return {
       ...field,
@@ -165,20 +176,22 @@ export function RecordListEditor<TRecord>({
             </div>
 
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              {fields.map((field) => (
-                <QuestionField
-                  key={field.id}
-                  question={{
-                    ...field,
-                    // Row-scoped, so two rows' inputs never share a test id or
-                    // an aria-describedby target.
-                    id: `${list.id}-${index}-${field.id}`,
-                  }}
-                  state={record}
-                  onChange={(next) => updateRecord(index, next)}
-                  showErrors={showErrors}
-                />
-              ))}
+              {fields
+                .filter((field) => !fieldIsAsked || fieldIsAsked(field.id, record))
+                .map((field) => (
+                  <QuestionField
+                    key={field.id}
+                    question={{
+                      ...field,
+                      // Row-scoped, so two rows' inputs never share a test id
+                      // or an aria-describedby target.
+                      id: `${list.id}-${index}-${field.id}`,
+                    }}
+                    state={record}
+                    onChange={(next) => updateRecord(index, next)}
+                    showErrors={showErrors}
+                  />
+                ))}
             </div>
 
             {index >= list.printedRows && (

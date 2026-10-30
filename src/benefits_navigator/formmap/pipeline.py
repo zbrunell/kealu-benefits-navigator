@@ -218,10 +218,15 @@ def _build_review_text(
 
     lines.append(words.filled_in)
 
-    if resolution.fields:
+    # A withheld mark and the value it belongs beside are listed together
+    # under their own heading, not as filled in and not as "see attached".
+    withheld = {*plan.withheld, *plan.withheld.values()}
+    shown = [r for r in resolution.fields if r.key not in withheld]
+
+    if shown:
         by_section: dict[str, list[str]] = {}
 
-        for resolved in resolution.fields:
+        for resolved in shown:
             label = resolved.mapping.printed_label or resolved.key
 
             by_section.setdefault(resolved.mapping.section, []).append(
@@ -282,13 +287,30 @@ def _build_review_text(
     _append_declared_blanks(lines, definition, words)
     _append_no_box(lines, definition, resolution, words)
 
-    if plan.unfitted:
+    too_long = [key for key in plan.unfitted if key not in withheld]
+
+    if too_long:
         lines += ["", words.too_long]
 
-        for key in sorted(plan.unfitted):
+        for key in sorted(too_long):
             mapping = definition.mapping_for(key)
             label = (mapping.printed_label if mapping else "") or key
             lines.append(f"    {label}")
+
+    if plan.withheld:
+        lines += ["", words.withheld]
+        values = {resolved.key: resolved for resolved in resolution.fields}
+
+        for key, companion in sorted(plan.withheld.items()):
+            for listed in (companion, key):
+                mapping = definition.mapping_for(listed)
+                label = (mapping.printed_label if mapping else "") or listed
+                resolved = values.get(listed)
+
+                if resolved is not None and listed == companion:
+                    lines.append(f"    {label}: {_shown(resolved)}")
+                else:
+                    lines.append(f"    {label}")
 
     if plan.unplaced:
         lines += ["", words.unplaced]
@@ -368,7 +390,15 @@ def _append_no_box(
         return
 
     answered = frozenset(resolution.unmapped)
-    applicable = [note for note in notes if note.key in answered]
+    placed = frozenset(resolved.mapping.key for resolved in resolution.fields)
+    applicable = [
+        note
+        for note in notes
+        if note.key in answered
+        # A note about a question the form asks more narrowly is moot once
+        # that narrower answer is on the page.
+        and getattr(note, "superseded_by", None) not in placed
+    ]
 
     if not applicable:
         return
@@ -478,6 +508,11 @@ def _append_not_applicable(
     plain: list[NotApplicable] = []
 
     for item in resolution.not_applicable:
+        # A whole printed part the household does not fill in at all — see
+        # `Condition.quiet`. Recorded on the resolution, not listed here.
+        if item.quiet:
+            continue
+
         mapping = definition.mapping_for(item.key)
 
         group = (
@@ -533,9 +568,14 @@ def _append_not_applicable(
             if not beyond:
                 continue
 
+            line = (
+                words.overflow_notes.get(group.overflow_note)
+                or words.overflow_row
+            )
+
             lines.append(
                 "    "
-                + words.overflow_row.format(
+                + line.format(
                     noun=group.row_noun, beyond=beyond, rows=group.rows
                 )
             )

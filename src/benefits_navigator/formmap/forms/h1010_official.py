@@ -36,7 +36,9 @@ handed a form filled at English coordinates.
 Every answer the Texas intake collects that H1010 has a box for. Across the
 form that is Sections A through G on printed pages 1 to 3, Section H's four
 person blocks, Sections K, N, O, P, Q, R and V, and Appendix C's authorized
-representative — 115 placements on each edition.
+representative; and, for a household applying for Medicaid or CHIP, the
+Medicaid / CHIP addendum on PDF pages 26 to 34 — its Sections 1 to 6 and
+Appendices A to C. See "The Medicaid / CHIP addendum" below.
 
 What is *not* mapped is no longer a work queue. It is a classification, with a
 concrete reason per answer, in
@@ -83,6 +85,7 @@ printed.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from benefits_navigator.formmap.measure import (
     Above,
@@ -95,9 +98,12 @@ from benefits_navigator.formmap.measure import (
     RightOf,
     SameRow,
     SnapToCircle,
+    SnapToSquare,
 )
 from benefits_navigator.formmap.definition import (
+    AllOf,
     AnyYes,
+    Condition,
     Derivation,
     JoinValues,
     PivotByKind,
@@ -151,6 +157,17 @@ class Spec:
     #: person's details by whether they are an adult or a child. Either key
     #: answers this printed column — see ``FieldMapping.alternate_keys``.
     alternate_keys: tuple[str, ...] = ()
+
+    #: When this printed box applies at all — see ``FieldMapping.applies_when``.
+    #:
+    #: Pages 1 to 25 declare none, which is unchanged. The Medicaid / CHIP
+    #: addendum declares one on every box, because the whole addendum is for a
+    #: household applying for health coverage.
+    applies_when: Any = None
+
+    #: Draw only beside this key's printed value — see
+    #: ``FieldMapping.drawn_only_with``.
+    drawn_only_with: str | None = None
 
 
 _A = "Section A — Your Facts"
@@ -592,9 +609,10 @@ def _other_money_specs(row: int) -> tuple[Spec, ...]:
              printed_label_es=(
                  f"Cantidad que recibe (Tipo de dinero {money})"
              )),
+        # The field plan sends the words ("Monthly"), not the option key.
         Spec(f"{prefix}.reported_frequency", FieldKind.CHOICE,
              f"How often are you paid? (Money type {money})", _O_OTHER,
-             options=FREQUENCY_OPTIONS,
+             options=FREQUENCY_OPTIONS, transform="frequency_option",
              printed_label_es=(
                  f"¿Con qué frecuencia le pagan? (Tipo de dinero {money})"
              )),
@@ -817,6 +835,752 @@ _REPRESENTATIVE_SPECS: tuple[Spec, ...] = (
 )
 
 
+# ---------------------------------------------------------------------------
+# The Medicaid / CHIP addendum (printed "H1010-M", PDF pages 26 to 34)
+# ---------------------------------------------------------------------------
+#
+# "Applying for or renewing Medicaid, CHIP, or Healthy Texas Women? If yes, you
+# must fill out this form." Every box below is conditioned on that, through a
+# key the field plan emits only for a household applying for Medicaid or CHIP.
+# For anyone else the addendum is not applicable and *quiet*: nine pages a
+# food-benefits household never fills in are not listed on its review sheet.
+#
+# The follow-ups behind a printed Yes/No are quiet too. "If yes, list the
+# dependents" left blank because the answer was No is finished, and the
+# reasons a Condition can give are English sentences — a Spanish review sheet
+# would otherwise gain lines in English.
+#
+# Nothing here reads a key that already carries a note in ``h1010_coverage``:
+# a key a condition reads counts as consumed for every household, which would
+# silently drop that note from food-benefits households' sheets too.
+
+#: Emitted only when the household applies for Medicaid or CHIP.
+APPLYING_FOR_HEALTH = "health.applying_for_medicaid_or_chip"
+
+#: Section 4's own condition, "only if the amount of money you get changes".
+YEARLY_TOTALS_APPLY = "income.yearly_totals_apply"
+
+_HEALTH = Condition(
+    key=APPLYING_FOR_HEALTH,
+    equals=True,
+    because="you are not applying for Medicaid or CHIP",
+    unknown_excludes=True,
+    quiet=True,
+)
+
+
+def _gate(key: str, equals: Any = True, *, presence: bool = False) -> Condition:
+    """A printed follow-up's condition, quiet like the rest of the addendum.
+
+    An *unanswered* gate excludes its follow-ups too, unlike the default for a
+    printed Yes/No. The default exists so an unanswered gate never discards an
+    answer the applicant gave; here the field plan emits a follow-up only while
+    its gate is Yes, so there is never such an answer to discard — and listing
+    "If yes, list the dependents" as work outstanding beside an unanswered "Will
+    you claim any dependents?" asks the applicant two questions for one.
+
+    ``presence`` names a row marker rather than a question; it behaves the same
+    and is kept as a word for the reader.
+    """
+    del presence
+
+    return Condition(
+        key=key,
+        equals=equals,
+        because=f"{key} is {equals!r}",
+        unknown_excludes=True,
+        quiet=True,
+    )
+
+
+def _health(*gates: Condition) -> Condition | AllOf:
+    """Applies to a household applying for health coverage, and these gates."""
+    return AllOf((_HEALTH, *gates)) if gates else _HEALTH
+
+
+_M1 = "Medicaid Addendum, Section 1 — Your Tax Return"
+_M2 = "Medicaid Addendum, Section 2 — Tax Deductions"
+_M3 = "Medicaid Addendum, Section 3 — People Applying"
+_M4 = "Medicaid Addendum, Section 4 — Money You Get"
+_M5 = "Medicaid Addendum, Section 5 — Insurance Through a Job"
+_M6 = "Medicaid Addendum, Section 6 — Read and Sign"
+_APPENDIX_A = "Appendix A — Health Coverage from Jobs"
+_APPENDIX_B = "Appendix B — American Indian or Alaska Native Family Member"
+
+#: Section 1 prints five person blocks: Person 1 and Persons 2 to 5.
+TAX_HOUSEHOLD_ROWS = 5
+
+#: Appendix A prints one job; Appendix B two people; question 7 three names.
+EMPLOYER_COVERAGE_ROWS = 1
+TRIBAL_ROWS = 2
+HTW_OPT_OUT_ROWS = 3
+
+YES_NO: tuple[str, ...] = ("yes", "no")
+
+
+def _tax_specs(slot: int) -> tuple[Spec, ...]:
+    """One Section 1 person block. Person 1 is the applicant."""
+    person = slot + 1
+    prefix = f"health.tax_household.{slot}"
+    present = _gate(f"{prefix}.present", presence=True)
+    files = _gate(f"{prefix}.plans_to_file")
+    claims = _gate(f"{prefix}.claims_dependents")
+    claimed = _gate(f"{prefix}.claimed_as_dependent")
+
+    specs = [
+        Spec(f"{prefix}.first_name", FieldKind.TEXT,
+             f"First name (Tax return, Person {person})", _M1,
+             applies_when=_health(present),
+             printed_label_es=f"Nombre (Declaración de impuestos, Persona {person})"),
+        Spec(f"{prefix}.middle_name", FieldKind.TEXT,
+             f"Middle name (Tax return, Person {person})", _M1, optional=True,
+             applies_when=_health(present),
+             printed_label_es=(
+                 f"Segundo nombre (Declaración de impuestos, Persona {person})"
+             )),
+        Spec(f"{prefix}.last_name", FieldKind.TEXT,
+             f"Last name (Tax return, Person {person})", _M1,
+             applies_when=_health(present),
+             printed_label_es=f"Apellido (Declaración de impuestos, Persona {person})"),
+        # "If married" — blank is the complete answer for someone who is not.
+        Spec(f"{prefix}.spouse_name", FieldKind.TEXT,
+             f"If married, name of spouse (Person {person})", _M1, optional=True,
+             applies_when=_health(present),
+             printed_label_es=(
+                 f"Si es casado(a), nombre de su esposo(a) (Persona {person})"
+             )),
+        Spec(f"{prefix}.plans_to_file", FieldKind.CHOICE,
+             f"Do you plan to file a federal income tax return next year? "
+             f"(Person {person})", _M1, transform="yes_no", options=YES_NO,
+             applies_when=_health(present),
+             printed_label_es=(
+                 f"¿Va a presentar una declaración de impuestos del IRS el "
+                 f"próximo año? (Persona {person})"
+             )),
+        Spec(f"{prefix}.files_jointly", FieldKind.CHOICE,
+             f"a. Will you file jointly with a spouse? (Person {person})", _M1,
+             transform="yes_no", options=YES_NO,
+             applies_when=_health(present, files),
+             printed_label_es=(
+                 f"a. ¿Presentará la declaración conjuntamente con su "
+                 f"esposo(a)? (Persona {person})"
+             )),
+        Spec(f"{prefix}.fears_harm_from_disclosure", FieldKind.CHOICE,
+             f"b. Are you afraid that giving facts about this person might put "
+             f"you or your children in danger? (Person {person})", _M1,
+             transform="yes_no", options=YES_NO,
+             applies_when=_health(present, files),
+             printed_label_es=(
+                 f"b. ¿Tiene miedo de que dar información sobre esta persona "
+                 f"pueda ponerlo a usted o a sus hijos en peligro? "
+                 f"(Persona {person})"
+             )),
+        Spec(f"{prefix}.claims_dependents", FieldKind.CHOICE,
+             f"c. Will you claim any dependents on your tax return? "
+             f"(Person {person})", _M1, transform="yes_no", options=YES_NO,
+             applies_when=_health(present),
+             printed_label_es=(
+                 f"c. ¿Reclamará dependientes en su declaración de impuestos? "
+                 f"(Persona {person})"
+             )),
+        Spec(f"{prefix}.dependent_names", FieldKind.TEXT,
+             f"If yes, list name(s) of dependents (Person {person})", _M1,
+             applies_when=_health(present, claims),
+             printed_label_es=(
+                 f"Si contesta “Sí”, escriba los nombres de los dependientes "
+                 f"(Persona {person})"
+             )),
+        Spec(f"{prefix}.claimed_as_dependent", FieldKind.CHOICE,
+             f"d. Will you be claimed as a dependent on someone's tax return? "
+             f"(Person {person})", _M1, transform="yes_no", options=YES_NO,
+             applies_when=_health(present),
+             printed_label_es=(
+                 f"d. ¿Lo reclamará alguien a usted como dependiente en la "
+                 f"declaración de impuestos? (Persona {person})"
+             )),
+        Spec(f"{prefix}.tax_filer_name", FieldKind.TEXT,
+             f"If yes, list the name of tax filer (Person {person})", _M1,
+             applies_when=_health(present, claimed),
+             printed_label_es=(
+                 f"Si contesta “Sí”, escriba el nombre del declarante "
+                 f"(Persona {person})"
+             )),
+        Spec(f"{prefix}.relationship_to_tax_filer", FieldKind.TEXT,
+             f"How are you related to the tax filer? (Person {person})", _M1,
+             applies_when=_health(present, claimed),
+             printed_label_es=(
+                 f"¿Qué relación tiene usted con el declarante? "
+                 f"(Persona {person})"
+             )),
+    ]
+
+    # Person 1 is the address the others are compared with.
+    if slot > 0:
+        specs.append(
+            Spec(f"{prefix}.lives_with_applicant", FieldKind.CHOICE,
+                 f"Does Person {person} live at the same address as Person 1?",
+                 _M1, transform="yes_no", options=YES_NO,
+                 applies_when=_health(present),
+                 printed_label_es=(
+                     f"¿Vive la Persona {person} en la misma dirección que la "
+                     f"Persona 1?"
+                 ))
+        )
+
+    return tuple(specs)
+
+
+_ANY_DEDUCTION = _gate("health.tax_deductions.any")
+
+
+def _deduction_specs() -> tuple[Spec, ...]:
+    """Section 2. The circles are "Mark all that apply"; each opens its row."""
+    alimony = _gate("health.tax_deductions.alimony")
+    student = _gate("health.tax_deductions.student_loan_interest")
+    other = _gate("health.tax_deductions.other")
+
+    return (
+        Spec("health.tax_deductions.alimony", FieldKind.CHECKBOX,
+             "Alimony paid", _M2, optional=True,
+             applies_when=_health(_ANY_DEDUCTION),
+             printed_label_es="Pensión alimenticia que paga"),
+        Spec("health.tax_deductions.alimony_amount", FieldKind.TEXT,
+             "Alimony paid — $", _M2, transform="currency_whole",
+             applies_when=_health(_ANY_DEDUCTION, alimony),
+             printed_label_es="Pensión alimenticia que paga — $"),
+        Spec("health.tax_deductions.alimony_frequency", FieldKind.TEXT,
+             "Alimony paid — How often?", _M2,
+             applies_when=_health(_ANY_DEDUCTION, alimony),
+             printed_label_es="Pensión alimenticia que paga — ¿Cada cuánto?"),
+        Spec("health.tax_deductions.alimony_agreement_before_2019",
+             FieldKind.CHOICE,
+             "Was the divorce or separation agreement executed or last "
+             "modified on or before Dec. 31, 2018?", _M2,
+             transform="yes_no", options=YES_NO,
+             applies_when=_health(_ANY_DEDUCTION, alimony),
+             printed_label_es=(
+                 "¿Fue firmado o modificado el acuerdo de divorcio o separación "
+                 "el 31 de diciembre de 2018 o antes?"
+             )),
+        Spec("health.tax_deductions.student_loan_interest", FieldKind.CHECKBOX,
+             "Student loan interest", _M2, optional=True,
+             applies_when=_health(_ANY_DEDUCTION),
+             printed_label_es="Interés del préstamo estudiantil"),
+        Spec("health.tax_deductions.student_loan_interest_amount",
+             FieldKind.TEXT, "Student loan interest — $", _M2,
+             transform="currency_whole",
+             applies_when=_health(_ANY_DEDUCTION, student),
+             printed_label_es="Interés del préstamo estudiantil — $"),
+        Spec("health.tax_deductions.student_loan_interest_frequency",
+             FieldKind.TEXT, "Student loan interest — How often?", _M2,
+             applies_when=_health(_ANY_DEDUCTION, student),
+             printed_label_es="Interés del préstamo estudiantil — ¿Cada cuánto?"),
+        Spec("health.tax_deductions.other", FieldKind.CHECKBOX,
+             "Other deductions", _M2, optional=True,
+             applies_when=_health(_ANY_DEDUCTION),
+             printed_label_es="Otras deducciones"),
+        Spec("health.tax_deductions.other_amount", FieldKind.TEXT,
+             "Other deductions — $", _M2, transform="currency_whole",
+             applies_when=_health(_ANY_DEDUCTION, other),
+             printed_label_es="Otras deducciones — $"),
+        Spec("health.tax_deductions.other_frequency", FieldKind.TEXT,
+             "Other deductions — How often?", _M2,
+             applies_when=_health(_ANY_DEDUCTION, other),
+             printed_label_es="Otras deducciones — ¿Cada cuánto?"),
+        Spec("health.tax_deductions.other_types", FieldKind.TEXT,
+             "Other deductions — Types", _M2,
+             applies_when=_health(_ANY_DEDUCTION, other),
+             printed_label_es="Otras deducciones — Tipo"),
+    )
+
+
+def _people_specs() -> tuple[Spec, ...]:
+    """Section 3, questions 1 to 6."""
+    migrant = _gate("health.child_travels_with_migrant_worker")
+    special = _gate("health.child_in_special_health_care_needs")
+    foster = _gate("household.foster_care_at_18_or_older")
+    confidential = _gate("health.htw_confidential_contact")
+
+    return (
+        Spec("health.child_travels_with_migrant_worker", FieldKind.CHOICE,
+             "1. Does a child applying for health care travel with a family "
+             "member who is a migrant farm worker?", _M3,
+             transform="yes_no", options=YES_NO, applies_when=_health(),
+             printed_label_es=(
+                 "1. ¿Viaja un niño que solicita atención médica con un "
+                 "familiar que es trabajador de campo migrante?"
+             )),
+        Spec("health.migrant_child_names", FieldKind.TEXT,
+             "If yes, what is the name of that child or children?", _M3,
+             applies_when=_health(migrant),
+             printed_label_es=(
+                 "Si contesta sí, ¿cuál es el nombre del niño o de los niños?"
+             )),
+        Spec("health.child_in_special_health_care_needs", FieldKind.CHOICE,
+             "2. Is a child in the Children with Special Health Care Needs "
+             "program?", _M3, transform="yes_no", options=YES_NO,
+             applies_when=_health(),
+             printed_label_es=(
+                 "2. ¿Participa un niño en el programa de Niños con "
+                 "Necesidades Médicas Especiales?"
+             )),
+        Spec("health.special_health_care_needs_who", FieldKind.TEXT,
+             "If yes, who? (Children with Special Health Care Needs)", _M3,
+             applies_when=_health(special),
+             printed_label_es=(
+                 "Si contesta “Sí”, ¿quién? (Niños con Necesidades Médicas "
+                 "Especiales)"
+             )),
+        Spec("health.american_indian_or_alaska_native", FieldKind.CHOICE,
+             "3. Is anyone an American Indian or Native Alaskan?", _M3,
+             transform="yes_no", options=YES_NO, applies_when=_health(),
+             printed_label_es=(
+                 "3. ¿Es alguien indio americano o nativo de Alaska?"
+             )),
+        Spec("household.foster_care_at_18_or_older", FieldKind.CHOICE,
+             "4. Was anyone in foster care when they were age 18 or older?",
+             _M3, transform="yes_no", options=YES_NO, applies_when=_health(),
+             printed_label_es=(
+                 "4. ¿Estuvo alguien bajo crianza temporal cuando tenía 18 "
+                 "años o más?"
+             )),
+        Spec("household.foster_care_at_18_or_older_who", FieldKind.TEXT,
+             "If yes, who? (foster care)", _M3,
+             applies_when=_health(foster),
+             printed_label_es="Si contesta “Sí”, ¿quién? (crianza temporal)"),
+        Spec("household.foster_care_at_18_or_older_state", FieldKind.TEXT,
+             "In which State?", _M3, applies_when=_health(foster),
+             printed_label_es="¿En qué estado?"),
+        Spec("household.absent_parents", FieldKind.CHOICE,
+             "5. Does any child on this application have a parent living "
+             "outside of the home?", _M3, transform="yes_no", options=YES_NO,
+             applies_when=_health(),
+             printed_label_es=(
+                 "5. ¿Vive fuera del hogar el padre o madre de algún niño que "
+                 "se menciona en esta solicitud?"
+             )),
+        # Question 6 prints no Yes/No: the address *is* the request. Each line
+        # is optional, because a household that wants no confidential address
+        # leaves the block blank and has answered.
+        *(
+            Spec(f"health.htw_confidential.{field}", FieldKind.TEXT,
+                 f"6. Healthy Texas Women confidential {label_en}", _M3,
+                 transform=transform, optional=True,
+                 applies_when=_health(confidential),
+                 printed_label_es=(
+                     f"6. Healthy Texas Women, {label_es} confidencial"
+                 ))
+            for field, label_en, label_es, transform in (
+                ("street", "mailing address - street", "dirección postal", None),
+                ("city", "city", "ciudad", None),
+                ("state", "state", "estado", "state_code"),
+                ("zip_code", "zip", "código postal", "zip5"),
+                ("phone", "phone number", "número de teléfono", "us_phone"),
+            )
+        ),
+    )
+
+
+def _htw_opt_out_specs(row: int) -> tuple[Spec, ...]:
+    """Section 3 question 7: one "Name ___. I do not want to be tested" line."""
+    prefix = f"health.htw_screening_opt_out.{row}"
+    present = _gate(f"{prefix}.present", presence=True)
+    declines = _gate("health.htw_declines_screening")
+    line = row + 1
+
+    return (
+        Spec(f"{prefix}.name", FieldKind.TEXT,
+             f"7. Name (does not want to be tested for HTW, line {line})", _M3,
+             applies_when=_health(declines, present),
+             printed_label_es=(
+                 f"7. Nombre (no quiere la prueba de HTW, línea {line})"
+             )),
+        # A mark beside a blank or overflowing name line would not say whose
+        # opt-out it is, so it is drawn only when the name is.
+        Spec(f"{prefix}.declines", FieldKind.CHECKBOX,
+             f"7. I do not want to be tested for HTW (line {line})", _M3,
+             applies_when=_health(declines, present),
+             drawn_only_with=f"{prefix}.name",
+             printed_label_es=(
+                 f"7. No quiero que me hagan la prueba para elegibilidad de "
+                 f"HTW (línea {line})"
+             )),
+    )
+
+
+#: Section 5 question 2's printed reasons, in the order the boxes are measured.
+LOST_COVERAGE_REASONS: tuple[str, ...] = (
+    "parent_job_ended",
+    "parent_cobra_or_ers_ended",
+    "parent_marital_status_changed",
+    "chip_other_state_ended",
+    "medicaid_other_state_ended",
+    "private_coverage_ended",
+    "parent_died",
+    "child_special_health_care_needs",
+    "medicaid_ended",
+    "other",
+)
+
+#: Section 6 B's printed choices, in the order the circles are measured.
+RENEWAL_YEARS: tuple[str, ...] = ("five", "four", "three", "two", "one", "none")
+
+
+def _money_and_coverage_specs() -> tuple[Spec, ...]:
+    """Sections 4, 5 and 6."""
+    totals = _gate(YEARLY_TOTALS_APPLY)
+    lost = _gate("health.lost_job_coverage")
+    jail = _gate("household.incarcerated")
+
+    return (
+        Spec("income.total_this_year", FieldKind.TEXT,
+             "Your total income this year", _M4, transform="currency_whole",
+             applies_when=_health(totals),
+             printed_label_es="Sus ingresos totales este año"),
+        # "(if you think it will be different)".
+        Spec("income.total_next_year", FieldKind.TEXT,
+             "Your total income next year (if you think it will be different)",
+             _M4, transform="currency_whole", optional=True,
+             applies_when=_health(totals),
+             printed_label_es=(
+                 "Sus ingresos totales el próximo año (si cree que será "
+                 "diferente)"
+             )),
+        Spec("health.has_employer_coverage", FieldKind.CHOICE,
+             "1. Can anyone listed on this form get health insurance through a "
+             "job?", _M5, transform="yes_no", options=YES_NO,
+             applies_when=_health(),
+             printed_label_es=(
+                 "1. ¿Puede obtener seguro médico alguien mencionado en esta "
+                 "solicitud por medio de un trabajo?"
+             )),
+        Spec("health.lost_job_coverage", FieldKind.CHOICE,
+             "2. Did anyone have insurance through a job and lose it within "
+             "the past 3 months?", _M5, transform="yes_no", options=YES_NO,
+             applies_when=_health(),
+             printed_label_es=(
+                 "2. ¿Tenía seguro alguien por medio de un trabajo y lo perdió "
+                 "en los últimos 3 meses?"
+             )),
+        Spec("health.lost_job_coverage_who", FieldKind.TEXT,
+             "If yes, who? (insurance through a job)", _M5,
+             applies_when=_health(lost),
+             printed_label_es="Si contesta “Sí”, ¿quién? (seguro del trabajo)"),
+        Spec("health.lost_job_coverage_end_date", FieldKind.TEXT,
+             "If yes, end date", _M5, transform="us_date",
+             applies_when=_health(lost),
+             printed_label_es="Si contesta “Sí”, fecha de terminación"),
+        Spec("health.lost_job_coverage_reason", FieldKind.CHOICE,
+             "If yes, reason the insurance ended", _M5,
+             options=LOST_COVERAGE_REASONS, applies_when=_health(lost),
+             printed_label_es=(
+                 "Si contesta “Sí”, razón por la que terminó el seguro"
+             )),
+        Spec("health.lost_job_coverage_other_reason", FieldKind.TEXT,
+             "Others", _M5, optional=True,
+             applies_when=_health(
+                 lost, _gate("health.lost_job_coverage_reason", "other")
+             ),
+             printed_label_es="Otra"),
+        Spec("household.incarcerated", FieldKind.CHOICE,
+             "A. Is anyone who is applying for health coverage in jail "
+             "(incarcerated)?", _M6, transform="yes_no", options=YES_NO,
+             applies_when=_health(),
+             printed_label_es=(
+                 "A. ¿Está en la cárcel alguien que solicita cobertura médica?"
+             )),
+        Spec("household.incarcerated_who", FieldKind.TEXT,
+             "If yes, who is in jail?", _M6, applies_when=_health(jail),
+             printed_label_es="Si contesta “Sí”, ¿quién está en la cárcel?"),
+        Spec("health.renewal_years", FieldKind.CHOICE,
+             "B. Renewing your health coverage in future years", _M6,
+             options=RENEWAL_YEARS, applies_when=_health(),
+             printed_label_es=(
+                 "B. Cómo renovar su cobertura médica en años futuros"
+             )),
+    )
+
+
+#: Appendix A's premium frequencies, in the order their boxes are measured.
+PREMIUM_FREQUENCIES: tuple[str, ...] = (
+    "weekly",
+    "bi_weekly",
+    "twice_a_month",
+    "monthly",
+    "quarterly",
+    "yearly",
+)
+
+#: Appendix A item 16's two printed changes. "No change" has no box.
+PLAN_CHANGES: tuple[str, ...] = (
+    "will_no_longer_provide",
+    "will_start_offering_or_change_premium",
+)
+
+
+def _employer_coverage_specs(row: int) -> tuple[Spec, ...]:
+    """Appendix A, one printed page per job that offers coverage.
+
+    Item 2, the employee's Social Security number, is never placed: the model
+    has nowhere to keep one. It is a declared blank instead.
+    """
+    prefix = f"appendices.employer_coverage.{row}"
+    present = _gate(f"{prefix}.present", presence=True)
+    eligible = _gate(f"{prefix}.eligible_now_or_soon")
+    changes_premium = _gate(
+        f"{prefix}.plan_change", "will_start_offering_or_change_premium"
+    )
+    item = _health(present)
+    detail = _health(present, eligible)
+
+    def spec(key: str, kind: FieldKind, label: str, label_es: str, **extra):
+        return Spec(f"{prefix}.{key}", kind, label, _APPENDIX_A,
+                    printed_label_es=label_es, **extra)
+
+    return (
+        spec("employee_name", FieldKind.TEXT,
+             "1. Employee name (First, Middle, Last)",
+             "1. Nombre del empleado (nombre, segundo nombre, apellido)",
+             applies_when=item),
+        spec("employer_name", FieldKind.TEXT, "3. Employer name",
+             "3. Nombre del empleador", applies_when=item),
+        spec("employer_ein", FieldKind.TEXT,
+             "4. Employer Identification Number (EIN)",
+             "4. Número de identificación del empleador (EIN)",
+             optional=True, applies_when=item),
+        spec("employer_address", FieldKind.TEXT, "5. Employer address",
+             "5. Dirección del empleador", applies_when=item),
+        spec("employer_phone", FieldKind.TEXT, "6. Employer phone number",
+             "6. Teléfono del empleador", transform="digits",
+             segments=((0, 3), (3, 6), (6, 10)), applies_when=item),
+        spec("employer_city", FieldKind.TEXT, "7. City", "7. Ciudad",
+             applies_when=item),
+        spec("employer_state", FieldKind.TEXT, "8. State", "8. Estado",
+             transform="state_code", applies_when=item),
+        spec("employer_zip_code", FieldKind.TEXT, "9. ZIP code",
+             "9. Código postal", transform="zip5", applies_when=item),
+        spec("contact_name", FieldKind.TEXT,
+             "10. Who can we contact about employee health coverage at this "
+             "job?",
+             "10. ¿Con quién podemos comunicarnos sobre cobertura médica para "
+             "empleados en este trabajo?",
+             applies_when=item),
+        spec("contact_phone", FieldKind.TEXT,
+             "11. Phone number (if different from above)",
+             "11. Teléfono (si es diferente del anterior)",
+             transform="digits", segments=((0, 3), (3, 6), (6, 10)),
+             optional=True, applies_when=item),
+        spec("employer_email", FieldKind.TEXT, "12. Email address",
+             "12. Dirección de correo electrónico", optional=True,
+             applies_when=item),
+        spec("eligible_now_or_soon", FieldKind.CHOICE,
+             "13. Are you currently eligible for coverage offered by this "
+             "employer, or will you become eligible in the next 3 months?",
+             "13. ¿Puede obtener la cobertura que ofrece este empleador en "
+             "este momento, o podrá obtenerla en los próximos 3 meses?",
+             transform="yes_no", options=YES_NO, applies_when=item),
+        spec("waiting_period_enrollment_date", FieldKind.TEXT,
+             "13a. If you’re in a waiting or probationary period, when can you "
+             "enroll in coverage?",
+             "13a. Si está en un período de espera o probatorio, ¿cuándo "
+             "podrá inscribirse en la cobertura?",
+             transform="us_date", optional=True, applies_when=detail),
+        *(
+            spec(f"other_eligible.{slot}", FieldKind.TEXT,
+                 f"13a. Name of anyone else who is eligible for coverage from "
+                 f"this job ({slot + 1})",
+                 f"13a. Nombre de otra persona que pueda obtener la cobertura "
+                 f"de este trabajo ({slot + 1})",
+                 optional=True, applies_when=detail)
+            for slot in range(3)
+        ),
+        spec("meets_minimum_value_standard", FieldKind.CHOICE,
+             "14. Does the employer offer a health plan that meets the minimum "
+             "value standard?",
+             "14. ¿Ofrece el empleador un plan médico que satisfaga el "
+             "estándar de valor mínimo?",
+             transform="yes_no", options=YES_NO, applies_when=detail),
+        spec("lowest_cost_premium", FieldKind.TEXT,
+             "15a. How much would the employee have to pay in premiums for "
+             "this plan?",
+             "15a. ¿Cuánto tendría que pagar en primas el empleado para este "
+             "plan?",
+             transform="currency_whole", applies_when=detail),
+        spec("lowest_cost_premium_frequency", FieldKind.CHOICE,
+             "15b. How often?", "15b. ¿Cada cuánto?",
+             options=PREMIUM_FREQUENCIES, applies_when=detail),
+        # "(if known)" — leaving it blank is the answer for "I don't know".
+        spec("plan_change", FieldKind.CHOICE,
+             "16. What change will the employer make for the new plan year "
+             "(if known)?",
+             "16. ¿Qué cambio hará el empleador para el nuevo año del plan "
+             "(si lo sabe)?",
+             options=PLAN_CHANGES, optional=True, applies_when=detail),
+        spec("changed_premium", FieldKind.TEXT,
+             "16a. How much would the employee have to pay in premiums for "
+             "this plan?",
+             "16a. ¿Cuánto tendrá que pagar en primas el empleado para ese "
+             "plan?",
+             transform="currency_whole",
+             applies_when=_health(present, eligible, changes_premium)),
+        spec("changed_premium_frequency", FieldKind.CHOICE,
+             "16b. How often?", "16b. ¿Cada cuánto?",
+             options=PREMIUM_FREQUENCIES,
+             applies_when=_health(present, eligible, changes_premium)),
+        spec("plan_change_date", FieldKind.TEXT,
+             "16. Date of change (mm/dd/yyyy)",
+             "16. Fecha de cambio (mes/día/año)",
+             transform="us_date", optional=True, applies_when=detail),
+    )
+
+
+def _tribal_specs(row: int) -> tuple[Spec, ...]:
+    """Appendix B, one printed person column.
+
+    Item 4 prints no Yes/No — only "$" and "How often?" — so whether the person
+    has that money is a condition here, not a box.
+    """
+    prefix = f"appendices.tribal.{row}"
+    column = row + 1
+    present = _gate(f"{prefix}.present", presence=True)
+    member = _gate(f"{prefix}.member_of_tribe")
+    not_received = _gate(f"{prefix}.received_indian_health_service", False)
+    has_income = _gate(f"{prefix}.has_excludable_tribal_income")
+    item = _health(present)
+
+    return (
+        Spec(f"{prefix}.first_name", FieldKind.TEXT,
+             f"1. Name — First (AI/AN Person {column})", _APPENDIX_B,
+             applies_when=item,
+             printed_label_es=f"1. Nombre — Nombre (Persona AI/AN {column})"),
+        Spec(f"{prefix}.middle_name", FieldKind.TEXT,
+             f"1. Name — Middle (AI/AN Person {column})", _APPENDIX_B,
+             optional=True, applies_when=item,
+             printed_label_es=(
+                 f"1. Nombre — Segundo nombre (Persona AI/AN {column})"
+             )),
+        Spec(f"{prefix}.last_name", FieldKind.TEXT,
+             f"1. Name — Last (AI/AN Person {column})", _APPENDIX_B,
+             applies_when=item,
+             printed_label_es=f"1. Nombre — Apellido (Persona AI/AN {column})"),
+        Spec(f"{prefix}.member_of_tribe", FieldKind.CHOICE,
+             f"2. Member of a federally recognized tribe? (AI/AN Person "
+             f"{column})", _APPENDIX_B, transform="yes_no", options=YES_NO,
+             applies_when=item,
+             printed_label_es=(
+                 f"2. ¿Es miembro de una tribu reconocida por el gobierno "
+                 f"federal? (Persona AI/AN {column})"
+             )),
+        Spec(f"{prefix}.tribe_name", FieldKind.TEXT,
+             f"2. If yes, tribe name (AI/AN Person {column})", _APPENDIX_B,
+             applies_when=_health(present, member),
+             printed_label_es=(
+                 f"2. Si contesta “Sí”, ¿cuál es el nombre de la tribu? "
+                 f"(Persona AI/AN {column})"
+             )),
+        Spec(f"{prefix}.received_indian_health_service", FieldKind.CHOICE,
+             f"3. Has this person ever gotten a service from the Indian Health "
+             f"Service, a tribal health program, or urban Indian health "
+             f"program? (AI/AN Person {column})", _APPENDIX_B,
+             transform="yes_no", options=YES_NO, applies_when=item,
+             printed_label_es=(
+                 f"3. ¿Alguna vez ha recibido esta persona un servicio del "
+                 f"Servicio de Salud Indígena, un programa de salud tribal o un "
+                 f"programa urbano de salud indígena? (Persona AI/AN {column})"
+             )),
+        # Item 3's follow-up hangs off a No, as printed.
+        Spec(f"{prefix}.eligible_for_indian_health_service", FieldKind.CHOICE,
+             f"3. If no, is this person eligible to get services from the "
+             f"Indian Health Service, tribal health programs, or urban Indian "
+             f"health programs? (AI/AN Person {column})", _APPENDIX_B,
+             transform="yes_no", options=YES_NO,
+             applies_when=_health(present, not_received),
+             printed_label_es=(
+                 f"3. Si contesta “No”, ¿puede esta persona recibir servicios "
+                 f"del Servicio de Salud Indígena, programas de salud tribales "
+                 f"o programas urbanos de salud indígena? (Persona AI/AN "
+                 f"{column})"
+             )),
+        Spec(f"{prefix}.tribal_income_amount", FieldKind.TEXT,
+             f"4. Income from these sources — $ (AI/AN Person {column})",
+             _APPENDIX_B, transform="currency_whole",
+             applies_when=_health(present, has_income),
+             printed_label_es=(
+                 f"4. Ingresos de estas fuentes — $ (Persona AI/AN {column})"
+             )),
+        Spec(f"{prefix}.tribal_income_frequency", FieldKind.TEXT,
+             f"4. Income from these sources — How often? (AI/AN Person "
+             f"{column})", _APPENDIX_B,
+             applies_when=_health(present, has_income),
+             printed_label_es=(
+                 f"4. Ingresos de estas fuentes — ¿Cada cuánto? (Persona AI/AN "
+                 f"{column})"
+             )),
+    )
+
+
+_ASSISTER = _gate("household.application_assister")
+
+
+def _appendix_c_specs() -> tuple[Spec, ...]:
+    """Appendix C's items 3 and 9, and its block for application counselors."""
+    representative = _gate(
+        "household.authorized_representative.0.present", presence=True
+    )
+
+    return (
+        Spec("household.authorized_representative.0.address.apartment",
+             FieldKind.TEXT, "3. Apartment or suite number", _APPENDIX_C,
+             optional=True, applies_when=representative,
+             printed_label_es="3. Número de apartamento o lote"),
+        Spec("household.authorized_representative.0.organization_id",
+             FieldKind.TEXT, "9. Organization ID number (if applicable)",
+             _APPENDIX_C, optional=True, applies_when=representative,
+             printed_label_es=(
+                 "9. Número de identificación de la organización (si aplica)"
+             )),
+        Spec("household.application_assister.start_date", FieldKind.TEXT,
+             "1. Application start date (mm/dd/yyyy) (counselor)", _APPENDIX_C,
+             transform="us_date", applies_when=_health(_ASSISTER),
+             printed_label_es=(
+                 "1. Application start date (mm/dd/yyyy) (consejero)"
+             )),
+        Spec("household.application_assister.name", FieldKind.TEXT,
+             "2. First name, middle name, last name, & suffix (counselor)",
+             _APPENDIX_C, applies_when=_health(_ASSISTER),
+             printed_label_es=(
+                 "2. First name, middle name, last name, & suffix (consejero)"
+             )),
+        Spec("household.application_assister.organization", FieldKind.TEXT,
+             "3. Organization name (counselor)", _APPENDIX_C,
+             applies_when=_health(_ASSISTER),
+             printed_label_es="3. Organization name (consejero)"),
+        Spec("household.application_assister.organization_id",
+             FieldKind.TEXT,
+             "4. Organization ID number (if applicable) (counselor)",
+             _APPENDIX_C, optional=True, applies_when=_health(_ASSISTER),
+             printed_label_es=(
+                 "4. Organization ID number (if applicable) (consejero)"
+             )),
+    )
+
+
+_ADDENDUM_SPECS: tuple[Spec, ...] = (
+    *(spec for slot in range(TAX_HOUSEHOLD_ROWS) for spec in _tax_specs(slot)),
+    *_deduction_specs(),
+    *_people_specs(),
+    *(spec for row in range(HTW_OPT_OUT_ROWS) for spec in _htw_opt_out_specs(row)),
+    *_money_and_coverage_specs(),
+    *(
+        spec
+        for row in range(EMPLOYER_COVERAGE_ROWS)
+        for spec in _employer_coverage_specs(row)
+    ),
+    *(spec for row in range(TRIBAL_ROWS) for spec in _tribal_specs(row)),
+    *_appendix_c_specs(),
+)
+
+
 FIELD_SPECS = (
     *FIELD_SPECS,
     *_GATEWAY_SPECS,
@@ -831,10 +1595,14 @@ FIELD_SPECS = (
     *_housing_specs(),
     *_housing_mark_specs(),
     *_REPRESENTATIVE_SPECS,
+    *_ADDENDUM_SPECS,
 )
 
 #: Every canonical key this form places, in printed order.
 PLACED_KEYS: tuple[str, ...] = tuple(spec.key for spec in FIELD_SPECS)
+
+#: The keys placed on the Medicaid / CHIP addendum, pages 26 to 34.
+ADDENDUM_KEYS: frozenset[str] = frozenset(spec.key for spec in _ADDENDUM_SPECS)
 
 
 # ---------------------------------------------------------------------------
@@ -1626,6 +2394,872 @@ _GATEWAY_PLACEMENTS_ES: dict[str, object] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# The Medicaid / CHIP addendum, placed — once per edition
+# ---------------------------------------------------------------------------
+#
+# Written per edition for the same reason as everything above, and here the
+# editions disagree inside the addendum itself: the Spanish "name of tax filer"
+# label wraps onto two lines for Persons 1, 3 and 5 and not for 2 and 4, its
+# Appendix A sets the premium frequencies in two rows where the English sets
+# one, and its Section 2 squeezes "How often?" and "Type" onto the line the
+# English gives a line of their own.
+#
+# Section 1 prints Person 1 on PDF page 26, Persons 2 and 3 on page 27, and
+# Persons 4 and 5 on page 28: slot N lives at the page and occurrence below.
+
+
+def _tax_page(slot: int) -> int:
+    return 26 + (slot + 1) // 2
+
+
+def _tax_occurrence(slot: int) -> int:
+    return 0 if slot == 0 else (slot - 1) % 2
+
+
+def _square(placements: object) -> tuple[SnapToSquare, ...]:
+    """Mark placements for printed squares rather than circles.
+
+    Appendices A and B print square checkboxes. ``_merge`` snaps every other
+    mark to the circle nearest it; these are snapped to their square instead,
+    and ``_snapped`` leaves them alone.
+    """
+    group = placements if isinstance(placements, tuple) else (placements,)
+
+    return tuple(SnapToSquare(placement) for placement in group)
+
+
+def _tax_placements_en(slot: int) -> dict[str, object]:
+    prefix = f"health.tax_household.{slot}"
+    page, occ = _tax_page(slot), _tax_occurrence(slot)
+
+    def at(phrase: str) -> Anchor:
+        return Anchor(phrase, page=page, occurrence=occ)
+
+    placements: dict[str, object] = {
+        f"{prefix}.first_name": Above(at("First name")),
+        f"{prefix}.middle_name": Above(at("Middle name")),
+        f"{prefix}.last_name": Above(at("Last name")),
+        f"{prefix}.spouse_name": Below(at("If married, name of spouse:")),
+        f"{prefix}.plans_to_file": _yes_no(
+            "Do you plan to file a federal income tax return next year?",
+            page, occurrence=occ,
+        ),
+        f"{prefix}.files_jointly": _yes_no(
+            "a. Will you file jointly with a spouse?", page, occurrence=occ
+        ),
+        # Question b wraps; its circles sit beside the second line.
+        f"{prefix}.fears_harm_from_disclosure": _yes_no(
+            "or your children in danger?", page, occurrence=occ
+        ),
+        f"{prefix}.claims_dependents": _yes_no(
+            "c. Will you claim any dependents on your tax return?",
+            page, occurrence=occ,
+        ),
+        f"{prefix}.dependent_names": Below(
+            at("If yes, list name(s) of dependents:")
+        ),
+        f"{prefix}.claimed_as_dependent": _yes_no(
+            "d. Will you be claimed as a dependent on someone's tax return?",
+            page, occurrence=occ,
+        ),
+        f"{prefix}.tax_filer_name": Below(
+            at("If yes, list the name of tax filer:")
+        ),
+        f"{prefix}.relationship_to_tax_filer": Below(
+            at("How are you related to the tax filer?")
+        ),
+    }
+
+    if slot > 0:
+        placements[f"{prefix}.lives_with_applicant"] = _yes_no(
+            f"Does Person {slot + 1} live at the same address as Person 1?",
+            page,
+        )
+
+    return placements
+
+
+#: The Spanish "name of tax filer" and "relationship" labels, per block.
+#:
+#: Persons 1, 3 and 5 print each label on two lines and the writing space sits
+#: under the second ("declarante:" / "declarante?"); Persons 2 and 4 print each
+#: on one. Anchored on the line the space sits under, per block, rather than on
+#: a phrase that happens to be shared.
+_ES_TAX_FILER_LABELS: dict[int, tuple[Anchor, Anchor]] = {
+    0: (
+        Anchor("declarante:", page=26),
+        Anchor("declarante?", page=26),
+    ),
+    1: (
+        Anchor("Si contesta “Sí”, escriba el nombre de declarante:", page=27),
+        Anchor("¿Qué relación tiene usted con el declarante?", page=27),
+    ),
+    2: (
+        Anchor("declarante:", page=27),
+        Anchor("declarante?", page=27),
+    ),
+    3: (
+        Anchor("Si contesta “Sí”, escriba el nombre del declarante:", page=28),
+        Anchor("¿Qué relación tiene usted con el declarante?", page=28),
+    ),
+    4: (
+        Anchor("declarante:", page=28),
+        Anchor("declarante?", page=28),
+    ),
+}
+
+
+def _tax_placements_es(slot: int) -> dict[str, object]:
+    prefix = f"health.tax_household.{slot}"
+    page, occ = _tax_page(slot), _tax_occurrence(slot)
+    filer, relationship = _ES_TAX_FILER_LABELS[slot]
+
+    def at(phrase: str) -> Anchor:
+        return Anchor(phrase, page=page, occurrence=occ)
+
+    placements: dict[str, object] = {
+        f"{prefix}.first_name": Above(at("Nombre")),
+        f"{prefix}.middle_name": Above(at("Segundo nombre")),
+        f"{prefix}.last_name": Above(at("Apellido")),
+        f"{prefix}.spouse_name": Below(
+            at("Si es casado(a), nombre de su esposo(a):")
+        ),
+        f"{prefix}.plans_to_file": _si_no(
+            "¿Va a presentar una declaración de impuestos del IRS el próximo "
+            "año?",
+            page, occurrence=occ,
+        ),
+        f"{prefix}.files_jointly": _si_no(
+            "a. ¿Presentará la declaración conjuntamente con su esposo(a)?",
+            page, occurrence=occ,
+        ),
+        f"{prefix}.fears_harm_from_disclosure": _si_no(
+            "pueda ponerlo a usted o a sus hijos en peligro?",
+            page, occurrence=occ,
+        ),
+        f"{prefix}.claims_dependents": _si_no(
+            "c. ¿Reclamará dependientes en su declaración de impuestos?",
+            page, occurrence=occ,
+        ),
+        f"{prefix}.dependent_names": Below(
+            at("Si contesta “Sí”, escriba los nombres de los dependientes:")
+        ),
+        # Question d wraps. Person 1's circles sit level with its second line,
+        # everyone else's with its first.
+        f"{prefix}.claimed_as_dependent": (
+            _si_no("de impuestos?", page, occurrence=occ)
+            if slot == 0
+            else _si_no(
+                "d. ¿Lo reclamará alguien a usted como dependiente en la "
+                "declaración",
+                page,
+                occurrence=occ,
+            )
+        ),
+        f"{prefix}.tax_filer_name": Below(filer),
+        f"{prefix}.relationship_to_tax_filer": Below(relationship),
+    }
+
+    if slot > 0:
+        placements[f"{prefix}.lives_with_applicant"] = _si_no(
+            f"¿Vive la Persona {slot + 1} en la misma dirección que la "
+            f"Persona 1?",
+            page,
+        )
+
+    return placements
+
+
+def _addendum_placements_en() -> dict[str, object]:
+    def at(phrase: str, page: int, occurrence: int = 0, **extra) -> Anchor:
+        return Anchor(phrase, page=page, occurrence=occurrence, **extra)
+
+    other_line = at("How often? ____", 29)
+
+    placements: dict[str, object] = {
+        # --- Section 2, page 29 --------------------------------------------
+        "health.tax_deductions.alimony": Over(at("Alimony paid", 29)),
+        "health.tax_deductions.alimony_amount": RightOf(
+            at("$", 29, 0), width=108.0, gap=2.0
+        ),
+        "health.tax_deductions.alimony_frequency": RightOf(
+            at("How often?", 29, 0), width=125.0, gap=3.0
+        ),
+        "health.tax_deductions.alimony_agreement_before_2019": _yes_no(
+            "on or before Dec. 31, 2018?", 29
+        ),
+        "health.tax_deductions.student_loan_interest": Over(
+            at("Student loan interest", 29)
+        ),
+        "health.tax_deductions.student_loan_interest_amount": RightOf(
+            at("$", 29, 1), width=56.0, gap=2.0
+        ),
+        "health.tax_deductions.student_loan_interest_frequency": RightOf(
+            at("How often?", 29, 1), width=125.0, gap=3.0
+        ),
+        # The circle sits beside the first of the item's three lines.
+        "health.tax_deductions.other": Over(
+            at("Other deductions, such as educator expenses", 29)
+        ),
+        "health.tax_deductions.other_amount": AfterMarker(
+            at("tuition and fees $", 29), width=60.0, height=13.0
+        ),
+        "health.tax_deductions.other_frequency": AfterMarker(
+            other_line, marker="often?", width=110.0, height=13.0
+        ),
+        "health.tax_deductions.other_types": AfterMarker(
+            other_line, marker="Types", width=110.0, height=13.0
+        ),
+        # --- Section 3, page 29 --------------------------------------------
+        "health.child_travels_with_migrant_worker": _yes_no(
+            "who is a migrant farm worker?", 29
+        ),
+        "health.migrant_child_names": Below(
+            at("If yes, what is the name of that child or children?", 29),
+            width=400.0,
+        ),
+        "health.child_in_special_health_care_needs": _yes_no(
+            "2. Is a child in the Children with Special Health Care Needs "
+            "program?",
+            29,
+        ),
+        "health.special_health_care_needs_who": Below(
+            at("If yes, who?", 29, 0), width=400.0
+        ),
+        "health.american_indian_or_alaska_native": _yes_no(
+            "3. Is anyone an American Indian or Native Alaskan?", 29
+        ),
+        "household.foster_care_at_18_or_older": _yes_no(
+            "4. Was anyone in foster care when they were", 29
+        ),
+        "household.foster_care_at_18_or_older_who": RightOf(
+            at("If yes, who?", 29, 1), width=130.0, gap=8.0
+        ),
+        "household.foster_care_at_18_or_older_state": RightOf(
+            at("In which State?", 29), width=150.0, gap=8.0
+        ),
+        "household.absent_parents": _yes_no("outside of the home?", 29),
+        "health.htw_confidential.street": RightOf(
+            at("Mailing Address - Street.", 29), width=250.0
+        ),
+        "health.htw_confidential.city": RightOf(at("City:", 29), width=200.0),
+        "health.htw_confidential.state": RightOf(at("State:", 29), width=60.0),
+        "health.htw_confidential.zip_code": RightOf(at("Zip:", 29), width=60.0),
+        "health.htw_confidential.phone": RightOf(
+            at("Phone number:", 29), width=110.0
+        ),
+        **{
+            key: placement
+            for row in range(HTW_OPT_OUT_ROWS)
+            for key, placement in (
+                (
+                    f"health.htw_screening_opt_out.{row}.name",
+                    AfterMarker(
+                        at("I do not want to be tested for HTW.", 29, row),
+                        marker="Name",
+                        width=170.0,
+                        height=13.0,
+                    ),
+                ),
+                # The box is printed after the sentence, not before it.
+                (
+                    f"health.htw_screening_opt_out.{row}.declines",
+                    RightOf(
+                        at("I do not want to be tested for HTW.", 29, row),
+                        width=9.0,
+                        height=9.0,
+                        gap=4.0,
+                    ),
+                ),
+            )
+        },
+        # --- Section 4, page 30 --------------------------------------------
+        "income.total_this_year": RightOf(at("$", 30, 0), width=150.0),
+        "income.total_next_year": RightOf(at("$", 30, 1), width=220.0),
+        # --- Section 5 ------------------------------------------------------
+        "health.has_employer_coverage": _yes_no(
+            "coverage is from someone else's job, such as a parent or spouse.)",
+            30,
+        ),
+        "health.lost_job_coverage": _yes_no("within the past 3 months?", 30),
+        "health.lost_job_coverage_who": Below(at("If yes, who?", 30)),
+        "health.lost_job_coverage_end_date": Below(at("If yes, end date:", 30)),
+        "health.lost_job_coverage_reason": tuple(
+            Over(at(label, 30))
+            for label in (
+                "Parent’s job ended due to",
+                "Parent’s COBRA or ERS",
+                "Change in parent’s",
+                "CHIP benefits from another",
+                "Medicaid benefits from",
+                "Private health coverage",
+                "Death of a parent.",
+                "The child has special",
+                "Medicaid benefits ended",
+                "Others",
+            )
+        ),
+        "health.lost_job_coverage_other_reason": RightOf(
+            at("Others", 30), width=60.0, gap=2.0
+        ),
+        # --- Section 6 ------------------------------------------------------
+        "household.incarcerated": _yes_no("in jail (incarcerated)?", 30),
+        "household.incarcerated_who": Below(
+            at("If yes, who is in jail?", 30), width=400.0
+        ),
+        "health.renewal_years": tuple(
+            Over(at(label, 30))
+            for label in (
+                "5 years (the maximum",
+                "4 years",
+                "3 years",
+                "2 years",
+                "1 years",
+                "Don’t use information from",
+            )
+        ),
+        # --- Appendix A, page 31 -------------------------------------------
+        **_employer_coverage_placements(
+            page=31,
+            employee=at("1. Employee name (First, Middle, Last)", 31),
+            employer=at("3. Employer name", 31),
+            ein=at("4. Employer Identification Number (EIN)", 31),
+            address=at("5. Employer address", 31),
+            phone_band=(505.0, 520.0),
+            city=at("7. City", 31),
+            state=at("8. State", 31),
+            zip_code=at("9. ZIP code", 31),
+            contact=at(
+                "10. Who can we contact about employee health coverage at this "
+                "job?",
+                31,
+            ),
+            contact_phone_band=(424.0, 439.0),
+            email=at("12. Email address", 31),
+            eligible_yes=at("Yes (Continue)", 31),
+            eligible_no=at("No (Stop here and go to page 9, Section L)", 31),
+            waiting=at(
+                "13a. If you’re in a waiting or probationary period, when can "
+                "you enroll in coverage?",
+                31,
+            ),
+            other_names=tuple(at("Name:", 31, slot) for slot in range(3)),
+            minimum_value=_yes_no(
+                "14. Does the employer offer a health plan that meets the "
+                "minimum value standard*?",
+                31,
+            ),
+            premium=at(
+                "a. How much would the employee have to pay in premiums for "
+                "this plan? $",
+                31,
+                0,
+            ),
+            frequencies=tuple(
+                SameRow(at("b. How often?", 31, 0), word)
+                for word in (
+                    "Weekly",
+                    "Every 2 weeks",
+                    "Twice a month",
+                    "Once a month",
+                    "Quarterly",
+                    "Yearly",
+                )
+            ),
+            changes=(
+                Over(at("Employer won’t offer health coverage", 31)),
+                Over(
+                    at(
+                        "Employer will start offering health coverage to "
+                        "employees",
+                        31,
+                    )
+                ),
+            ),
+            changed_premium=at(
+                "a. How much would the employee have to pay in premiums for "
+                "this plan? $",
+                31,
+                1,
+            ),
+            changed_frequencies=tuple(
+                SameRow(at("b. How often?", 31, 1), word)
+                for word in (
+                    "Weekly",
+                    "Every 2 weeks",
+                    "Twice a month",
+                    "Once a month",
+                    "Quarterly",
+                    "Yearly",
+                )
+            ),
+            change_date=at("Date of change (mm/dd/yyyy):", 31),
+        ),
+        # --- Appendix B, page 33 -------------------------------------------
+        **{
+            key: placement
+            for row in range(TRIBAL_ROWS)
+            for key, placement in _tribal_placements(
+                row,
+                first=at("First", 33, row),
+                middle=at("Middle", 33, row),
+                last=at("Last", 33, row),
+                member=(
+                    Over(at("Yes", 33, row, within=(524.0, 535.0))),
+                    Over(at("No", 33, row, within=(470.0, 480.0))),
+                ),
+                tribe=at("If yes, tribe name", 33, row),
+                tribe_gap=6.0,
+                received=(
+                    Over(at("Yes", 33, row, within=(442.0, 452.0))),
+                    Over(at("No", 33, row, within=(425.0, 435.0))),
+                ),
+                eligible=(
+                    Over(at("Yes", 33, row, within=(360.0, 370.0))),
+                    Over(at("No", 33, row, within=(360.0, 370.0))),
+                ),
+                amount=at("$", 33, row, within=(322.0, 330.0)),
+                often=at("How often?", 33, row),
+            ).items()
+        },
+        # --- Appendix C, page 34 -------------------------------------------
+        "household.authorized_representative.0.address.apartment": Below(
+            at("3. Apartment or suite number", 34)
+        ),
+        "household.authorized_representative.0.organization_id": Below(
+            at("9. Organization ID number (if applicable)", 34)
+        ),
+        "household.application_assister.start_date": Below(
+            at("1. Application start date (mm/dd/yyyy)", 34), width=200.0
+        ),
+        "household.application_assister.name": Below(
+            at("2. First name, middle name, last name, & suffix", 34),
+            width=340.0,
+        ),
+        "household.application_assister.organization": Below(
+            at("3. Organization name", 34)
+        ),
+        "household.application_assister.organization_id": Below(
+            at("4. Organization ID number (if applicable)", 34)
+        ),
+    }
+
+    return placements
+
+
+def _employer_coverage_placements(
+    *,
+    page: int,
+    employee: Anchor,
+    employer: Anchor,
+    ein: Anchor,
+    address: Anchor,
+    phone_band: tuple[float, float],
+    city: Anchor,
+    state: Anchor,
+    zip_code: Anchor,
+    contact: Anchor,
+    contact_phone_band: tuple[float, float],
+    email: Anchor,
+    eligible_yes: Anchor,
+    eligible_no: Anchor,
+    waiting: Anchor,
+    other_names: tuple[Anchor, ...],
+    minimum_value: object,
+    premium: Anchor,
+    frequencies: tuple[object, ...],
+    changes: tuple[object, ...],
+    changed_premium: Anchor,
+    changed_frequencies: tuple[object, ...],
+    change_date: Anchor,
+) -> dict[str, object]:
+    """Appendix A's one printed page, from one edition's own anchors.
+
+    A layout helper, not a shared map: every anchor is passed in by the
+    edition's builder, in that edition's words.
+    """
+    prefix = "appendices.employer_coverage.0"
+
+    return {
+        f"{prefix}.employee_name": Below(employee),
+        f"{prefix}.employer_name": Below(employer),
+        # Written as the applicant typed it, just above the printed template.
+        # The two editions group that template differently — the English one
+        # prints three groups, like the Social Security number above it — so
+        # splitting the digits into its cells would put them in the wrong ones
+        # on one edition or the other.
+        f"{prefix}.employer_ein": Below(ein, gap=0.5, height=12.0),
+        f"{prefix}.employer_address": Below(address),
+        f"{prefix}.employer_phone": PhoneSlots(
+            within=phone_band, page=page, x_from=350.0, ends_at=520.0
+        ),
+        f"{prefix}.employer_city": Below(city),
+        f"{prefix}.employer_state": Below(state),
+        f"{prefix}.employer_zip_code": Below(zip_code),
+        f"{prefix}.contact_name": Below(contact, width=520.0),
+        f"{prefix}.contact_phone": PhoneSlots(
+            within=contact_phone_band, page=page, x_from=50.0, ends_at=225.0
+        ),
+        f"{prefix}.employer_email": Below(email),
+        f"{prefix}.eligible_now_or_soon": _square(
+            (Over(eligible_yes), Over(eligible_no))
+        ),
+        f"{prefix}.waiting_period_enrollment_date": RightOf(
+            waiting, width=120.0, gap=6.0
+        ),
+        **{
+            f"{prefix}.other_eligible.{slot}": RightOf(
+                anchor, width=110.0, gap=3.0
+            )
+            for slot, anchor in enumerate(other_names)
+        },
+        f"{prefix}.meets_minimum_value_standard": _square(minimum_value),
+        f"{prefix}.lowest_cost_premium": AfterMarker(
+            premium, width=110.0, height=13.0
+        ),
+        f"{prefix}.lowest_cost_premium_frequency": _square(frequencies),
+        f"{prefix}.plan_change": _square(changes),
+        f"{prefix}.changed_premium": AfterMarker(
+            changed_premium, width=110.0, height=13.0
+        ),
+        f"{prefix}.changed_premium_frequency": _square(changed_frequencies),
+        f"{prefix}.plan_change_date": RightOf(change_date, width=120.0, gap=6.0),
+    }
+
+
+def _tribal_placements(
+    row: int,
+    *,
+    first: Anchor,
+    middle: Anchor,
+    last: Anchor,
+    member: tuple[object, object],
+    tribe: Anchor,
+    tribe_gap: float,
+    received: tuple[object, object],
+    eligible: tuple[object, object],
+    amount: Anchor,
+    often: Anchor,
+) -> dict[str, object]:
+    """One Appendix B person column, from one edition's own anchors."""
+    prefix = f"appendices.tribal.{row}"
+
+    return {
+        f"{prefix}.first_name": Below(first),
+        f"{prefix}.middle_name": Below(middle),
+        f"{prefix}.last_name": Below(last),
+        f"{prefix}.member_of_tribe": _square(member),
+        f"{prefix}.tribe_name": Below(tribe, gap=tribe_gap, height=12.0),
+        f"{prefix}.received_indian_health_service": _square(received),
+        f"{prefix}.eligible_for_indian_health_service": _square(eligible),
+        f"{prefix}.tribal_income_amount": RightOf(amount, width=90.0, gap=2.0),
+        f"{prefix}.tribal_income_frequency": RightOf(often, width=95.0, gap=3.0),
+    }
+
+
+def _addendum_placements_es() -> dict[str, object]:
+    def at(phrase: str, page: int, occurrence: int = 0, **extra) -> Anchor:
+        return Anchor(phrase, page=page, occurrence=occurrence, **extra)
+
+    placements: dict[str, object] = {
+        # --- Sección 2, página 29 ------------------------------------------
+        "health.tax_deductions.alimony": Over(
+            at("Pensión alimenticia que paga $", 29)
+        ),
+        "health.tax_deductions.alimony_amount": AfterMarker(
+            at("Pensión alimenticia que paga $", 29), width=70.0, height=13.0
+        ),
+        "health.tax_deductions.alimony_frequency": RightOf(
+            at("¿Cada cuánto?", 29, 0), width=120.0, gap=3.0
+        ),
+        "health.tax_deductions.alimony_agreement_before_2019": _si_no(
+            "el 31 de diciembre de 2018", 29
+        ),
+        "health.tax_deductions.student_loan_interest": Over(
+            at("Interés del préstamo estudiantil $", 29)
+        ),
+        "health.tax_deductions.student_loan_interest_amount": AfterMarker(
+            at("Interés del préstamo estudiantil $", 29), width=70.0, height=13.0
+        ),
+        "health.tax_deductions.student_loan_interest_frequency": RightOf(
+            at("¿Cada cuánto?", 29, 1), width=120.0, gap=3.0
+        ),
+        "health.tax_deductions.other": Over(
+            at("Otras deducciones, como gastos de educador", 29)
+        ),
+        # The Spanish line gives the amount, how often and the type one row.
+        "health.tax_deductions.other_amount": AfterMarker(
+            at("para los militares en servicio activo, matrícula y tarifas $", 29),
+            width=24.0,
+            height=13.0,
+        ),
+        "health.tax_deductions.other_frequency": RightOf(
+            at("¿Cada cuánto?", 29, 2), width=42.0, gap=2.0
+        ),
+        "health.tax_deductions.other_types": RightOf(
+            at("Tipo :", 29), width=44.0, gap=2.0
+        ),
+        # --- Sección 3, página 29 ------------------------------------------
+        "health.child_travels_with_migrant_worker": _si_no(
+            "1. ¿Viaja un niño que solicita atención médica con un familiar que "
+            "es",
+            29,
+        ),
+        "health.migrant_child_names": Below(
+            at("Si contesta sí, ¿cuál es el nombre del niño o de los niños?", 29),
+            width=400.0,
+        ),
+        "health.child_in_special_health_care_needs": _si_no(
+            "2. ¿Participa un niño en el programa de Niños con Necesidades", 29
+        ),
+        "health.special_health_care_needs_who": Below(
+            at("Si contesta “Sí”, ¿quién?", 29, 0), width=400.0
+        ),
+        "health.american_indian_or_alaska_native": _si_no(
+            "3. ¿Es alguien indio americano o nativo de Alaska?", 29
+        ),
+        "household.foster_care_at_18_or_older": _si_no(
+            "4. ¿Estuvo alguien bajo crianza temporal cuando tenía 18 años o "
+            "más?",
+            29,
+        ),
+        # The Spanish edition sets the writing space above these two labels,
+        # where the English sets it beside them.
+        "household.foster_care_at_18_or_older_who": Above(
+            at("Si contesta “Sí”, ¿quién?", 29, 1), width=190.0
+        ),
+        "household.foster_care_at_18_or_older_state": Above(
+            at("¿En qué estado?", 29), width=210.0
+        ),
+        "household.absent_parents": _si_no("en esta solicitud?", 29),
+        "health.htw_confidential.street": RightOf(
+            at("Dirección postal - Calle:", 29), width=250.0
+        ),
+        "health.htw_confidential.city": RightOf(at("Ciudad:", 29), width=165.0),
+        "health.htw_confidential.state": RightOf(at("Estado:", 29), width=60.0),
+        "health.htw_confidential.zip_code": RightOf(
+            at("Código postal:", 29), width=60.0
+        ),
+        "health.htw_confidential.phone": RightOf(
+            at("Número de teléfono:", 29), width=100.0
+        ),
+        **{
+            key: placement
+            for row in range(HTW_OPT_OUT_ROWS)
+            for key, placement in (
+                (
+                    f"health.htw_screening_opt_out.{row}.name",
+                    AfterMarker(
+                        at(
+                            "No quiero que me hagan la prueba para elegibilidad "
+                            "de HTW",
+                            29,
+                            row,
+                        ),
+                        marker="Nombre:",
+                        width=64.0,
+                        height=13.0,
+                    ),
+                ),
+                (
+                    f"health.htw_screening_opt_out.{row}.declines",
+                    RightOf(
+                        at(
+                            "No quiero que me hagan la prueba para elegibilidad "
+                            "de HTW",
+                            29,
+                            row,
+                        ),
+                        width=9.0,
+                        height=9.0,
+                        # The Spanish box sits well past the end of the line.
+                        gap=29.0,
+                    ),
+                ),
+            )
+        },
+        # --- Sección 4, página 30 ------------------------------------------
+        "income.total_this_year": RightOf(at("$", 30, 0), width=150.0),
+        "income.total_next_year": RightOf(at("$", 30, 1), width=220.0),
+        # --- Sección 5 -----------------------------------------------------
+        "health.has_employer_coverage": _si_no(
+            "otra persona, por ejemplo, de un padre o esposo).", 30
+        ),
+        "health.lost_job_coverage": _si_no("últimos 3 meses?", 30),
+        "health.lost_job_coverage_who": Below(
+            at("Si contesta “Sí”, ¿quién?", 30)
+        ),
+        "health.lost_job_coverage_end_date": Below(
+            at("Si contesta “Sí”, fecha de terminación:", 30)
+        ),
+        # The same order as the English: parent's job, COBRA, marital status,
+        # CHIP in another state, Medicaid in another state, private coverage,
+        # a parent's death, special health-care needs, Medicaid ended, other.
+        "health.lost_job_coverage_reason": (
+            Over(at("Terminó el empleo del", 30)),
+            Over(at("Terminó la cobertura de", 30)),
+            Over(at("Cambió el estado civil", 30)),
+            Over(at("Terminaron los beneficios", 30, 0)),
+            Over(at("Terminaron los beneficios de", 30)),
+            Over(at("Terminó la cobertura médica", 30)),
+            Over(at("Murió uno de los padres", 30)),
+            Over(at("El niño tiene necesidades", 30)),
+            Over(at("Terminaron los beneficios", 30, 1)),
+            Over(at("Otra:", 30)),
+        ),
+        "health.lost_job_coverage_other_reason": RightOf(
+            at("Otra:", 30), width=70.0, gap=2.0
+        ),
+        # --- Sección 6 -----------------------------------------------------
+        "household.incarcerated": _si_no(
+            "A. ¿Está en la cárcel alguien que solicita cobertura médica?", 30
+        ),
+        "household.incarcerated_who": Below(
+            at("Si contesta “Sí”, ¿quién está en la cárcel?", 30), width=400.0
+        ),
+        "health.renewal_years": tuple(
+            Over(at(label, 30))
+            for label in (
+                "5 años (el máximo",
+                "4 años",
+                "3 años",
+                "2 años",
+                "1 año",
+                "No use información de las",
+            )
+        ),
+        # --- Apéndice A, página 31 -----------------------------------------
+        **_employer_coverage_placements(
+            page=31,
+            employee=at(
+                "1. Nombre del empleado (nombre, segundo nombre, apellido)", 31
+            ),
+            employer=at("3. Nombre del empleador", 31),
+            ein=at("4. Número de identificación del empleador (EIN)", 31),
+            address=at("5. Dirección del empleador", 31),
+            phone_band=(505.0, 520.0),
+            city=at("7. Ciudad", 31),
+            state=at("8. Estado", 31),
+            zip_code=at("9. Código postal", 31),
+            contact=at(
+                "10. ¿Con quién podemos comunicarnos sobre cobertura médica para "
+                "empleados en este trabajo?",
+                31,
+            ),
+            contact_phone_band=(424.0, 439.0),
+            email=at("12. Dirección de correo electrónico", 31),
+            eligible_yes=at("Sí (Continúe)", 31),
+            eligible_no=at("No (Pare aquí y vaya a la página 9, Sección L)", 31),
+            waiting=at(
+                "13a. Si está en un período de espera o probatorio, ¿cuándo "
+                "podrá inscribirse en la cobertura?",
+                31,
+            ),
+            other_names=tuple(at("Nombre:", 31, slot) for slot in range(3)),
+            minimum_value=_si_no(
+                "14. ¿Ofrece el empleador un plan médico que satisfaga el "
+                "estándar de valor mínimo*?",
+                31,
+            ),
+            premium=at(
+                "a. ¿Cuánto tendría que pagar en primas el empleado para este "
+                "plan? $",
+                31,
+            ),
+            # Two rows of three, so each option is found by its own words.
+            frequencies=tuple(
+                Over(at(word, 31, 0))
+                for word in (
+                    "Cada semana",
+                    "Cada dos semanas",
+                    "Dos veces al mes",
+                    "Una vez al mes",
+                    "Cada 3 meses",
+                    "Una vez al año",
+                )
+            ),
+            changes=(
+                Over(at("El empleador no ofrecerá cobertura médica.", 31)),
+                Over(at("El empleador empezará a ofrecer cobertura médica", 31)),
+            ),
+            changed_premium=at(
+                "a. ¿Cuánto tendrá que pagar en primas el empleado para ese "
+                "plan? $",
+                31,
+            ),
+            changed_frequencies=tuple(
+                Over(at(word, 31, 1))
+                for word in (
+                    "Cada semana",
+                    "Cada dos semanas",
+                    "Dos veces al mes",
+                    "Una vez al mes",
+                    "Cada 3 meses",
+                    "Una vez al año",
+                )
+            ),
+            change_date=at("Fecha de cambio (mes/día/año):", 31),
+        ),
+        # --- Apéndice B, página 33 -----------------------------------------
+        **{
+            key: placement
+            for row in range(TRIBAL_ROWS)
+            for key, placement in _tribal_placements(
+                row,
+                first=at("Nombre", 33, row),
+                middle=at("Segundo nombre", 33, row),
+                last=at("Apellido", 33, row),
+                member=(
+                    Over(at("Sí", 33, row, within=(524.0, 535.0))),
+                    Over(at("No", 33, row, within=(470.0, 480.0))),
+                ),
+                # The label wraps; the space sits under "de la tribu?".
+                tribe=at("de la tribu?", 33, row),
+                # Closer to its rule than the English label is to its own.
+                tribe_gap=0.5,
+                received=(
+                    Over(at("Sí", 33, row, within=(442.0, 452.0))),
+                    Over(at("No", 33, row, within=(425.0, 435.0))),
+                ),
+                eligible=(
+                    Over(at("Sí", 33, row, within=(337.0, 347.0))),
+                    Over(at("No", 33, row, within=(337.0, 347.0))),
+                ),
+                amount=at("$", 33, row, within=(300.0, 308.0)),
+                # The two "¿Cada cuánto?" sit 0.7 points apart, on either side
+                # of a reading-order band, so the right-hand column reads first.
+                often=at("¿Cada cuánto?", 33, 1 - row),
+            ).items()
+        },
+        # --- Apéndice C, página 34 -----------------------------------------
+        "household.authorized_representative.0.address.apartment": Below(
+            at("3. Número de apartamento o lote", 34)
+        ),
+        # The label wraps to a second line that fills the cell, so the value
+        # goes beside it.
+        "household.authorized_representative.0.organization_id": RightOf(
+            at("organización (si aplica)", 34), width=90.0, height=10.5, gap=6.0
+        ),
+        # This block is printed in English on the Spanish edition too.
+        "household.application_assister.start_date": Below(
+            at("1. Application start date (mm/dd/yyyy)", 34), width=200.0
+        ),
+        "household.application_assister.name": Below(
+            at("2. First name, middle name, last name, & suffix", 34),
+            width=340.0,
+        ),
+        "household.application_assister.organization": Below(
+            at("3. Organization name", 34)
+        ),
+        "household.application_assister.organization_id": Below(
+            at("4. Organization ID number (if applicable)", 34)
+        ),
+    }
+
+    return placements
+
+
 #: Canonical keys whose target is a printed circle rather than a writing space.
 #:
 #: Derived from the specs, so a new CHOICE or CHECKBOX is snapped without
@@ -1655,7 +3289,11 @@ def _snapped(placement: object) -> object:
     offset, and averaging would move most marks off centre to improve a few.
     """
     if isinstance(placement, tuple):
-        return tuple(SnapToCircle(inner) for inner in placement)
+        return tuple(_snapped(inner) for inner in placement)
+
+    # Already snapped to the square it belongs in; see `_square`.
+    if isinstance(placement, SnapToSquare):
+        return placement
 
     return SnapToCircle(placement)
 
@@ -1695,6 +3333,8 @@ PLACEMENTS_EN = _merge(
     ),
     _housing_placements(_HOUSING_LABELS, 0),
     _representative_placements_en(),
+    *(_tax_placements_en(slot) for slot in range(TAX_HOUSEHOLD_ROWS)),
+    _addendum_placements_en(),
 )
 
 PLACEMENTS_ES = _merge(
@@ -1709,6 +3349,8 @@ PLACEMENTS_ES = _merge(
     ),
     _housing_placements(_HOUSING_LABELS, 1),
     _representative_placements_es(),
+    *(_tax_placements_es(slot) for slot in range(TAX_HOUSEHOLD_ROWS)),
+    _addendum_placements_es(),
 )
 
 
@@ -1789,6 +3431,8 @@ def _mappings(targets: dict[str, OverlayTarget]) -> tuple[FieldMapping, ...]:
             # child's residency, school and sex answer unplaced while the
             # adults' worked.
             alternate_keys=spec.alternate_keys,
+            applies_when=spec.applies_when,
+            drawn_only_with=spec.drawn_only_with,
         )
         for spec in FIELD_SPECS
     )
@@ -1884,6 +3528,33 @@ OFFICIAL_GROUPS: tuple[RepeatingGroup, ...] = (
         prefix="income.unearned",
         rows=OFFICIAL_OTHER_MONEY_ROWS,
         row_noun="Other income",
+    ),
+    # The Medicaid / CHIP addendum's lists. Each says what to do with the
+    # rows it cannot hold, in the form's own terms — Appendix A asks for "a
+    # copy of this page for each job that offers coverage".
+    RepeatingGroup(
+        prefix="health.tax_household",
+        rows=TAX_HOUSEHOLD_ROWS,
+        row_noun="Section 1 person",
+        overflow_note="h1010m_tax_people",
+    ),
+    RepeatingGroup(
+        prefix="health.htw_screening_opt_out",
+        rows=HTW_OPT_OUT_ROWS,
+        row_noun="HTW name line",
+        overflow_note="h1010m_htw_opt_outs",
+    ),
+    RepeatingGroup(
+        prefix="appendices.employer_coverage",
+        rows=EMPLOYER_COVERAGE_ROWS,
+        row_noun="Appendix A job",
+        overflow_note="h1010m_appendix_a",
+    ),
+    RepeatingGroup(
+        prefix="appendices.tribal",
+        rows=TRIBAL_ROWS,
+        row_noun="Appendix B person",
+        overflow_note="h1010m_appendix_b",
     ),
 )
 
@@ -1997,6 +3668,13 @@ def build() -> FormDefinition:
         DocumentVariant(
             document=TX_H1010_ES,
             targets=es_targets,
+            # Declared on every spec; without this the Spanish review sheet
+            # named each question in English.
+            printed_labels={
+                spec.key: spec.printed_label_es
+                for spec in FIELD_SPECS
+                if spec.printed_label_es
+            },
         ),
     )
 

@@ -345,6 +345,44 @@ class DocumentText:
 
         return len([line for line in candidates if wanted in line.normalized()])
 
+    def square_near(
+        self,
+        box: Box,
+        *,
+        reach: float = 14.0,
+        min_size: float = 6.0,
+        max_size: float = 14.0,
+    ) -> Box | None:
+        """The printed square checkbox nearest a box's centre, if any.
+
+        The counterpart of :meth:`PageInk.circle_near` for forms that print
+        squares. H1010's Medicaid addendum prints circles in its sections and
+        squares in Appendices A and B, and the squares — unlike the circles —
+        are drawn as rectangles, so they are found among :attr:`rects` rather
+        than in rendered pixels.
+        """
+        centre_x = box.x + box.width / 2
+        centre_y = box.y + box.height / 2
+
+        squares = [
+            rect
+            for rect in self.rects
+            if rect.page == box.page
+            and min_size <= rect.width <= max_size
+            and min_size <= rect.height <= max_size
+            and abs(rect.width - rect.height) <= 1.0
+        ]
+
+        def distance(rect: Box) -> float:
+            return max(
+                abs(rect.x + rect.width / 2 - centre_x),
+                abs(rect.y + rect.height / 2 - centre_y),
+            )
+
+        near = [rect for rect in squares if distance(rect) <= reach]
+
+        return min(near, key=distance) if near else None
+
     def page_lines(self, page: int) -> tuple[PrintedText, ...]:
         """Every line on `page`, top to bottom. For eyeballing a layout."""
         lines = [line for line in self.lines if line.page == page]
@@ -1391,8 +1429,49 @@ class SnapToCircle:
         )
 
 
+@dataclass(frozen=True)
+class SnapToSquare:
+    """A mark placement, centred in the printed square nearest it.
+
+    :class:`SnapToCircle` for the boxes some pages print instead of circles.
+    Raises rather than falling back to the label-relative guess: a square
+    checkbox that cannot be found means the placement is measured against the
+    wrong part of the page, and a mark beside a box reads as no answer.
+    """
+
+    inner: "Placement"
+
+    #: Slightly smaller than the square, as for a circle.
+    fill: float = 0.8
+
+    reach: float = 14.0
+
+    def resolve(self, text: DocumentText) -> Box:
+        guess = self.inner.resolve(text)
+        square = text.square_near(guess, reach=self.reach)
+
+        if square is None:
+            raise MeasurementError(
+                f"no printed square within {self.reach} points of the mark at "
+                f"({guess.x:.1f}, {guess.y:.1f}) on page {guess.page}"
+            )
+
+        width = square.width * self.fill
+        height = square.height * self.fill
+
+        return Box(
+            page=square.page,
+            x=square.x + (square.width - width) / 2,
+            y=square.y + (square.height - height) / 2,
+            width=width,
+            height=height,
+        )
+
+
 #: Any way of describing where a box is, relative to the printed page.
-Placement = Above | RightOf | Over | AfterMarker | CellGrid | SnapToCircle
+Placement = (
+    Above | RightOf | Over | AfterMarker | CellGrid | SnapToCircle | SnapToSquare
+)
 
 
 def _width_to_next_column(

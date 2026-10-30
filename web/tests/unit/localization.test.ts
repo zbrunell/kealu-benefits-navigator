@@ -103,6 +103,9 @@ const IDENTICAL_BY_DESIGN = new Set([
   'intake_progress_percent',
   // "Fax" is the Spanish word as well.
   'tx_submit_fax',
+  // A programme name, which HHSC's Spanish edition prints in English too.
+  'tx_screen_health_htw',
+  'tx_section_htw',
 ]);
 
 /**

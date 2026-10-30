@@ -3,6 +3,7 @@
 // Licensed under the Kealu Vector License v1.0 — PATENT PENDING
 //
 
+import type { MedicaidAddendumAnswers } from "@/types/medicaid-addendum";
 import type { Saws2PlusProgram } from "@/lib/report-assembler";
 import type { BenefitProgramId } from "@/lib/state-applications";
 import {
@@ -339,6 +340,14 @@ export interface Saws2PlusApplicationData {
    * unanswered question is never mistaken for an explicit No.
    */
   questionnaire: Saws2PlusQuestionnaire;
+
+  /**
+   * Answers to Texas's Medicaid / CHIP addendum that nothing above holds.
+   *
+   * Absent until a Texas household applying for health coverage answers one.
+   * See `types/medicaid-addendum.ts`.
+   */
+  medicaidAddendum?: MedicaidAddendumAnswers;
 }
 
 /*

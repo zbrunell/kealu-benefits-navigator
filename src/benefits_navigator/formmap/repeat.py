@@ -77,6 +77,11 @@ class RepeatingGroup:
     #: rather than guessed at by whoever reads it.
     presence_suffix: str = "present"
 
+    #: A ``ReviewWords.overflow_notes`` key, for a table whose form says what
+    #: to do with the rows it cannot hold ("attach a copy of this page for each
+    #: job"). Empty uses the generic overflow line.
+    overflow_note: str = ""
+
     def __post_init__(self) -> None:
         if self.rows < 1:
             raise ValueError(f"{self.prefix}: a table needs at least one row")

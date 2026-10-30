@@ -936,6 +936,90 @@
       {
         "key": "resources.has_personal_property",
         "value": false
+      },
+      {
+        "key": "health.applying_for_medicaid_or_chip",
+        "value": true
+      },
+      {
+        "key": "income.yearly_totals_apply",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.0.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.0.first_name",
+        "value": "Marisol"
+      },
+      {
+        "key": "health.tax_household.0.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "health.tax_household.0.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.0.spouse_name",
+        "value": "Diego Ramirez"
+      },
+      {
+        "key": "health.tax_household.1.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.1.first_name",
+        "value": "Diego"
+      },
+      {
+        "key": "health.tax_household.1.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.1.spouse_name",
+        "value": "Marisol Elena Ramirez"
+      },
+      {
+        "key": "health.tax_household.1.lives_with_applicant",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.2.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.2.first_name",
+        "value": "Sofia"
+      },
+      {
+        "key": "health.tax_household.2.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.2.lives_with_applicant",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.3.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.3.first_name",
+        "value": "Mateo"
+      },
+      {
+        "key": "health.tax_household.3.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.3.lives_with_applicant",
+        "value": true
+      },
+      {
+        "key": "household.foster_care_at_18_or_older",
+        "value": false
       }
     ]
   },
@@ -1592,6 +1676,174 @@
       {
         "key": "expenses.household.5.amount_monthly",
         "value": 35
+      },
+      {
+        "key": "health.applying_for_medicaid_or_chip",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.0.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.0.first_name",
+        "value": "Marisol"
+      },
+      {
+        "key": "health.tax_household.0.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "health.tax_household.0.last_name",
+        "value": "Ramirez de la Cruz Villanueva"
+      },
+      {
+        "key": "health.tax_household.0.spouse_name",
+        "value": "Adulto0 Ramirez"
+      },
+      {
+        "key": "health.tax_household.1.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.1.first_name",
+        "value": "Adulto0"
+      },
+      {
+        "key": "health.tax_household.1.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.1.spouse_name",
+        "value": "Marisol Elena Ramirez de la Cruz Villanueva"
+      },
+      {
+        "key": "health.tax_household.1.lives_with_applicant",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.2.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.2.first_name",
+        "value": "Adulto1"
+      },
+      {
+        "key": "health.tax_household.2.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.2.spouse_name",
+        "value": "Marisol Elena Ramirez de la Cruz Villanueva"
+      },
+      {
+        "key": "health.tax_household.2.lives_with_applicant",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.3.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.3.first_name",
+        "value": "Adulto2"
+      },
+      {
+        "key": "health.tax_household.3.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.3.spouse_name",
+        "value": "Marisol Elena Ramirez de la Cruz Villanueva"
+      },
+      {
+        "key": "health.tax_household.3.lives_with_applicant",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.4.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.4.first_name",
+        "value": "Adulto3"
+      },
+      {
+        "key": "health.tax_household.4.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.4.spouse_name",
+        "value": "Marisol Elena Ramirez de la Cruz Villanueva"
+      },
+      {
+        "key": "health.tax_household.4.lives_with_applicant",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.5.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.5.first_name",
+        "value": "Ninez0"
+      },
+      {
+        "key": "health.tax_household.5.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.5.lives_with_applicant",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.6.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.6.first_name",
+        "value": "Ninez1"
+      },
+      {
+        "key": "health.tax_household.6.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.6.lives_with_applicant",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.7.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.7.first_name",
+        "value": "Ninez2"
+      },
+      {
+        "key": "health.tax_household.7.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.7.lives_with_applicant",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.8.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.8.first_name",
+        "value": "Ninez3"
+      },
+      {
+        "key": "health.tax_household.8.last_name",
+        "value": "Ramirez"
+      },
+      {
+        "key": "health.tax_household.8.lives_with_applicant",
+        "value": true
       }
     ]
   },
@@ -1808,6 +2060,30 @@
       {
         "key": "resources.has_personal_property",
         "value": false
+      },
+      {
+        "key": "health.applying_for_medicaid_or_chip",
+        "value": true
+      },
+      {
+        "key": "income.yearly_totals_apply",
+        "value": false
+      },
+      {
+        "key": "health.tax_household.0.present",
+        "value": true
+      },
+      {
+        "key": "health.tax_household.0.first_name",
+        "value": "Marisol"
+      },
+      {
+        "key": "health.tax_household.0.middle_name",
+        "value": "Elena"
+      },
+      {
+        "key": "health.tax_household.0.last_name",
+        "value": "Ramirez"
       }
     ]
   }

@@ -271,3 +271,31 @@ def yes_no_text(value: Any) -> str:
         return "No"
 
     return ""
+
+
+#: The words the field plan prints for each pay frequency, by option key.
+#:
+#: These are ``FREQUENCY_LABELS`` in ``web/src/lib/reported-amounts.ts``, which
+#: a test keeps in step. The field plan sends a reported frequency as the words
+#: because California's form prints them into a text column.
+_FREQUENCY_WORDS: dict[str, str] = {
+    "Weekly": "weekly",
+    "Every two weeks": "every_two_weeks",
+    "Twice a month": "twice_a_month",
+    "Monthly": "monthly",
+    "Irregular": "irregular",
+}
+
+
+@register("frequency_option")
+def frequency_option(value: Any) -> str:
+    """A reported frequency as the option key a CHOICE target marks.
+
+    ``Monthly`` → ``monthly``. A value that is already an option key passes
+    through, and anything else is returned unchanged, so a frequency with no
+    circle still fails loudly as "no option on the form" rather than being
+    dropped.
+    """
+    text = plain(value)
+
+    return _FREQUENCY_WORDS.get(text, text)

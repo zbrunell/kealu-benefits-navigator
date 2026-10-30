@@ -1,5 +1,12 @@
 import { planAppendixDRows } from "@/lib/appendix-d-rows";
 import { householdSizeFromMembers } from "@/lib/household";
+import {
+  addendumOf,
+  addendumPeople,
+  appliesForHealthCoverage,
+  fullName,
+  rosterSpouseName,
+} from "@/lib/medicaid-addendum";
 import { planHouseholdRows } from "@/lib/household-rows";
 import { monthlyForBudget, printableAmount } from "@/lib/reported-amounts";
 import {
@@ -1007,6 +1014,9 @@ function mapQuestionnaire(
     fields.push(rowPresent(prefix));
     text(`${prefix}.name`, representative.name);
     text(`${prefix}.organization`, representative.organization);
+    // Appendix C item 9. Appendix C is where Section V sends every household
+    // that names a representative, whatever it applies for.
+    text(`${prefix}.organization_id`, representative.organizationId);
     text(`${prefix}.phone`, representative.phone);
     text(`${prefix}.address.street`, representative.street);
     text(`${prefix}.address.apartment`, representative.apartment);
@@ -1656,6 +1666,278 @@ function mapQuestionnaire(
 }
 
 /**
+ * Texas's Medicaid / CHIP addendum: the answers only it asks for.
+ *
+ * Emits nothing unless the household is applying for Medicaid or CHIP, which is
+ * the addendum's own rule ("Applying for or renewing Medicaid, CHIP, or Healthy
+ * Texas Women? If yes, you must fill out this form"). So a California plan, and
+ * a Texas plan for food benefits alone, are exactly what they were before.
+ *
+ * The addendum questions the shared model already answers — Appendix A from
+ * `health.employerCoverage`, Appendix B from `appendices.tribalMembership`, a
+ * parent living outside the home, American Indian or Alaska Native, the
+ * authorized representative — are emitted by the steps above under their
+ * existing keys. This step adds only what they do not: answers kept in
+ * `medicaidAddendum`, and a person's name split into the first, middle and last
+ * boxes the addendum prints.
+ *
+ * Follow-ups are emitted only while the question that opens them is Yes, like
+ * every other gateway in this file, so detail left over from an earlier Yes
+ * cannot reach the form.
+ */
+function mapMedicaidAddendum(
+  application: Saws2PlusApplicationData,
+): ApplicationFieldPlanEntry[] {
+  if (!appliesForHealthCoverage(application)) return [];
+
+  const fields: ApplicationFieldPlanEntry[] = [];
+  const addendum = addendumOf(application);
+  const people = addendumPeople(application);
+  const { health, circumstances, income, appendices } = application.questionnaire;
+
+  const tri = (key: string, value: boolean | undefined) => {
+    if (typeof value === "boolean") fields.push(entry(key, value));
+  };
+
+  const text = (key: string, value: string | undefined | null) => {
+    const trimmed = typeof value === "string" ? value.trim() : "";
+
+    if (trimmed) fields.push(entry(key, trimmed));
+  };
+
+  const amount = (key: string, value: number | undefined) => {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      fields.push(entry(key, value));
+    }
+  };
+
+  const nameOf = (memberId: string) =>
+    fullName(
+      people.find((person) => person.memberId === memberId) ?? {
+        firstName: "",
+        middleName: "",
+        lastName: "",
+      },
+    );
+
+  const nameParts = (
+    prefix: string,
+    person: { firstName: string; middleName: string; lastName: string },
+  ) => {
+    text(`${prefix}.first_name`, person.firstName);
+    text(`${prefix}.middle_name`, person.middleName);
+    text(`${prefix}.last_name`, person.lastName);
+  };
+
+  /*
+   * What the addendum's printed boxes are conditioned on. Emitted as keys of
+   * their own rather than read from `programs.*` or `income.varies_during_year`
+   * by the mapping layer: a key a form reads is a key it has "a place for",
+   * and those two carry review-sheet notes a food-benefits household relies
+   * on.
+   */
+  fields.push(entry("health.applying_for_medicaid_or_chip", true));
+  tri("income.yearly_totals_apply", income.incomeVariesDuringYear);
+
+  // ── Section 1: every person's tax return, Person 1 first ───────────────
+  for (const [slot, person] of people.entries()) {
+    const prefix = `health.tax_household.${slot}`;
+    const answers = addendum.taxReturns[person.memberId] ?? {};
+
+    fields.push(rowPresent(prefix));
+    nameParts(prefix, person);
+
+    // Typed when the roster could not say; otherwise the roster's spouse.
+    text(
+      `${prefix}.spouse_name`,
+      answers.spouseName?.trim() || rosterSpouseName(application, person.memberId),
+    );
+
+    tri(`${prefix}.plans_to_file`, answers.plansToFile);
+
+    // "If yes, answer questions a to c. If no, skip to question c."
+    if (answers.plansToFile === true) {
+      tri(`${prefix}.files_jointly`, answers.filesJointly);
+      tri(`${prefix}.fears_harm_from_disclosure`, answers.fearsHarmFromDisclosure);
+    }
+
+    tri(`${prefix}.claims_dependents`, answers.claimsDependents);
+
+    if (answers.claimsDependents === true) {
+      text(`${prefix}.dependent_names`, answers.dependentNames);
+    }
+
+    tri(`${prefix}.claimed_as_dependent`, answers.claimedAsDependent);
+
+    if (answers.claimedAsDependent === true) {
+      text(`${prefix}.tax_filer_name`, answers.taxFilerName);
+      text(`${prefix}.relationship_to_tax_filer`, answers.relationshipToTaxFiler);
+    }
+
+    /*
+     * "Does Person N live at the same address as Person 1?" The roster is
+     * "everyone who lives with you", so for everyone on it the answer is
+     * already given and the address line below it does not apply.
+     */
+    if (slot > 0) tri(`${prefix}.lives_with_applicant`, true);
+  }
+
+  // ── Section 2: tax deductions ──────────────────────────────────────────
+  tri("health.tax_deductions.any", addendum.hasTaxDeductions);
+
+  if (addendum.hasTaxDeductions === true) {
+    tri("health.tax_deductions.alimony", addendum.paysAlimony);
+
+    if (addendum.paysAlimony === true) {
+      amount("health.tax_deductions.alimony_amount", addendum.alimonyAmount);
+      text("health.tax_deductions.alimony_frequency", addendum.alimonyFrequency);
+      tri(
+        "health.tax_deductions.alimony_agreement_before_2019",
+        addendum.alimonyAgreementBefore2019,
+      );
+    }
+
+    tri("health.tax_deductions.student_loan_interest", addendum.paysStudentLoanInterest);
+
+    if (addendum.paysStudentLoanInterest === true) {
+      amount(
+        "health.tax_deductions.student_loan_interest_amount",
+        addendum.studentLoanInterestAmount,
+      );
+      text(
+        "health.tax_deductions.student_loan_interest_frequency",
+        addendum.studentLoanInterestFrequency,
+      );
+    }
+
+    tri("health.tax_deductions.other", addendum.hasOtherDeductions);
+
+    if (addendum.hasOtherDeductions === true) {
+      amount("health.tax_deductions.other_amount", addendum.otherDeductionsAmount);
+      text("health.tax_deductions.other_frequency", addendum.otherDeductionsFrequency);
+      text("health.tax_deductions.other_types", addendum.otherDeductionsTypes);
+    }
+  }
+
+  // ── Section 3: people applying ─────────────────────────────────────────
+  tri("health.child_travels_with_migrant_worker", addendum.childTravelsWithMigrantWorker);
+
+  if (addendum.childTravelsWithMigrantWorker === true) {
+    text("health.migrant_child_names", addendum.migrantChildNames);
+  }
+
+  tri("health.child_in_special_health_care_needs", addendum.childInSpecialHealthCareNeeds);
+
+  if (addendum.childInSpecialHealthCareNeeds === true) {
+    text("health.special_health_care_needs_who", addendum.specialHealthCareNeedsWho);
+  }
+
+  /*
+   * "Was anyone in foster care when they were age 18 or older?" is asked only
+   * after "Was anyone in your home ever in foster care?" says Yes. A No there
+   * already answers it: nobody who was never in foster care was in it at 18.
+   */
+  tri(
+    "household.foster_care_at_18_or_older",
+    addendum.fosterCareAt18OrOlder ??
+      (circumstances.everInFosterCare === false ? false : undefined),
+  );
+
+  if (addendum.fosterCareAt18OrOlder === true) {
+    text("household.foster_care_at_18_or_older_who", addendum.fosterCareWho);
+    text("household.foster_care_at_18_or_older_state", addendum.fosterCareState);
+  }
+
+  tri("health.htw_confidential_contact", addendum.wantsConfidentialHtwContact);
+
+  if (addendum.wantsConfidentialHtwContact === true) {
+    text("health.htw_confidential.street", addendum.confidentialStreet);
+    text("health.htw_confidential.city", addendum.confidentialCity);
+    text("health.htw_confidential.state", addendum.confidentialState);
+    text("health.htw_confidential.zip_code", addendum.confidentialZipCode);
+    text("health.htw_confidential.phone", addendum.confidentialPhone);
+  }
+
+  tri("health.htw_declines_screening", addendum.declinesHtwScreening);
+
+  if (addendum.declinesHtwScreening === true) {
+    const named = (addendum.htwScreeningOptOuts ?? [])
+      .map((optOut) => nameOf(optOut.memberId))
+      .filter(Boolean);
+
+    for (const [index, name] of named.entries()) {
+      const prefix = `health.htw_screening_opt_out.${index}`;
+
+      fields.push(rowPresent(prefix));
+      text(`${prefix}.name`, name);
+      fields.push(entry(`${prefix}.declines`, true));
+    }
+  }
+
+  // ── Section 4: only when income changes from month to month ────────────
+  if (income.incomeVariesDuringYear === true) {
+    amount("income.total_this_year", addendum.totalIncomeThisYear);
+    amount("income.total_next_year", addendum.totalIncomeNextYear);
+  }
+
+  // ── Section 5, question 2: job-based insurance lost ─────────────────────
+  tri("health.lost_job_coverage", addendum.lostJobCoverage);
+
+  if (addendum.lostJobCoverage === true) {
+    text("health.lost_job_coverage_who", addendum.lostJobCoverageWho);
+    text("health.lost_job_coverage_end_date", addendum.lostJobCoverageEndDate);
+    text("health.lost_job_coverage_reason", addendum.lostJobCoverageReason);
+
+    if (addendum.lostJobCoverageReason === "other") {
+      text("health.lost_job_coverage_other_reason", addendum.lostJobCoverageOtherReason);
+    }
+  }
+
+  // Appendix A items 10 and 11, on the same rows the step above numbered.
+  for (const [index, employer] of activeEntries(health.employerCoverage).entries()) {
+    const prefix = `appendices.employer_coverage.${index}`;
+
+    text(`${prefix}.contact_name`, employer?.contactName);
+    text(`${prefix}.contact_phone`, employer?.contactPhone);
+  }
+
+  // ── Section 6 ──────────────────────────────────────────────────────────
+  tri("household.incarcerated", addendum.incarcerated);
+
+  if (addendum.incarcerated === true) {
+    text("household.incarcerated_who", addendum.incarceratedWho);
+  }
+
+  text("health.renewal_years", addendum.renewalYears);
+
+  // ── Appendix B: names in the first, middle and last boxes it prints ─────
+  if (health.americanIndianOrAlaskaNative === true) {
+    for (const [index, tribal] of activeEntries(appendices?.tribalMembership).entries()) {
+      const person = people.find((candidate) => candidate.memberId === tribal?.memberId);
+
+      if (person) nameParts(`appendices.tribal.${index}`, person);
+    }
+  }
+
+  // ── Appendix C: the counselor block. The representative's own items,
+  // organization ID included, are emitted for every household with the rest
+  // of the representative, in `mapQuestionnaire`.
+  tri("household.application_assister", addendum.completedByAssister);
+
+  if (addendum.completedByAssister === true) {
+    text("household.application_assister.start_date", addendum.assisterStartDate);
+    text("household.application_assister.name", addendum.assisterName);
+    text("household.application_assister.organization", addendum.assisterOrganization);
+    text(
+      "household.application_assister.organization_id",
+      addendum.assisterOrganizationId,
+    );
+  }
+
+  return fields;
+}
+
+/**
  * Convert structured application state into a reusable, form-independent plan.
  *
  * Empty/null values are omitted. Explicit false and numeric zero are retained
@@ -1695,6 +1977,9 @@ export function buildApplicationFieldPlan(
       application,
     ),
     ...mapQuestionnaire(
+      application,
+    ),
+    ...mapMedicaidAddendum(
       application,
     ),
   ].filter(({ value }) => {
