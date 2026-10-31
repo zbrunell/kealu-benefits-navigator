@@ -1,5 +1,103 @@
 # Demo Script
 
+## Austin, Texas — the multi-jurisdiction demo (web app)
+
+The scenario to run to confirm a household outside California gets a correct
+plan. Everything below flows through the real jurisdiction resolution, program
+registry and eligibility screening — demo mode replaces only the LLM that writes
+the phase prose, not any of the logic.
+
+### Run it
+
+```bash
+cd web
+E2E_MODE=1 E2E_PHASE_DELAY_MS=300 caffeinate -i npm run dev
+```
+
+Open http://localhost:3000 and answer the three Tier-1 questions:
+
+| Question | Answer |
+|---|---|
+| ZIP code | `78705` |
+| Annual household income | `20000` |
+| Household | `Two adults, ages 34 and 31` |
+
+Then click **Skip remaining questions** → **Run Analysis**.
+
+### What you should see
+
+**Jurisdiction** — the Benefits Research phase opens with:
+
+```
+Country: US   State: TX   County: Travis   City: Austin   ZIP: 78705
+```
+
+**18 programs**, each tagged with the level it is administered at — Federal,
+State, County, or City / local — with its agency, source URL and the effective
+date of the thresholds used.
+
+**Recommended:** Texas SNAP (screened against the real HHSC gross limit of
+$2,292/month for a household of 2), Central Health MAP, the Austin Energy
+Customer Assistance Program, CEAP, and federal Lifeline.
+
+**Correctly refused:** every Texas Medicaid category, because two non-pregnant
+adults with no children match none of them — and **not** on a 138% FPL test,
+which does not exist in Texas. TANF is refused on household composition, not on
+income.
+
+**The coverage gap, named plainly:**
+
+> Texas did not expand Medicaid, so adults who are not pregnant, not caring for
+> a child, and not disabled usually cannot get Medicaid at any income. Below the
+> poverty line they also cannot get marketplace subsidies. Local programs are
+> the realistic route to care.
+
+**Evidence Verification** shows a jurisdiction check (`California-only programs
+offered | 0 | 0 | PASS`) and a threshold-provenance table marking each figure
+VERIFIED or NEEDS REVIEW.
+
+**Documents** are three lists, not one: what you need to submit (you can submit
+today), what will likely be verified, and what may be requested.
+
+**Values** are estimated only where a published formula exists — SNAP shows
+~$109/mo from the allotment formula; coverage programs read "Not estimated" with
+the reason.
+
+Click **Continue with 1 recommended program** → the Texas Form H1010
+application: the four Texas programs to tick, then Texas's own screens — where
+you live and get your mail, who lives with you, money, bills, things you own,
+the SNAP expedited screen, your situation, and anyone applying on your behalf.
+
+**Generate** produces a filled H1010 worksheet plus a review sheet naming what
+was filled in, what a blank completes, and what your own answers make
+inapplicable — with the reason for each. The screen says plainly that HHSC
+publishes H1010 only through its own website, so what you are holding carries
+your answers rather than being the agency's paper.
+
+### What must NOT appear
+
+Medi-Cal · CalFresh · CalWORKs · SAWS 2 PLUS · BenefitsCal · GetCalFresh ·
+Covered California · California CARE · California LifeLine ·
+benefitscal.com · getcalfresh.org · coveredca.com
+
+### The California control
+
+Same server, ZIP `90001`, income `42000`, household
+`Single parent with 2 kids ages 4 and 9`. This must still produce Medi-Cal,
+CalFresh, CalWORKs and a generated SAWS 2 PLUS draft — and no Texas program.
+
+### Automated equivalents
+
+```bash
+cd web
+npx vitest run tests/unit/austin-scenarios.test.ts tests/unit/jurisdiction-routing.test.ts
+caffeinate -i npx playwright test --project=applications
+```
+
+---
+
+# MCP server demo script
+
 ## Prerequisites
 
 1. Antigravity running with benefits-navigator MCP server loaded

@@ -174,9 +174,6 @@ export default function DraftCompletionGuide({
           </a>
         </div>
 
-        <p className="mt-3 text-xs text-slate-600">
-          {t("dcg_print_note")}
-        </p>
       </div>
 
       {/* ── What you must finish by hand ─────────────────────────────────── */}

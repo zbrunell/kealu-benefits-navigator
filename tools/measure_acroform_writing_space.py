@@ -1,0 +1,224 @@
+#!/usr/bin/env python
+#
+# Copyright 2025 Kealu Inc. All rights reserved.
+# Licensed under the Kealu Vector License v1.0 — PATENT PENDING
+#
+
+"""Measure where each native-field form's widgets overlap their own labels.
+
+Run from the repository root::
+
+    .venv/bin/python tools/measure_acroform_writing_space.py          # regenerate
+    .venv/bin/python tools/measure_acroform_writing_space.py --check  # fail if stale
+
+Some widgets on the AcroForm templates the application fills are drawn over
+part of the printed question they answer — the Spanish SAWS 2 PLUS home address
+widget covers the second line of its label; Appendix B's phone widget starts
+under its printed "(". This reads every printed word with ``pdftotext`` and
+records, for each text widget a label intrudes on, the part of the widget left
+free. :mod:`benefits_navigator.formmap.acroform` moves a *written* widget into
+that space at fill time.
+
+**Read the diff before committing.** Each entry moves where a value prints on a
+government form.
+
+Needs ``pdftotext`` (poppler). Nothing on the filling path does — that is the
+point of committing the output.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT / "src"))
+
+from pypdf import PdfReader  # noqa: E402
+
+from benefits_navigator.formmap.acroform import (  # noqa: E402
+    WRITING_SPACE_PATH,
+    measure_writing_space,
+    printed_runs,
+    starting_size,
+)
+from benefits_navigator.formmap.measure import _TextExtractor  # noqa: E402
+
+FORMS_DIR = REPO_ROOT / "src" / "benefits_navigator" / "forms"
+
+#: Every AcroForm template the application writes native fields into.
+TEMPLATES = (
+    "CA-SAWS-2-PLUS.pdf",
+    "CA-SAWS-2-PLUS-ES.pdf",
+    "CA-SAWS-1.pdf",
+    "IL-444-2378B.pdf",
+    "NY-LDSS-4826-DD.pdf",
+    "PA-600.pdf",
+)
+
+_MULTILINE = 1 << 12
+
+
+def _inherited(node, key):
+    while node is not None:
+        if key in node:
+            return node[key]
+
+        parent = node.get("/Parent")
+        node = parent.get_object() if parent is not None else None
+
+    return None
+
+
+def _qualified_name(annotation) -> str | None:
+    parts: list[str] = []
+    node = annotation
+
+    while node is not None:
+        if node.get("/T") is not None:
+            parts.append(str(node["/T"]))
+
+        parent = node.get("/Parent")
+        node = parent.get_object() if parent is not None else None
+
+    return ".".join(reversed(parts)) if parts else None
+
+
+def measure(path: Path) -> dict[str, object]:
+    words = _TextExtractor(path).extract().words
+    reader = PdfReader(str(path))
+    acro_form = reader.trailer["/Root"].get("/AcroForm")
+    acro_form = acro_form.get_object() if acro_form is not None else {}
+
+    widgets: list[dict[str, object]] = []
+
+    for page_number, page in enumerate(reader.pages, start=1):
+        runs = None
+
+        for reference in page.get("/Annots") or []:
+            annotation = reference.get_object()
+
+            if annotation.get("/Subtype") != "/Widget":
+                continue
+
+            if str(_inherited(annotation, "/FT")) != "/Tx":
+                continue
+
+            name = _qualified_name(annotation)
+            appearance = _inherited(annotation, "/DA") or acro_form.get("/DA")
+
+            if name is None or appearance is None:
+                continue
+
+            parts = str(appearance).split()
+
+            try:
+                declared = float(parts[parts.index("Tf") - 1])
+            except (ValueError, IndexError):
+                continue
+
+            bounds = [float(value) for value in annotation["/Rect"]]
+            rect = (
+                min(bounds[0], bounds[2]),
+                min(bounds[1], bounds[3]),
+                max(bounds[0], bounds[2]),
+                max(bounds[1], bounds[3]),
+            )
+            multiline = bool(int(_inherited(annotation, "/Ff") or 0) & _MULTILINE)
+
+            if runs is None:
+                runs = printed_runs(words, page_number)
+
+            free, shortened = measure_writing_space(
+                rect,
+                runs,
+                starting_size(declared, rect[3] - rect[1], multiline),
+                multiline,
+            )
+
+            if free == rect:
+                continue
+
+            widgets.append(
+                {
+                    "page": page_number,
+                    "field": name,
+                    "rect": [round(value, 3) for value in rect],
+                    "free": [round(value, 3) for value in free],
+                    "shortened": shortened,
+                }
+            )
+
+    return {
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "widgets": widgets,
+    }
+
+
+def render() -> str:
+    documents = {name: measure(FORMS_DIR / name) for name in TEMPLATES}
+
+    return (
+        json.dumps(
+            {
+                "_comment": (
+                    "Generated by tools/measure_acroform_writing_space.py. Do "
+                    "not hand-edit. Each entry is a text widget the template "
+                    "draws over part of its own printed label, and the part of "
+                    "it left free: [left, bottom, right, top] in PDF user "
+                    "space. A written widget is moved into its free space; a "
+                    "template whose sha256 differs gets no adjustments."
+                ),
+                "documents": documents,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n"
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="fail if the committed measurements differ from a fresh run",
+    )
+    args = parser.parse_args()
+
+    fresh = render()
+
+    if args.check:
+        current = (
+            WRITING_SPACE_PATH.read_text(encoding="utf-8")
+            if WRITING_SPACE_PATH.exists()
+            else ""
+        )
+
+        if current != fresh:
+            print(
+                f"{WRITING_SPACE_PATH.relative_to(REPO_ROOT)} is out of date. "
+                "Run tools/measure_acroform_writing_space.py and review the diff.",
+                file=sys.stderr,
+            )
+            return 1
+
+        print("writing-space measurements are up to date")
+        return 0
+
+    WRITING_SPACE_PATH.write_text(fresh, encoding="utf-8")
+    counts = ", ".join(
+        f"{name}: {len(document['widgets'])}"  # type: ignore[arg-type]
+        for name, document in json.loads(fresh)["documents"].items()
+    )
+    print(f"  {counts} -> {WRITING_SPACE_PATH.relative_to(REPO_ROOT)}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

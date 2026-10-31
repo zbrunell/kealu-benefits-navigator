@@ -8,7 +8,57 @@ import {
   buildHouseholdMemberPrefill,
   parseHouseholdComposition,
 } from "@/lib/household";
-import type { ReportPayload } from "@/lib/report-assembler";
+import type {
+  ApplicationSummary,
+  ReportPayload,
+} from "@/lib/report-assembler";
+import type { ApplicationPrefill } from "@/types/application";
+import { applicationForState } from "@/lib/state-applications";
+
+/**
+ * Decide what application, if any, this household can be offered.
+ *
+ * One place, consulted by both the cached and freshly-assembled paths, which
+ * previously each carried their own copy of `state === "CA"`.
+ *
+ * A `generated` application also needs a recommendation for its own form —
+ * without one there is nothing to prefill. A `manual` one does not: the value
+ * is the programme list, the official route and the checklist, and those exist
+ * whether or not the screening produced a form-specific recommendation.
+ *
+ * Both deliveries receive the prefill. It withheld it from `manual` on the
+ * reasoning that a manual guide reads the applicant's own answers instead — but
+ * a manual flow never runs the questionnaire, so there were no answers to read:
+ * the guide's "what you already told us" list came back holding nothing but a
+ * household size of 1. The prefill *is* the applicant's own answers, derived
+ * from intake, and carrying them across is the entire purpose of that page.
+ */
+function applicationSummaryFor(
+  summary: ApplicationSummary,
+  state: string | undefined,
+  prefill: ApplicationPrefill,
+): ApplicationSummary {
+  const definition = applicationForState(state);
+
+  if (!definition) return summary;
+
+  if (definition.delivery === "generated") {
+    const matching = summary.recommendations.find(
+      (recommendation) => recommendation.formId === definition.formId,
+    );
+
+    if (!matching) return summary;
+  }
+
+  return {
+    ...summary,
+    available: true,
+    formId: definition.formId,
+    formName: definition.formCode,
+    delivery: definition.delivery,
+    prefill,
+  };
+}
 
 /**
  * GET /api/workflow/[runId]/report
@@ -100,7 +150,15 @@ export async function GET(
      * applicant can supply it rather than being shown a guess.
      */
     city: session?.vars.city?.trim() ?? "",
-    state: session?.vars.state?.trim() || "CA",
+    /*
+     * No default. This used to fall back to "CA" when the ZIP resolved no
+     * state, which meant an unresolved location was silently treated as a
+     * California household — it was offered the SAWS 2 PLUS application and
+     * had California written into its address block. An empty state now stays
+     * empty: `applicationForState` returns null, no form is offered, and the
+     * applicant is asked rather than guessed at.
+     */
+    state: session?.vars.state?.trim() ?? "",
     county: session?.vars.county?.trim() ?? "",
 
     preferredLanguage,
@@ -127,28 +185,18 @@ export async function GET(
       available: false,
       formId: null,
       formName: null,
+      delivery: null,
       status: "not_started",
       recommendedPrograms: [],
       recommendations: [],
       prefill: null,
     };
 
-    const sawsRecommendation = cachedPayload.application.recommendations.find(
-      (application) => application.formId === "CA_SAWS_2_PLUS",
+    cachedPayload.application = applicationSummaryFor(
+      cachedPayload.application,
+      session.vars.state,
+      applicationPrefill,
     );
-
-    if (
-      session.vars.state?.trim().toUpperCase() === "CA" &&
-      sawsRecommendation
-    ) {
-      cachedPayload.application = {
-        ...cachedPayload.application,
-        available: true,
-        formId: "CA_SAWS_2_PLUS",
-        formName: "SAWS 2 PLUS",
-        prefill: applicationPrefill,
-      };
-    }
 
     return NextResponse.json(cachedPayload, {
       status: 200,
@@ -164,29 +212,18 @@ export async function GET(
       available: false,
       formId: null,
       formName: null,
+      delivery: null,
       status: "not_started",
       recommendedPrograms: [],
       recommendations: [],
       prefill: null,
     };
 
-    // SAWS 2 PLUS is currently supported only for California households.
-    const sawsRecommendation = payload.application.recommendations.find(
-      (application) => application.formId === "CA_SAWS_2_PLUS",
+    payload.application = applicationSummaryFor(
+      payload.application,
+      session.vars.state,
+      applicationPrefill,
     );
-
-    if (
-      session.vars.state?.trim().toUpperCase() === "CA" &&
-      sawsRecommendation
-    ) {
-      payload.application = {
-        ...payload.application,
-        available: true,
-        formId: "CA_SAWS_2_PLUS",
-        formName: "SAWS 2 PLUS",
-        prefill: applicationPrefill,
-      };
-    }
 
     // Cache report and mark the workflow complete.
     sessionStore.update(session.sessionId, {

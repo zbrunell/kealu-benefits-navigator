@@ -86,15 +86,32 @@ export function localeFromCookieHeader(header: string | null): Locale {
 /**
  * The language of the paper form an applicant in `locale` actually receives.
  *
- * Spanish has an official fillable CDSS translation. Simplified Chinese does
- * not — see `form_templates.py` — so its applicants get the English form with
- * a Simplified Chinese interface and guide, and every surface says so.
+ * **California only.** Spanish has an official fillable CDSS translation of
+ * SAWS 2 PLUS; Simplified Chinese does not — see `form_templates.py` — so its
+ * applicants get the English form with a Simplified Chinese interface and
+ * guide, and every surface says so.
+ *
+ * Do not reach for this on any other state's path. It encodes the assumption
+ * that a locale maps one-to-one onto a document language, which is true of
+ * California's two files and **false in general**: Texas H1049 and H3037 are
+ * single bilingual documents answering both English and Spanish, so "the
+ * document language for a Spanish applicant" is not a single tag and cannot be
+ * computed from the locale at all.
+ *
+ * The general answer is the document's own declared `languages`, resolved by
+ * the Python document layer and delivered in the form manifest — see
+ * `types/form-manifest.ts` and `lib/document-labels.ts`.
  */
 export function documentLanguageFor(locale: Locale): Locale {
   return locale === 'es' ? 'es' : 'en';
 }
 
-/** Whether `locale` receives the official state form in its own language. */
+/**
+ * Whether `locale` receives the official state form in its own language.
+ *
+ * California only, for the reason above. A Texas applicant reading a bilingual
+ * H1049 *is* reading their own language, and this would say otherwise.
+ */
 export function hasOfficialTranslatedForm(locale: Locale): boolean {
   return documentLanguageFor(locale) === locale;
 }

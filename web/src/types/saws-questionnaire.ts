@@ -393,11 +393,31 @@ export function emptyResourceSections(): ResourceSections {
 // Household circumstances
 // ---------------------------------------------------------------------------
 
+/**
+ * An authorized representative, shaped to Appendix C's printed items.
+ *
+ * The address is held in parts rather than as one string because the printed
+ * page has separate boxes — item 2 address, 3 apartment, 4 city, 5 state, 6 zip
+ * — and a single string could only be split by guessing which part is which.
+ * That guess is why city, state and zip were previously left blank.
+ */
 export interface AuthorizedRepresentative {
+  /** Appendix C item 1, and the page 2 "AUTHORIZED REPRESENTATIVE NAME" box. */
   name: string;
+  /** Appendix C item 8, "Organization name (if applicable)". */
   organization: string;
+  /** Appendix C item 7, and page 2's representative phone box. */
   phone: string;
-  address: string;
+  /** Appendix C item 2, the street line only. */
+  street: string;
+  /** Appendix C item 3, "Apartment or Suite number". */
+  apartment: string;
+  /** Appendix C item 4. */
+  city: string;
+  /** Appendix C item 5. Two-letter code, stored uppercase and unlocalized. */
+  state: string;
+  /** Appendix C item 6. */
+  zipCode: string;
   /** Whether the representative may act for CalFresh. */
   forCalFresh: TriState;
   /** Whether the representative may act for health coverage (Appendix C). */

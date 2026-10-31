@@ -306,3 +306,51 @@ describe('buildFixturePhaseDocuments', () => {
     expect(payload.application.recommendedPrograms).toContain('medi_cal');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Demo mode keeps the state-specific wording
+// ---------------------------------------------------------------------------
+
+describe('demo action plan — preliminary wording and Texas submission', () => {
+  const TEXAS_FAMILY = {
+    ...LOW_INCOME_FAMILY,
+    zip_code: '78705',
+    providers: '',
+  };
+
+  function actionPlan(vars: Record<string, string>): string {
+    return buildFixturePhaseDocuments(vars)['action-plan'];
+  }
+
+  function immediateActions(doc: string): string {
+    return doc.split('## Prioritized Steps')[1].split('\n## ')[0];
+  }
+
+  it('says the household may qualify, never that it qualifies', () => {
+    for (const vars of [LOW_INCOME_FAMILY, TEXAS_FAMILY]) {
+      const bottomLine = actionPlan(vars).split('## Bottom Line')[1].split('##')[0];
+
+      expect(bottomLine).toContain(
+        'Based on the information you provided, your household may qualify for',
+      );
+      expect(bottomLine).not.toMatch(/\byou qualify\b|\byou are eligible\b|\byou will receive\b/i);
+    }
+  });
+
+  it('tells a Texas household to submit the H1010 by fax, mail, or in person', () => {
+    const steps = immediateActions(actionPlan(TEXAS_FAMILY));
+    const h1010 = steps.split('\n').find((line) => line.includes('H1010')) ?? '';
+
+    expect(h1010).toContain('submit it to HHSC by fax, by mail, or in person at an HHSC benefits office');
+    expect(h1010).not.toMatch(/yourtexasbenefits/i);
+    expect(h1010).not.toMatch(/2-1-1|upload/i);
+  });
+
+  it('leaves the California submission step as it was', () => {
+    const steps = immediateActions(actionPlan(LOW_INCOME_FAMILY));
+    const saws = steps.split('\n').find((line) => line.includes('SAWS 2 PLUS')) ?? '';
+
+    expect(saws).toContain('application at https://benefitscal.com/');
+    expect(saws).not.toMatch(/HHSC/);
+  });
+});

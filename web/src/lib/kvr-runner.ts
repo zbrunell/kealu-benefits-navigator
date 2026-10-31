@@ -54,6 +54,32 @@ export const PUBLIC_ERROR_CODES: Record<
   UNKNOWN_RUNNER_FAILURE: 'BN-9000',
 };
 
+/**
+ * What each public error code means, for whoever looks up a code a user reports.
+ * Never sent to the browser: users see only GENERIC_WORKFLOW_ERROR and the code.
+ */
+export const PUBLIC_ERROR_DESCRIPTIONS: Record<
+  PublicWorkflowErrorCode,
+  string
+> = {
+  'BN-1001':
+    'Rate limit: the AI provider rejected requests for being too frequent (HTTP 429 or a subscription usage limit).',
+  'BN-1002':
+    'Spend limit: the AI provider account is out of quota, credit, or its monthly spend limit.',
+  'BN-1003':
+    'Authentication: the KVR AI account has missing, invalid, or expired credentials (for example an expired OAuth login). Re-run `kvr accounts login <account>`.',
+  'BN-1004':
+    'Provider unavailable: the AI provider returned 502/503/504 or reported being overloaded.',
+  'BN-2001':
+    'KVR exited with a non-zero code for a reason not matched above. See diagnosticTail in the server log.',
+  'BN-2002':
+    'KVR was killed by a signal before it finished.',
+  'BN-3001':
+    'Idle timeout: KVR produced no output for IDLE_TIMEOUT_MS and was stopped.',
+  'BN-9000':
+    'Unknown failure: the run ended in failure without a recognised cause.',
+};
+
 /** Canonical phase names in workflow order. */
 export const PHASE_NAMES: string[] = [
   'benefits-research',
@@ -117,6 +143,22 @@ function classifyRunnerFailure(
 ): RunnerFailureCode {
   const normalized = output.toLowerCase();
 
+  // Checked first: without credentials no request is ever sent, so any rate
+  // or spend wording elsewhere in the output is not the cause.
+  if (
+    normalized.includes('unauthorized') ||
+    normalized.includes('invalid api key') ||
+    normalized.includes('authentication_error') ||
+    normalized.includes('authentication_failed') ||
+    normalized.includes('failed to authenticate') ||
+    normalized.includes('empty oauth token') ||
+    normalized.includes('no valid credentials') ||
+    normalized.includes('status 401') ||
+    normalized.includes('status 403')
+  ) {
+    return 'UPSTREAM_AUTH';
+  }
+
   if (
     normalized.includes('monthly spend limit') ||
     normalized.includes("org's monthly spend limit") ||
@@ -137,16 +179,6 @@ function classifyRunnerFailure(
     normalized.includes('status 429')
   ) {
     return 'UPSTREAM_RATE_LIMIT';
-  }
-
-  if (
-    normalized.includes('unauthorized') ||
-    normalized.includes('invalid api key') ||
-    normalized.includes('authentication_error') ||
-    normalized.includes('status 401') ||
-    normalized.includes('status 403')
-  ) {
-    return 'UPSTREAM_AUTH';
   }
 
   if (
@@ -238,6 +270,7 @@ function _checkIdle(
         runId,
         failureCode,
         publicCode,
+        description: PUBLIC_ERROR_DESCRIPTIONS[publicCode],
         reason: 'idle_timeout',
         elapsedMs: elapsed,
       }),
@@ -453,6 +486,7 @@ export function startRun(
           runId,
           failureCode,
           publicCode,
+          description: PUBLIC_ERROR_DESCRIPTIONS[publicCode],
           exitCode: code,
           signal,
           diagnosticTail: sanitizeFailureOutput(combinedOutput),
@@ -628,4 +662,5 @@ export const __internal = {
   outputIndicatesFailure,
   sanitizeFailureOutput,
   PUBLIC_ERROR_CODES,
+  PUBLIC_ERROR_DESCRIPTIONS,
 };

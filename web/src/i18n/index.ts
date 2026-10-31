@@ -156,9 +156,33 @@ export function missingKeys(locale: Locale): {
  */
 export function translateQuestion(
   msgs: Messages,
-  question: { promptKey: string; prompt: string },
+  question: {
+    promptKey: string;
+    prompt: string;
+    promptVars?: Record<string, string | number>;
+  },
 ): string {
-  return (msgs as Record<string, string>)[question.promptKey] ?? question.prompt;
+  const catalog = msgs as Record<string, string>;
+  const template = catalog[question.promptKey] ?? question.prompt;
+
+  if (!question.promptVars) return template;
+
+  /*
+   * A value that is itself a catalog key is resolved before interpolation.
+   *
+   * The per-entry prompts name a field by its key — `qfield_name` — because the
+   * planner has no locale. Substituting the key verbatim would put
+   * "qfield_name is needed" on screen, so a value that resolves in the catalog
+   * is replaced by what it resolves to, and anything else is used as-is.
+   */
+  const resolved: Record<string, string | number> = {};
+
+  for (const [name, value] of Object.entries(question.promptVars)) {
+    resolved[name] =
+      typeof value === 'string' && value in catalog ? catalog[value] : value;
+  }
+
+  return interpolate(template, resolved);
 }
 
 /** As `translateQuestion`, for the optional clarifying sentence. */

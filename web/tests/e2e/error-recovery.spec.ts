@@ -148,6 +148,30 @@ test.describe('KVR failure shows inline error banner (Story 6 AC 1)', () => {
     // Either the correlation ID itself or a reference to it should be present
     expect(bannerHtml.length).toBeGreaterThan(0);
   });
+
+  test('error banner shows the public error code with the generic message only', async ({ page }) => {
+    await page.goto('/');
+
+    // What kvr-runner sends for an expired KVR account login (UPSTREAM_AUTH).
+    await page.route('**/api/workflow/*/stream', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive',
+        },
+        body: 'id: 1\nevent: phase\ndata: {"event_type":"error","message":"The system is currently overloaded. Please try again later.","error_code":"BN-1003"}\n\n',
+      });
+    });
+
+    await completeIntakeAndStartRun(page);
+
+    const banner = findErrorBanner(page);
+    await expect(banner).toContainText('Error code: BN-1003', { timeout: 10_000 });
+    await expect(banner).toContainText('The system is currently overloaded.');
+    await expect(banner).not.toContainText(/auth|oauth|credential/i);
+  });
 });
 
 // ---------------------------------------------------------------------------

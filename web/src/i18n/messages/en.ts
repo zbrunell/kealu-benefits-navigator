@@ -27,7 +27,13 @@ const en = {
   chat_unable_to_start: '⚠ Unable to start analysis',
   chat_please_retry: 'please try again.',
   chat_hide_answers: 'Hide answers',
-  chat_edit_answers: 'Edit answers',
+  chat_edit_answers: 'Edit Answers',
+  chat_edit_answers_hint: 'You can go back and change any answer.',
+  chat_edit_field_aria: 'New answer for {field}',
+  chat_edit_field_button_aria: 'Edit {field}',
+  chat_saving: 'Saving…',
+  chat_saved: 'Saved',
+  chat_answer_updated: '✓ Answer updated. {field} is now: {value}',
   chat_save: 'Save',
   chat_cancel: 'Cancel',
   chat_edit: 'Edit',
@@ -526,7 +532,7 @@ const en = {
   household_parent_disabled: 'Parent disabled',
   household_parent_deceased: 'Parent deceased',
   household_parent_none: 'None of these',
-  household_privacy_note: 'Social Security numbers are intentionally not collected.',
+  household_privacy_note: 'Social Security numbers are intentionally not collected or prefilled here. Enter them by hand on the official form if it asks for them.',
   household_add_member: 'Add household member',
   household_none_added: 'No additional household members added.',
   household_back: 'Back to eligibility questions',
@@ -549,10 +555,13 @@ const en = {
   programs_other_aria: 'Which other program are you applying for?',
   programs_back: 'Back to report',
   programs_continue: 'Continue with selected programs',
-  report_ca_application: 'California benefits application',
-  report_saws_application: 'SAWS 2 PLUS application',
-  report_action_plan_intro: 'Your action plan identified the following application recommendations using the completed eligibility and evidence-verification phases.',
+  report_state_application: 'Your state’s benefits application',
+  report_action_plan_intro: 'Based on the information you provided, you may qualify for the following benefits.',
   report_screening_note: 'These are screening recommendations, not official eligibility determinations.',
+  report_disclaimer_tx:
+    'This tool provides preliminary guidance based on the information you provide and does not make an official eligibility determination. It may not account for every eligibility rule, exception, verification requirement, or individual circumstance. The Texas Health and Human Services Commission (HHSC) will make the final determination of your eligibility after reviewing your application and any required supporting information.',
+  report_disclaimer:
+    'This tool provides preliminary guidance based on the information you provide and does not make an official eligibility determination. It may not account for every eligibility rule, exception, verification requirement, or individual circumstance. The agency that runs each program will make the final determination of your eligibility after reviewing your application and any required supporting information.',
   shell_rec_unavailable: 'Application recommendation unavailable',
   shell_rec_missing: 'The structured SAWS 2 PLUS recommendation could not be found.',
   shell_back_to_report: 'Back to report',
@@ -572,11 +581,11 @@ const en = {
   dcg_official_note: 'This is the official California SAWS 2 PLUS form with your answers filled in.',
   dcg_open_draft: 'Open draft',
   dcg_download_draft: 'Download draft',
-  dcg_take_guide: 'Take the step-by-step guide with you',
-  dcg_guide_intro: 'A one-page-per-section checklist of everything left to do on this draft.',
-  dcg_open_guide: 'Open printable guide',
+  dcg_take_guide: 'Your step-by-step guide',
+  dcg_guide_intro: 'It lists everything still to be completed on this draft. Open it here, download it, or print it and keep it beside the application while you fill in the rest.',
+  dcg_open_guide: 'Open guide',
   dcg_download_guide: 'Download guide',
-  dcg_helper_guide: 'Guide for someone helping you',
+  dcg_helper_guide: 'Version for someone helping you',
   dcg_finish_by_hand: 'Before you submit: finish these by hand',
   dcg_where_to_submit: 'Where to submit your application',
   dcg_online_fastest: 'Online (fastest):',
@@ -777,6 +786,8 @@ const en = {
   av_generate_application: 'Generate application',
   av_answers_need_correcting: 'Some answers need correcting.',
   av_draft_failed: 'Failed to generate application draft.',
+  av_draft_unreachable:
+    'We could not reach the server to prepare your application. Check your connection and try again — your answers are still here.',
 
   // ── Marketplace plans ───────────────────────────────────────────────────
   mkt_not_provided: 'Not provided',
@@ -785,7 +796,6 @@ const en = {
 
   // ── Draft completion guide ──────────────────────────────────────────────
   dcg_draft_reference: 'Draft reference {reference}. The same reference is printed on the guide below, so you can tell which guide goes with which draft if you generate more than one.',
-  dcg_print_note: 'Open the guide and use your browser’s Print command to print it or save it as a PDF. It is laid out for US Letter paper.',
   dcg_questions_blank: 'Printed questions left blank ({count})',
   dcg_county_known: 'Your ZIP code is in {county} County, so {county} County processes your application.',
   dcg_county_unknown: 'We could not determine your county from your ZIP code, so check which county serves your address before you submit.',
@@ -803,6 +813,597 @@ const en = {
   guide_skipped_appendix_c: 'no authorized representative was named for health coverage',
   guide_skipped_appendix_d: 'it is for cash aid with two or more adults applying',
   guide_skipped_appendix_e: 'detailed vehicle information is only needed for cash aid, or for health care where someone applying is 65 or older or disabled',
+
+  field_city: 'City',
+  required_legend: '* Required',
+  required_suffix: 'required',
+  validation_required_missing: 'Please answer the required questions before continuing.',
+  validation_still_needed: 'Still needed: {fields}',
+  req_label_required: 'Required to continue',
+  req_label_important: 'Helps determine your benefits',
+  req_label_can_complete_later: 'Can complete later',
+  req_label_optional: 'Optional',
+  req_hint_required: 'We need this before moving on.',
+  req_hint_important: 'Answering helps the County process your application faster and work out what you qualify for.',
+  req_hint_can_complete_later: 'You can leave this blank for now. The County may still need it later.',
+  req_hint_optional: 'The form treats this as optional — it does not affect eligibility.',
+
+  field_sex: 'Sex',
+  field_state: 'State',
+
+  guide_section_not_collected_title: 'Information the form asks for that we could not supply',
+  guide_section_not_collected_intro: 'Write these in by hand. The printed form has boxes for them and we had no way to fill them.',
+  guide_section_optional_not_collected_title: 'Optional boxes we left for you',
+  guide_section_optional_not_collected_intro: 'The form treats these as optional. You may fill them in or leave them blank — either way your application is complete.',
+  vt_race_checkboxes: 'Optional checkboxes',
+  vt_contact_blocks: 'Name, address and phone for each person',
+  instr_uncollected_race_ethnicity: 'We do not ask about race or ethnicity, so this block is blank. The form says answering is optional and that it does not affect your eligibility or benefit amount — you may fill it in or leave it blank.',
+  instr_uncollected_member_contact: 'You told us not everyone has the same contact information. The printed form asks for the name, home and mailing address, phone numbers and email of each person whose details differ, and we do not collect those, so write them into the two blocks under this question.',
+
+  q_record_field_needed: '{field} is needed for entry {number}.',
+  qfield_description: 'Description',
+  qfield_kind: 'Type',
+  qfield_make: 'Make and model',
+  qfield_name: 'Name',
+  qfield_source: 'Source',
+
+  qfield_street: 'Street address',
+  qfield_apartment: 'Apartment or suite',
+  qfield_city: 'City',
+  qfield_state: 'State',
+  qfield_zipCode: 'ZIP code',
+  qfield_phone: 'Phone number',
+
+  elig_medi_cal_income_below_magi: 'Household income of {income} is {fplPercent} of the {fplYear} Federal Poverty Level, at or below the {limitPercent} MAGI Medi-Cal limit of {limitAmount} for a household of {householdSize}.',
+  elig_ca_medicaid_expansion: 'California expanded Medicaid, so adults without dependent children qualify on income alone.',
+  elig_medi_cal_children_within_266: 'Household income is {fplPercent} of FPL — above the 138% adult limit but within the 266% FPL limit for children in California.',
+  elig_medi_cal_children_may_qualify_one: 'The child in the household may qualify for Medi-Cal even though the adults may not.',
+  elig_medi_cal_children_may_qualify_other: 'All {children} children in the household may qualify for Medi-Cal even though the adults may not.',
+  elig_medi_cal_pregnancy_within_213: 'Household income is {fplPercent} of FPL, within the 213% FPL limit for pregnancy-related Medi-Cal.',
+  elig_medi_cal_income_above_magi: 'Household income of {income} is {fplPercent} of FPL, above the 138% MAGI Medi-Cal limit of {limitAmount}.',
+  elig_covered_ca_more_likely: 'Covered California premium tax credits are the more likely path to affordable coverage at this income.',
+  elig_calfresh_gross_below_130: 'Gross household income is {fplPercent} of FPL, below the 130% federal gross-income screen for a household of {householdSize}.',
+  elig_calfresh_no_asset_test: 'California has no CalFresh asset test for most households.',
+  elig_calfresh_within_mce_200: 'Gross household income is {fplPercent} of FPL, within California’s 200% Modified Categorical Eligibility limit of {grossLimit}.',
+  elig_calfresh_net_income_depends: 'The final benefit depends on net income after the housing and utility deductions.',
+  elig_calfresh_gross_above_200: 'Gross household income is {fplPercent} of FPL, above California’s 200% CalFresh gross-income limit of {grossLimit}.',
+  elig_calworks_no_child_or_pregnancy: 'No dependent child and no pregnancy was identified in the household. CalWORKs requires a needy child in the home or a pregnancy.',
+  elig_calworks_pregnancy_within_mbsac: 'The household includes a pregnancy and income is {fplPercent} of FPL, within the range where the CalWORKs MBSAC test is commonly met.',
+  elig_calworks_children_within_mbsac_one: 'The household includes one dependent child and income is {fplPercent} of FPL, within the range where the CalWORKs MBSAC test is commonly met.',
+  elig_calworks_children_within_mbsac_other: 'The household includes {children} dependent children and income is {fplPercent} of FPL, within the range where the CalWORKs MBSAC test is commonly met.',
+  elig_calworks_near_mbsac: 'Income is {fplPercent} of FPL, near the CalWORKs Minimum Basic Standard of Adequate Care for a household of {householdSize}. The determination depends on countable income after disregards.',
+  elig_calworks_above_mbsac: 'Income of {fplPercent} of FPL is above the CalWORKs Minimum Basic Standard of Adequate Care for a household of {householdSize}.',
+  missing_monthly_rent_or_mortgage: 'Monthly rent or mortgage amount',
+  missing_monthly_utilities: 'Monthly utility costs',
+  missing_monthly_housing_costs: 'Monthly housing costs',
+  missing_countable_property_and_vehicles: 'Countable property and vehicle resources',
+  missing_child_citizenship_status: 'Each child’s citizenship or immigration status',
+  missing_expected_due_date: 'Expected due date',
+  prog_other_explanation: 'The application has an “Other” box on page 1. Tell us which program so we can write it on the form.',
+
+  api_error_field_problems: 'Some answers cannot be written to the form. Please review them and try again.',
+  api_error_workflow_unavailable: 'The analysis service is temporarily unavailable. Please try again shortly.',
+
+  app_ca_saws2plus_name: 'Application for CalFresh, Cash Aid, and/or Medi-Cal/Health Care Programs',
+  app_tx_h1010_name: 'Texas Works Application for Assistance',
+  app_ca_how_to_apply: 'Submit through BenefitsCal, or take the signed application to your county social services office.',
+  app_tx_how_to_apply: 'Apply online at YourTexasBenefits.com, by phone at 2-1-1, in person at a Texas Health and Human Services benefits office, or by mailing the completed form.',
+  program_medi_cal: 'Medi-Cal',
+  program_calfresh: 'CalFresh',
+  program_calworks: 'CalWORKs',
+  program_tx_medicaid: 'Medicaid',
+  program_tx_chip: 'CHIP',
+  program_tx_snap: 'SNAP food benefits',
+  program_tx_tanf: 'TANF cash help for families',
+  manual_heading: 'How to apply',
+  manual_intro: 'We cannot fill this application in for you, so here is everything you need to complete it yourself.',
+  manual_your_answers: 'What you already told us',
+  manual_your_answers_intro: 'Copy these onto the form so you do not have to work them out again.',
+  manual_still_needed: 'What you will need that we did not ask for',
+  manual_step_open_official: 'Open Form {form} using the official link below.',
+  manual_step_copy_answers: 'Copy across the answers you have already given us.',
+  manual_step_answer_remaining: 'Answer the remaining questions on the form.',
+  manual_step_submit: 'Submit the completed application through one of the options below.',
+  manual_missing_ssn: 'A Social Security number for everyone applying. We never ask for these, so the form will be blank.',
+  manual_missing_signature: 'Your signature and the date. These cannot be filled in ahead of time.',
+  manual_missing_immigration_documents: 'Immigration document details, if anyone applying is not a U.S. citizen.',
+  manual_missing_income_detail: 'Employer names, pay dates and the amount of each paycheque. You told us there is income, but not the detail the form asks for.',
+  manual_channel_online: 'Online',
+  manual_channel_phone: 'By phone',
+  manual_channel_in_person: 'In person',
+  manual_channel_mail: 'By mail',
+  field_household_size: 'Household size',
+
+
+  // ── Multi-jurisdiction program registry ───────────────────────────────────
+  //
+  // Program names, summaries, eligibility explanations, benefit-estimate
+  // statements and income-cliff warnings for every jurisdiction in
+  // lib/programs/. Added alongside the California keys above rather than
+  // replacing them: California is still fully supported.
+
+  program_federal_marketplace: 'HealthCare.gov Marketplace coverage',
+  program_federal_wic: 'WIC',
+  program_federal_liheap: 'LIHEAP home energy assistance',
+  program_federal_lifeline: 'Lifeline phone and internet discount',
+  program_federal_medicare_savings: 'Medicare Savings Programs',
+  program_covered_california: 'Covered California',
+  program_ca_care: 'CARE utility discount',
+  program_ca_lifeline: 'California LifeLine',
+  program_ca_wic: 'California WIC',
+  program_tx_medicaid_child: 'Children’s Medicaid (STAR)',
+  program_tx_medicaid_pregnancy: 'Medicaid for Pregnant Women',
+  program_tx_chip_perinatal: 'CHIP Perinatal',
+  program_tx_healthy_texas_women: 'Healthy Texas Women',
+  program_tx_medicaid_parent: 'Medicaid for Parents and Caretaker Relatives',
+  program_tx_wic: 'Texas WIC',
+  program_tx_ceap: 'Comprehensive Energy Assistance Program (CEAP)',
+  program_travis_central_health_map: 'Central Health Medical Access Program (MAP)',
+  program_austin_energy_cap: 'Austin Energy Customer Assistance Program',
+  program_austin_plus1: 'Austin Energy Plus 1 emergency bill help',
+  program_federal_marketplace_summary: 'Private health plans with premium tax credits, bought through the federal marketplace.',
+  program_federal_wic_summary: 'Food, formula, and nutrition support for pregnancy, new mothers, and children under five.',
+  program_federal_liheap_summary: 'Federal money, passed to state and local agencies, that helps pay home heating and cooling bills.',
+  program_federal_lifeline_summary: 'A monthly discount on phone or internet service for low-income households.',
+  program_federal_medicare_savings_summary: 'State-run help paying Medicare premiums, deductibles, and copays.',
+  program_ca_medi_cal_summary: 'California’s Medicaid program: free or low-cost health coverage, including for adults on income alone.',
+  program_ca_calfresh_summary: 'California’s SNAP program: a monthly food benefit loaded onto an EBT card.',
+  program_ca_calworks_summary: 'Monthly cash aid for California families with children, plus welfare-to-work services.',
+  program_ca_covered_california_summary: 'California’s own health insurance marketplace, with state and federal premium help.',
+  program_ca_care_summary: 'A discount on gas and electric bills for income-qualified California utility customers.',
+  program_ca_lifeline_summary: 'A California discount on home or mobile phone service, on top of the federal Lifeline benefit.',
+  program_ca_wic_summary: 'California’s WIC program, run by the Department of Public Health.',
+  program_tx_medicaid_child_summary: 'Free health coverage for Texas children, with income limits that differ by the child’s age.',
+  program_tx_chip_summary: 'Low-cost health coverage for Texas children whose family earns too much for Children’s Medicaid.',
+  program_tx_medicaid_pregnancy_summary: 'Health coverage during pregnancy and for twelve months after the birth.',
+  program_tx_chip_perinatal_summary: 'Prenatal and delivery care for a pregnancy that cannot be covered by Medicaid, including because of immigration status.',
+  program_tx_healthy_texas_women_summary: 'Women’s health and family planning services for Texas women aged 15 to 44.',
+  program_tx_medicaid_parent_summary: 'Very limited Texas Medicaid for parents and relatives caring for a child, with an income limit far below the poverty line.',
+  program_tx_snap_summary: 'Texas’s SNAP program: a monthly food benefit on a Lone Star Card.',
+  program_tx_tanf_summary: 'A small monthly cash grant for Texas families caring for a child.',
+  program_tx_ceap_summary: 'Texas energy assistance that pays part of your electricity bill directly to the utility.',
+  program_travis_central_health_map_summary: 'Travis County’s local health care program: doctors, specialists, and prescriptions through a local network, open to residents regardless of immigration status.',
+  program_austin_energy_cap_summary: 'Ongoing discounts on City of Austin electric, water, wastewater, and drainage charges.',
+  program_austin_plus1_summary: 'One-time emergency help with an overdue City of Austin utility bill.',
+  elig_marketplace_below_subsidy_floor: 'Household income is {fplPercent} of the Federal Poverty Level, below the {limitPercent} floor for marketplace premium tax credits. Because Texas did not expand Medicaid, a household in this range may have no subsidised coverage option — this is the Medicaid coverage gap.',
+  elig_marketplace_above_subsidy_ceiling: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} level where premium tax credits normally end. You can still buy a plan at full price.',
+  elig_marketplace_subsidy_range: 'Household income is {fplPercent} of the Federal Poverty Level, within the range up to {limitPercent} where premium tax credits reduce the monthly cost of a marketplace plan.',
+  elig_wic_no_qualifying_person: 'WIC serves pregnant and postpartum women, infants, and children under five. No one in the household was reported as fitting one of those groups.',
+  elig_wic_income_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} WIC income limit.',
+  elig_wic_pregnancy_qualifies: 'A pregnancy was reported, which is one of the categories WIC serves.',
+  elig_wic_young_child_qualifies: 'A child under five was reported, which is one of the categories WIC serves.',
+  elig_wic_income_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} WIC income limit.',
+  elig_no_published_threshold: 'We do not hold this program’s published income standard, so we cannot screen it. The agency decides.',
+  elig_program_available_no_rule: 'This program is available where you live. We have not encoded its eligibility rules, so we cannot say whether you qualify — it is worth asking about.',
+  elig_msp_no_medicare_signal: 'Nothing in the household suggests anyone is on Medicare, which these programs require.',
+  elig_msp_age_signal: 'Someone in the household is 65 or older and may be on Medicare, which these programs help pay for.',
+  elig_msp_disability_signal: 'A disability was reported, which can bring someone onto Medicare before 65.',
+  elig_lifeline_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} Lifeline limit. Taking part in SNAP or Medicaid also qualifies you.',
+  elig_lifeline_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} Lifeline income limit.',
+  elig_ca_care_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} CARE limit for a discount on gas and electricity.',
+  elig_ca_care_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} CARE income limit.',
+  elig_tx_ceap_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} limit for Texas energy assistance. Funding is limited and applications are taken by a local agency.',
+  elig_tx_ceap_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} limit for Texas energy assistance.',
+  elig_austin_cap_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} limit for the City of Austin utility discount. Approval for SNAP, Medicaid, CHIP, or MAP also enrols you automatically.',
+  elig_austin_cap_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} income limit for the City of Austin utility discount.',
+  elig_tx_medicaid_child_no_child: 'No child was reported in the household. Children’s Medicaid covers children under 19.',
+  elig_tx_medicaid_child_within_band: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} limit that applies to the youngest child’s age band.',
+  elig_tx_medicaid_child_bands_by_age: 'Texas sets a different limit for each age: 198% of poverty under age one, 144% for ages one to five, and 133% for ages six to eighteen. Children of different ages in the same household can get different answers.',
+  elig_tx_medicaid_child_above_band: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} Children’s Medicaid limit for this age band.',
+  elig_tx_chip_next_step: 'CHIP is the next step for a child over the Medicaid limit, and the same application covers both.',
+  elig_tx_chip_no_child: 'No child was reported in the household. CHIP covers children under 19.',
+  elig_tx_chip_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} CHIP limit.',
+  elig_tx_chip_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} CHIP limit.',
+  elig_tx_chip_after_medicaid_screen: 'Texas checks Children’s Medicaid first and moves the child to CHIP if income is too high. One application does both, so you do not choose between them.',
+  elig_tx_pregnancy_not_reported: 'No pregnancy was reported in the household.',
+  elig_tx_pregnancy_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} limit for Medicaid for Pregnant Women.',
+  elig_tx_pregnancy_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} limit for Medicaid for Pregnant Women.',
+  elig_tx_pregnancy_postpartum_coverage: 'Coverage continues for {months} months after the birth.',
+  elig_tx_chip_perinatal_next_step: 'CHIP Perinatal covers the pregnancy when Medicaid cannot, and is worth applying for.',
+  elig_tx_chip_perinatal_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} CHIP Perinatal limit.',
+  elig_tx_chip_perinatal_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} CHIP Perinatal limit.',
+  elig_tx_chip_perinatal_status_independent: 'CHIP Perinatal is open regardless of immigration status, so it is a route to prenatal care when Medicaid is not available.',
+  elig_tx_htw_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} Healthy Texas Women limit.',
+  elig_tx_htw_no_one_in_age_range: 'Healthy Texas Women serves women aged 15 to 44, and the income limit is {limitPercent} of poverty. No one in the reported ages falls in that range.',
+  elig_tx_htw_income_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} Healthy Texas Women limit.',
+  elig_tx_parent_medicaid_no_child: 'This program is only for a parent or relative caring for a child in the home, and no child was reported.',
+  elig_tx_parent_medicaid_very_low_standard: 'Texas covers parents and caretaker relatives only at an income far below the poverty line — one of the lowest limits in the country. Most working parents earn too much to qualify.',
+  elig_tx_parent_medicaid_no_published_percent: 'The limit is a dollar standard set by Texas, not a percentage of poverty, and we do not hold the current table. Only Texas Health and Human Services can tell you the exact figure.',
+  elig_tx_snap_within_gross_limit: 'Monthly household income of {monthlyIncome} is at or below the Texas SNAP gross income limit of {limitAmount} for a household of {householdSize}.',
+  elig_tx_snap_net_test_follows: 'A second test then applies to income after deductions, with a limit of {limitAmount} a month. Rent and utility costs reduce the income that counts.',
+  elig_tx_snap_expedited_possible: 'Monthly income is below {limitAmount}, so you may qualify for expedited service and receive benefits within {days} days.',
+  elig_tx_snap_within_categorical: 'Monthly household income of {monthlyIncome} is above the standard limit but within the {fplPercent} of poverty limit of {limitAmount}, under which Texas still grants eligibility.',
+  elig_tx_snap_net_income_depends: 'Whether you qualify depends on income after the rent, utility, and dependent-care deductions, which we did not ask about.',
+  elig_tx_snap_above_gross_limit: 'Monthly household income of {monthlyIncome} is above the Texas SNAP limit of {limitAmount} for a household of {householdSize}.',
+  elig_tx_tanf_no_dependent_child: 'Texas TANF is only for families caring for a child aged 18 or under. Low income on its own does not qualify an adult-only household.',
+  elig_tx_tanf_pregnancy_may_qualify: 'A pregnancy was reported. Texas can begin TANF late in a pregnancy even before the child is born.',
+  elig_tx_tanf_dependent_child_one: 'The household includes one child, which is the first requirement for Texas TANF.',
+  elig_tx_tanf_dependent_child_other: 'The household includes {children} children, which is the first requirement for Texas TANF.',
+  elig_tx_tanf_needs_tests: 'Texas then applies two dollar-based needs tests that we do not hold, so only Texas Health and Human Services can decide the outcome.',
+  elig_tx_tanf_grant_is_small: 'The grant is small — roughly {fplPercent} of the Federal Poverty Level — so it is worth applying mainly alongside SNAP and Medicaid rather than on its own.',
+  elig_travis_map_above_limit: 'Household income is {fplPercent} of the Federal Poverty Level, above the {limitPercent} limit for the Travis County Medical Access Program.',
+  elig_travis_map_within_limit: 'Household income is {fplPercent} of the Federal Poverty Level, within the {limitPercent} limit for the Travis County Medical Access Program.',
+  elig_travis_map_not_insurance: 'MAP is not health insurance. It pays for care from a set list of local clinics, specialists, and pharmacies in Travis County.',
+  elig_travis_map_status_independent: 'MAP is open to Travis County residents regardless of immigration status, which makes it the main option for adults who cannot get Texas Medicaid.',
+  elig_travis_map_income_lookback: 'Eligibility is based on the income you received in the last {days} days, not last year’s.',
+  missing_household_tax_filing_status: 'How the household files taxes, and who is claimed on the return',
+  missing_wic_appointment_documents: 'Proof of pregnancy or the child’s age, brought to a WIC appointment',
+  missing_published_income_standard: 'The agency’s current income standard, which we do not hold',
+  missing_medicare_enrollment: 'Whether anyone in the household is enrolled in Medicare',
+  missing_countable_resources: 'Cash, bank balances, and other countable resources',
+  missing_countable_resources_against_limit: 'Cash, bank balances, and other countable resources, measured against the {limitAmount} limit',
+  missing_child_ages: 'Each child’s age, which decides the limit that applies',
+  missing_htw_sex_and_age: 'Whether anyone in the household is a woman aged 15 to 44 — we do not ask this',
+  missing_travis_residency_proof: 'Proof that you live in Travis County',
+  missing_current_insurance_status: 'Whether anyone applying already has health insurance',
+  missing_austin_utility_account: 'Your City of Austin utility account number',
+  estimate_method_snap_allotment: 'Estimated from the published SNAP formula: the maximum benefit for your household size, minus 30% of income after the standard deduction. Rent and utility deductions, which we did not ask about, usually raise this.',
+  estimate_unknown_premium_varies: 'Not shown — the premium depends on the plan you pick and your exact age, so any single figure would be misleading.',
+  estimate_unknown_food_package: 'Not shown — WIC gives specific foods rather than a cash amount.',
+  estimate_unknown_coverage_not_cash: 'Not shown — this is health coverage, not a payment. Its worth depends on the care you actually use.',
+  estimate_unknown_over_income: 'Not shown — income appears to be above the limit for this program.',
+  estimate_unknown_not_eligible_category: 'Not shown — the household does not meet this program’s basic requirements.',
+  estimate_unknown_grant_after_disregards: 'Not shown — the grant is calculated from countable income after deductions the agency applies.',
+  estimate_unknown_state_determined: 'Not shown — only the agency can calculate this amount.',
+  estimate_unknown_discount_varies: 'Not shown — the discount depends on your usage and your utility’s current rates.',
+  estimate_unknown_payment_to_utility: 'Not shown — the payment is set per household from the funds available that year.',
+  estimate_unknown_no_cash_value: 'Not shown — this program has no cash value to estimate.',
+  cliff_approaching_fpl_limit: 'Income is within {headroomPercent} of this program’s {limitPercent} limit ({limitAmount} a year for your household size). A raise above that could end eligibility.',
+  report_jurisdiction_heading: 'Where these programs come from',
+  report_jurisdiction_federal: 'Federal',
+  report_jurisdiction_state: 'State',
+  report_jurisdiction_county: 'County',
+  report_jurisdiction_city: 'City and local',
+  report_application_heading: 'Your application',
+  report_coverage_gap_heading: 'The Medicaid coverage gap',
+  report_coverage_gap_body: 'Texas did not expand Medicaid, so adults who are not pregnant, not caring for a child, and not disabled usually cannot get Medicaid at any income. Below the poverty line they also cannot get marketplace subsidies. Local programs are the realistic route to care.',
+  report_estimate_disclaimer: 'Dollar figures are estimates from published formulas, not decisions. Only the agency can tell you the amount you will receive.',
+  docs_to_submit_heading: 'What you need to submit an application',
+  docs_to_submit_intro: 'You can submit with this alone. Do not wait until you have everything below it.',
+  docs_to_verify_heading: 'What you will likely be asked to verify',
+  docs_to_verify_intro: 'Send these when you have them. The agency will tell you the deadline, and filing sooner sets an earlier benefit start date.',
+  docs_maybe_heading: 'What may be requested, depending on your household',
+  docs_maybe_intro: 'Only some households are asked for these.',
+  docs_file_now_note: 'Filing today protects your benefit start date. Missing documents can follow.',
+
+
+  // ── Manual (non-generated) application view ──────────────────────────────
+  manual_open_official_link: 'Open the official application',
+  manual_programs_heading: 'Programs you may qualify for',
+  manual_steps_heading: 'What to do, in order',
+  manual_contact_heading: 'Your details, so you can copy them across',
+  manual_contact_intro: 'Optional. Anything you enter here is added to the list below so you are not answering the same questions twice at the office.',
+  report_manual_cta: 'See how to apply',
+
+  // ── Texas Form H1010 intake ──────────────────────────────────────────────
+  // Shared intake controls, used by any form's flow.
+  intake_continue: 'Continue',
+  report_review_application: 'Review your application',
+  intake_clear_answer: 'Clear',
+  intake_remove_row: 'Remove',
+  intake_row_number: 'No. {number}',
+  intake_overflow_row:
+    'The printed form has room for {rows}. Attach this one on a separate sheet.',
+  intake_overflow_total:
+    '{count} more than the {rows} the printed form holds. They are kept, and the review sheet tells you to attach them.',
+
+  // Screens.
+  tx_screen_where: 'Where you live and get your mail',
+  tx_screen_household: 'Who lives with you',
+  tx_screen_money: 'Money you get',
+  tx_screen_bills: 'Bills you pay',
+  tx_screen_own: 'Things you own',
+  tx_screen_urgent: 'If you need food benefits right away',
+  tx_screen_situation: 'Your situation',
+  tx_screen_helper: 'Someone helping you apply',
+  tx_progress: '{answered} of {asked} answered',
+  tx_generating: 'Preparing your form…',
+
+  // Where you get your mail.
+  tx_section_mailing: 'Where you get your mail',
+  tx_section_mailing_intro:
+    'Answer the first question. Give a mailing address only if you answered No.',
+  tx_q_mail_same: 'Do you get your mail at the address where you live?',
+
+  // Where you live.
+  tx_section_home: 'Where you live',
+  tx_section_home_intro:
+    'Texas can still take your application if you have nowhere to live. Say so here and the office will help.',
+  tx_q_homeless: 'Is anyone in your home homeless?',
+  tx_q_institutional:
+    'Does anyone live in a shelter, group home, or institution?',
+
+  // Who lives with you.
+  tx_section_household: 'About your household',
+  tx_section_household_intro:
+    'These decide who counts as your household and which programs you can be screened for.',
+  tx_q_food_together: 'Do you buy and prepare food together?',
+  tx_q_food_together_help:
+    'People who buy and cook together are one household for food benefits, even if they are not related.',
+  tx_q_pregnant: 'Is anyone in your home pregnant?',
+  tx_q_pregnant_help:
+    'Texas Medicaid covers pregnancy, so this can open a route to coverage that is otherwise closed.',
+  tx_q_students: 'Is anyone in your home a student?',
+  tx_roster_title: 'Everyone else in your home',
+  tx_roster_intro:
+    'Everyone who lives with you apart from yourself. Your own details are on the previous screen.',
+  tx_roster_add: 'Add a person',
+  tx_roster_empty: 'Nobody added yet. If you live alone, continue.',
+  tx_roster_citizen: 'Are they a U.S. citizen or U.S. national?',
+  tx_roster_age: 'Age {age}',
+
+  // Money you get.
+  tx_section_money: 'Money coming in',
+  tx_section_money_intro:
+    'Report income before taxes. Texas HHSC will ask for proof after you apply.',
+  tx_q_annual_income: 'Total yearly household income',
+  tx_q_annual_income_help:
+    'A rough figure is fine. The job and payment details below are what the office works from.',
+  tx_q_income_kind: 'Where does your household’s money come from?',
+  tx_q_income_kind_help:
+    'In a few words, list the sources — for example: a job, self-employment, Social Security, disability (SSI/SSDI), unemployment, child support, a pension. Write “none” if nobody has income.',
+  tx_q_has_job: 'Does anyone in your home have a job?',
+  tx_q_self_employed: 'Is anyone self-employed or running a business?',
+  tx_q_other_income: 'Does anyone get money from anywhere else?',
+  tx_q_other_income_help:
+    'Child support, unemployment, Social Security, retirement, veterans’ benefits.',
+  tx_q_income_varies: 'Does anyone’s income change during the year?',
+  tx_jobs_title: 'Jobs',
+  tx_jobs_intro: 'One row for each job anyone in your home has.',
+  tx_jobs_add: 'Add a job',
+  tx_jobs_empty: 'No jobs added yet.',
+  tx_job_employer: 'Employer',
+  tx_job_employer_address: 'Employer address',
+  tx_job_employer_address_help:
+    'HHSC verifies pay with the employer. Give the address if you know it.',
+  tx_job_gross_this_month: 'Gross pay received this month',
+  tx_job_gross_this_month_help:
+    'Everything received this month before deductions — not one paycheck.',
+  tx_job_pay_frequency: 'How often paid',
+  tx_job_hours: 'Hours a week',
+  tx_other_income_title: 'Other money you get',
+  tx_other_income_intro:
+    'One row for each source that is not from a job.',
+  tx_other_income_add: 'Add a source',
+  tx_other_income_empty: 'No other income added yet.',
+  tx_other_income_source: 'Where it comes from',
+  tx_other_income_source_help:
+    'For example: child support, unemployment, Social Security.',
+  tx_other_income_amount: 'How much',
+  tx_other_income_frequency: 'How often',
+
+  // Bills you pay.
+  tx_section_bills: 'What you pay',
+  tx_section_bills_intro:
+    'Rent, mortgage and utility costs can raise your food benefits, so report them even if you are behind on them.',
+  tx_q_has_bills: 'Do you pay rent, a mortgage, or utility bills?',
+  tx_q_has_bills_help:
+    'Report what you are billed, even if someone else helps you pay it.',
+  tx_q_dependent_care:
+    'Do you pay for child care or adult care so someone can work or go to school?',
+  tx_q_child_support:
+    'Does anyone pay child support to someone outside your home?',
+  tx_q_medical_costs:
+    'Does anyone 60 or older, or with a disability, have medical costs?',
+  tx_q_medical_costs_help:
+    'Medical costs for those household members are a food-benefit deduction.',
+  tx_bills_title: 'What you pay each month',
+  tx_bills_intro: 'One row for each housing or utility cost.',
+  tx_bills_add: 'Add a bill',
+  tx_bills_empty: 'No bills added yet.',
+  tx_bill_kind: 'Kind of bill',
+  tx_bill_amount: 'Cost each month',
+  tx_bill_description: 'Details',
+  tx_bill_description_help: 'Only needed when you choose “Other”.',
+
+  // Things you own.
+  tx_section_own: 'Things you own',
+  tx_section_own_intro:
+    'Texas does not count most savings for food benefits, but the state asks. HHSC will tell you if anything here needs proof.',
+  tx_q_accounts: 'Does anyone have a bank account, cash, or savings?',
+  tx_q_accounts_help:
+    'We never ask for an account number, and none is written on your form.',
+  tx_q_vehicles: 'Does anyone own a car or truck?',
+  tx_q_real_property: 'Does anyone own a home, land, or other property?',
+  tx_q_personal_property: 'Does anyone own anything else of value?',
+
+  // Expedited screening.
+  tx_section_urgent: 'If you need food benefits right away',
+  tx_section_urgent_intro:
+    'Texas screens every food-benefit application for expedited service, which can mean benefits within a few days. The first three questions are the federal test; the rest are urgent needs your caseworker should know about.',
+  tx_q_expedited_income:
+    'Is your monthly income under $150 and your cash on hand $100 or less?',
+  tx_q_expedited_housing:
+    'Are your income and cash together less than your rent and utilities this month?',
+  tx_q_expedited_farm: 'Is anyone a migrant or seasonal farm worker?',
+  tx_q_expedited_food: 'Will your food run out in the next three days?',
+  tx_q_expedited_eviction: 'Have you been given an eviction notice?',
+  tx_q_expedited_utilities:
+    'Have your utilities been shut off, or been threatened with shut-off?',
+  tx_q_expedited_clothing: 'Does anyone need essential clothing?',
+  tx_q_expedited_transport:
+    'Does anyone need transportation to meet an emergency need?',
+
+  // Your situation.
+  tx_section_situation: 'Your situation',
+  tx_section_situation_intro:
+    'These do not decide your application on their own. They tell the office which rules to check.',
+  tx_q_military: 'Has anyone in your home served in the military?',
+  tx_q_disability: 'Does a disability limit anyone’s daily activities?',
+  tx_q_foster_care: 'Was anyone in your home ever in foster care?',
+  tx_q_foster_care_help:
+    'Texas covers some young adults who were in foster care, up to age 26.',
+  tx_q_prior_assistance: 'Has anyone in your home received benefits before?',
+  tx_q_existing_benefits: 'Benefits anyone already gets',
+
+  // Someone helping you apply.
+  tx_section_helper: 'Someone helping you apply',
+  tx_section_helper_intro:
+    'An authorized representative can apply, be interviewed, and receive notices for you.',
+  tx_q_has_helper: 'Is someone applying on your behalf?',
+  tx_q_has_helper_help:
+    'They must sign the official form themselves. We never fill in a signature.',
+  tx_helper_details_title: 'Their details',
+  tx_helper_details_intro:
+    'Enough for the office to reach them. Only their name is required.',
+  tx_helper_add: 'Add their details',
+  tx_helper_empty: 'No details added yet.',
+  tx_helper_name: 'Their name',
+  tx_helper_organization: 'Organization',
+
+  // Review and generate.
+  tx_job_who: 'Whose job is it?',
+  tx_other_income_who: 'Who gets it?',
+  tx_person_you: 'You',
+  tx_review_heading: 'Review and prepare your form',
+  tx_review_intro:
+    'Check what you have told us, then prepare your Form H1010. You can go back and change any answer. Answering every question that applies to you makes your application more complete, which can help HHSC process it.',
+  tx_review_programs: 'Applying for',
+  tx_review_household_size: 'Household size',
+  tx_review_answered: 'Questions answered',
+  tx_review_worksheet_note:
+    'We fill in Texas HHSC’s own Form H1010 — the agency’s paper, with your answers already on it. A few boxes are yours to complete by hand; the checklist we prepare beside it names every one and says what to write.',
+  tx_draft_ready: 'Your Form H1010 is ready',
+  tx_draft_worksheet:
+    'This is the official Texas application with your answers on it. Read every page before you sign — you sign it yourself, and we never fill in a signature.',
+  tx_draft_download: 'Download your application',
+  tx_draft_open_review: 'What we filled in, and what is left',
+  // How to send the prepared H1010. Fax, mail, or in person only: the PDF
+  // cannot be filed through YourTexasBenefits.com, and 2-1-1 is not a way to
+  // file it.
+  tx_submit_heading: 'How to submit your application',
+  tx_submit_intro:
+    'Your application still needs to be submitted to HHSC. Sign it, then send it one of these ways:',
+  tx_submit_fax: 'Fax',
+  tx_submit_fax_note: 'If your form is 2-sided, fax both sides.',
+  tx_submit_mail: 'Mail',
+  tx_submit_in_person: 'In person',
+  tx_submit_office_name: 'Texas HHSC benefits office',
+  tx_submit_office_for_address: 'The benefits office for the home address you gave us.',
+  tx_submit_office_unknown:
+    'At a Texas HHSC benefits office. We could not match your home address to one, so call 2-1-1 (pick a language, then press 1) to find the nearest office.',
+  tx_submit_after:
+    'HHSC makes the official decision about your eligibility. After you submit, HHSC may ask for more information or proof, such as pay stubs. Sending those is a separate step from submitting your application — follow the instructions HHSC sends you.',
+
+
+  // ── One person at a time ─────────────────────────────────────────────────
+  //
+  // Written to be read by someone who has not filled in a benefits form
+  // before. Short sentences, ordinary words, and the person's own name once we
+  // know it — "Is María in school?" rather than "Household Member 2: student
+  // status". Each question says what it needs and stops; the form's reasons
+  // for asking are HHSC's, and repeating "this helps us determine your
+  // eligibility" under every question teaches people to skip the text.
+  tx_person_heading: 'About {name}',
+  tx_person_unnamed: 'this person',
+  tx_person_relationship: 'How is {name} related to you?',
+
+  tx_person_programs: 'Which benefits is {name} applying for?',
+  tx_person_programs_help:
+    'Choose all that apply. Different people in your home can apply for different benefits, and some people may not be applying at all.',
+
+  tx_person_sex_help: 'The form asks for this. Answer as it appears on {name}’s records.',
+  tx_person_lives_in_texas: 'Does {name} live in Texas?',
+  tx_person_stays_in_texas: 'Does {name} plan to keep living in Texas?',
+  tx_person_citizen: 'Is {name} a U.S. citizen or U.S. national?',
+  tx_person_citizen_help:
+    'You can still apply if the answer is no. Answer for {name} only.',
+  tx_person_school: 'Is {name} in school?',
+  tx_person_full_time_student: 'Is {name} going full time?',
+
+  // Program names and what each one helps with. Short enough to scan, and
+  // careful never to read as a promise: who qualifies is HHSC's decision.
+  tx_program_snap_name: 'Food benefits (SNAP)',
+  tx_program_snap_summary: 'Helps pay for groceries.',
+  tx_program_medicaid_name: 'Medicaid',
+  tx_program_medicaid_summary:
+    'Health coverage for people who meet Texas rules.',
+  tx_program_chip_name: 'CHIP',
+  tx_program_chip_summary:
+    'Low-cost health coverage for children whose families earn too much for Medicaid.',
+  tx_program_tanf_name: 'Cash help (TANF)',
+  tx_program_tanf_summary: 'Monthly cash for some families with children.',
+
+  intake_progress_label: 'Progress',
+  intake_progress_percent: '{percent}%',
+
+  // ── Form delivery: what document the applicant is getting ────────────────
+  //
+  // The card that names each form in a household's packet. Every string here
+  // is read by someone who should never have to know that "BI" means bilingual
+  // or that the file is called TX-H1049-BI-2001-12.pdf. The form's own number
+  // (H1010) is shown because a county office recognises it; nothing else
+  // internal is.
+  //
+  // The three language keys are named in the *reader's* language, so a Spanish
+  // reader sees "Español" for a Spanish document and "Inglés" for an English
+  // one. `form_card_language_en_es` is its own label rather than a list built
+  // at render: a document printing both is not "English", and labelling it so
+  // would tell a Spanish reader they had been given the English one.
+
+  form_card_language_en: 'English',
+  form_card_language_es: 'Spanish',
+  form_card_language_zh_cn: 'Chinese',
+  form_card_language_en_es: 'English & Spanish',
+
+  form_document_officially_bilingual: 'Official bilingual form',
+  form_document_language_fallback:
+    'The agency does not publish this form in your language, so the form itself is in English. Everything we explain about it is in your language.',
+  form_document_bilingual_scope_signature_page_only:
+    'The part you sign is printed in English and Spanish. The page your doctor or nurse completes is in English only.',
+
+  form_card_requirement_required: 'Required',
+  form_card_requirement_needs_confirmation: 'You may be asked for this',
+  form_card_requirement_optional: 'Optional',
+
+  form_card_purpose_label: 'What it is for',
+  form_card_program_label: 'For',
+  form_card_language_label: 'Language',
+
+  form_purpose_tx_h1010:
+    'The application itself. One form covers food benefits, cash help and health coverage.',
+  form_purpose_tx_h1049:
+    'Reports income from your own business or self-employment, when you do not have tax or business records to send instead.',
+  form_purpose_tx_h3037:
+    'Confirms a pregnancy for health coverage. A doctor or nurse completes the medical part; you sign the permission to share it.',
+  form_purpose_tx_h1028_mbic:
+    'Your employer confirms your job, pay and any health insurance offered at work. Only for Medicaid Buy-In for Children.',
+  form_purpose_ca_saws2plus:
+    'The application itself. One form covers CalFresh, cash aid and Medi-Cal.',
+  form_purpose_unknown: 'A supporting document for your application.',
+
+  form_card_prefill_done: 'Your information has been added where possible.',
+  form_card_prefill_worksheet:
+    'Your answers are on this worksheet, ready to copy onto the official form.',
+  form_card_prefill_blank:
+    'This is the official blank form. We have not filled anything in.',
+  form_card_prefill_counts: 'Filled in {filled} of {mapped} boxes.',
+
+  form_card_open: 'Open application',
+  form_card_download: 'Download application',
+  form_card_open_form: 'Open form',
+  form_card_download_form: 'Download form',
+  form_card_get_official: 'Get the official form',
+  form_card_official_source: 'See the agency’s page',
+
+  form_card_unavailable: 'We cannot prepare this one yet',
+  tx_h1028_mbic_superseded_revision:
+    'The copy we hold is out of date, so we will not prepare it. Ask your caseworker for the current version.',
+
+  tx_h1010_required_for_selected_programs:
+    'This is the application for the benefits you chose.',
+  tx_h1049_self_employment_reported:
+    'You told us someone works for themselves. You may be asked to report that income on this form — or you may be able to send your latest tax return instead.',
+  tx_h3037_pregnancy_reported_for_health_coverage:
+    'You told us someone is pregnant, and you are applying for health coverage.',
+  tx_h1028_mbic_employment_reported_for_buy_in:
+    'You are applying for Medicaid Buy-In for Children and someone in the household has a job.',
+
+  packet_heading: 'Your paperwork',
+  packet_intro:
+    'The forms your application needs, and what each one is for. We have prepared what we can.',
+  packet_main_heading: 'Your application',
+  packet_supporting_heading: 'Forms that may go with it',
 
 } as const;
 

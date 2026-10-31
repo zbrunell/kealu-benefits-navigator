@@ -24,14 +24,16 @@ import { buildInitialApplicationData } from '@/lib/application-data';
 import { buildApplicationFieldPlan } from '@/lib/application-mapper';
 import {
   QUESTION_META,
-  REQUIREMENT_HINTS,
-  REQUIREMENT_LABELS,
+  REQUIREMENT_HINT_KEYS,
+  REQUIREMENT_LABEL_KEYS,
   getRequiredApplicationQuestions,
   requirementForTier,
   sawsQuestionFor,
   tierFor,
   writePath,
 } from '@/lib/saws2-question-planner';
+import { messages } from '@/i18n';
+import { SUPPORTED_LOCALES } from '@/lib/locale';
 import {
   canSkip,
   currentQuestion,
@@ -189,16 +191,29 @@ describe('question priority', () => {
       'can_complete_later',
       'optional',
     ] as const) {
-      expect(REQUIREMENT_LABELS[requirement]).toBeTruthy();
-      expect(REQUIREMENT_HINTS[requirement]).toBeTruthy();
+      // The key must exist, and must resolve in every locale — a key with no
+      // catalog entry would throw at render rather than show English.
+      const labelKey = REQUIREMENT_LABEL_KEYS[requirement];
+      const hintKey = REQUIREMENT_HINT_KEYS[requirement];
+
+      expect(labelKey).toBeTruthy();
+      expect(hintKey).toBeTruthy();
+
+      for (const locale of SUPPORTED_LOCALES) {
+        const catalog = messages[locale] as unknown as Record<string, string>;
+
+        expect(catalog[labelKey], `${locale}.${labelKey}`).toBeTruthy();
+        expect(catalog[hintKey], `${locale}.${hintKey}`).toBeTruthy();
+      }
+
       // Skipping must never be described as "does not apply" or "not needed".
-      expect(REQUIREMENT_HINTS[requirement]).not.toMatch(
+      expect(messages.en[hintKey as keyof typeof messages.en]).not.toMatch(
         /does not apply|not needed|irrelevant/i,
       );
     }
 
-    expect(REQUIREMENT_LABELS.required).toBe('Required to continue');
-    expect(REQUIREMENT_LABELS.can_complete_later).toBe('Can complete later');
+    expect(messages.en.req_label_required).toBe('Required to continue');
+    expect(messages.en.req_label_can_complete_later).toBe('Can complete later');
   });
 });
 

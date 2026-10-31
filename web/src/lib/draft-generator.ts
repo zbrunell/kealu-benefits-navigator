@@ -20,6 +20,10 @@ import path from 'path';
 import { buildApplicationFieldPlan } from '@/lib/application-mapper';
 import { resolveKvr } from '@/lib/kvr-checker';
 import type { Saws2PlusApplicationData } from '@/types/application';
+import {
+  parseFormManifest,
+  type FormManifestEntry,
+} from '@/types/form-manifest';
 import type { SessionVars } from '@/types/session';
 
 /** Result of a successful draft generation. */
@@ -29,6 +33,26 @@ export interface DraftResult {
 
   /** "official" for a real state AcroForm PDF; "worksheet" for the fallback. */
   formType: 'official' | 'worksheet';
+
+  /**
+   * Absolute path to the review sheet the generator wrote beside the PDF.
+   *
+   * Present for a document rendered through the mapping layer, which writes
+   * one every time; absent for the California path, whose completion guide is
+   * computed in TypeScript from the SAWS readiness model. The guide route
+   * serves whichever exists rather than deciding by state.
+   */
+  reviewPath?: string;
+
+  /**
+   * The forms this household needs, and the document each resolves to.
+   *
+   * Empty for a state with no forms catalog. Produced by the Python mapping
+   * layer during the same call that renders the PDF, so the cards and the
+   * document cannot describe different packets — see
+   * `benefits_navigator.formmap.manifest`.
+   */
+  packet: FormManifestEntry[];
 }
 
 /**
@@ -260,6 +284,8 @@ export async function generateDraft(
         const result = JSON.parse(stdout.trim()) as {
           path?: string;
           form_type?: string;
+          review_path?: string;
+          packet?: unknown;
           error?: string;
         };
 
@@ -314,6 +340,10 @@ export async function generateDraft(
         resolve({
           path: result.path,
           formType,
+          reviewPath: result.review_path,
+          // Parsed rather than trusted: it crossed a process boundary, and a
+          // malformed card must not be able to break a page.
+          packet: parseFormManifest(result.packet),
         });
       } catch {
         console.log(

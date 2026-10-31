@@ -6,11 +6,17 @@
 "use client";
 
 import {
+  RELATIONSHIP_LABEL_KEYS,
   allowedRelationshipsForDateOfBirth,
-  type HouseholdRelationship,
 } from "@/lib/household-relationships";
+import { useState } from "react";
 import { ageOnDate, dateOfBirthBounds } from "@/lib/date-of-birth";
 import { useTranslation } from "@/hooks/use-translation";
+import { ADDED_ROW_ATTRIBUTE, useFocusAddedRow } from "@/hooks/use-focus-added-row";
+import {
+  RequiredMissingNotice,
+  continueButtonClass,
+} from "./required-marker";
 import type { Saws2PlusProgram } from "@/lib/report-assembler";
 
 import type {
@@ -97,7 +103,7 @@ function YesNoQuestion({
 
   return (
     <fieldset className="rounded-lg border border-slate-200 bg-white p-3">
-      <legend className="px-1 text-sm font-medium text-slate-800">
+      <legend className="boxed-legend text-sm font-medium text-slate-800">
         {label}
       </legend>
 
@@ -158,7 +164,7 @@ function ProgramCheckboxes({
 
   return (
     <fieldset className="rounded-lg border border-slate-200 bg-white p-3">
-      <legend className="px-1 text-sm font-medium text-slate-800">
+      <legend className="boxed-legend text-sm font-medium text-slate-800">
         {t("household_which_benefits")}
       </legend>
 
@@ -189,22 +195,6 @@ function ProgramCheckboxes({
   );
 }
 
-/** How each relationship is written on screen. */
-/**
- * Catalog keys, not prose: this map is rendered into a <select> the applicant
- * reads, so the words have to come from their language's catalog.
- */
-const RELATIONSHIP_LABEL_KEYS: Record<HouseholdRelationship, string> = {
-  spouse: "rel_spouse",
-  child: "rel_child",
-  parent: "rel_parent",
-  sibling: "rel_sibling",
-  grandparent: "rel_grandparent",
-  grandchild: "rel_grandchild",
-  unrelated: "rel_unrelated",
-  other: "rel_other",
-};
-
 export default function HouseholdStep({
   applicant,
   members,
@@ -219,6 +209,9 @@ export default function HouseholdStep({
   onContinue,
 }: HouseholdStepProps) {
   const { t } = useTranslation();
+  const { containerRef, markAdded } = useFocusAddedRow<HTMLDivElement>(
+    members.length,
+  );
 
   /**
    * Base identity information is required before continuing.
@@ -234,6 +227,19 @@ export default function HouseholdStep({
       Boolean(member.dateOfBirth) &&
       Boolean(member.relationshipToApplicant.trim()),
   );
+
+  const [showMissing, setShowMissing] = useState(false);
+
+  function handleContinue() {
+    if (!membersValid) {
+      // Nothing is cleared; the applicant is told why Continue did nothing.
+      setShowMissing(true);
+
+      return;
+    }
+
+    onContinue();
+  }
 
   return (
     <div className="space-y-4">
@@ -264,7 +270,7 @@ export default function HouseholdStep({
           </p>
         </div>
 
-        <div className="mt-6 space-y-5">
+        <div ref={containerRef} className="mt-6 space-y-5">
           {members.map((member, index) => {
             const calculatedAge =
               ageFromDateOfBirth(member.dateOfBirth)
@@ -290,6 +296,7 @@ export default function HouseholdStep({
             return (
               <fieldset
                 key={member.id}
+                {...{ [ADDED_ROW_ATTRIBUTE]: "" }}
                 className="rounded-xl border border-slate-200 bg-slate-50 p-4"
               >
                 <div className="flex items-center justify-between gap-3">
@@ -458,10 +465,12 @@ export default function HouseholdStep({
                       }
                     />
 
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    {/* Stacked, as on the applicant step: beside Sex,
+                        Marital status was squeezed into half a row. */}
+                    <div className="grid max-w-sm gap-4">
                       <label className="block">
                         <span className="text-sm font-medium text-slate-700">
-                          Sex
+                          {t("field_sex")}
                         </span>
 
                         <select
@@ -479,13 +488,13 @@ export default function HouseholdStep({
                           className={INPUT_CLASS}
                         >
                           <option value="">
-                            Select
+                            {t("opt_select")}
                           </option>
                           <option value="male">
-                            Male
+                            {t("opt_male")}
                           </option>
                           <option value="female">
-                            Female
+                            {t("opt_female")}
                           </option>
                         </select>
                       </label>
@@ -510,22 +519,22 @@ export default function HouseholdStep({
                           className={INPUT_CLASS}
                         >
                           <option value="">
-                            Select
+                            {t("opt_select")}
                           </option>
                           <option value="single">
-                            Single
+                            {t("opt_single")}
                           </option>
                           <option value="married">
-                            Married
+                            {t("opt_married")}
                           </option>
                           <option value="separated">
-                            Separated
+                            {t("opt_separated")}
                           </option>
                           <option value="divorced">
-                            Divorced
+                            {t("opt_divorced")}
                           </option>
                           <option value="widowed">
-                            Widowed
+                            {t("opt_widowed")}
                           </option>
                         </select>
                       </label>
@@ -593,7 +602,7 @@ export default function HouseholdStep({
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="block">
                         <span className="text-sm font-medium text-slate-700">
-                          Sex
+                          {t("field_sex")}
                         </span>
 
                         <select
@@ -611,13 +620,13 @@ export default function HouseholdStep({
                           className={INPUT_CLASS}
                         >
                           <option value="">
-                            Select
+                            {t("opt_select")}
                           </option>
                           <option value="male">
-                            Male
+                            {t("opt_male")}
                           </option>
                           <option value="female">
-                            Female
+                            {t("opt_female")}
                           </option>
                         </select>
                       </label>
@@ -694,7 +703,7 @@ export default function HouseholdStep({
                     </div>
 
                     <fieldset className="rounded-lg border border-slate-200 bg-white p-3">
-                      <legend className="px-1 text-sm font-medium text-slate-800">
+                      <legend className="boxed-legend text-sm font-medium text-slate-800">
                         {t("household_parent_question")}
                       </legend>
 
@@ -751,8 +760,6 @@ export default function HouseholdStep({
 
                     <p className="text-xs text-slate-500">
                       {t("household_privacy_note")}
-                      or prefilled here. They must be entered manually in the
-                      official form if required.
                     </p>
                   </div>
                 )}
@@ -763,7 +770,10 @@ export default function HouseholdStep({
 
         <button
           type="button"
-          onClick={onAdd}
+          onClick={() => {
+            markAdded();
+            onAdd();
+          }}
           className="mt-5 rounded-lg border border-green-300 bg-green-50 px-4 py-2 text-sm font-medium text-green-800 hover:bg-green-100"
         >
           {t("household_add_member")}
@@ -786,13 +796,18 @@ export default function HouseholdStep({
 
           <button
             type="button"
-            onClick={onContinue}
-            disabled={!membersValid}
-            className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={handleContinue}
+            aria-disabled={!membersValid}
+            className={continueButtonClass(membersValid)}
           >
             {t("ui_continue")}
           </button>
         </div>
+
+        <RequiredMissingNotice
+          show={showMissing && !membersValid}
+          testId="household-required-missing"
+        />
       </div>
     </div>
   );

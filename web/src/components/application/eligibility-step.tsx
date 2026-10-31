@@ -11,7 +11,13 @@ import type {
   PersonalEmergencyInformation,
   PregnancyInformation,
 } from "@/types/application";
+import { useState } from "react";
 import { useTranslation } from "@/hooks/use-translation";
+import {
+  RequiredLegend,
+  RequiredMissingNotice,
+  continueButtonClass,
+} from "./required-marker";
 
 interface EligibilityStepProps {
   preferences: ApplicationPreferences;
@@ -56,7 +62,7 @@ function YesNoQuestion({
 
   return (
     <fieldset className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <legend className="px-1 text-sm font-medium text-slate-900">
+      <legend className="boxed-legend text-sm font-medium text-slate-900">
         {label}
       </legend>
 
@@ -122,6 +128,19 @@ export default function EligibilityStep({
     (answer) => typeof answer === "boolean",
   );
 
+  const [showMissing, setShowMissing] = useState(false);
+
+  function handleContinue() {
+    if (!isComplete) {
+      // Nothing is cleared; the applicant is told why Continue did nothing.
+      setShowMissing(true);
+
+      return;
+    }
+
+    onContinue();
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-green-200 bg-white p-6 shadow-sm">
@@ -136,6 +155,8 @@ export default function EligibilityStep({
         <p className="mt-2 text-sm text-slate-600">
           {t("elig_intro")}
         </p>
+
+        <RequiredLegend />
 
         <section className="mt-6">
           <h2 className="text-base font-semibold text-slate-900">
@@ -308,7 +329,7 @@ export default function EligibilityStep({
 
             {personalEmergency.hasEmergency === true && (
               <fieldset className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                <legend className="px-1 text-sm font-medium text-amber-950">
+                <legend className="boxed-legend text-sm font-medium text-amber-950">
                   {t("elig_emergency_types")}
                 </legend>
 
@@ -355,13 +376,22 @@ export default function EligibilityStep({
 
           <button
             type="button"
-            onClick={onContinue}
-            disabled={!isComplete}
-            className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={handleContinue}
+            aria-disabled={!isComplete}
+            className={continueButtonClass(isComplete)}
           >
             {t("elig_continue")}
           </button>
         </div>
+
+        {/*
+          No field list: every question on this step is required, so naming
+          them would reprint the page rather than point anywhere useful.
+        */}
+        <RequiredMissingNotice
+          show={showMissing && !isComplete}
+          testId="eligibility-required-missing"
+        />
       </div>
     </div>
   );

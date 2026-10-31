@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/*
+ * Name the source directory explicitly. Automatic detection reports each
+ * scanned file as a dependency but never the directories, so webpack's
+ * persistent cache did not notice new component files: classes used only in
+ * them (gap-5 in the Texas person card, bg-slate-300 on a disabled Continue)
+ * were missing from the CSS until the cache was deleted. An explicit @source
+ * is reported as a directory dependency and invalidates correctly.
+ */
+@source "..";
+
 /* ─── Markdown content typography ──────────────────────────────────────────── */
 
 .markdown-content {
@@ -128,3 +138,22 @@
 }
 .typing-dot:nth-child(2) { animation-delay: 0.15s; }
 .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* ─── Boxed question prompts ───────────────────────────────────────────────── */
+
+/*
+ * A fieldset's legend normally sits on the box's top border. A prompt long
+ * enough to wrap ("Do you buy and prepare food together?") then straddles the
+ * border, with the second line inside the box and the first outside it.
+ * Floating the legend puts it inside the box like any other text; the element
+ * after it clears the float so it starts on its own line.
+ */
+.boxed-legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+
+.boxed-legend + * {
+  clear: both;
+}

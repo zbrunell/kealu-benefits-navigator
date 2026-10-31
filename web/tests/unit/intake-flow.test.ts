@@ -218,6 +218,8 @@ describe('getNextQuestion()', () => {
       zip_code: '77001',
       annual_income: '42000',
       household_profile: 'Single parent, 2 kids',
+      // Derived from the ZIP alongside state and county, never asked.
+      city: 'Houston',
       current_coverage: 'uninsured',
       medications: 'none',
       providers: 'Dr. Smith',

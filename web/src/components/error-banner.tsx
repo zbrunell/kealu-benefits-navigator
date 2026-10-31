@@ -9,6 +9,8 @@ import { useTranslation } from '@/hooks/use-translation';
 
 interface ErrorBannerProps {
   message: string;
+  /** Public error key such as "BN-1003"; users quote it to support. */
+  errorCode?: string;
   correlationId?: string;
   onRetry: () => void;
   /** Optional secondary action (e.g. "Edit my information"). */
@@ -20,9 +22,10 @@ interface ErrorBannerProps {
   secondaryLabel?: string;
 }
 
-/** Inline amber error banner with optional correlation ID, retry, and secondary action. */
+/** Inline amber error banner with optional error code, correlation ID, retry, and secondary action. */
 export default function ErrorBanner({
   message,
+  errorCode,
   correlationId,
   onRetry,
   onSecondary,
@@ -40,6 +43,11 @@ export default function ErrorBanner({
         <span aria-hidden className="mt-0.5 shrink-0 text-amber-500">⚠</span>
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm leading-snug">{message}</p>
+          {errorCode && (
+            <p className="text-xs text-amber-700 mt-1 font-mono break-all">
+              Error code: {errorCode}
+            </p>
+          )}
           {correlationId && (
             <p className="text-xs text-amber-700 mt-1 font-mono break-all">
               Error ID: {correlationId}

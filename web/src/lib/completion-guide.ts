@@ -137,7 +137,15 @@ export interface CompletionGuideInput {
  * Only the words are translated. `printedPage` and `saws` are quotations of
  * what the page itself prints, so they stay exactly as the paper reads.
  */
-function locationOf(item: ManualItem, locale: Locale): string | undefined {
+function locationOf(
+  item: ManualItem,
+  locale: Locale,
+  /*
+   * The printed label is a quotation of the paper, so it follows the document
+   * language even when our prose around it does not.
+   */
+  documentLanguage: Locale,
+): string | undefined {
   if (!item.page) return undefined;
 
   const page = t(messages[locale], 'guide_location_pdf_page').replace(
@@ -145,7 +153,22 @@ function locationOf(item: ManualItem, locale: Locale): string | undefined {
     String(item.page),
   );
 
-  return `${page} · ${item.printedPage} · ${item.saws}`;
+  const reference = `${page} · ${item.printedPage} · ${item.saws}`;
+
+  /*
+   * The words printed beside the box, when we have them.
+   *
+   * Page numbers alone tell an applicant which sheet to turn to and nothing
+   * about what to look for once they are there. Quoting the heading is what
+   * turns "PAGE 2 OF 17" into something findable — and it must be the heading
+   * their edition prints, not a translation of ours.
+   */
+  const printed =
+    (item.printedLabelKey &&
+      printedTextFor(PRINTED_LABELS, item.printedLabelKey, documentLanguage)) ||
+    undefined;
+
+  return printed ? `${reference} · “${printed}”` : reference;
 }
 
 /** A short reference derived from the run id: enough to pair, not to identify. */
@@ -243,7 +266,7 @@ function itemsFor(
               item.printedSection,
             )} — ${instruction}`
           : instruction,
-      location: locationOf(item, locale),
+      location: locationOf(item, locale, documentLanguage),
       person: item.person,
     };
   });
@@ -444,9 +467,16 @@ const SECTION_ORDER: readonly ManualReason[] = [
   'ssn',
   'write_in',
   'unsupported',
+  'not_collected',
   'overflow',
   'signature',
   'signature_date',
+  /*
+   * Last, and after the signatures: a block the form itself calls optional is
+   * the least urgent thing on the page, and putting it above the signature
+   * would suggest it matters more than signing.
+   */
+  'optional_not_collected',
 ];
 
 /**

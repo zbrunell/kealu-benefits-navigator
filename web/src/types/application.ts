@@ -4,6 +4,7 @@
 //
 
 import type { Saws2PlusProgram } from "@/lib/report-assembler";
+import type { BenefitProgramId } from "@/lib/state-applications";
 import {
   emptyQuestionnaire,
   type Saws2PlusQuestionnaire,
@@ -22,11 +23,57 @@ export type PersonSex = "male" | "female";
 export interface PersonApplicationDetails {
   applyingFor: Saws2PlusProgram[];
 
+  /**
+   * Which Texas benefits *this person* is applying for.
+   *
+   * Separate from `applyingFor`, which is California's set, for the reason
+   * `Saws2PlusProgram` is kept California-only: the two are not the same
+   * programmes, and one list holding both would look generic while meaning
+   * neither.
+   *
+   * Separate from `Saws2PlusApplicationData.selectedPrograms`, which is the
+   * *household's* selection, for a reason that shows up on the printed page.
+   * H1010 asks both questions and they are not the same: Section A asks "mark
+   * the benefits anyone on your case is applying for", and every person block
+   * then asks "mark the benefits Person N is applying for". A household
+   * applying for SNAP and Medicaid does not mean the grandmother in the spare
+   * room is applying for either, and marking her circles from the household
+   * answer would be filing a claim on her behalf.
+   */
+  texasPrograms?: BenefitProgramId[];
+
   sex?: PersonSex;
   citizenOrNational?: boolean;
 
+  /**
+   * Whether this person is enrolled in school at all.
+   *
+   * H1010 asks it before it asks about full time — "Is this person going to
+   * school?" and then "If yes, is this person going full-time?" — so a No here
+   * is a complete answer and `fullTimeStudent` is not asked.
+   */
+  attendsSchool?: boolean;
+
   fullTimeStudent?: boolean;
   disabled?: boolean;
+
+  /**
+   * Whether this person lives in Texas.
+   *
+   * Asked once per person block on H1010, not once per household: a household
+   * can include someone who has moved away, and Texas residency is
+   * individual.
+   */
+  livesInTexas?: boolean;
+
+  /**
+   * Whether this person plans to keep living in Texas.
+   *
+   * The form's own words are "Plan to stay in Texas?", and it asks this
+   * separately from whether they live here now — someone can live in Texas and
+   * be leaving. Kept as its own answer rather than inferred from the first.
+   */
+  plansToStayInTexas?: boolean;
 }
 
 export interface AdultApplicationDetails extends PersonApplicationDetails {
@@ -237,7 +284,21 @@ export interface PersonalEmergencyInformation {
 }
 
 export interface Saws2PlusApplicationData {
-  selectedPrograms: Saws2PlusProgram[];
+  /**
+   * Which programmes this application is requesting.
+   *
+   * `BenefitProgramId`, not the California trio. "What am I applying for?" is
+   * the same question in every state, and typing the answer as California's
+   * three made a Texas household's answer unrepresentable: the canonical field
+   * plan emits `programs.<id>`, so `programs.tx_snap` — which Form H1010 maps —
+   * could never be produced no matter what the applicant ticked.
+   *
+   * The California *flow* is still California-only, and says so where it
+   * narrows: `isSaws2PlusProgram` guards every SAWS-shaped component and
+   * `evaluateApplicationReadiness` filters before reasoning. Narrowing at the
+   * point of use is honest; narrowing the shared model was not.
+   */
+  selectedPrograms: BenefitProgramId[];
 
   /**
    * Page 1 asks "What programs are you applying for?" with an "Other" option
@@ -280,11 +341,19 @@ export interface Saws2PlusApplicationData {
   questionnaire: Saws2PlusQuestionnaire;
 }
 
+/*
+ * An empty address, with an empty state.
+ *
+ * `state` defaulted to "CA", so every blank application began life asserting
+ * the applicant lives in California — including one for a household whose ZIP
+ * resolved elsewhere or not at all. The state is written from the resolved
+ * jurisdiction (see buildInitialApplicationData) or left for the applicant.
+ */
 export const EMPTY_ADDRESS: ApplicationAddress = {
   street: "",
   apartment: "",
   city: "",
-  state: "CA",
+  state: "",
   zipCode: "",
 };
 

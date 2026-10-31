@@ -624,3 +624,107 @@ describe('addController() — history replay includes workflow_start', () => {
     vi.useRealTimers();
   });
 });
+
+describe('__internal.classifyRunnerFailure() — upstream failures', () => {
+  // Captured from `kvr run benefits-navigator` on 2026-09-25 with an expired
+  // OAuth login for the account (run 358abe31-… failed the same way).
+  const EXPIRED_OAUTH_OUTPUT = [
+    'Checking environment quotas...',
+    "Phase 'insurance-research' failed: Parallel execution error: Empty OAuth token ",
+    "for account 'claude/kealu.com'; token refresh may have failed or the account has",
+    'no valid credentials',
+    '│ Reason: Parallel execution error: Empty OAuth token for account              │',
+    '│   • Wait a few minutes and retry                                             │',
+    '│   • Check AI service status                                                  │',
+  ].join('\n');
+
+  it('classifies an empty or expired OAuth token as UPSTREAM_AUTH (BN-1003)', () => {
+    const code = __internal.classifyRunnerFailure(EXPIRED_OAUTH_OUTPUT, 1, null);
+    expect(code).toBe('UPSTREAM_AUTH');
+    expect(__internal.PUBLIC_ERROR_CODES[code]).toBe('BN-1003');
+  });
+
+  it('classifies the claude CLI "authentication_failed" result as UPSTREAM_AUTH', () => {
+    const output =
+      '{"error":"authentication_failed","text":"Failed to authenticate: OAuth session expired and could not be refreshed"}';
+    expect(__internal.classifyRunnerFailure(output, 1, null)).toBe('UPSTREAM_AUTH');
+  });
+
+  it('prefers UPSTREAM_AUTH when the output also mentions a rate limit', () => {
+    const output = `WARN rate limit hit, retrying in 2s\n${EXPIRED_OAUTH_OUTPUT}`;
+    expect(__internal.classifyRunnerFailure(output, 1, null)).toBe('UPSTREAM_AUTH');
+  });
+
+  it('still classifies a 429 without auth errors as UPSTREAM_RATE_LIMIT (BN-1001)', () => {
+    const output = '{"is_error":true,"api_error_status":429}';
+    expect(__internal.classifyRunnerFailure(output, 1, null)).toBe('UPSTREAM_RATE_LIMIT');
+  });
+
+  it('falls back to PROCESS_EXIT_NONZERO when nothing matches', () => {
+    expect(__internal.classifyRunnerFailure('Workflow failed', 1, null)).toBe(
+      'PROCESS_EXIT_NONZERO',
+    );
+  });
+});
+
+describe('PUBLIC_ERROR_DESCRIPTIONS', () => {
+  it('describes every public error code', () => {
+    for (const publicCode of Object.values(__internal.PUBLIC_ERROR_CODES)) {
+      expect(__internal.PUBLIC_ERROR_DESCRIPTIONS[publicCode]).toBeTruthy();
+    }
+  });
+
+  it('describes BN-1003 as an authentication failure', () => {
+    expect(__internal.PUBLIC_ERROR_DESCRIPTIONS['BN-1003']).toMatch(/^Authentication/);
+  });
+});
+
+describe('startRun() — failure event sent to the browser', () => {
+  beforeEach(() => {
+    activeRuns.clear();
+    mockSpawn.mockReset();
+    mockResolveKvr.mockReturnValue('/usr/local/bin/kvr');
+  });
+
+  afterEach(() => {
+    for (const run of activeRuns.values()) clearInterval(run.idleTimer);
+    activeRuns.clear();
+  });
+
+  it('sends only the generic message and BN-1003 for an auth failure; the description stays in the server log', () => {
+    const mockProc = makeMockProcess();
+    mockSpawn.mockReturnValue(mockProc);
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    startRun('run-auth', 'sess-auth', {} as any);
+    const ctrl = { enqueue: vi.fn(), close: vi.fn() } as any;
+    addController('run-auth', ctrl);
+
+    const onStdout = mockProc.stdout.on.mock.calls.find(
+      (call: [string]) => call[0] === 'data',
+    )[1];
+    onStdout(Buffer.from("Parallel execution error: Empty OAuth token for account 'claude/kealu.com'\n"));
+    const onClose = mockProc.on.mock.calls.find((call: [string]) => call[0] === 'close')[1];
+    onClose(1, null);
+
+    const sent: string[] = ctrl.enqueue.mock.calls.map(
+      (call: [Uint8Array]) => new TextDecoder().decode(call[0]),
+    );
+    const errorPayload = sent.find((s) => s.includes('"event_type":"error"'))!;
+    const event = JSON.parse(errorPayload.split('\n').find((l) => l.startsWith('data: '))!.slice(6));
+    expect(event).toEqual({
+      event_type: 'error',
+      message: 'The system is currently overloaded. Please try again later.',
+      error_code: 'BN-1003',
+    });
+    expect(errorPayload).not.toMatch(/oauth|authentication|kealu\.com/i);
+
+    const logged = JSON.parse(errorLog.mock.calls[0][0] as string);
+    expect(logged.failureCode).toBe('UPSTREAM_AUTH');
+    expect(logged.publicCode).toBe('BN-1003');
+    expect(logged.description).toMatch(/^Authentication/);
+
+    vi.restoreAllMocks();
+  });
+});

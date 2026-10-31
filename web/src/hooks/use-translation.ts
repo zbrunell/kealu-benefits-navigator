@@ -19,6 +19,11 @@
 
 import { useLanguage } from '@/contexts/language-context';
 import {
+  resolveReason,
+  resolveReasons,
+  type EligibilityReason,
+} from '@/lib/eligibility-reasons';
+import {
   interpolate,
   t as tFn,
   tPlural,
@@ -55,11 +60,28 @@ export function useTranslation() {
       vars?: Record<string, string | number>,
     ): string => tPlural(msgs, locale, baseKey, count, vars),
     /** Translate a planned question's wording. */
-    tq: (question: { promptKey: string; prompt: string }): string =>
+    tq: (question: {
+      promptKey: string;
+      prompt: string;
+      promptVars?: Record<string, string | number>;
+    }): string =>
       translateQuestion(msgs, question),
     /** Translate a planned question's clarifying sentence, if it has one. */
     tqHelp: (question: { helpKey?: string; help?: string }): string | undefined =>
       translateQuestionHelp(msgs, question),
+    /**
+     * Render an eligibility explanation in the active locale.
+     *
+     * The screening hands the UI a key and some numbers; this is where they
+     * become a sentence. Percentages and amounts are formatted for the locale,
+     * so a Spanish reader sees "64 %" and "$21 597" without the underlying
+     * values changing.
+     */
+    tReason: (item: EligibilityReason): string =>
+      resolveReason(item, msgs, locale),
+    /** As `tReason`, for a list. */
+    tReasons: (items: readonly EligibilityReason[]): string[] =>
+      resolveReasons(items, msgs, locale),
     locale,
   };
 }

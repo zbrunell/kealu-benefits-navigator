@@ -15,6 +15,7 @@
  */
 
 import type { Saws2PlusApplicationData } from '@/types/application';
+import type { FormManifestEntry } from '@/types/form-manifest';
 
 /**
  * HouseholdVars — maps 1:1 to the `variables:` block in benefits-navigator.yaml,
@@ -29,8 +30,17 @@ export interface HouseholdVars {
   household_profile: string;
   /** Two-letter US state abbreviation derived from the ZIP code. */
   state: string;
-  /** County name for county-specific benefit programs. */
+  /** County name (no " County" suffix) for county-specific benefit programs. */
   county: string;
+  /**
+   * City derived from the ZIP code, for city-level benefit programs.
+   *
+   * Promoted from an extra runtime var to a first-class workflow variable when
+   * city-level programs became real: a municipal utility discount is matched on
+   * the city, and the discovery phase cannot search for one it was never told
+   * about. It is derived, never asked — see lib/location.ts.
+   */
+  city: string;
   /** Five-digit ZIP code (or ZIP+4). */
   zip_code: string;
   /** Employment type: "employed", "self-employed", "unemployed", etc. */
@@ -64,15 +74,15 @@ export interface HouseholdVars {
  * the workflow YAML `variables:` block.
  *
  * - `annual_income` — asked during intake.
- * - `city` — derived from the ZIP code alongside `state` and `county`
- *   (see lib/location.ts). `state`/`county` are YAML variables; `city` is not,
- *   so it lives here rather than in HouseholdVars.
  *
- * Both are passed through to KVR as `--var` values like any other var.
+ * `city` used to live here. It is now a declared workflow variable alongside
+ * `state` and `county`, because the discovery phase searches for city-level
+ * programs by name and needs it in the template.
+ *
+ * Passed through to KVR as a `--var` value like any other var.
  */
 export interface ExtraRuntimeVars {
   annual_income?: string;
-  city?: string;
 }
 
 /**
@@ -85,12 +95,13 @@ export type SessionVars = Partial<HouseholdVars> & ExtraRuntimeVars;
 
 /**
  * Runtime-inspectable manifest of HouseholdVars keys.
- * Includes all 16 YAML variables + annual_income (extra runtime var).
+ * Includes all 17 YAML variables + annual_income (extra runtime var).
  */
 export const HOUSEHOLD_VARS_KEYS: string[] = [
   'household_profile',
   'state',
   'county',
+  'city',
   'zip_code',
   'income_type',
   'medications',
@@ -210,4 +221,31 @@ export interface Session {
   draftApplicationData?: Saws2PlusApplicationData | null;
   /** ISO 8601 instant the current draft was generated. */
   draftGeneratedAt?: string | null;
+  /**
+   * Absolute path to the review sheet written beside the draft, when the
+   * generator wrote one.
+   *
+   * The mapping layer produces one for every document it renders: what it
+   * filled in, what is optional, what the applicant's own answers make
+   * inapplicable and why, and anything too long for its printed box. That is
+   * the completion guide for those forms, already written in the language the
+   * document was filled in — so the guide route serves it rather than building
+   * a second one. Absent for California, whose guide is computed from the SAWS
+   * readiness model instead.
+   */
+  draftReviewPath?: string | null;
+  /**
+   * The forms this household needs, and the official document each resolves to.
+   *
+   * Produced by the Python mapping layer during generation — see
+   * `benefits_navigator.formmap.manifest` — and stored so the interface can
+   * render a card per form without asking a second time.
+   *
+   * It is stored rather than recomputed for the same reason `draftPath` is: it
+   * describes the packet the applicant was actually handed. Recomputing it when
+   * the cards are drawn would let the interface show a Spanish H1010 beside a
+   * document that was filled in English, if the applicant switched language in
+   * between.
+   */
+  draftPacket?: FormManifestEntry[] | null;
 }
