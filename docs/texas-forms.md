@@ -560,9 +560,21 @@ downloads the government form with their answers on it.
 That is a change. It was the Navigator worksheet while the official definition
 placed 29 of the intake's answers, because a form with three pages filled and
 eighteen blank is worse for an applicant than a worksheet carrying every
-answer. The official definition now places **115 fields on each edition** —
-every answer H1010 has a box for — so the same measure that once favoured the
-worksheet now favours the form.
+answer. The official definition now places every answer H1010 has a box for,
+so the same measure that once favoured the worksheet now favours the form.
+
+**The Medicaid / CHIP addendum** (PDF pages 26 to 34, printed "H1010-M") is
+filled for a household applying for Medicaid or CHIP, in both editions:
+Section 1's tax return for each person, Section 2's deductions, Section 3's
+questions about people applying, Section 4's yearly totals (only when income
+changes during the year), Section 5's job-based insurance, Section 6's
+incarceration and renewal choice, and Appendices A (health coverage from a job),
+B (American Indian or Alaska Native family members) and C (authorized
+representative and application counselors). Every addendum box is conditioned
+on the household applying for health coverage and is *quiet* otherwise: a
+food-benefits household's form and review sheet are exactly what they were. The
+Texas intake asks the addendum's questions on screens that appear only when
+they apply, and reuses the shared answers wherever one already exists.
 
 The worksheet is still registered, as `TX_H1010_WORKSHEET`. It is a supplement,
 not a substitute: it carries answers the official form has no box for, which

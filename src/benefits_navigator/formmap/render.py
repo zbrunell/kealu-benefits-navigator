@@ -88,6 +88,11 @@ class RenderPlan:
     #: Canonical keys with an overlay target but no box for the chosen value.
     unplaced: list[str] = field(default_factory=list)
 
+    #: Marks not drawn because the value they belong beside was not drawn.
+    #:
+    #: Key → the key it belongs beside. See ``FieldMapping.drawn_only_with``.
+    withheld: dict[str, str] = field(default_factory=dict)
+
     def pages_used(self) -> tuple[int, ...]:
         return tuple(sorted({drawn.page for drawn in self.draws}))
 
@@ -126,12 +131,29 @@ def plan_render(resolved_fields: list[ResolvedField]) -> RenderPlan:
     """
     plan = RenderPlan()
 
-    for resolved in resolved_fields:
+    # A mark tied to another value is planned after everything else, so whether
+    # that value was drawn is already known.
+    untied = [r for r in resolved_fields if not r.mapping.drawn_only_with]
+    tied = [r for r in resolved_fields if r.mapping.drawn_only_with]
+    planned: set[str] = set()
+
+    for resolved in untied + tied:
         target = resolved.target
 
         if not isinstance(target, OverlayTarget):
             continue
 
+        companion = resolved.mapping.drawn_only_with
+
+        if companion and (
+            companion not in planned
+            or companion in plan.unfitted
+            or companion in plan.unplaced
+        ):
+            plan.withheld[resolved.key] = companion
+            continue
+
+        planned.add(resolved.key)
         box = resolved.box()
 
         if box is None:

@@ -406,6 +406,8 @@ export interface AuthorizedRepresentative {
   name: string;
   /** Appendix C item 8, "Organization name (if applicable)". */
   organization: string;
+  /** Appendix C item 9, "Organization ID number (if applicable)". */
+  organizationId?: string;
   /** Appendix C item 7, and page 2's representative phone box. */
   phone: string;
   /** Appendix C item 2, the street line only. */
@@ -667,6 +669,10 @@ export interface EmployerCoverageEntry {
   employerCity: string;
   employerState: string;
   employerZipCode: string;
+  /** Item 10, who to contact about employee health coverage at this job. */
+  contactName?: string;
+  /** Item 11, that contact's phone number, if different from the employer's. */
+  contactPhone?: string;
   /** Item 12, the employer representative's email address. */
   employerEmail: string;
   /** Item 13a, when enrolment is possible if in a waiting period. */

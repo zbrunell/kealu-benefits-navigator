@@ -38,6 +38,7 @@ from benefits_navigator.formmap.documents import (
     validate_variant,
 )
 from benefits_navigator.formmap.forms.h1010_official import (
+    ADDENDUM_KEYS,
     PLACED_KEYS,
     PLACEMENTS_EN,
     PLACEMENTS_ES,
@@ -348,6 +349,7 @@ class TestDocumentLanguage:
             key
             for key in english.targets
             if english.targets[key].boxes() == spanish.targets[key].boxes()
+            and not _identically_typeset(key)
         ]
 
         assert identical == [], (
@@ -2028,7 +2030,10 @@ class TestTheEditionsCannotBeConfused:
             en_target = english.mapping_for(key).target
             es_target = spanish.mapping_for(key).target
 
-            if _boxes_of_target(en_target) == _boxes_of_target(es_target):
+            if (
+                _boxes_of_target(en_target) == _boxes_of_target(es_target)
+                and not _identically_typeset(key)
+            ):
                 shared.append(key)
 
         assert shared == [], (
@@ -2113,6 +2118,63 @@ class TestTheEditionsCannotBeConfused:
         assert en_boxes != es_boxes, key
 
 
+#: Wordless printed templates, measured from each document's own glyphs.
+#:
+#: Appendix A's employer phone number is a ``(   )   -`` template with no words
+#: to anchor in either language. ``PhoneSlots`` finds the printed parentheses
+#: and dash on whichever document it is measuring, and HHSC prints them in the
+#: same place on both.
+_WORDLESS_TEMPLATES = frozenset({"appendices.employer_coverage.0.employer_phone"})
+
+
+def _anchor_phrases(placement) -> tuple[str, ...]:
+    """Every printed phrase a placement is measured from."""
+    if isinstance(placement, tuple):
+        return tuple(
+            phrase for inner in placement for phrase in _anchor_phrases(inner)
+        )
+
+    phrases: list[str] = []
+
+    for attribute in ("anchor", "question", "inner"):
+        inner = getattr(placement, attribute, None)
+
+        if inner is not None:
+            phrases.extend(_anchor_phrases(inner))
+
+    phrase = getattr(placement, "phrase", None)
+
+    if phrase is not None:
+        phrases.append(phrase)
+
+    return tuple(phrases)
+
+
+def _identically_typeset(key: str) -> bool:
+    """Whether identical geometry here is HHSC's layout, not an inheritance.
+
+    Pages 1 to 25 never qualify: every printed question there sits somewhere
+    different on the two editions. Parts of the Medicaid addendum do not — HHSC
+    set Appendix A's "7. City" and "7. Ciudad" at the very same coordinates —
+    so a correctly measured Spanish box can coincide with the English one.
+
+    It still has to be *measured from Spanish*. An addendum box qualifies only
+    when the Spanish placement names different printed words than the English
+    one (or is a wordless template, measured from each document's own glyphs),
+    which is the inheritance this test exists to catch.
+    """
+    if key not in ADDENDUM_KEYS:
+        return False
+
+    if key in _WORDLESS_TEMPLATES:
+        return True
+
+    english = _anchor_phrases(PLACEMENTS_EN[key])
+    spanish = _anchor_phrases(PLACEMENTS_ES[key])
+
+    return bool(english) and bool(spanish) and english != spanish
+
+
 def _boxes_of_target(target) -> tuple:
     """Every box a target draws into, as comparable numbers."""
     return tuple(
@@ -2176,7 +2238,9 @@ class TestMarksAreCentredInTheirCircles:
 
         for mapping in self._mark_targets(definition_for_form("TX_H1010")):
             for box in boxes[mapping.key]:
-                circle = text.ink.circle_near(box)
+                # Appendices A and B of the Medicaid addendum print squares;
+                # a mark there belongs in its square, held to the same rule.
+                circle = text.ink.circle_near(box) or text.square_near(box)
 
                 if circle is None:
                     strays.append(
@@ -2261,7 +2325,7 @@ class TestMarksAreCentredInTheirCircles:
                 for b in spanish[mapping.key]
             ]
 
-            if en_boxes == es_boxes:
+            if en_boxes == es_boxes and not _identically_typeset(mapping.key):
                 shared.append(mapping.key)
 
         assert shared == [], shared[:6]

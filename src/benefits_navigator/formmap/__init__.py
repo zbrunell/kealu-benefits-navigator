@@ -49,6 +49,7 @@ entry point — but generation was left where it works.
 from __future__ import annotations
 
 from benefits_navigator.formmap.definition import (
+    AllOf,
     Condition,
     FieldMapping,
     FormDefinition,
@@ -109,6 +110,7 @@ __all__ = [
     "GeneratedForm",
     "NativeFieldFormNotRenderable",
     "NotApplicable",
+    "AllOf",
     "OverlayTarget",
     "RenderPlan",
     "RepeatingGroup",

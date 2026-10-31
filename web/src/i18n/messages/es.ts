@@ -1398,6 +1398,198 @@ const es: Messages = {
   packet_main_heading: 'Su solicitud',
   packet_supporting_heading: 'Formularios que pueden acompañarla',
 
+  // ── Adenda de Medicaid / CHIP ────────────────────────────────────────────
+  //
+  // Redactado como las preguntas impresas de la adenda H1010-M-S de la HHSC,
+  // porque el solicitante puede compararlas con el formulario en español.
+  tx_screen_health_tax: 'Impuestos, para la cobertura médica',
+  tx_screen_health_money: 'Dinero y seguro del trabajo, para la cobertura médica',
+  tx_screen_health_people: 'Personas que solicitan cobertura médica',
+  tx_screen_health_htw: 'Healthy Texas Women',
+  tx_screen_health_final: 'Antes de firmar',
+
+  tx_tax_title_you: 'Su declaración de impuestos',
+  tx_tax_title_person: 'Declaración de impuestos: {name}',
+  tx_tax_intro:
+    'Texas usa la declaración de impuestos para saber quién cuenta en el hogar para Medicaid y CHIP. Aún puede solicitar aunque no presente una declaración de impuestos del IRS.',
+  tx_tax_spouse_name: 'Nombre del esposo o de la esposa',
+  tx_tax_plans_to_file_you: '¿Va a presentar una declaración de impuestos del IRS el próximo año?',
+  tx_tax_plans_to_file: '¿Va a presentar esta persona una declaración de impuestos del IRS el próximo año?',
+  tx_tax_plans_to_file_help: 'Conteste solo por esta persona.',
+  tx_tax_files_jointly: '¿Presentará la declaración conjuntamente con su esposo(a)?',
+  tx_tax_fears_harm:
+    '¿Tiene miedo de que dar información sobre esta persona pueda ponerlo a usted o a sus hijos en peligro?',
+  tx_tax_fears_harm_help:
+    'Si contesta que sí, podría no tener que darnos los datos sobre esta persona. Posiblemente pueda obtener una Exención de Violencia Doméstica.',
+  tx_tax_claims_dependents: '¿Reclamará dependientes en su declaración de impuestos?',
+  tx_tax_dependent_names: 'Nombres de los dependientes',
+  tx_tax_claimed_as_dependent:
+    '¿Lo reclamará alguien como dependiente en la declaración de impuestos?',
+  tx_tax_filer_name: 'Nombre del declarante',
+  tx_tax_relationship_to_filer: '¿Qué relación tiene con el declarante?',
+
+  tx_section_deductions: 'Deducciones de los impuestos',
+  tx_section_deductions_intro:
+    'Algunos costos se pueden deducir en una declaración de impuestos del IRS. Si alguien los tiene, los costos de la cobertura médica podrían ser un poco más bajos.',
+  tx_q_has_deductions:
+    '¿Paga alguien pensión alimenticia, interés de un préstamo estudiantil u otros costos que se pueden deducir en una declaración de impuestos del IRS?',
+  tx_q_has_deductions_help:
+    'No incluya costos que ya incluyó como parte de la cantidad neta de trabajo por su cuenta. Si tiene alguna de estas deducciones, la HHSC le pedirá una copia de la declaración de impuestos del año pasado.',
+  tx_q_alimony: '¿Paga pensión alimenticia?',
+  tx_q_deduction_amount: 'Cantidad',
+  tx_q_deduction_frequency: '¿Cada cuánto?',
+  tx_q_alimony_before_2019:
+    '¿Fue firmado o modificado el acuerdo de divorcio o separación el 31 de diciembre de 2018 o antes?',
+  tx_q_student_loan_interest: '¿Paga interés de un préstamo estudiantil?',
+  tx_q_other_deductions: '¿Tiene otras deducciones?',
+  tx_q_other_deductions_help:
+    'Como gastos de educador, cuentas de ahorro para la salud, gastos de mudanza para los militares en servicio activo, o matrícula y tarifas.',
+  tx_q_other_deduction_types: '¿De qué tipo?',
+
+  tx_section_income_totals: 'Ingresos del año',
+  tx_section_income_totals_intro:
+    'Nos dijo que los ingresos cambian durante el año. Un total anual ayuda a la HHSC a ver el año completo.',
+  tx_q_total_income_this_year: 'Sus ingresos totales este año',
+  tx_q_total_income_next_year: 'Sus ingresos totales el próximo año',
+  tx_q_total_income_next_year_help: 'Solo si cree que serán diferentes.',
+
+  tx_section_job_coverage: 'Seguro que ofrece un trabajo',
+  tx_q_job_coverage:
+    '¿Puede obtener seguro médico alguien mencionado en esta solicitud por medio de un trabajo?',
+  tx_q_job_coverage_help:
+    'Conteste que sí aunque la cobertura sea del trabajo de otra persona, por ejemplo, de un padre o esposo.',
+  tx_q_lost_job_coverage:
+    '¿Tenía seguro alguien por medio de un trabajo y lo perdió en los últimos 3 meses?',
+  tx_q_lost_job_coverage_who: '¿Quién?',
+  tx_q_lost_job_coverage_end_date: '¿Cuándo terminó?',
+  tx_q_lost_job_coverage_reason: '¿Por qué terminó el seguro?',
+  tx_q_lost_job_coverage_other_reason: '¿Cuál fue la razón?',
+  tx_opt_lost_parent_job_ended:
+    'Terminó el empleo del padre debido a cortes de personal o cierre de la empresa',
+  tx_opt_lost_parent_cobra: 'Terminó la cobertura de COBRA o ERS de uno de los padres',
+  tx_opt_lost_parent_marital_status: 'Cambió el estado civil del padre o madre',
+  tx_opt_lost_chip_other_state: 'Terminaron los beneficios de CHIP de otro estado',
+  tx_opt_lost_medicaid_other_state: 'Terminaron los beneficios de Medicaid de otro estado',
+  tx_opt_lost_private_coverage: 'Terminó la cobertura médica privada',
+  tx_opt_lost_parent_died: 'Murió uno de los padres',
+  tx_opt_lost_special_needs: 'El niño tiene necesidades médicas especiales',
+  tx_opt_lost_medicaid_ended: 'Terminaron los beneficios de Medicaid (por cualquier razón)',
+  tx_opt_lost_other: 'Otra razón',
+
+  tx_employer_title: 'Trabajos que ofrecen cobertura médica',
+  tx_employer_intro:
+    'Uno por cada trabajo que ofrece cobertura. El formulario tiene espacio para uno; para más, la HHSC le pide que añada una copia de la página. El empleador le puede ayudar a contestar.',
+  tx_employer_add: 'Añadir un trabajo que ofrece cobertura',
+  tx_employer_empty: 'Todavía no ha añadido ningún trabajo.',
+  tx_employer_employee: '¿De quién es el trabajo?',
+  tx_employer_ein: 'Número de identificación del empleador (EIN)',
+  tx_employer_ein_help: 'Aparece en el formulario W-2. Déjelo en blanco si no lo sabe.',
+  tx_employer_phone: 'Teléfono del empleador',
+  tx_employer_contact:
+    '¿Con quién puede comunicarse la HHSC sobre la cobertura médica en este trabajo?',
+  tx_employer_contact_phone: 'Su teléfono, si es diferente',
+  tx_employer_email: 'Su correo electrónico',
+  tx_employer_eligible:
+    '¿Puede esta persona obtener la cobertura en este momento o en los próximos 3 meses?',
+  tx_employer_waiting_period:
+    'Si está en un período de espera, ¿cuándo podrá inscribirse?',
+  tx_employer_other_eligible:
+    'Otra persona que puede obtener la cobertura de este trabajo',
+  tx_employer_minimum_value:
+    '¿Ofrece el empleador un plan médico que satisfaga el estándar de valor mínimo?',
+  tx_employer_minimum_value_help:
+    'El plan paga por lo menos el 60 % de los costos cubiertos. El empleador se lo puede decir.',
+  tx_employer_premium:
+    '¿Cuánto pagaría el empleado por el plan más económico solo para el empleado?',
+  tx_employer_premium_help: 'No incluya planes familiares.',
+  tx_employer_premium_frequency: '¿Cada cuánto?',
+  tx_employer_plan_change:
+    '¿Qué cambio hará el empleador para el nuevo año del plan?',
+  tx_employer_plan_change_help: 'Solo si lo sabe. Si no, déjelo en blanco.',
+  tx_opt_plan_change_stop: 'El empleador no ofrecerá cobertura médica',
+  tx_opt_plan_change_premium:
+    'El empleador empezará a ofrecer cobertura o cambiará la prima del plan más económico',
+  tx_employer_changed_premium: '¿Cuánto pagaría el empleado después del cambio?',
+  tx_employer_plan_change_date: 'Fecha del cambio',
+  tx_opt_quarterly: 'Cada 3 meses',
+  tx_opt_yearly: 'Una vez al año',
+
+  tx_section_health_children: 'Niños que solicitan cobertura médica',
+  tx_q_migrant_child:
+    '¿Viaja un niño que solicita atención médica con un familiar que es trabajador de campo migrante?',
+  tx_q_migrant_child_names: 'Nombre del niño o de los niños',
+  tx_q_special_needs_child:
+    '¿Participa un niño en el programa de Niños con Necesidades Médicas Especiales?',
+  tx_q_special_needs_child_help: 'Un programa de Texas, también llamado CSHCN.',
+  tx_q_special_needs_who: '¿Quién?',
+  tx_q_absent_parent:
+    '¿Vive fuera del hogar el padre o madre de algún niño que se menciona en esta solicitud?',
+  tx_section_health_people: 'Cualquier persona que solicita cobertura médica',
+  tx_q_foster_care_at_18: '¿Estuvo alguien bajo crianza temporal cuando tenía 18 años o más?',
+  tx_q_foster_care_who: '¿Quién?',
+  tx_q_foster_care_state: '¿En qué estado?',
+  tx_q_american_indian: '¿Es alguien indio americano o nativo de Alaska?',
+  tx_q_american_indian_help:
+    'Si contesta que sí, nos dirá un poco más sobre esa persona abajo. Puede significar más ayuda y costos más bajos.',
+
+  tx_tribal_title: 'Familiares indios americanos o nativos de Alaska',
+  tx_tribal_intro:
+    'Una por cada persona. El formulario tiene espacio para dos; para más, la HHSC le pide que añada una copia de la página.',
+  tx_tribal_add: 'Añadir una persona',
+  tx_tribal_empty: 'Todavía no ha añadido a nadie.',
+  tx_tribal_who: '¿Quién es?',
+  tx_tribal_member_of_tribe: '¿Es miembro de una tribu reconocida por el gobierno federal?',
+  tx_tribal_tribe_name: 'Nombre de la tribu',
+  tx_tribal_received_service:
+    '¿Alguna vez ha recibido esta persona un servicio del Servicio de Salud Indígena, un programa de salud tribal o un programa urbano de salud indígena, o por medio de un envío a servicios de uno de estos programas?',
+  tx_tribal_eligible_for_service:
+    '¿Puede esta persona recibir servicios del Servicio de Salud Indígena, programas de salud tribales o programas urbanos de salud indígena, o por medio de un envío a servicios de uno de estos programas?',
+  tx_tribal_has_income:
+    '¿Incluye algún ingreso de esta solicitud pagos per cápita de una tribu, dinero de tierra indígena en fideicomiso o dinero de la venta de artículos de importancia cultural?',
+  tx_tribal_has_income_help:
+    'Es posible que parte de este dinero no cuente para Medicaid o CHIP.',
+
+  tx_section_htw: 'Healthy Texas Women',
+  tx_section_htw_intro:
+    'Healthy Texas Women ofrece servicios de salud y de planificación familiar gratuitos a mujeres de 15 a 44 años de edad.',
+  tx_q_htw_confidential:
+    '¿Quiere recibir la correspondencia de Healthy Texas Women en una dirección diferente y privada?',
+  tx_q_htw_confidential_help:
+    'Para que su participación sea privada. Escriba la dirección y el teléfono que la HHSC debe usar.',
+  tx_q_htw_declines:
+    '¿Hay alguien que no quiera que le hagan la prueba de elegibilidad para Healthy Texas Women?',
+  tx_q_htw_declines_help:
+    'A las mujeres de 15 a 44 años que no califican para Medicaid o CHIP se les hace la prueba de Healthy Texas Women automáticamente.',
+  tx_htw_opt_outs_title: 'Quién no quiere que le hagan la prueba',
+  tx_htw_opt_outs_intro: 'El formulario tiene espacio para tres nombres.',
+  tx_htw_opt_outs_add: 'Añadir una persona',
+  tx_htw_opt_outs_empty: 'Todavía no ha añadido a nadie.',
+  tx_htw_opt_out_who: '¿Quién?',
+
+  tx_section_health_final: 'Antes de firmar',
+  tx_q_incarcerated: '¿Está en la cárcel alguien que solicita cobertura médica?',
+  tx_q_incarcerated_who: '¿Quién está en la cárcel?',
+  tx_q_renewal_years:
+    '¿Puede la HHSC usar datos de ingresos, incluso de las declaraciones de impuestos, para renovar su cobertura médica sin preguntarle?',
+  tx_q_renewal_years_help:
+    'La HHSC le enviará un aviso, le permitirá hacer cambios y puede cancelar en cualquier momento. Escoja por cuántos años.',
+  tx_opt_renewal_five: 'Sí, por 5 años (el máximo permitido)',
+  tx_opt_renewal_four: 'Sí, por 4 años',
+  tx_opt_renewal_three: 'Sí, por 3 años',
+  tx_opt_renewal_two: 'Sí, por 2 años',
+  tx_opt_renewal_one: 'Sí, por 1 año',
+  tx_opt_renewal_none:
+    'No, no use información de las declaraciones de impuestos para renovar mi cobertura',
+
+  tx_helper_organization_id: 'Número de identificación de la organización, si tiene uno',
+  tx_section_assister: 'Consejeros de solicitudes',
+  tx_q_assister:
+    '¿Es usted un consejero certificado de solicitudes, navegante, agente o intermediario que llena esta solicitud para otra persona?',
+  tx_q_assister_start_date: 'Fecha en que empezó la solicitud',
+  tx_q_assister_name: 'Su nombre completo',
+  tx_q_assister_organization: 'Nombre de la organización',
+  tx_q_assister_organization_id: 'Número de identificación de la organización, si tiene uno',
+
 } as const;
 
 export default es;

@@ -136,6 +136,13 @@ class DocumentVariant:
     #: than an oversight.
     targets: Mapping[str, FieldTarget] = dataclass_field(default_factory=dict)
 
+    #: Canonical key → the question as **this edition** prints it.
+    #:
+    #: The review sheet names each question by its printed wording, so an
+    #: applicant holding the Spanish edition needs the Spanish wording to find
+    #: it. A key not listed keeps the mapping's own label.
+    printed_labels: Mapping[str, str] = dataclass_field(default_factory=dict)
+
     #: Mapped questions this edition does not print, with the reason.
     #:
     #: Keyed by canonical key so the review sheet can tell an applicant that a
@@ -340,7 +347,10 @@ def resolve_for_definition(
     * ``base_document`` set to the chosen edition's filename, so the overlay
       merges onto the right file, and
     * every mapping's target replaced by the chosen edition's own target, so
-      the coordinates belong to the file being drawn on.
+      the coordinates belong to the file being drawn on, and
+    * every mapping's printed label replaced by the edition's own wording,
+      where it declares one, so the review sheet names the question the way
+      the page in the applicant's hands prints it.
 
     Both halves matter and swapping only one is worse than swapping neither: the
     Spanish document with English coordinates renders without error, onto a page
@@ -361,8 +371,14 @@ def resolve_for_definition(
 
     document = chosen.variant.document
 
+    labels = chosen.variant.printed_labels
+
     fields = tuple(
-        dataclasses.replace(mapping, target=chosen.variant.targets[mapping.key])
+        dataclasses.replace(
+            mapping,
+            target=chosen.variant.targets[mapping.key],
+            printed_label=labels.get(mapping.key, mapping.printed_label),
+        )
         for mapping in definition.fields
         if mapping.key in chosen.variant.targets
     )

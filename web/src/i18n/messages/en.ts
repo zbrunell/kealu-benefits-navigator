@@ -1405,6 +1405,201 @@ const en = {
   packet_main_heading: 'Your application',
   packet_supporting_heading: 'Forms that may go with it',
 
+  // ── Medicaid / CHIP addendum ─────────────────────────────────────────────
+  //
+  // HHSC's addendum to Form H1010, asked only of a household applying for
+  // Medicaid or CHIP. Worded close to the printed questions, because the
+  // applicant may compare the two. None of these questions blocks Continue:
+  // each one the applicant answers makes the application more complete.
+  tx_screen_health_tax: 'Taxes, for health coverage',
+  tx_screen_health_money: 'Money and job insurance, for health coverage',
+  tx_screen_health_people: 'People applying for health coverage',
+  tx_screen_health_htw: 'Healthy Texas Women',
+  tx_screen_health_final: 'Before you sign',
+
+  // Section 1: one block per person.
+  tx_tax_title_you: 'Your tax return',
+  tx_tax_title_person: 'Tax return: {name}',
+  tx_tax_intro:
+    'Texas uses tax filing to work out who counts in a household for Medicaid and CHIP. You can still apply even if you don’t file a federal income tax return.',
+  tx_tax_spouse_name: 'Name of spouse',
+  tx_tax_plans_to_file_you: 'Do you plan to file a federal income tax return next year?',
+  tx_tax_plans_to_file: 'Does this person plan to file a federal income tax return next year?',
+  tx_tax_plans_to_file_help: 'Answer for this person only.',
+  tx_tax_files_jointly: 'Will they file jointly with a spouse?',
+  tx_tax_fears_harm:
+    'Are you afraid that giving facts about this person might put you or your children in danger?',
+  tx_tax_fears_harm_help:
+    'If yes, you might not have to give facts about this person. You might be able to get the Family Violence Exemption.',
+  tx_tax_claims_dependents: 'Will they claim any dependents on their tax return?',
+  tx_tax_dependent_names: 'Names of the dependents',
+  tx_tax_claimed_as_dependent: 'Will they be claimed as a dependent on someone’s tax return?',
+  tx_tax_filer_name: 'Name of the tax filer',
+  tx_tax_relationship_to_filer: 'How are they related to the tax filer?',
+
+  // Section 2.
+  tx_section_deductions: 'Tax deductions',
+  tx_section_deductions_intro:
+    'Some costs can be deducted on a federal tax return. If anyone has them, health coverage costs might be a little lower.',
+  tx_q_has_deductions:
+    'Does anyone pay alimony, student loan interest, or other costs that can be deducted on a federal tax return?',
+  tx_q_has_deductions_help:
+    'Don’t include a cost already counted as part of net self-employment income. If you have any of these, HHSC will ask for a copy of last year’s tax return.',
+  tx_q_alimony: 'Alimony paid?',
+  tx_q_deduction_amount: 'Amount',
+  tx_q_deduction_frequency: 'How often?',
+  tx_q_alimony_before_2019:
+    'Was the divorce or separation agreement made or last changed on or before December 31, 2018?',
+  tx_q_student_loan_interest: 'Student loan interest?',
+  tx_q_other_deductions: 'Other deductions?',
+  tx_q_other_deductions_help:
+    'Such as educator expenses, health savings accounts, moving expenses for active-duty military, or tuition and fees.',
+  tx_q_other_deduction_types: 'What kinds?',
+
+  // Section 4.
+  tx_section_income_totals: 'Income for the year',
+  tx_section_income_totals_intro:
+    'You told us income changes during the year. A yearly total helps HHSC look at the whole year.',
+  tx_q_total_income_this_year: 'Your total income this year',
+  tx_q_total_income_next_year: 'Your total income next year',
+  tx_q_total_income_next_year_help: 'Only if you think it will be different.',
+
+  // Section 5.
+  tx_section_job_coverage: 'Insurance offered through a job',
+  tx_q_job_coverage: 'Can anyone listed on this application get health insurance through a job?',
+  tx_q_job_coverage_help:
+    'Answer yes even if the coverage is from someone else’s job, such as a parent or spouse.',
+  tx_q_lost_job_coverage:
+    'Did anyone have insurance through a job and lose it within the past 3 months?',
+  tx_q_lost_job_coverage_who: 'Who?',
+  tx_q_lost_job_coverage_end_date: 'When did it end?',
+  tx_q_lost_job_coverage_reason: 'Why did the insurance end?',
+  tx_q_lost_job_coverage_other_reason: 'What was the reason?',
+  tx_opt_lost_parent_job_ended: 'Parent’s job ended due to layoff or business closing',
+  tx_opt_lost_parent_cobra: 'Parent’s COBRA or ERS coverage ended',
+  tx_opt_lost_parent_marital_status: 'Change in parent’s marital status',
+  tx_opt_lost_chip_other_state: 'CHIP benefits from another state ended',
+  tx_opt_lost_medicaid_other_state: 'Medicaid benefits from another state ended',
+  tx_opt_lost_private_coverage: 'Private health coverage ended',
+  tx_opt_lost_parent_died: 'Death of a parent',
+  tx_opt_lost_special_needs: 'The child has special health-care needs',
+  tx_opt_lost_medicaid_ended: 'Medicaid benefits ended (for any reason)',
+  tx_opt_lost_other: 'Another reason',
+
+  // Appendix A.
+  tx_employer_title: 'Jobs that offer health coverage',
+  tx_employer_intro:
+    'One for each job that offers coverage. The form has room for one; for more, HHSC asks you to attach a copy of the page. The employer can help you answer.',
+  tx_employer_add: 'Add a job that offers coverage',
+  tx_employer_empty: 'No job added yet.',
+  tx_employer_employee: 'Whose job is it?',
+  tx_employer_ein: 'Employer Identification Number (EIN)',
+  tx_employer_ein_help: 'On a W-2. Leave blank if you don’t know it.',
+  tx_employer_phone: 'Employer phone number',
+  tx_employer_contact: 'Who can HHSC contact about health coverage at this job?',
+  tx_employer_contact_phone: 'Their phone number, if different',
+  tx_employer_email: 'Their email address',
+  tx_employer_eligible:
+    'Can this person get the coverage now, or within the next 3 months?',
+  tx_employer_waiting_period: 'If in a waiting period, when can they enroll?',
+  tx_employer_other_eligible: 'Anyone else who can get coverage from this job',
+  tx_employer_minimum_value:
+    'Does the employer offer a health plan that meets the minimum value standard?',
+  tx_employer_minimum_value_help:
+    'The plan pays at least 60% of covered costs. The employer can tell you.',
+  tx_employer_premium:
+    'What would the employee pay for the lowest-cost plan for the employee only?',
+  tx_employer_premium_help: 'Don’t include family plans.',
+  tx_employer_premium_frequency: 'How often?',
+  tx_employer_plan_change: 'What change will the employer make for the new plan year?',
+  tx_employer_plan_change_help: 'Only if you know. Otherwise leave this blank.',
+  tx_opt_plan_change_stop: 'The employer won’t offer health coverage',
+  tx_opt_plan_change_premium:
+    'The employer will start offering coverage, or change the premium for the lowest-cost plan',
+  tx_employer_changed_premium: 'What would the employee pay after the change?',
+  tx_employer_plan_change_date: 'Date of change',
+  tx_opt_quarterly: 'Every 3 months',
+  tx_opt_yearly: 'Once a year',
+
+  // Section 3.
+  tx_section_health_children: 'Children applying for health coverage',
+  tx_q_migrant_child:
+    'Does a child applying for health care travel with a family member who is a migrant farm worker?',
+  tx_q_migrant_child_names: 'Name of that child or children',
+  tx_q_special_needs_child:
+    'Is a child in the Children with Special Health Care Needs program?',
+  tx_q_special_needs_child_help: 'A Texas program, also called CSHCN.',
+  tx_q_special_needs_who: 'Who?',
+  tx_q_absent_parent: 'Does any child on this application have a parent living outside the home?',
+  tx_section_health_people: 'Anyone applying for health coverage',
+  tx_q_foster_care_at_18: 'Was anyone in foster care when they were age 18 or older?',
+  tx_q_foster_care_who: 'Who?',
+  tx_q_foster_care_state: 'In which state?',
+  tx_q_american_indian: 'Is anyone American Indian or Alaska Native?',
+  tx_q_american_indian_help:
+    'If yes, you’ll tell us a little more about them below. It can mean extra help and lower costs.',
+
+  // Appendix B.
+  tx_tribal_title: 'American Indian or Alaska Native family members',
+  tx_tribal_intro:
+    'One for each person. The form has room for two; for more, HHSC asks you to attach a copy of the page.',
+  tx_tribal_add: 'Add a person',
+  tx_tribal_empty: 'Nobody added yet.',
+  tx_tribal_who: 'Who is it?',
+  tx_tribal_member_of_tribe: 'Member of a federally recognized tribe?',
+  tx_tribal_tribe_name: 'Tribe name',
+  tx_tribal_received_service:
+    'Has this person ever gotten a service from the Indian Health Service, a tribal health program, or an urban Indian health program, or through a referral from one of these programs?',
+  tx_tribal_eligible_for_service:
+    'Is this person eligible to get services from the Indian Health Service, tribal health programs, or urban Indian health programs, or through a referral from one of these programs?',
+  tx_tribal_has_income:
+    'Does any income on this application include tribal per capita payments, money from Indian trust land, or money from selling items of cultural significance?',
+  tx_tribal_has_income_help:
+    'Some of this money may not be counted for Medicaid or CHIP.',
+
+  // Section 3, questions 6 and 7.
+  tx_section_htw: 'Healthy Texas Women',
+  tx_section_htw_intro:
+    'Healthy Texas Women provides free women’s health and family planning services for women ages 15 to 44.',
+  tx_q_htw_confidential:
+    'Do you want Healthy Texas Women letters sent to a different, private address?',
+  tx_q_htw_confidential_help:
+    'To keep taking part private. Give the address and phone number HHSC should use.',
+  tx_q_htw_declines:
+    'Does anyone not want to be tested for Healthy Texas Women?',
+  tx_q_htw_declines_help:
+    'Women ages 15 to 44 who don’t qualify for Medicaid or CHIP are tested for Healthy Texas Women automatically.',
+  tx_htw_opt_outs_title: 'Who does not want to be tested',
+  tx_htw_opt_outs_intro: 'The form has room for three names.',
+  tx_htw_opt_outs_add: 'Add a person',
+  tx_htw_opt_outs_empty: 'Nobody added yet.',
+  tx_htw_opt_out_who: 'Who?',
+
+  // Section 6.
+  tx_section_health_final: 'Before you sign',
+  tx_q_incarcerated: 'Is anyone who is applying for health coverage in jail?',
+  tx_q_incarcerated_who: 'Who is in jail?',
+  tx_q_renewal_years:
+    'May HHSC use income data, including from tax returns, to renew your health coverage without asking you?',
+  tx_q_renewal_years_help:
+    'HHSC will send you a notice, let you make changes, and you can cancel at any time. Choose for how many years.',
+  tx_opt_renewal_five: 'Yes, for 5 years (the most allowed)',
+  tx_opt_renewal_four: 'Yes, for 4 years',
+  tx_opt_renewal_three: 'Yes, for 3 years',
+  tx_opt_renewal_two: 'Yes, for 2 years',
+  tx_opt_renewal_one: 'Yes, for 1 year',
+  tx_opt_renewal_none: 'No, don’t use information from tax returns to renew my coverage',
+
+  // Appendix C.
+  tx_helper_organization_id: 'Organization ID number, if they have one',
+  tx_section_assister: 'Application counselors',
+  tx_q_assister:
+    'Are you a certified application counselor, navigator, agent, or broker filling out this application for somebody else?',
+  tx_q_assister_start_date: 'Application start date',
+  tx_q_assister_name: 'Your full name',
+  tx_q_assister_organization: 'Organization name',
+  tx_q_assister_organization_id: 'Organization ID number, if any',
+
 } as const;
 
 export default en;

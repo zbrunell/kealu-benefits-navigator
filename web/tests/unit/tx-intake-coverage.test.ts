@@ -54,18 +54,51 @@ const FIXTURE = path.join(
   'tx-intake-canonical-keys.json',
 );
 
+/**
+ * How to answer one pass's branching questions.
+ *
+ * Every Yes/No and every choice opens some follow-ups and shuts others. The
+ * Medicaid addendum has follow-ups that hang off a *No* inside a row whose
+ * screen question was *Yes* — Appendix B's "If no, is this person eligible to
+ * get services…" — and off the last option of a choice, so no single pass
+ * reaches them all. The passes in `PASSES`, unioned, do.
+ */
+interface Pass {
+  /** The answer to every Yes/No on the screens. */
+  screens: boolean;
+  /** The answer to every Yes/No inside a table row. */
+  rows: boolean;
+  /** Which option every choice takes. */
+  choice: 'first' | 'last';
+}
+
+const PASSES: readonly Pass[] = [
+  { screens: true, rows: true, choice: 'first' },
+  { screens: true, rows: true, choice: 'last' },
+  { screens: true, rows: false, choice: 'last' },
+  { screens: false, rows: false, choice: 'last' },
+];
+
 /** A value of the right shape for a question, so the mapper emits its key. */
-function probe<TState>(question: IntakeQuestion<TState>): AnswerValue {
+function probe<TState>(
+  question: IntakeQuestion<TState>,
+  pass: Pass = PASSES[0],
+  inRow = false,
+): AnswerValue {
   switch (question.kind) {
     case 'yes_no':
-      return true;
+      return inRow ? pass.rows : pass.screens;
     case 'money':
     case 'integer':
       return 1;
     case 'date':
       return '2000-01-01';
-    case 'choice':
-      return question.options?.[0]?.value ?? 'probe';
+    case 'choice': {
+      const options = question.options ?? [];
+      const option = pass.choice === 'first' ? options[0] : options[options.length - 1];
+
+      return option?.value ?? 'probe';
+    }
     case 'tel':
       return '5125550100';
     case 'email':
@@ -131,7 +164,7 @@ function probeMember(): HouseholdMember {
 }
 
 /** Everything the Texas flow can capture, all at once. */
-function fullyAnswered(): Data {
+function fullyAnswered(pass: Pass): Data {
   let data: Data = {
     ...structuredClone(EMPTY_APPLICATION_DATA),
     selectedPrograms: ['tx_snap', 'tx_medicaid', 'tx_chip', 'tx_tanf'],
@@ -149,7 +182,7 @@ function fullyAnswered(): Data {
    * `tx-intake.test.ts`.
    */
   for (const question of allQuestions(TX_H1010_INTAKE)) {
-    data = question.write(data, probe(question));
+    data = question.write(data, probe(question, pass));
   }
 
   // Mail elsewhere, so the mailing block's own keys are emitted too.
@@ -170,7 +203,11 @@ function fullyAnswered(): Data {
       const value =
         list.peopleField && field.id === list.peopleField
           ? 'applicant'
-          : probe(field as IntakeQuestion<unknown>);
+          : // A second person on the same row — Appendix A's "anyone else
+            // eligible" — names the roster member, so the name resolves.
+            list.peopleFields?.includes(field.id)
+            ? 'probe-member'
+            : probe(field as IntakeQuestion<unknown>, pass, true);
 
       record = field.write(record as never, value);
     }
@@ -182,9 +219,13 @@ function fullyAnswered(): Data {
 }
 
 function emit(): string[] {
-  const plan = buildApplicationFieldPlan(fullyAnswered(), { county: 'Travis' });
+  const keys = PASSES.flatMap((pass) =>
+    buildApplicationFieldPlan(fullyAnswered(pass), { county: 'Travis' }).map(
+      (field) => field.key,
+    ),
+  );
 
-  return [...new Set(plan.map((field) => field.key))].sort();
+  return [...new Set(keys)].sort();
 }
 
 describe('the canonical keys a Texas applicant can produce', () => {

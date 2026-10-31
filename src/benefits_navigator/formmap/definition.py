@@ -225,6 +225,16 @@ class Condition:
     #: table would be reported to a single applicant as work still to do.
     unknown_excludes: bool = False
 
+    #: Leave the excluded fields off the review sheet entirely.
+    #:
+    #: For a gateway that rules out a whole printed *document within the
+    #: document* rather than a few boxes. H1010's Medicaid addendum is nine
+    #: pages a food-benefits-only household never fills in; listing its two
+    #: hundred boxes under "not applicable" would bury the handful of lines that
+    #: matter, and the printed page already says who fills it in. The field is
+    #: still recorded as not applicable — only the listing is suppressed.
+    quiet: bool = False
+
     def applies(self, values: Mapping[str, Any]) -> bool:
         """Whether the gated field should be filled, given the answers."""
         gateway = values.get(self.key, _ABSENT)
@@ -237,6 +247,44 @@ class Condition:
     def explain(self) -> str:
         return self.because or f"{self.key} says this does not apply"
 
+    def first_failure(self, values: Mapping[str, Any]) -> "Condition | None":
+        """This condition when it excludes the field, otherwise ``None``."""
+        return None if self.applies(values) else self
+
+    def keys(self) -> tuple[str, ...]:
+        """The gateway keys this condition reads."""
+        return (self.key,)
+
+
+@dataclass(frozen=True)
+class AllOf:
+    """Several gateways that must all agree before a field applies.
+
+    A printed box behind two questions: Appendix B of H1010's Medicaid addendum
+    applies only to a household applying for health coverage *and* reporting an
+    American Indian or Alaska Native member. Each part keeps its own reason, and
+    the first one that fails is the one the review sheet gives — so a household
+    not applying for Medicaid is told that, not that nobody is AI/AN.
+    """
+
+    conditions: tuple[Condition, ...]
+
+    def applies(self, values: Mapping[str, Any]) -> bool:
+        return self.first_failure(values) is None
+
+    def first_failure(self, values: Mapping[str, Any]) -> Condition | None:
+        for condition in self.conditions:
+            if not condition.applies(values):
+                return condition
+
+        return None
+
+    def explain(self) -> str:
+        return " ".join(condition.explain() for condition in self.conditions)
+
+    def keys(self) -> tuple[str, ...]:
+        return tuple(key for condition in self.conditions for key in condition.keys())
+
 
 @dataclass(frozen=True)
 class NotApplicable:
@@ -246,6 +294,9 @@ class NotApplicable:
     printed_label: str
     section: str
     reason: str
+
+    #: Recorded, but not listed on the review sheet. See ``Condition.quiet``.
+    quiet: bool = False
 
 
 @dataclass(frozen=True)
@@ -281,7 +332,7 @@ class FieldMapping:
     #: Held on the mapping rather than applied by the form builder so that
     #: resolution — the layer every mapping test runs against — can report the
     #: field as *not applicable* rather than as missing. See :class:`Condition`.
-    applies_when: Condition | None = None
+    applies_when: Condition | AllOf | None = None
 
     #: Other canonical keys that answer the same printed question.
     #:
@@ -313,6 +364,15 @@ class FieldMapping:
     #: group the review sheet by person instead of listing forty loose labels,
     #: and to let a test assert that row 2 draws row 2's data.
     row: tuple[str, int] | None = None
+
+    #: Another key whose printed value this mark belongs beside, if any.
+    #:
+    #: A mark that only means something next to a name — H1010-M's "Name ___.
+    #: I do not want to be tested for HTW" — is drawn only when that name is.
+    #: If the name does not fit its line, a lone mark would not say whose
+    #: answer it is, so both are left for the applicant to write by hand. See
+    #: ``RenderPlan.withheld``.
+    drawn_only_with: str | None = None
 
     def __post_init__(self) -> None:
         for key in self.candidate_keys():
@@ -872,7 +932,7 @@ class FormDefinition:
             keys.update(mapping.candidate_keys())
 
             if mapping.applies_when is not None:
-                keys.add(mapping.applies_when.key)
+                keys.update(mapping.applies_when.keys())
 
         # A key a derivation reads is consumed by this form even though no box
         # names it: `expenses.household.0.kind` is what decides which printed
@@ -1007,8 +1067,13 @@ def resolve_mappings(
 
     for mapping in definition.fields:
         condition = mapping.applies_when
+        failure = (
+            condition.first_failure(canonical_values)
+            if condition is not None
+            else None
+        )
 
-        if condition is not None and not condition.applies(canonical_values):
+        if failure is not None:
             # Excluded by a gateway answer. Recorded, not silently dropped:
             # the review sheet has to be able to say *why* the box is empty.
             report.not_applicable.append(
@@ -1016,7 +1081,8 @@ def resolve_mappings(
                     key=mapping.key,
                     printed_label=mapping.printed_label or mapping.key,
                     section=mapping.section,
-                    reason=condition.explain(),
+                    reason=failure.explain(),
+                    quiet=failure.quiet,
                 )
             )
             continue

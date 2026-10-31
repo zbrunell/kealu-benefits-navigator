@@ -65,13 +65,18 @@ import {
   type IntakeSection,
 } from "@/lib/form-intake/model";
 import {
+  TAX_PERSON_SLOTS,
   TX_BILLS,
+  TX_EMPLOYER_COVERAGE,
   TX_H1010_INTAKE,
+  TX_HTW_OPT_OUTS,
   TX_JOBS,
   TX_OTHER_INCOME,
   TX_REPRESENTATIVE,
   TX_SECTIONS,
+  TX_TRIBAL_MEMBERS,
   householdOptions,
+  taxSectionId,
   type RecordList,
 } from "@/lib/form-intake/tx-h1010";
 import { applicationForForm, programNameKey } from "@/lib/state-applications";
@@ -154,6 +159,48 @@ const SCREENS: readonly Screen[] = [
     id: "situation",
     titleKey: "tx_screen_situation",
     sections: [TX_SECTIONS.situation],
+    lists: [],
+  },
+  /*
+   * The Medicaid / CHIP addendum. Every section on these screens applies only
+   * to a household applying for Medicaid or CHIP, so for anyone else the
+   * screens are skipped exactly as the SNAP screen is for a healthcare-only
+   * household.
+   */
+  {
+    id: "health-tax",
+    titleKey: "tx_screen_health_tax",
+    sections: Array.from({ length: TAX_PERSON_SLOTS }, (_, slot) =>
+      taxSectionId(slot),
+    ),
+    lists: [],
+  },
+  {
+    id: "health-money",
+    titleKey: "tx_screen_health_money",
+    sections: [
+      TX_SECTIONS.deductions,
+      TX_SECTIONS.incomeTotals,
+      TX_SECTIONS.jobCoverage,
+    ],
+    lists: [TX_EMPLOYER_COVERAGE],
+  },
+  {
+    id: "health-people",
+    titleKey: "tx_screen_health_people",
+    sections: [TX_SECTIONS.healthChildren, TX_SECTIONS.healthPeople],
+    lists: [TX_TRIBAL_MEMBERS],
+  },
+  {
+    id: "health-htw",
+    titleKey: "tx_screen_health_htw",
+    sections: [TX_SECTIONS.htw],
+    lists: [TX_HTW_OPT_OUTS],
+  },
+  {
+    id: "health-final",
+    titleKey: "tx_screen_health_final",
+    sections: [TX_SECTIONS.healthFinal, TX_SECTIONS.assister],
     lists: [],
   },
   {
@@ -381,7 +428,13 @@ export default function TexasApplicationView({
       if (!listIsOpen(list, data)) continue;
 
       list.read(data).forEach((record, index) => {
-        for (const field of missingRecordAnswers(list.fields, record)) {
+        const asked = list.isFieldAsked
+          ? list.fields.filter((field) =>
+              list.isFieldAsked?.(field.id, record, data),
+            )
+          : list.fields;
+
+        for (const field of missingRecordAnswers(asked, record)) {
           missing.push(
             `${t(list.titleKey)} ${index + 1}: ${t(field.promptKey)}`,
           );
@@ -655,7 +708,9 @@ export default function TexasApplicationView({
           .map((section) => (
             <section key={section.id} data-testid={`tx-section-${section.id}`}>
               <h2 className="text-base font-semibold text-slate-900">
-                {t(section.titleKey)}
+                {section.titleValues
+                  ? tv(section.titleKey, section.titleValues(data))
+                  : t(section.titleKey)}
               </h2>
 
               {section.introKey && (
@@ -704,6 +759,12 @@ export default function TexasApplicationView({
               showErrors={showErrors}
               maxRows={list.id === TX_REPRESENTATIVE.id ? 1 : undefined}
               people={householdOptions(data)}
+              fieldIsAsked={
+                list.isFieldAsked
+                  ? (fieldId, record) =>
+                      Boolean(list.isFieldAsked?.(fieldId, record, data))
+                  : undefined
+              }
               onChange={(records) =>
                 setData((current) => list.write(current, [...records]))
               }

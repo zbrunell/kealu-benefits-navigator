@@ -203,7 +203,9 @@ export async function walkToReview(
 ): Promise<string[]> {
   const seen: string[] = [];
 
-  for (let guard = 0; guard < 12; guard += 1) {
+  // Enough for a household applying for Medicaid, whose addendum adds up to
+  // five screens to the twelve a food-benefits household can see.
+  for (let guard = 0; guard < 20; guard += 1) {
     if (await page.getByTestId('tx-generate').isVisible().catch(() => false)) {
       return seen;
     }

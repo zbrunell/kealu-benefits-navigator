@@ -66,6 +66,8 @@ class ReviewWords:
     not_applicable: str
     because: str
     too_long: str
+    #: Heading for a mark left blank with the name it belongs beside.
+    withheld: str
     unplaced: str
     overflow: str
     review_before_submitting: str
@@ -103,6 +105,13 @@ class ReviewWords:
     #: for the reader who needs it. Keyed rather than inlined on the document
     #: because ``provenance`` records facts about files and holds no prose.
     scope_notes: dict[str, str] = dataclass_field(default_factory=dict)
+
+    #: Overflow lines for ``RepeatingGroup.overflow_note``, by that key.
+    #:
+    #: ``{beyond}`` and ``{rows}`` as in :attr:`overflow_row`. Used where the
+    #: form itself says what to do with the rows it cannot hold, so the sheet
+    #: repeats the form's instruction rather than a generic one.
+    overflow_notes: dict[str, str] = dataclass_field(default_factory=dict)
 
 
 ENGLISH = ReviewWords(
@@ -146,6 +155,10 @@ ENGLISH = ReviewWords(
     too_long=(
         'Too long for the printed box — write "see attached" and attach the '
         "full answer:"
+    ),
+    withheld=(
+        "Left blank so it stays clear whose answer it is — write the name on "
+        "the line and mark the box beside it yourself:"
     ),
     unplaced=(
         "Mapped but with nowhere to render (a definition defect — please "
@@ -220,6 +233,29 @@ ENGLISH = ReviewWords(
         "blank — there is no {noun} to put in them."
     ),
     overflow_row="{noun}: {beyond} more than the {rows} printed rows.",
+    overflow_notes={
+        "h1010m_tax_people": (
+            "Medicaid Addendum, Section 1: the form has room for {rows} people "
+            "and you told us about {beyond} more. Attach a sheet answering "
+            "Section 1's questions for each of them."
+        ),
+        "h1010m_htw_opt_outs": (
+            "Medicaid Addendum, Section 3, question 7: the form has {rows} name "
+            "lines and you told us about {beyond} more people. Attach a sheet "
+            "with each name and \"I do not want to be tested for HTW.\""
+        ),
+        "h1010m_appendix_a": (
+            "Appendix A: the form has room for {rows} job and you told us about "
+            "{beyond} more with health coverage. The form asks for a copy "
+            "of Appendix A for each job: copy the blank page, fill in one copy "
+            "for each of those jobs, and attach them."
+        ),
+        "h1010m_appendix_b": (
+            "Appendix B: the form has room for {rows} people and you told us "
+            "about {beyond} more. The form asks you to copy the page: fill in a "
+            "copy for them ({rows} people to a page) and attach it."
+        ),
+    },
     scope_notes={
         "form_document_bilingual_scope_signature_page_only": (
             "The authorization you sign (page 2) is printed in English and "
@@ -282,6 +318,10 @@ SPANISH = ReviewWords(
     too_long=(
         'Demasiado largo para el espacio impreso — escriba "see attached" y '
         "adjunte la respuesta completa:"
+    ),
+    withheld=(
+        "Se dejó en blanco para que quede claro de quién es la respuesta — "
+        "escriba usted el nombre en la línea y marque la casilla de al lado:"
     ),
     unplaced=(
         "Asignado pero sin lugar donde imprimirse (un defecto de la "
@@ -360,6 +400,32 @@ SPANISH = ReviewWords(
         "no hay más {noun} que poner."
     ),
     overflow_row="{noun}: {beyond} más de las {rows} filas impresas.",
+    overflow_notes={
+        "h1010m_tax_people": (
+            "Adenda A (H1010-M-S), Sección 1: el formulario tiene espacio "
+            "para {rows} personas y usted nos habló de {beyond} más. Adjunte "
+            "una hoja que conteste las preguntas de la Sección 1 para cada una."
+        ),
+        "h1010m_htw_opt_outs": (
+            "Adenda A (H1010-M-S), Sección 3, pregunta 7: el formulario "
+            "tiene {rows} líneas para nombres y usted nos habló de {beyond} "
+            "personas más. Adjunte una hoja con cada nombre y \"No quiero que "
+            "me hagan la prueba para elegibilidad de HTW.\""
+        ),
+        "h1010m_appendix_a": (
+            "Apéndice A: el formulario tiene espacio para {rows} trabajo y "
+            "usted nos habló de {beyond} más con cobertura médica. El "
+            "formulario pide una copia del Apéndice A para cada trabajo: copie "
+            "la página en blanco, llene una copia para cada uno de esos "
+            "trabajos y añádalas."
+        ),
+        "h1010m_appendix_b": (
+            "Apéndice B: el formulario tiene espacio para {rows} personas y "
+            "usted nos habló de {beyond} más. El formulario pide que copie la "
+            "página: llene una copia para ellas ({rows} personas por página) y "
+            "añádala."
+        ),
+    },
     scope_notes={
         "form_document_bilingual_scope_signature_page_only": (
             "La autorización que usted firma (página 2) está impresa en "

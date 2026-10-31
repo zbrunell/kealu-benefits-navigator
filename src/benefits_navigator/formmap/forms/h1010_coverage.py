@@ -94,6 +94,13 @@ class NotOnThisForm:
     #: something for them to do about it.
     action_key: str | None = None
 
+    #: A key that, once placed on the form, makes this note unnecessary.
+    #:
+    #: For an answer the form asks a *narrower* version of: the note tells the
+    #: applicant to answer the narrower question by hand, which is only true
+    #: while we have not answered it for them.
+    superseded_by: str | None = None
+
 
 #: HHSC's own designation for the section a note belongs to, where there is one.
 _SECTION_A = "Section A"
@@ -285,6 +292,9 @@ NOT_ON_THIS_FORM: tuple[NotOnThisForm, ...] = (
             "theirs, so ours does not answer theirs."
         ),
         action_key="uncollected_tx_h1010_foster_care_age",
+        # A household applying for Medicaid or CHIP is asked the narrower
+        # question, and its answer is printed on the addendum.
+        superseded_by="household.foster_care_at_18_or_older",
     ),
     NotOnThisForm(
         key="household.prior_public_assistance",

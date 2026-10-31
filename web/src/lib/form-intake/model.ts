@@ -129,6 +129,14 @@ export interface IntakeQuestion<TState> {
 
   gate?: Gate;
 
+  /**
+   * A condition on the rest of the application, for a follow-up no single
+   * earlier answer decides — "If married, name of spouse" is asked only when
+   * the person is married *and* the roster does not already say who the
+   * spouse is. Checked in addition to `gate`, never instead of it.
+   */
+  appliesWhen?: (state: TState) => boolean;
+
   /** Normalisation safe to apply while someone is still typing. */
   normalize?: (raw: string) => string;
 
@@ -139,6 +147,12 @@ export interface IntakeQuestion<TState> {
 export interface IntakeSection<TState> {
   id: string;
   titleKey: string;
+  /**
+   * Values for placeholders in the title, for a section that is about one
+   * person: "{name}'s tax return". Read at render time, so it follows the
+   * name as it is typed.
+   */
+  titleValues?: (state: TState) => Record<string, string>;
   introKey?: string;
   /** Shuts the whole section, not just one question. */
   gate?: Gate;
@@ -231,6 +245,8 @@ export function isAsked<TState>(
   );
 
   if (section && !sectionIsAsked(form, state, section)) return false;
+
+  if (question.appliesWhen && !question.appliesWhen(state)) return false;
 
   return gateIsOpen(form, state, question.gate);
 }
